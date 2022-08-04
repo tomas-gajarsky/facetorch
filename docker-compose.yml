@@ -1,0 +1,25 @@
+version: "3.3"
+services:
+
+  # Container for running the latest deployment
+  facetorch:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    volumes:
+        - ./:/opt/facetorch
+
+  facetorch-gpu:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.gpu
+    volumes:
+        - ./:/opt/facetorch
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: [gpu]
+
