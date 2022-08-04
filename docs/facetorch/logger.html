@@ -28,6 +28,7 @@
 </summary>
 <pre><code class="python">import logging
 import os
+from typing import Optional
 
 from pythonjsonlogger import jsonlogger
 
@@ -37,7 +38,7 @@ class LoggerJsonFile:
         self,
         name: str = &#34;facetorch&#34;,
         level: int = logging.CRITICAL,
-        path_file: str = &#34;./test.log&#34;,
+        path_file: Optional[str] = None,
         json_format: str = &#34;%(asctime)s %(levelname)s %(message)s&#34;,
     ):
         &#34;&#34;&#34;Logger in json format that writes to a file and console.
@@ -71,9 +72,8 @@ class LoggerJsonFile:
             json_handler.setFormatter(formatter)
             self.logger.addHandler(json_handler)
 
-            os.makedirs(os.path.dirname(self.path_file), exist_ok=True)
-
             if self.path_file is not None:
+                os.makedirs(os.path.dirname(self.path_file), exist_ok=True)
                 path_file_handler = logging.FileHandler(self.path_file, mode=&#34;w&#34;)
                 path_file_handler.setLevel(self.level)
                 self.logger.addHandler(path_file_handler)
@@ -92,7 +92,7 @@ class LoggerJsonFile:
 <dl>
 <dt id="facetorch.logger.LoggerJsonFile"><code class="flex name class">
 <span>class <span class="ident">LoggerJsonFile</span></span>
-<span>(</span><span>name: str = 'facetorch', level: int = 50, path_file: str = './test.log', json_format: str = '%(asctime)s %(levelname)s %(message)s')</span>
+<span>(</span><span>name: str = 'facetorch', level: int = 50, path_file: Optional[str] = None, json_format: str = '%(asctime)s %(levelname)s %(message)s')</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Logger in json format that writes to a file and console.</p>
@@ -121,7 +121,7 @@ class LoggerJsonFile:
         self,
         name: str = &#34;facetorch&#34;,
         level: int = logging.CRITICAL,
-        path_file: str = &#34;./test.log&#34;,
+        path_file: Optional[str] = None,
         json_format: str = &#34;%(asctime)s %(levelname)s %(message)s&#34;,
     ):
         &#34;&#34;&#34;Logger in json format that writes to a file and console.
@@ -155,9 +155,8 @@ class LoggerJsonFile:
             json_handler.setFormatter(formatter)
             self.logger.addHandler(json_handler)
 
-            os.makedirs(os.path.dirname(self.path_file), exist_ok=True)
-
             if self.path_file is not None:
+                os.makedirs(os.path.dirname(self.path_file), exist_ok=True)
                 path_file_handler = logging.FileHandler(self.path_file, mode=&#34;w&#34;)
                 path_file_handler.setLevel(self.level)
                 self.logger.addHandler(path_file_handler)
@@ -186,9 +185,8 @@ class LoggerJsonFile:
         json_handler.setFormatter(formatter)
         self.logger.addHandler(json_handler)
 
-        os.makedirs(os.path.dirname(self.path_file), exist_ok=True)
-
         if self.path_file is not None:
+            os.makedirs(os.path.dirname(self.path_file), exist_ok=True)
             path_file_handler = logging.FileHandler(self.path_file, mode=&#34;w&#34;)
             path_file_handler.setLevel(self.level)
             self.logger.addHandler(path_file_handler)
