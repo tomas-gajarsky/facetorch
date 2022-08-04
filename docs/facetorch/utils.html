@@ -28,6 +28,7 @@
 </summary>
 <pre><code class="python">import os
 
+import omegaconf
 import torch
 import torchvision
 
@@ -83,7 +84,26 @@ def draw_boxes_and_save(data: ImageData, path_output: str) -&gt; None:
         width=3,
     )
     pil_image = torchvision.transforms.functional.to_pil_image(data.img)
-    pil_image.save(path_output)</code></pre>
+    pil_image.save(path_output)
+
+
+def fix_transform_list_attr(
+    transform: torchvision.transforms.Compose,
+) -&gt; torchvision.transforms.Compose:
+    &#34;&#34;&#34;Fix the transform attributes by converting the listconfig to a list.
+    This enables to optimize the transform using TorchScript.
+
+    Args:
+        transform (torchvision.transforms.Compose): Transform to be fixed.
+
+    Returns:
+        torchvision.transforms.Compose: Fixed transform.
+    &#34;&#34;&#34;
+    for transform_x in transform.transforms:
+        for key, value in transform_x.__dict__.items():
+            if isinstance(value, omegaconf.listconfig.ListConfig):
+                transform_x.__dict__[key] = list(value)
+    return transform</code></pre>
 </details>
 </section>
 <section>
@@ -202,6 +222,45 @@ def draw_boxes_and_save(data: ImageData, path_output: str) -&gt; None:
     pil_image.save(path_output)</code></pre>
 </details>
 </dd>
+<dt id="facetorch.utils.fix_transform_list_attr"><code class="name flex">
+<span>def <span class="ident">fix_transform_list_attr</span></span>(<span>transform: torchvision.transforms.transforms.Compose) ‑> torchvision.transforms.transforms.Compose</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Fix the transform attributes by converting the listconfig to a list.
+This enables to optimize the transform using TorchScript.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>transform</code></strong> :&ensp;<code>torchvision.transforms.Compose</code></dt>
+<dd>Transform to be fixed.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>torchvision.transforms.Compose</code></dt>
+<dd>Fixed transform.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fix_transform_list_attr(
+    transform: torchvision.transforms.Compose,
+) -&gt; torchvision.transforms.Compose:
+    &#34;&#34;&#34;Fix the transform attributes by converting the listconfig to a list.
+    This enables to optimize the transform using TorchScript.
+
+    Args:
+        transform (torchvision.transforms.Compose): Transform to be fixed.
+
+    Returns:
+        torchvision.transforms.Compose: Fixed transform.
+    &#34;&#34;&#34;
+    for transform_x in transform.transforms:
+        for key, value in transform_x.__dict__.items():
+            if isinstance(value, omegaconf.listconfig.ListConfig):
+                transform_x.__dict__[key] = list(value)
+    return transform</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -269,6 +328,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="facetorch.utils.read_version" href="#facetorch.utils.read_version">read_version</a></code></li>
 <li><code><a title="facetorch.utils.rgb2bgr" href="#facetorch.utils.rgb2bgr">rgb2bgr</a></code></li>
 <li><code><a title="facetorch.utils.draw_boxes_and_save" href="#facetorch.utils.draw_boxes_and_save">draw_boxes_and_save</a></code></li>
+<li><code><a title="facetorch.utils.fix_transform_list_attr" href="#facetorch.utils.fix_transform_list_attr">fix_transform_list_attr</a></code></li>
 </ul>
 </li>
 </ul>

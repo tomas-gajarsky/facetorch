@@ -28,39 +28,25 @@
 </summary>
 <pre><code class="python">from typing import Union
 
-import omegaconf
 import torch
 import torchvision
 from torchvision import transforms
 
 
-def optimize_transform(
-    transform: transforms.Compose, device: torch.device
+def script_transform(
+    transform: transforms.Compose,
 ) -&gt; Union[torch.jit.ScriptModule, torch.jit.ScriptFunction]:
     &#34;&#34;&#34;Convert the composed transform to a TorchScript module.
 
     Args:
         transform (transforms.Compose): Transform compose object to be scripted.
-        device (torch.device): Torch device cpu or cuda.
 
     Returns:
         Union[torch.jit.ScriptModule, torch.jit.ScriptFunction]: Scripted transform.
     &#34;&#34;&#34;
 
-    def _fix_transform_list_attr(
-        _transform: transforms.Compose,
-    ) -&gt; transforms.Compose:
-        &#34;&#34;&#34;Fix the transform attributes by converting the listconfig to a list.
-        This enables to optimize the transform using TorchScript.&#34;&#34;&#34;
-        for transform_x in _transform.transforms:
-            for key, value in transform_x.__dict__.items():
-                if isinstance(value, omegaconf.listconfig.ListConfig):
-                    transform_x.__dict__[key] = list(value)
-        return _transform
-
-    transform = _fix_transform_list_attr(transform)
     transform_seq = torch.nn.Sequential(*transform.transforms)
-    transform_jit = torch.jit.script(transform_seq).to(device)
+    transform_jit = torch.jit.script(transform_seq)
     return transform_jit
 
 
@@ -114,8 +100,8 @@ class SquarePad(torch.nn.Module):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="facetorch.transforms.optimize_transform"><code class="name flex">
-<span>def <span class="ident">optimize_transform</span></span>(<span>transform: torchvision.transforms.transforms.Compose, device: torch.device) ‑> Union[torch.jit._script.ScriptModule, torch.jit.ScriptFunction]</span>
+<dt id="facetorch.transforms.script_transform"><code class="name flex">
+<span>def <span class="ident">script_transform</span></span>(<span>transform: torchvision.transforms.transforms.Compose) ‑> Union[torch.jit._script.ScriptModule, torch.jit.ScriptFunction]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Convert the composed transform to a TorchScript module.</p>
@@ -123,8 +109,6 @@ class SquarePad(torch.nn.Module):
 <dl>
 <dt><strong><code>transform</code></strong> :&ensp;<code>transforms.Compose</code></dt>
 <dd>Transform compose object to be scripted.</dd>
-<dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
-<dd>Torch device cpu or cuda.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
@@ -135,33 +119,20 @@ class SquarePad(torch.nn.Module):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def optimize_transform(
-    transform: transforms.Compose, device: torch.device
+<pre><code class="python">def script_transform(
+    transform: transforms.Compose,
 ) -&gt; Union[torch.jit.ScriptModule, torch.jit.ScriptFunction]:
     &#34;&#34;&#34;Convert the composed transform to a TorchScript module.
 
     Args:
         transform (transforms.Compose): Transform compose object to be scripted.
-        device (torch.device): Torch device cpu or cuda.
 
     Returns:
         Union[torch.jit.ScriptModule, torch.jit.ScriptFunction]: Scripted transform.
     &#34;&#34;&#34;
 
-    def _fix_transform_list_attr(
-        _transform: transforms.Compose,
-    ) -&gt; transforms.Compose:
-        &#34;&#34;&#34;Fix the transform attributes by converting the listconfig to a list.
-        This enables to optimize the transform using TorchScript.&#34;&#34;&#34;
-        for transform_x in _transform.transforms:
-            for key, value in transform_x.__dict__.items():
-                if isinstance(value, omegaconf.listconfig.ListConfig):
-                    transform_x.__dict__[key] = list(value)
-        return _transform
-
-    transform = _fix_transform_list_attr(transform)
     transform_seq = torch.nn.Sequential(*transform.transforms)
-    transform_jit = torch.jit.script(transform_seq).to(device)
+    transform_jit = torch.jit.script(transform_seq)
     return transform_jit</code></pre>
 </details>
 </dd>
@@ -226,6 +197,17 @@ class SquarePad(torch.nn.Module):
 <ul class="hlist">
 <li>torch.nn.modules.module.Module</li>
 </ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="facetorch.transforms.SquarePad.dump_patches"><code class="name">var <span class="ident">dump_patches</span> : bool</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.transforms.SquarePad.training"><code class="name">var <span class="ident">training</span> : bool</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="facetorch.transforms.SquarePad.forward"><code class="name flex">
@@ -324,7 +306,7 @@ setTimeout(() => input.focus(), 100);
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="facetorch.transforms.optimize_transform" href="#facetorch.transforms.optimize_transform">optimize_transform</a></code></li>
+<li><code><a title="facetorch.transforms.script_transform" href="#facetorch.transforms.script_transform">script_transform</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
@@ -333,6 +315,8 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="facetorch.transforms.SquarePad" href="#facetorch.transforms.SquarePad">SquarePad</a></code></h4>
 <ul class="">
 <li><code><a title="facetorch.transforms.SquarePad.forward" href="#facetorch.transforms.SquarePad.forward">forward</a></code></li>
+<li><code><a title="facetorch.transforms.SquarePad.dump_patches" href="#facetorch.transforms.SquarePad.dump_patches">dump_patches</a></code></li>
+<li><code><a title="facetorch.transforms.SquarePad.training" href="#facetorch.transforms.SquarePad.training">training</a></code></li>
 </ul>
 </li>
 </ul>

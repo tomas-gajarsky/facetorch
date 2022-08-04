@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Optional
 
 from pythonjsonlogger import jsonlogger
 
@@ -9,7 +10,7 @@ class LoggerJsonFile:
         self,
         name: str = "facetorch",
         level: int = logging.CRITICAL,
-        path_file: str = "./test.log",
+        path_file: Optional[str] = None,
         json_format: str = "%(asctime)s %(levelname)s %(message)s",
     ):
         """Logger in json format that writes to a file and console.
@@ -43,9 +44,8 @@ class LoggerJsonFile:
             json_handler.setFormatter(formatter)
             self.logger.addHandler(json_handler)
 
-            os.makedirs(os.path.dirname(self.path_file), exist_ok=True)
-
             if self.path_file is not None:
+                os.makedirs(os.path.dirname(self.path_file), exist_ok=True)
                 path_file_handler = logging.FileHandler(self.path_file, mode="w")
                 path_file_handler.setLevel(self.level)
                 self.logger.addHandler(path_file_handler)

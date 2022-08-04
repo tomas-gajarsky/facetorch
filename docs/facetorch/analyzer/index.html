@@ -207,7 +207,8 @@ It is the orchestrator responsible for initializing and running the following co
                 self.logger.info(f&#34;Running FacePredictor: {predictor_name}&#34;)
                 data = _predict_batch(data, predictor, predictor_name)
 
-        if path_output and len(path_output) &gt; 0:
+        path_output = None if path_output == &#34;None&#34; else path_output
+        if path_output is not None:
             self.logger.info(&#34;Saving image&#34;, extra={&#34;path_output&#34;: path_output})
             draw_boxes_and_save(data, path_output)
 
@@ -317,7 +318,8 @@ def run(
             self.logger.info(f&#34;Running FacePredictor: {predictor_name}&#34;)
             data = _predict_batch(data, predictor, predictor_name)
 
-    if path_output and len(path_output) &gt; 0:
+    path_output = None if path_output == &#34;None&#34; else path_output
+    if path_output is not None:
         self.logger.info(&#34;Saving image&#34;, extra={&#34;path_output&#34;: path_output})
         draw_boxes_and_save(data, path_output)
 
