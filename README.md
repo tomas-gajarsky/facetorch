@@ -6,15 +6,42 @@
 
 Facetorch is a Python library that can detect faces and analyze facial features like expressions using artificial neural networks. The goal is to gather open-source face analysis models from the community, optimize them for performance using TorchScript, and combine them to create a single face analysis tool that one can:
 
-1. configure using Hydra (OmegaConf)
-2. reproduce with conda-lock and Docker
-3. accelerate on CPU and GPU with TorchScript
+1. configure using [Hydra](https://hydra.cc/docs/intro/) (OmegaConf)
+2. reproduce with [conda-lock](https://github.com/conda-incubator/conda-lock) and [Docker](https://docs.docker.com/get-docker/)
+3. accelerate on CPU and GPU with [TorchScript](https://pytorch.org/docs/stable/jit.html)
 4. extend by uploading a model file to Google Drive and adding a config yaml file to the repository
-
 
 Please, use the library responsibly with caution and follow the 
 [ethics guidelines for Trustworthy AI from European Commission](https://ec.europa.eu/futurium/en/ai-alliance-consultation.1.html). 
 The models are not perfect and may be biased.
+
+## Install
+PyPI
+```bash
+pip install facetorch
+```
+Conda
+```bash
+conda install -c conda-forge facetorch
+```
+
+## Usage
+
+### Prerequisites
+* [Docker](https://docs.docker.com/get-docker/)
+* [Docker Compose](https://docs.docker.com/compose/install/)
+
+Docker Compose builds an image that can be used to run the FaceAnalyzer.
+
+### Configure
+
+The project is configured by files located in *conf* with the main file *conf/config.yaml*.
+
+### Run docker example
+    
+* CPU: ```docker compose run facetorch python ./scripts/example.py```
+* GPU: ```docker compose run facetorch-gpu python ./scripts/example.py analyzer.device=cuda```
+
 
 ## Components
 FaceAnalyzer is the main class of Facetorch as it is the orchestrator responsible for initializing and running the following components:
@@ -24,6 +51,8 @@ FaceAnalyzer is the main class of Facetorch as it is the orchestrator responsibl
 3. Unifier - processor that unifies sizes of all faces and normalizes them
     between 0 and 1.
 4. Predictor dict - set of wrappers around neural networks trained to analyze facial features.
+
+[Documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html) provides more detailed information about the facetorch modules.
 
 ### Structure
 ```
@@ -36,50 +65,6 @@ analyzer
             ├── fer
             └── deepfake
 ```
-
-## Usage
-
-### Prerequisites
-* [Docker](https://docs.docker.com/get-docker/)
-* [Docker Compose](https://docs.docker.com/compose/install/)
-
-Docker Compose builds an image that can be used to run the Facetorch Analyzer.
-One can run it using the configuration specified in **conf/config.yaml**.
-
-### Run docker example
-```
-# Build the docker image and open shell
-docker compose run facetorch bash
-
-# Run the analyzer example
-python ./scripts/example.py
-```
-
-## Installation
-
-PyPI
-```bash
-pip install facetorch
-```
-
-Conda
-```bash
-conda install -c conda-forge facetorch
-```
-
-## Usage
-
-### Prerequisites
-* [Docker](https://docs.docker.com/get-docker/)
-* [Docker Compose](https://docs.docker.com/compose/install/)
-
-Docker compose will build the image and run it with the configuration specified in *conf/config.yaml*.
-
-### Running the analyzer
-
-    
-* CPU: ```docker compose run facetorch python ./scripts/example.py```
-* GPU: ```docker compose run facetorch-gpu python ./scripts/example.py analyzer.device=cuda```
 
 
 ## Available models
@@ -210,12 +195,5 @@ the requirements of the new model.
 1. Run profiling of the example script: ```python -m cProfile -o profiling/example.prof scripts/example.py```
 2. Open profiling file in the browser: ```snakeviz profiling/example.prof```
 
-### TODO
-
-- host docs on github
-- github actions to build docs
-- github actions upload to pypi
-- github actions upload to conda
-- github actions test
-- v2 include averaging in the response object
-- v2 add support for AWS Inferentia chips
+# Acknowledgements
+I want to thank the open source code community and the researchers who have published the models. This project would not be possible without their work.
