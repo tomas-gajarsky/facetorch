@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>facetorch.analyzer.core API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>facetorch.analyzer.core</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from typing import Optional, Union
+
+import facetorch
+import torch
+from codetiming import Timer
+from facetorch.analyzer.predictor.core import FacePredictor
+from facetorch.datastruct import ImageData, Response
+from facetorch.logger import LoggerJsonFile
+from facetorch.utils import draw_boxes_and_save
+from hydra.utils import instantiate
+from omegaconf import OmegaConf
+
+logger = LoggerJsonFile().logger
+
+
+class FaceAnalyzer(object):
+    @Timer(&#34;FaceAnalyzer.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    def __init__(self, cfg: OmegaConf):
+        &#34;&#34;&#34;FaceAnalyzer is the main class that reads images and runs face detection, tensor unification, as well as facial feature analysis prediction.
+        It is the orchestrator responsible for initializing and running the following components:
+
+        1. Reader - reads the image and returns an ImageData object containing the image tensor.
+        2. Detector - wrapper around a neural network that detects faces.
+        3. Unifier - processor that unifies sizes of all faces and normalizes them between 0 and 1.
+        4. Predictor list - list of wrappers around models trained to analyze facial features for example, expressions.
+
+        Args:
+            cfg (OmegaConf): Config object with image reader, face detector, unifier and predictor configurations.
+
+        Attributes:
+            cfg (OmegaConf): Config object with image reader, face detector, unifier and predictor configurations.
+            reader (BaseReader): Reader object that reads the image and returns an ImageData object containing the image tensor.
+            detector (FaceDetector): FaceDetector object that wraps a neural network that detects faces.
+            unifier (FaceUnifier): FaceUnifier object that unifies sizes of all faces and normalizes them between 0 and 1.
+            predictors (Dict[str, FacePredictor]): Dict of FacePredictor objects that predict facial features. Key is the name of the predictor.
+            logger (logging.Logger): Logger object that logs messages.
+
+        &#34;&#34;&#34;
+        self.cfg = cfg
+        self.logger = instantiate(self.cfg.logger).logger
+
+        self.logger.info(&#34;Initializing FaceAnalyzer&#34;)
+        self.logger.debug(&#34;Config&#34;, extra=self.cfg.__dict__[&#34;_content&#34;])
+
+        self.logger.info(&#34;Initializing BaseReader&#34;)
+        self.reader = instantiate(self.cfg.reader)
+
+        self.logger.info(&#34;Initializing FaceDetector&#34;)
+        self.detector = instantiate(self.cfg.detector)
+
+        self.logger.info(&#34;Initializing FaceUnifier&#34;)
+        self.unifier = instantiate(self.cfg.unifier)
+
+        self.logger.info(&#34;Initializing dictionary of FacePredictor objects&#34;)
+        self.predictors = {}
+        for predictor_name in self.cfg.predictor:
+            self.logger.info(f&#34;Initializing FacePredictor {predictor_name}&#34;)
+            self.predictors[predictor_name] = instantiate(
+                self.cfg.predictor[predictor_name]
+            )
+
+    @Timer(&#34;FaceAnalyzer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    def run(
+        self,
+        path_image: str,
+        batch_size: int = 8,
+        fix_img_size: bool = False,
+        return_img_data: bool = False,
+        include_tensors: bool = False,
+        path_output: Optional[str] = None,
+    ) -&gt; Union[Response, ImageData]:
+        &#34;&#34;&#34;Reads image, detects faces, unifies the detected faces, predicts facial features
+         and returns analyzed data.
+
+        Args:
+            path_image (str): Path to the input image.
+            batch_size (int): Batch size for making predictions on the faces. Default is 8.
+            fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False.
+            return_img_data (bool): If True, returns all image data including tensors, otherwise only returns the faces. Default is False.
+            include_tensors (bool): If True, removes tensors from the returned data object. Default is False.
+            path_output (Optional[str]): Path where to save the image with detected faces. If None, the image is not saved. Default: None.
+
+        Returns:
+            Union[Response, ImageData]: If return_img_data is False, returns a Response object containing the faces and their facial features. If return_img_data is True, returns the entire ImageData object.
+
+        &#34;&#34;&#34;
+
+        def _predict_batch(
+            data: ImageData, predictor: FacePredictor, predictor_name: str
+        ) -&gt; ImageData:
+            n_faces = len(data.faces)
+
+            for face_indx_start in range(0, n_faces, batch_size):
+                face_indx_end = min(face_indx_start + batch_size, n_faces)
+
+                face_batch_tensor = torch.stack(
+                    [face.tensor for face in data.faces[face_indx_start:face_indx_end]]
+                )
+                preds = predictor.run(face_batch_tensor)
+                data.add_preds(preds, predictor_name, face_indx_start)
+
+            return data
+
+        self.logger.info(&#34;Running FaceAnalyzer&#34;)
+        self.logger.info(&#34;Reading image&#34;, extra={&#34;path_image&#34;: path_image})
+        data = self.reader.run(path_image, fix_img_size=fix_img_size)
+        data.version = facetorch.__version__
+
+        self.logger.info(&#34;Detecting faces&#34;)
+        data = self.detector.run(data)
+        n_faces = len(data.faces)
+        self.logger.info(f&#34;Number of faces: {n_faces}&#34;)
+
+        if n_faces &gt; 0:
+            self.logger.info(&#34;Unifying faces&#34;)
+            data = self.unifier.run(data)
+
+            self.logger.info(&#34;Predicting facial features&#34;)
+            for predictor_name, predictor in self.predictors.items():
+                self.logger.info(f&#34;Running FacePredictor: {predictor_name}&#34;)
+                data = _predict_batch(data, predictor, predictor_name)
+
+        if path_output and len(path_output) &gt; 0:
+            self.logger.info(&#34;Saving image&#34;, extra={&#34;path_output&#34;: path_output})
+            draw_boxes_and_save(data, path_output)
+
+        if not include_tensors:
+            self.logger.info(&#34;Removing tensors&#34;)
+            data.reset_tensors()
+
+        response = Response(faces=data.faces, version=data.version)
+
+        if return_img_data:
+            self.logger.debug(&#34;Returning image data object&#34;, extra=data.__dict__)
+            return data
+        else:
+            self.logger.debug(&#34;Returning response with faces&#34;, extra=response.__dict__)
+            return response</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="facetorch.analyzer.core.FaceAnalyzer"><code class="flex name class">
+<span>class <span class="ident">FaceAnalyzer</span></span>
+<span>(</span><span>cfg: omegaconf.omegaconf.OmegaConf)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>FaceAnalyzer is the main class that reads images and runs face detection, tensor unification, as well as facial feature analysis prediction.
+It is the orchestrator responsible for initializing and running the following components:</p>
+<ol>
+<li>Reader - reads the image and returns an ImageData object containing the image tensor.</li>
+<li>Detector - wrapper around a neural network that detects faces.</li>
+<li>Unifier - processor that unifies sizes of all faces and normalizes them between 0 and 1.</li>
+<li>Predictor list - list of wrappers around models trained to analyze facial features for example, expressions.</li>
+</ol>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>cfg</code></strong> :&ensp;<code>OmegaConf</code></dt>
+<dd>Config object with image reader, face detector, unifier and predictor configurations.</dd>
+</dl>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>cfg</code></strong> :&ensp;<code>OmegaConf</code></dt>
+<dd>Config object with image reader, face detector, unifier and predictor configurations.</dd>
+<dt><strong><code>reader</code></strong> :&ensp;<code>BaseReader</code></dt>
+<dd>Reader object that reads the image and returns an ImageData object containing the image tensor.</dd>
+<dt><strong><code>detector</code></strong> :&ensp;<code>FaceDetector</code></dt>
+<dd>FaceDetector object that wraps a neural network that detects faces.</dd>
+<dt><strong><code>unifier</code></strong> :&ensp;<code>FaceUnifier</code></dt>
+<dd>FaceUnifier object that unifies sizes of all faces and normalizes them between 0 and 1.</dd>
+<dt><strong><code>predictors</code></strong> :&ensp;<code>Dict[str, FacePredictor]</code></dt>
+<dd>Dict of FacePredictor objects that predict facial features. Key is the name of the predictor.</dd>
+<dt><strong><code>logger</code></strong> :&ensp;<code>logging.Logger</code></dt>
+<dd>Logger object that logs messages.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FaceAnalyzer(object):
+    @Timer(&#34;FaceAnalyzer.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    def __init__(self, cfg: OmegaConf):
+        &#34;&#34;&#34;FaceAnalyzer is the main class that reads images and runs face detection, tensor unification, as well as facial feature analysis prediction.
+        It is the orchestrator responsible for initializing and running the following components:
+
+        1. Reader - reads the image and returns an ImageData object containing the image tensor.
+        2. Detector - wrapper around a neural network that detects faces.
+        3. Unifier - processor that unifies sizes of all faces and normalizes them between 0 and 1.
+        4. Predictor list - list of wrappers around models trained to analyze facial features for example, expressions.
+
+        Args:
+            cfg (OmegaConf): Config object with image reader, face detector, unifier and predictor configurations.
+
+        Attributes:
+            cfg (OmegaConf): Config object with image reader, face detector, unifier and predictor configurations.
+            reader (BaseReader): Reader object that reads the image and returns an ImageData object containing the image tensor.
+            detector (FaceDetector): FaceDetector object that wraps a neural network that detects faces.
+            unifier (FaceUnifier): FaceUnifier object that unifies sizes of all faces and normalizes them between 0 and 1.
+            predictors (Dict[str, FacePredictor]): Dict of FacePredictor objects that predict facial features. Key is the name of the predictor.
+            logger (logging.Logger): Logger object that logs messages.
+
+        &#34;&#34;&#34;
+        self.cfg = cfg
+        self.logger = instantiate(self.cfg.logger).logger
+
+        self.logger.info(&#34;Initializing FaceAnalyzer&#34;)
+        self.logger.debug(&#34;Config&#34;, extra=self.cfg.__dict__[&#34;_content&#34;])
+
+        self.logger.info(&#34;Initializing BaseReader&#34;)
+        self.reader = instantiate(self.cfg.reader)
+
+        self.logger.info(&#34;Initializing FaceDetector&#34;)
+        self.detector = instantiate(self.cfg.detector)
+
+        self.logger.info(&#34;Initializing FaceUnifier&#34;)
+        self.unifier = instantiate(self.cfg.unifier)
+
+        self.logger.info(&#34;Initializing dictionary of FacePredictor objects&#34;)
+        self.predictors = {}
+        for predictor_name in self.cfg.predictor:
+            self.logger.info(f&#34;Initializing FacePredictor {predictor_name}&#34;)
+            self.predictors[predictor_name] = instantiate(
+                self.cfg.predictor[predictor_name]
+            )
+
+    @Timer(&#34;FaceAnalyzer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    def run(
+        self,
+        path_image: str,
+        batch_size: int = 8,
+        fix_img_size: bool = False,
+        return_img_data: bool = False,
+        include_tensors: bool = False,
+        path_output: Optional[str] = None,
+    ) -&gt; Union[Response, ImageData]:
+        &#34;&#34;&#34;Reads image, detects faces, unifies the detected faces, predicts facial features
+         and returns analyzed data.
+
+        Args:
+            path_image (str): Path to the input image.
+            batch_size (int): Batch size for making predictions on the faces. Default is 8.
+            fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False.
+            return_img_data (bool): If True, returns all image data including tensors, otherwise only returns the faces. Default is False.
+            include_tensors (bool): If True, removes tensors from the returned data object. Default is False.
+            path_output (Optional[str]): Path where to save the image with detected faces. If None, the image is not saved. Default: None.
+
+        Returns:
+            Union[Response, ImageData]: If return_img_data is False, returns a Response object containing the faces and their facial features. If return_img_data is True, returns the entire ImageData object.
+
+        &#34;&#34;&#34;
+
+        def _predict_batch(
+            data: ImageData, predictor: FacePredictor, predictor_name: str
+        ) -&gt; ImageData:
+            n_faces = len(data.faces)
+
+            for face_indx_start in range(0, n_faces, batch_size):
+                face_indx_end = min(face_indx_start + batch_size, n_faces)
+
+                face_batch_tensor = torch.stack(
+                    [face.tensor for face in data.faces[face_indx_start:face_indx_end]]
+                )
+                preds = predictor.run(face_batch_tensor)
+                data.add_preds(preds, predictor_name, face_indx_start)
+
+            return data
+
+        self.logger.info(&#34;Running FaceAnalyzer&#34;)
+        self.logger.info(&#34;Reading image&#34;, extra={&#34;path_image&#34;: path_image})
+        data = self.reader.run(path_image, fix_img_size=fix_img_size)
+        data.version = facetorch.__version__
+
+        self.logger.info(&#34;Detecting faces&#34;)
+        data = self.detector.run(data)
+        n_faces = len(data.faces)
+        self.logger.info(f&#34;Number of faces: {n_faces}&#34;)
+
+        if n_faces &gt; 0:
+            self.logger.info(&#34;Unifying faces&#34;)
+            data = self.unifier.run(data)
+
+            self.logger.info(&#34;Predicting facial features&#34;)
+            for predictor_name, predictor in self.predictors.items():
+                self.logger.info(f&#34;Running FacePredictor: {predictor_name}&#34;)
+                data = _predict_batch(data, predictor, predictor_name)
+
+        if path_output and len(path_output) &gt; 0:
+            self.logger.info(&#34;Saving image&#34;, extra={&#34;path_output&#34;: path_output})
+            draw_boxes_and_save(data, path_output)
+
+        if not include_tensors:
+            self.logger.info(&#34;Removing tensors&#34;)
+            data.reset_tensors()
+
+        response = Response(faces=data.faces, version=data.version)
+
+        if return_img_data:
+            self.logger.debug(&#34;Returning image data object&#34;, extra=data.__dict__)
+            return data
+        else:
+            self.logger.debug(&#34;Returning response with faces&#34;, extra=response.__dict__)
+            return response</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="facetorch.analyzer.core.FaceAnalyzer.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self, path_image: str, batch_size: int = 8, fix_img_size: bool = False, return_img_data: bool = False, include_tensors: bool = False, path_output: Optional[str] = None) ‑> Union[<a title="facetorch.datastruct.Response" href="../datastruct.html#facetorch.datastruct.Response">Response</a>, <a title="facetorch.datastruct.ImageData" href="../datastruct.html#facetorch.datastruct.ImageData">ImageData</a>]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Reads image, detects faces, unifies the detected faces, predicts facial features
+and returns analyzed data.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>path_image</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to the input image.</dd>
+<dt><strong><code>batch_size</code></strong> :&ensp;<code>int</code></dt>
+<dd>Batch size for making predictions on the faces. Default is 8.</dd>
+<dt><strong><code>fix_img_size</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If True, resizes the image to the size specified in reader. Default is False.</dd>
+<dt><strong><code>return_img_data</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If True, returns all image data including tensors, otherwise only returns the faces. Default is False.</dd>
+<dt><strong><code>include_tensors</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If True, removes tensors from the returned data object. Default is False.</dd>
+<dt><strong><code>path_output</code></strong> :&ensp;<code>Optional[str]</code></dt>
+<dd>Path where to save the image with detected faces. If None, the image is not saved. Default: None.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Union[Response, ImageData]</code></dt>
+<dd>If return_img_data is False, returns a Response object containing the faces and their facial features. If return_img_data is True, returns the entire ImageData object.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@Timer(&#34;FaceAnalyzer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+def run(
+    self,
+    path_image: str,
+    batch_size: int = 8,
+    fix_img_size: bool = False,
+    return_img_data: bool = False,
+    include_tensors: bool = False,
+    path_output: Optional[str] = None,
+) -&gt; Union[Response, ImageData]:
+    &#34;&#34;&#34;Reads image, detects faces, unifies the detected faces, predicts facial features
+     and returns analyzed data.
+
+    Args:
+        path_image (str): Path to the input image.
+        batch_size (int): Batch size for making predictions on the faces. Default is 8.
+        fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False.
+        return_img_data (bool): If True, returns all image data including tensors, otherwise only returns the faces. Default is False.
+        include_tensors (bool): If True, removes tensors from the returned data object. Default is False.
+        path_output (Optional[str]): Path where to save the image with detected faces. If None, the image is not saved. Default: None.
+
+    Returns:
+        Union[Response, ImageData]: If return_img_data is False, returns a Response object containing the faces and their facial features. If return_img_data is True, returns the entire ImageData object.
+
+    &#34;&#34;&#34;
+
+    def _predict_batch(
+        data: ImageData, predictor: FacePredictor, predictor_name: str
+    ) -&gt; ImageData:
+        n_faces = len(data.faces)
+
+        for face_indx_start in range(0, n_faces, batch_size):
+            face_indx_end = min(face_indx_start + batch_size, n_faces)
+
+            face_batch_tensor = torch.stack(
+                [face.tensor for face in data.faces[face_indx_start:face_indx_end]]
+            )
+            preds = predictor.run(face_batch_tensor)
+            data.add_preds(preds, predictor_name, face_indx_start)
+
+        return data
+
+    self.logger.info(&#34;Running FaceAnalyzer&#34;)
+    self.logger.info(&#34;Reading image&#34;, extra={&#34;path_image&#34;: path_image})
+    data = self.reader.run(path_image, fix_img_size=fix_img_size)
+    data.version = facetorch.__version__
+
+    self.logger.info(&#34;Detecting faces&#34;)
+    data = self.detector.run(data)
+    n_faces = len(data.faces)
+    self.logger.info(f&#34;Number of faces: {n_faces}&#34;)
+
+    if n_faces &gt; 0:
+        self.logger.info(&#34;Unifying faces&#34;)
+        data = self.unifier.run(data)
+
+        self.logger.info(&#34;Predicting facial features&#34;)
+        for predictor_name, predictor in self.predictors.items():
+            self.logger.info(f&#34;Running FacePredictor: {predictor_name}&#34;)
+            data = _predict_batch(data, predictor, predictor_name)
+
+    if path_output and len(path_output) &gt; 0:
+        self.logger.info(&#34;Saving image&#34;, extra={&#34;path_output&#34;: path_output})
+        draw_boxes_and_save(data, path_output)
+
+    if not include_tensors:
+        self.logger.info(&#34;Removing tensors&#34;)
+        data.reset_tensors()
+
+    response = Response(faces=data.faces, version=data.version)
+
+    if return_img_data:
+        self.logger.debug(&#34;Returning image data object&#34;, extra=data.__dict__)
+        return data
+    else:
+        self.logger.debug(&#34;Returning response with faces&#34;, extra=response.__dict__)
+        return response</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="facetorch.analyzer" href="index.html">facetorch.analyzer</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="facetorch.analyzer.core.FaceAnalyzer" href="#facetorch.analyzer.core.FaceAnalyzer">FaceAnalyzer</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.analyzer.core.FaceAnalyzer.run" href="#facetorch.analyzer.core.FaceAnalyzer.run">run</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

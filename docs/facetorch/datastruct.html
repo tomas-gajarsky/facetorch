@@ -1,0 +1,1195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>facetorch.datastruct API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>facetorch.datastruct</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from dataclasses import dataclass, field
+from typing import Dict, List
+
+import torch
+from codetiming import Timer
+
+from facetorch.logger import LoggerJsonFile
+
+logger = LoggerJsonFile().logger
+
+
+@dataclass
+class Dimensions:
+    &#34;&#34;&#34;Data class for image dimensions.
+
+    Attributes:
+        height (int): Image height.
+        width (int): Image width.
+    &#34;&#34;&#34;
+
+    height: int = field(default=0)
+    width: int = field(default=0)
+
+
+@dataclass
+class Location:
+    &#34;&#34;&#34;Data class for face location.
+
+    Attributes:
+        x1 (int): x1 coordinate
+        x2 (int): x2 coordinate
+        y1 (int): y1 coordinate
+        y2 (int): y2 coordinate
+    &#34;&#34;&#34;
+
+    x1: int = field(default=0)
+    x2: int = field(default=0)
+    y1: int = field(default=0)
+    y2: int = field(default=0)
+
+    def form_square(self) -&gt; None:
+        &#34;&#34;&#34;Form a square from the location.
+
+        Returns:
+            None
+        &#34;&#34;&#34;
+        height = self.y2 - self.y1
+        width = self.x2 - self.x1
+
+        if height &gt; width:
+            diff = height - width
+            self.x1 = self.x1 - int(diff / 2)
+            self.x2 = self.x2 + int(diff / 2)
+        elif height &lt; width:
+            diff = width - height
+            self.y1 = self.y1 - int(diff / 2)
+            self.y2 = self.y2 + int(diff / 2)
+        else:
+            pass
+
+    def expand(self, amount: int) -&gt; None:
+        &#34;&#34;&#34;Expand the location while keeping the center.
+
+        Args:
+            amount (int): Amount of pixels to expand the location by.
+
+        Returns:
+            None
+        &#34;&#34;&#34;
+        if amount != 0:
+            self.x1 = self.x1 - amount
+            self.y1 = self.y1 - amount
+            self.x2 = self.x2 + amount
+            self.y2 = self.y2 + amount
+
+
+@dataclass
+class Prediction:
+    &#34;&#34;&#34;Data class for face prediction results.
+
+    Attributes:
+        label (str): Label of the face given by predictor.
+        logits (torch.Tensor): Output of the predictor model for the face.
+    &#34;&#34;&#34;
+
+    label: str = field(default_factory=str)
+    logits: torch.Tensor = field(default_factory=torch.Tensor)
+
+
+@dataclass
+class Detection:
+    &#34;&#34;&#34;Data class for detector output.
+
+    Attributes:
+        loc (torch.Tensor): Locations of faces
+        conf (torch.Tensor): Confidences of faces
+        landmarks (torch.Tensor): Landmarks of faces
+        boxes (torch.Tensor): Bounding boxes of faces
+        dets (torch.Tensor): Detections of faces
+
+    &#34;&#34;&#34;
+
+    loc: torch.Tensor = field(default_factory=torch.Tensor)
+    conf: torch.Tensor = field(default_factory=torch.Tensor)
+    landmarks: torch.Tensor = field(default_factory=torch.Tensor)
+    boxes: torch.Tensor = field(default_factory=torch.Tensor)
+    dets: torch.Tensor = field(default_factory=torch.Tensor)
+
+
+@dataclass
+class Face:
+    &#34;&#34;&#34;Data class for face attributes.
+
+    Attributes:
+        indx (int): Index of the face.
+        loc (Location): Location of the face in the image.
+        dims (Dimensions): Dimensions of the face (height, width).
+        tensor (torch.Tensor): Face tensor.
+        ratio (float): Ratio of the face area to the image area.
+        preds (Dict[str, Prediction]): Predictions of the face given by predictor set.
+    &#34;&#34;&#34;
+
+    indx: int = field(default_factory=int)
+    loc: Location = field(default_factory=Location)
+    dims: Dimensions = field(default_factory=Dimensions)
+    tensor: torch.Tensor = field(default_factory=torch.Tensor)
+    ratio: float = field(default_factory=float)
+    preds: Dict[str, Prediction] = field(default_factory=dict)
+
+
+@dataclass
+class ImageData:
+    &#34;&#34;&#34;The main data class used for passing data between the different facetorch modules.
+
+    Attributes:
+        path (str): Path to the image.
+        img (torch.Tensor): Original image tensor.
+        tensor (torch.Tensor): Processed image tensor.
+        dims (Dimensions): Dimensions of the image (height, width).
+        det (Detection): Detection data.
+        faces (Dict[int, Face]): Dictionary of faces.
+        version (int): Version of the image.
+
+    &#34;&#34;&#34;
+
+    path: str = field(default_factory=str)
+    img: torch.Tensor = field(default_factory=torch.Tensor)
+    tensor: torch.Tensor = field(default_factory=torch.Tensor)
+    dims: Dimensions = field(default_factory=Dimensions)
+    det: Detection = field(default_factory=Detection)
+    faces: List[Face] = field(default_factory=list)
+    version: str = field(default_factory=str)
+
+    def add_preds(
+        self,
+        preds_list: List[Prediction],
+        predictor_name: str,
+        face_offset: int = 0,
+    ) -&gt; None:
+        &#34;&#34;&#34;Adds a list of predictions to the data object.
+
+        Args:
+            preds_list (List[Prediction]): List of predictions.
+            predictor_name (str): Name of the predictor.
+            face_offset (int): Offset of the face index.
+
+        Returns:
+            None
+
+        &#34;&#34;&#34;
+        j = 0
+        for i in range(face_offset, face_offset + len(preds_list)):
+            self.faces[i].preds[predictor_name] = preds_list[j]
+            j += 1
+
+    def reset_img(self) -&gt; None:
+        &#34;&#34;&#34;Reset the original image tensor to empty state.&#34;&#34;&#34;
+        self.img = torch.tensor([])
+
+    def reset_tensor(self) -&gt; None:
+        &#34;&#34;&#34;Reset the processed image tensor to empty state.&#34;&#34;&#34;
+        self.tensor = torch.tensor([])
+
+    def reset_face_tensors(self) -&gt; None:
+        &#34;&#34;&#34;Reset the face tensors to empty state.&#34;&#34;&#34;
+        for i in range(0, len(self.faces)):
+            self.faces[i].tensor = torch.tensor([])
+
+    def reset_face_pred_tensors(self) -&gt; None:
+        &#34;&#34;&#34;Reset the face prediction tensors to empty state.&#34;&#34;&#34;
+        for i in range(0, len(self.faces)):
+            for key in self.faces[i].preds:
+                self.faces[i].preds[key].logits = torch.tensor([])
+
+    def reset_det_tensors(self) -&gt; None:
+        &#34;&#34;&#34;Reset the detection object to empty state.&#34;&#34;&#34;
+        self.det = Detection()
+
+    @Timer(&#34;ImageData.reset_faces&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    def reset_tensors(self) -&gt; None:
+        &#34;&#34;&#34;Reset the tensors to empty state.&#34;&#34;&#34;
+        self.reset_img()
+        self.reset_tensor()
+        self.reset_face_tensors()
+        self.reset_face_pred_tensors()
+        self.reset_det_tensors()
+
+    def set_dims(self) -&gt; None:
+        &#34;&#34;&#34;Set the dimensions attribute from the tensor attribute.&#34;&#34;&#34;
+        self.dims.height = self.tensor.shape[2]
+        self.dims.width = self.tensor.shape[3]
+
+    def aggregate_loc_tensor(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Aggregates the location tensor from all faces.
+
+        Returns:
+            torch.Tensor: Aggregated location tensor for drawing purposes.
+        &#34;&#34;&#34;
+        loc_tensor = torch.zeros((len(self.faces), 4), dtype=torch.float32)
+        for i in range(0, len(self.faces)):
+            loc_tensor[i] = torch.tensor(
+                [
+                    self.faces[i].loc.x1,
+                    self.faces[i].loc.y1,
+                    self.faces[i].loc.x2,
+                    self.faces[i].loc.y2,
+                ]
+            )
+        return loc_tensor
+
+
+@dataclass
+class Response:
+    &#34;&#34;&#34;Data class for response data that is a subset of ImageData.
+
+    Attributes:
+        faces (Dict[int, Face]): Dictionary of faces.
+        version (int): Version of the image.
+
+    &#34;&#34;&#34;
+
+    faces: List[Face] = field(default_factory=list)
+    version: str = field(default_factory=str)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="facetorch.datastruct.Dimensions"><code class="flex name class">
+<span>class <span class="ident">Dimensions</span></span>
+<span>(</span><span>height: int = 0, width: int = 0)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Data class for image dimensions.</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>height</code></strong> :&ensp;<code>int</code></dt>
+<dd>Image height.</dd>
+<dt><strong><code>width</code></strong> :&ensp;<code>int</code></dt>
+<dd>Image width.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class Dimensions:
+    &#34;&#34;&#34;Data class for image dimensions.
+
+    Attributes:
+        height (int): Image height.
+        width (int): Image width.
+    &#34;&#34;&#34;
+
+    height: int = field(default=0)
+    width: int = field(default=0)</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="facetorch.datastruct.Dimensions.height"><code class="name">var <span class="ident">height</span> : int</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.Dimensions.width"><code class="name">var <span class="ident">width</span> : int</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="facetorch.datastruct.Location"><code class="flex name class">
+<span>class <span class="ident">Location</span></span>
+<span>(</span><span>x1: int = 0, x2: int = 0, y1: int = 0, y2: int = 0)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Data class for face location.</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>x1</code></strong> :&ensp;<code>int</code></dt>
+<dd>x1 coordinate</dd>
+<dt><strong><code>x2</code></strong> :&ensp;<code>int</code></dt>
+<dd>x2 coordinate</dd>
+<dt><strong><code>y1</code></strong> :&ensp;<code>int</code></dt>
+<dd>y1 coordinate</dd>
+<dt><strong><code>y2</code></strong> :&ensp;<code>int</code></dt>
+<dd>y2 coordinate</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class Location:
+    &#34;&#34;&#34;Data class for face location.
+
+    Attributes:
+        x1 (int): x1 coordinate
+        x2 (int): x2 coordinate
+        y1 (int): y1 coordinate
+        y2 (int): y2 coordinate
+    &#34;&#34;&#34;
+
+    x1: int = field(default=0)
+    x2: int = field(default=0)
+    y1: int = field(default=0)
+    y2: int = field(default=0)
+
+    def form_square(self) -&gt; None:
+        &#34;&#34;&#34;Form a square from the location.
+
+        Returns:
+            None
+        &#34;&#34;&#34;
+        height = self.y2 - self.y1
+        width = self.x2 - self.x1
+
+        if height &gt; width:
+            diff = height - width
+            self.x1 = self.x1 - int(diff / 2)
+            self.x2 = self.x2 + int(diff / 2)
+        elif height &lt; width:
+            diff = width - height
+            self.y1 = self.y1 - int(diff / 2)
+            self.y2 = self.y2 + int(diff / 2)
+        else:
+            pass
+
+    def expand(self, amount: int) -&gt; None:
+        &#34;&#34;&#34;Expand the location while keeping the center.
+
+        Args:
+            amount (int): Amount of pixels to expand the location by.
+
+        Returns:
+            None
+        &#34;&#34;&#34;
+        if amount != 0:
+            self.x1 = self.x1 - amount
+            self.y1 = self.y1 - amount
+            self.x2 = self.x2 + amount
+            self.y2 = self.y2 + amount</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="facetorch.datastruct.Location.x1"><code class="name">var <span class="ident">x1</span> : int</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.Location.x2"><code class="name">var <span class="ident">x2</span> : int</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.Location.y1"><code class="name">var <span class="ident">y1</span> : int</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.Location.y2"><code class="name">var <span class="ident">y2</span> : int</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="facetorch.datastruct.Location.form_square"><code class="name flex">
+<span>def <span class="ident">form_square</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Form a square from the location.</p>
+<h2 id="returns">Returns</h2>
+<p>None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def form_square(self) -&gt; None:
+    &#34;&#34;&#34;Form a square from the location.
+
+    Returns:
+        None
+    &#34;&#34;&#34;
+    height = self.y2 - self.y1
+    width = self.x2 - self.x1
+
+    if height &gt; width:
+        diff = height - width
+        self.x1 = self.x1 - int(diff / 2)
+        self.x2 = self.x2 + int(diff / 2)
+    elif height &lt; width:
+        diff = width - height
+        self.y1 = self.y1 - int(diff / 2)
+        self.y2 = self.y2 + int(diff / 2)
+    else:
+        pass</code></pre>
+</details>
+</dd>
+<dt id="facetorch.datastruct.Location.expand"><code class="name flex">
+<span>def <span class="ident">expand</span></span>(<span>self, amount: int) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Expand the location while keeping the center.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>amount</code></strong> :&ensp;<code>int</code></dt>
+<dd>Amount of pixels to expand the location by.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def expand(self, amount: int) -&gt; None:
+    &#34;&#34;&#34;Expand the location while keeping the center.
+
+    Args:
+        amount (int): Amount of pixels to expand the location by.
+
+    Returns:
+        None
+    &#34;&#34;&#34;
+    if amount != 0:
+        self.x1 = self.x1 - amount
+        self.y1 = self.y1 - amount
+        self.x2 = self.x2 + amount
+        self.y2 = self.y2 + amount</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="facetorch.datastruct.Prediction"><code class="flex name class">
+<span>class <span class="ident">Prediction</span></span>
+<span>(</span><span>label: str = &lt;factory&gt;, logits: torch.Tensor = &lt;factory&gt;)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Data class for face prediction results.</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>label</code></strong> :&ensp;<code>str</code></dt>
+<dd>Label of the face given by predictor.</dd>
+<dt><strong><code>logits</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Output of the predictor model for the face.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class Prediction:
+    &#34;&#34;&#34;Data class for face prediction results.
+
+    Attributes:
+        label (str): Label of the face given by predictor.
+        logits (torch.Tensor): Output of the predictor model for the face.
+    &#34;&#34;&#34;
+
+    label: str = field(default_factory=str)
+    logits: torch.Tensor = field(default_factory=torch.Tensor)</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="facetorch.datastruct.Prediction.label"><code class="name">var <span class="ident">label</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.Prediction.logits"><code class="name">var <span class="ident">logits</span> : torch.Tensor</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="facetorch.datastruct.Detection"><code class="flex name class">
+<span>class <span class="ident">Detection</span></span>
+<span>(</span><span>loc: torch.Tensor = &lt;factory&gt;, conf: torch.Tensor = &lt;factory&gt;, landmarks: torch.Tensor = &lt;factory&gt;, boxes: torch.Tensor = &lt;factory&gt;, dets: torch.Tensor = &lt;factory&gt;)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Data class for detector output.</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>loc</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Locations of faces</dd>
+<dt><strong><code>conf</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Confidences of faces</dd>
+<dt><strong><code>landmarks</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Landmarks of faces</dd>
+<dt><strong><code>boxes</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Bounding boxes of faces</dd>
+<dt><strong><code>dets</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Detections of faces</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class Detection:
+    &#34;&#34;&#34;Data class for detector output.
+
+    Attributes:
+        loc (torch.Tensor): Locations of faces
+        conf (torch.Tensor): Confidences of faces
+        landmarks (torch.Tensor): Landmarks of faces
+        boxes (torch.Tensor): Bounding boxes of faces
+        dets (torch.Tensor): Detections of faces
+
+    &#34;&#34;&#34;
+
+    loc: torch.Tensor = field(default_factory=torch.Tensor)
+    conf: torch.Tensor = field(default_factory=torch.Tensor)
+    landmarks: torch.Tensor = field(default_factory=torch.Tensor)
+    boxes: torch.Tensor = field(default_factory=torch.Tensor)
+    dets: torch.Tensor = field(default_factory=torch.Tensor)</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="facetorch.datastruct.Detection.loc"><code class="name">var <span class="ident">loc</span> : torch.Tensor</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.Detection.conf"><code class="name">var <span class="ident">conf</span> : torch.Tensor</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.Detection.landmarks"><code class="name">var <span class="ident">landmarks</span> : torch.Tensor</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.Detection.boxes"><code class="name">var <span class="ident">boxes</span> : torch.Tensor</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.Detection.dets"><code class="name">var <span class="ident">dets</span> : torch.Tensor</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="facetorch.datastruct.Face"><code class="flex name class">
+<span>class <span class="ident">Face</span></span>
+<span>(</span><span>indx: int = &lt;factory&gt;, loc: <a title="facetorch.datastruct.Location" href="#facetorch.datastruct.Location">Location</a> = &lt;factory&gt;, dims: <a title="facetorch.datastruct.Dimensions" href="#facetorch.datastruct.Dimensions">Dimensions</a> = &lt;factory&gt;, tensor: torch.Tensor = &lt;factory&gt;, ratio: float = &lt;factory&gt;, preds: Dict[str, <a title="facetorch.datastruct.Prediction" href="#facetorch.datastruct.Prediction">Prediction</a>] = &lt;factory&gt;)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Data class for face attributes.</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>indx</code></strong> :&ensp;<code>int</code></dt>
+<dd>Index of the face.</dd>
+<dt><strong><code>loc</code></strong> :&ensp;<code><a title="facetorch.datastruct.Location" href="#facetorch.datastruct.Location">Location</a></code></dt>
+<dd>Location of the face in the image.</dd>
+<dt><strong><code>dims</code></strong> :&ensp;<code><a title="facetorch.datastruct.Dimensions" href="#facetorch.datastruct.Dimensions">Dimensions</a></code></dt>
+<dd>Dimensions of the face (height, width).</dd>
+<dt><strong><code>tensor</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Face tensor.</dd>
+<dt><strong><code>ratio</code></strong> :&ensp;<code>float</code></dt>
+<dd>Ratio of the face area to the image area.</dd>
+<dt><strong><code>preds</code></strong> :&ensp;<code>Dict[str, <a title="facetorch.datastruct.Prediction" href="#facetorch.datastruct.Prediction">Prediction</a>]</code></dt>
+<dd>Predictions of the face given by predictor set.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class Face:
+    &#34;&#34;&#34;Data class for face attributes.
+
+    Attributes:
+        indx (int): Index of the face.
+        loc (Location): Location of the face in the image.
+        dims (Dimensions): Dimensions of the face (height, width).
+        tensor (torch.Tensor): Face tensor.
+        ratio (float): Ratio of the face area to the image area.
+        preds (Dict[str, Prediction]): Predictions of the face given by predictor set.
+    &#34;&#34;&#34;
+
+    indx: int = field(default_factory=int)
+    loc: Location = field(default_factory=Location)
+    dims: Dimensions = field(default_factory=Dimensions)
+    tensor: torch.Tensor = field(default_factory=torch.Tensor)
+    ratio: float = field(default_factory=float)
+    preds: Dict[str, Prediction] = field(default_factory=dict)</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="facetorch.datastruct.Face.indx"><code class="name">var <span class="ident">indx</span> : int</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.Face.loc"><code class="name">var <span class="ident">loc</span> : <a title="facetorch.datastruct.Location" href="#facetorch.datastruct.Location">Location</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.Face.dims"><code class="name">var <span class="ident">dims</span> : <a title="facetorch.datastruct.Dimensions" href="#facetorch.datastruct.Dimensions">Dimensions</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.Face.tensor"><code class="name">var <span class="ident">tensor</span> : torch.Tensor</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.Face.ratio"><code class="name">var <span class="ident">ratio</span> : float</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.Face.preds"><code class="name">var <span class="ident">preds</span> : Dict[str, <a title="facetorch.datastruct.Prediction" href="#facetorch.datastruct.Prediction">Prediction</a>]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="facetorch.datastruct.ImageData"><code class="flex name class">
+<span>class <span class="ident">ImageData</span></span>
+<span>(</span><span>path: str = &lt;factory&gt;, img: torch.Tensor = &lt;factory&gt;, tensor: torch.Tensor = &lt;factory&gt;, dims: <a title="facetorch.datastruct.Dimensions" href="#facetorch.datastruct.Dimensions">Dimensions</a> = &lt;factory&gt;, det: <a title="facetorch.datastruct.Detection" href="#facetorch.datastruct.Detection">Detection</a> = &lt;factory&gt;, faces: List[<a title="facetorch.datastruct.Face" href="#facetorch.datastruct.Face">Face</a>] = &lt;factory&gt;, version: str = &lt;factory&gt;)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>The main data class used for passing data between the different facetorch modules.</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to the image.</dd>
+<dt><strong><code>img</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Original image tensor.</dd>
+<dt><strong><code>tensor</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Processed image tensor.</dd>
+<dt><strong><code>dims</code></strong> :&ensp;<code><a title="facetorch.datastruct.Dimensions" href="#facetorch.datastruct.Dimensions">Dimensions</a></code></dt>
+<dd>Dimensions of the image (height, width).</dd>
+<dt><strong><code>det</code></strong> :&ensp;<code><a title="facetorch.datastruct.Detection" href="#facetorch.datastruct.Detection">Detection</a></code></dt>
+<dd>Detection data.</dd>
+<dt><strong><code>faces</code></strong> :&ensp;<code>Dict[int, <a title="facetorch.datastruct.Face" href="#facetorch.datastruct.Face">Face</a>]</code></dt>
+<dd>Dictionary of faces.</dd>
+<dt><strong><code>version</code></strong> :&ensp;<code>int</code></dt>
+<dd>Version of the image.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class ImageData:
+    &#34;&#34;&#34;The main data class used for passing data between the different facetorch modules.
+
+    Attributes:
+        path (str): Path to the image.
+        img (torch.Tensor): Original image tensor.
+        tensor (torch.Tensor): Processed image tensor.
+        dims (Dimensions): Dimensions of the image (height, width).
+        det (Detection): Detection data.
+        faces (Dict[int, Face]): Dictionary of faces.
+        version (int): Version of the image.
+
+    &#34;&#34;&#34;
+
+    path: str = field(default_factory=str)
+    img: torch.Tensor = field(default_factory=torch.Tensor)
+    tensor: torch.Tensor = field(default_factory=torch.Tensor)
+    dims: Dimensions = field(default_factory=Dimensions)
+    det: Detection = field(default_factory=Detection)
+    faces: List[Face] = field(default_factory=list)
+    version: str = field(default_factory=str)
+
+    def add_preds(
+        self,
+        preds_list: List[Prediction],
+        predictor_name: str,
+        face_offset: int = 0,
+    ) -&gt; None:
+        &#34;&#34;&#34;Adds a list of predictions to the data object.
+
+        Args:
+            preds_list (List[Prediction]): List of predictions.
+            predictor_name (str): Name of the predictor.
+            face_offset (int): Offset of the face index.
+
+        Returns:
+            None
+
+        &#34;&#34;&#34;
+        j = 0
+        for i in range(face_offset, face_offset + len(preds_list)):
+            self.faces[i].preds[predictor_name] = preds_list[j]
+            j += 1
+
+    def reset_img(self) -&gt; None:
+        &#34;&#34;&#34;Reset the original image tensor to empty state.&#34;&#34;&#34;
+        self.img = torch.tensor([])
+
+    def reset_tensor(self) -&gt; None:
+        &#34;&#34;&#34;Reset the processed image tensor to empty state.&#34;&#34;&#34;
+        self.tensor = torch.tensor([])
+
+    def reset_face_tensors(self) -&gt; None:
+        &#34;&#34;&#34;Reset the face tensors to empty state.&#34;&#34;&#34;
+        for i in range(0, len(self.faces)):
+            self.faces[i].tensor = torch.tensor([])
+
+    def reset_face_pred_tensors(self) -&gt; None:
+        &#34;&#34;&#34;Reset the face prediction tensors to empty state.&#34;&#34;&#34;
+        for i in range(0, len(self.faces)):
+            for key in self.faces[i].preds:
+                self.faces[i].preds[key].logits = torch.tensor([])
+
+    def reset_det_tensors(self) -&gt; None:
+        &#34;&#34;&#34;Reset the detection object to empty state.&#34;&#34;&#34;
+        self.det = Detection()
+
+    @Timer(&#34;ImageData.reset_faces&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    def reset_tensors(self) -&gt; None:
+        &#34;&#34;&#34;Reset the tensors to empty state.&#34;&#34;&#34;
+        self.reset_img()
+        self.reset_tensor()
+        self.reset_face_tensors()
+        self.reset_face_pred_tensors()
+        self.reset_det_tensors()
+
+    def set_dims(self) -&gt; None:
+        &#34;&#34;&#34;Set the dimensions attribute from the tensor attribute.&#34;&#34;&#34;
+        self.dims.height = self.tensor.shape[2]
+        self.dims.width = self.tensor.shape[3]
+
+    def aggregate_loc_tensor(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Aggregates the location tensor from all faces.
+
+        Returns:
+            torch.Tensor: Aggregated location tensor for drawing purposes.
+        &#34;&#34;&#34;
+        loc_tensor = torch.zeros((len(self.faces), 4), dtype=torch.float32)
+        for i in range(0, len(self.faces)):
+            loc_tensor[i] = torch.tensor(
+                [
+                    self.faces[i].loc.x1,
+                    self.faces[i].loc.y1,
+                    self.faces[i].loc.x2,
+                    self.faces[i].loc.y2,
+                ]
+            )
+        return loc_tensor</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="facetorch.datastruct.ImageData.path"><code class="name">var <span class="ident">path</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.ImageData.img"><code class="name">var <span class="ident">img</span> : torch.Tensor</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.ImageData.tensor"><code class="name">var <span class="ident">tensor</span> : torch.Tensor</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.ImageData.dims"><code class="name">var <span class="ident">dims</span> : <a title="facetorch.datastruct.Dimensions" href="#facetorch.datastruct.Dimensions">Dimensions</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.ImageData.det"><code class="name">var <span class="ident">det</span> : <a title="facetorch.datastruct.Detection" href="#facetorch.datastruct.Detection">Detection</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.ImageData.faces"><code class="name">var <span class="ident">faces</span> : List[<a title="facetorch.datastruct.Face" href="#facetorch.datastruct.Face">Face</a>]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.ImageData.version"><code class="name">var <span class="ident">version</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="facetorch.datastruct.ImageData.add_preds"><code class="name flex">
+<span>def <span class="ident">add_preds</span></span>(<span>self, preds_list: List[<a title="facetorch.datastruct.Prediction" href="#facetorch.datastruct.Prediction">Prediction</a>], predictor_name: str, face_offset: int = 0) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Adds a list of predictions to the data object.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>preds_list</code></strong> :&ensp;<code>List[<a title="facetorch.datastruct.Prediction" href="#facetorch.datastruct.Prediction">Prediction</a>]</code></dt>
+<dd>List of predictions.</dd>
+<dt><strong><code>predictor_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the predictor.</dd>
+<dt><strong><code>face_offset</code></strong> :&ensp;<code>int</code></dt>
+<dd>Offset of the face index.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_preds(
+    self,
+    preds_list: List[Prediction],
+    predictor_name: str,
+    face_offset: int = 0,
+) -&gt; None:
+    &#34;&#34;&#34;Adds a list of predictions to the data object.
+
+    Args:
+        preds_list (List[Prediction]): List of predictions.
+        predictor_name (str): Name of the predictor.
+        face_offset (int): Offset of the face index.
+
+    Returns:
+        None
+
+    &#34;&#34;&#34;
+    j = 0
+    for i in range(face_offset, face_offset + len(preds_list)):
+        self.faces[i].preds[predictor_name] = preds_list[j]
+        j += 1</code></pre>
+</details>
+</dd>
+<dt id="facetorch.datastruct.ImageData.reset_img"><code class="name flex">
+<span>def <span class="ident">reset_img</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Reset the original image tensor to empty state.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_img(self) -&gt; None:
+    &#34;&#34;&#34;Reset the original image tensor to empty state.&#34;&#34;&#34;
+    self.img = torch.tensor([])</code></pre>
+</details>
+</dd>
+<dt id="facetorch.datastruct.ImageData.reset_tensor"><code class="name flex">
+<span>def <span class="ident">reset_tensor</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Reset the processed image tensor to empty state.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_tensor(self) -&gt; None:
+    &#34;&#34;&#34;Reset the processed image tensor to empty state.&#34;&#34;&#34;
+    self.tensor = torch.tensor([])</code></pre>
+</details>
+</dd>
+<dt id="facetorch.datastruct.ImageData.reset_face_tensors"><code class="name flex">
+<span>def <span class="ident">reset_face_tensors</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Reset the face tensors to empty state.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_face_tensors(self) -&gt; None:
+    &#34;&#34;&#34;Reset the face tensors to empty state.&#34;&#34;&#34;
+    for i in range(0, len(self.faces)):
+        self.faces[i].tensor = torch.tensor([])</code></pre>
+</details>
+</dd>
+<dt id="facetorch.datastruct.ImageData.reset_face_pred_tensors"><code class="name flex">
+<span>def <span class="ident">reset_face_pred_tensors</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Reset the face prediction tensors to empty state.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_face_pred_tensors(self) -&gt; None:
+    &#34;&#34;&#34;Reset the face prediction tensors to empty state.&#34;&#34;&#34;
+    for i in range(0, len(self.faces)):
+        for key in self.faces[i].preds:
+            self.faces[i].preds[key].logits = torch.tensor([])</code></pre>
+</details>
+</dd>
+<dt id="facetorch.datastruct.ImageData.reset_det_tensors"><code class="name flex">
+<span>def <span class="ident">reset_det_tensors</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Reset the detection object to empty state.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_det_tensors(self) -&gt; None:
+    &#34;&#34;&#34;Reset the detection object to empty state.&#34;&#34;&#34;
+    self.det = Detection()</code></pre>
+</details>
+</dd>
+<dt id="facetorch.datastruct.ImageData.reset_tensors"><code class="name flex">
+<span>def <span class="ident">reset_tensors</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Reset the tensors to empty state.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@Timer(&#34;ImageData.reset_faces&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+def reset_tensors(self) -&gt; None:
+    &#34;&#34;&#34;Reset the tensors to empty state.&#34;&#34;&#34;
+    self.reset_img()
+    self.reset_tensor()
+    self.reset_face_tensors()
+    self.reset_face_pred_tensors()
+    self.reset_det_tensors()</code></pre>
+</details>
+</dd>
+<dt id="facetorch.datastruct.ImageData.set_dims"><code class="name flex">
+<span>def <span class="ident">set_dims</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Set the dimensions attribute from the tensor attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_dims(self) -&gt; None:
+    &#34;&#34;&#34;Set the dimensions attribute from the tensor attribute.&#34;&#34;&#34;
+    self.dims.height = self.tensor.shape[2]
+    self.dims.width = self.tensor.shape[3]</code></pre>
+</details>
+</dd>
+<dt id="facetorch.datastruct.ImageData.aggregate_loc_tensor"><code class="name flex">
+<span>def <span class="ident">aggregate_loc_tensor</span></span>(<span>self) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Aggregates the location tensor from all faces.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>torch.Tensor</code></dt>
+<dd>Aggregated location tensor for drawing purposes.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def aggregate_loc_tensor(self) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Aggregates the location tensor from all faces.
+
+    Returns:
+        torch.Tensor: Aggregated location tensor for drawing purposes.
+    &#34;&#34;&#34;
+    loc_tensor = torch.zeros((len(self.faces), 4), dtype=torch.float32)
+    for i in range(0, len(self.faces)):
+        loc_tensor[i] = torch.tensor(
+            [
+                self.faces[i].loc.x1,
+                self.faces[i].loc.y1,
+                self.faces[i].loc.x2,
+                self.faces[i].loc.y2,
+            ]
+        )
+    return loc_tensor</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="facetorch.datastruct.Response"><code class="flex name class">
+<span>class <span class="ident">Response</span></span>
+<span>(</span><span>faces: List[<a title="facetorch.datastruct.Face" href="#facetorch.datastruct.Face">Face</a>] = &lt;factory&gt;, version: str = &lt;factory&gt;)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Data class for response data that is a subset of ImageData.</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>faces</code></strong> :&ensp;<code>Dict[int, <a title="facetorch.datastruct.Face" href="#facetorch.datastruct.Face">Face</a>]</code></dt>
+<dd>Dictionary of faces.</dd>
+<dt><strong><code>version</code></strong> :&ensp;<code>int</code></dt>
+<dd>Version of the image.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class Response:
+    &#34;&#34;&#34;Data class for response data that is a subset of ImageData.
+
+    Attributes:
+        faces (Dict[int, Face]): Dictionary of faces.
+        version (int): Version of the image.
+
+    &#34;&#34;&#34;
+
+    faces: List[Face] = field(default_factory=list)
+    version: str = field(default_factory=str)</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="facetorch.datastruct.Response.faces"><code class="name">var <span class="ident">faces</span> : List[<a title="facetorch.datastruct.Face" href="#facetorch.datastruct.Face">Face</a>]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.datastruct.Response.version"><code class="name">var <span class="ident">version</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="facetorch" href="index.html">facetorch</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="facetorch.datastruct.Dimensions" href="#facetorch.datastruct.Dimensions">Dimensions</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.datastruct.Dimensions.height" href="#facetorch.datastruct.Dimensions.height">height</a></code></li>
+<li><code><a title="facetorch.datastruct.Dimensions.width" href="#facetorch.datastruct.Dimensions.width">width</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.datastruct.Location" href="#facetorch.datastruct.Location">Location</a></code></h4>
+<ul class="two-column">
+<li><code><a title="facetorch.datastruct.Location.form_square" href="#facetorch.datastruct.Location.form_square">form_square</a></code></li>
+<li><code><a title="facetorch.datastruct.Location.expand" href="#facetorch.datastruct.Location.expand">expand</a></code></li>
+<li><code><a title="facetorch.datastruct.Location.x1" href="#facetorch.datastruct.Location.x1">x1</a></code></li>
+<li><code><a title="facetorch.datastruct.Location.x2" href="#facetorch.datastruct.Location.x2">x2</a></code></li>
+<li><code><a title="facetorch.datastruct.Location.y1" href="#facetorch.datastruct.Location.y1">y1</a></code></li>
+<li><code><a title="facetorch.datastruct.Location.y2" href="#facetorch.datastruct.Location.y2">y2</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.datastruct.Prediction" href="#facetorch.datastruct.Prediction">Prediction</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.datastruct.Prediction.label" href="#facetorch.datastruct.Prediction.label">label</a></code></li>
+<li><code><a title="facetorch.datastruct.Prediction.logits" href="#facetorch.datastruct.Prediction.logits">logits</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.datastruct.Detection" href="#facetorch.datastruct.Detection">Detection</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.datastruct.Detection.loc" href="#facetorch.datastruct.Detection.loc">loc</a></code></li>
+<li><code><a title="facetorch.datastruct.Detection.conf" href="#facetorch.datastruct.Detection.conf">conf</a></code></li>
+<li><code><a title="facetorch.datastruct.Detection.landmarks" href="#facetorch.datastruct.Detection.landmarks">landmarks</a></code></li>
+<li><code><a title="facetorch.datastruct.Detection.boxes" href="#facetorch.datastruct.Detection.boxes">boxes</a></code></li>
+<li><code><a title="facetorch.datastruct.Detection.dets" href="#facetorch.datastruct.Detection.dets">dets</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.datastruct.Face" href="#facetorch.datastruct.Face">Face</a></code></h4>
+<ul class="two-column">
+<li><code><a title="facetorch.datastruct.Face.indx" href="#facetorch.datastruct.Face.indx">indx</a></code></li>
+<li><code><a title="facetorch.datastruct.Face.loc" href="#facetorch.datastruct.Face.loc">loc</a></code></li>
+<li><code><a title="facetorch.datastruct.Face.dims" href="#facetorch.datastruct.Face.dims">dims</a></code></li>
+<li><code><a title="facetorch.datastruct.Face.tensor" href="#facetorch.datastruct.Face.tensor">tensor</a></code></li>
+<li><code><a title="facetorch.datastruct.Face.ratio" href="#facetorch.datastruct.Face.ratio">ratio</a></code></li>
+<li><code><a title="facetorch.datastruct.Face.preds" href="#facetorch.datastruct.Face.preds">preds</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.datastruct.ImageData" href="#facetorch.datastruct.ImageData">ImageData</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.datastruct.ImageData.add_preds" href="#facetorch.datastruct.ImageData.add_preds">add_preds</a></code></li>
+<li><code><a title="facetorch.datastruct.ImageData.reset_img" href="#facetorch.datastruct.ImageData.reset_img">reset_img</a></code></li>
+<li><code><a title="facetorch.datastruct.ImageData.reset_tensor" href="#facetorch.datastruct.ImageData.reset_tensor">reset_tensor</a></code></li>
+<li><code><a title="facetorch.datastruct.ImageData.reset_face_tensors" href="#facetorch.datastruct.ImageData.reset_face_tensors">reset_face_tensors</a></code></li>
+<li><code><a title="facetorch.datastruct.ImageData.reset_face_pred_tensors" href="#facetorch.datastruct.ImageData.reset_face_pred_tensors">reset_face_pred_tensors</a></code></li>
+<li><code><a title="facetorch.datastruct.ImageData.reset_det_tensors" href="#facetorch.datastruct.ImageData.reset_det_tensors">reset_det_tensors</a></code></li>
+<li><code><a title="facetorch.datastruct.ImageData.reset_tensors" href="#facetorch.datastruct.ImageData.reset_tensors">reset_tensors</a></code></li>
+<li><code><a title="facetorch.datastruct.ImageData.set_dims" href="#facetorch.datastruct.ImageData.set_dims">set_dims</a></code></li>
+<li><code><a title="facetorch.datastruct.ImageData.aggregate_loc_tensor" href="#facetorch.datastruct.ImageData.aggregate_loc_tensor">aggregate_loc_tensor</a></code></li>
+<li><code><a title="facetorch.datastruct.ImageData.path" href="#facetorch.datastruct.ImageData.path">path</a></code></li>
+<li><code><a title="facetorch.datastruct.ImageData.img" href="#facetorch.datastruct.ImageData.img">img</a></code></li>
+<li><code><a title="facetorch.datastruct.ImageData.tensor" href="#facetorch.datastruct.ImageData.tensor">tensor</a></code></li>
+<li><code><a title="facetorch.datastruct.ImageData.dims" href="#facetorch.datastruct.ImageData.dims">dims</a></code></li>
+<li><code><a title="facetorch.datastruct.ImageData.det" href="#facetorch.datastruct.ImageData.det">det</a></code></li>
+<li><code><a title="facetorch.datastruct.ImageData.faces" href="#facetorch.datastruct.ImageData.faces">faces</a></code></li>
+<li><code><a title="facetorch.datastruct.ImageData.version" href="#facetorch.datastruct.ImageData.version">version</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.datastruct.Response" href="#facetorch.datastruct.Response">Response</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.datastruct.Response.faces" href="#facetorch.datastruct.Response.faces">faces</a></code></li>
+<li><code><a title="facetorch.datastruct.Response.version" href="#facetorch.datastruct.Response.version">version</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>
