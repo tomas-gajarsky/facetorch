@@ -28,15 +28,16 @@
 </summary>
 <pre><code class="python">import os
 from abc import ABCMeta, abstractmethod
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 import torch
 from codetiming import Timer
 from torchvision import transforms
 
+from facetorch import utils
 from facetorch.datastruct import ImageData
 from facetorch.logger import LoggerJsonFile
-from facetorch.transforms import optimize_transform
+from facetorch.transforms import script_transform
 
 logger = LoggerJsonFile().logger
 
@@ -45,7 +46,7 @@ class BaseProcessor(object, metaclass=ABCMeta):
     @Timer(&#34;BaseProcessor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
     def __init__(
         self,
-        transform: transforms.Compose,
+        transform: Optional[transforms.Compose],
         device: torch.device,
         optimize_transform: bool,
     ):
@@ -67,14 +68,17 @@ class BaseProcessor(object, metaclass=ABCMeta):
         self.transform = transform if transform != &#34;None&#34; else None
         self.optimize_transform = optimize_transform
 
-        if self.optimize_transform:
+        if self.transform is not None:
+            self.transform = utils.fix_transform_list_attr(self.transform)
+
+        if self.optimize_transform is True:
             self.optimize()
 
-    @Timer(&#34;BaseProcessor.optimize&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
     def optimize(self):
         &#34;&#34;&#34;Optimizes the transform using torch.jit and deploys it to the device.&#34;&#34;&#34;
         if self.transform is not None:
-            self.transform = optimize_transform(self.transform, self.device)
+            self.transform = script_transform(self.transform)
+            self.transform = self.transform.to(self.device)
 
     @abstractmethod
     def run(self):
@@ -233,7 +237,7 @@ class BaseModel(object, metaclass=ABCMeta):
 <dl>
 <dt id="facetorch.base.BaseProcessor"><code class="flex name class">
 <span>class <span class="ident">BaseProcessor</span></span>
-<span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool)</span>
+<span>(</span><span>transform: Optional[torchvision.transforms.transforms.Compose], device: torch.device, optimize_transform: bool)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Base class for processors.</p>
@@ -259,7 +263,7 @@ All subclass should overwrite:</p>
     @Timer(&#34;BaseProcessor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
     def __init__(
         self,
-        transform: transforms.Compose,
+        transform: Optional[transforms.Compose],
         device: torch.device,
         optimize_transform: bool,
     ):
@@ -281,14 +285,17 @@ All subclass should overwrite:</p>
         self.transform = transform if transform != &#34;None&#34; else None
         self.optimize_transform = optimize_transform
 
-        if self.optimize_transform:
+        if self.transform is not None:
+            self.transform = utils.fix_transform_list_attr(self.transform)
+
+        if self.optimize_transform is True:
             self.optimize()
 
-    @Timer(&#34;BaseProcessor.optimize&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
     def optimize(self):
         &#34;&#34;&#34;Optimizes the transform using torch.jit and deploys it to the device.&#34;&#34;&#34;
         if self.transform is not None:
-            self.transform = optimize_transform(self.transform, self.device)
+            self.transform = script_transform(self.transform)
+            self.transform = self.transform.to(self.device)
 
     @abstractmethod
     def run(self):
@@ -314,11 +321,11 @@ All subclass should overwrite:</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;BaseProcessor.optimize&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
-def optimize(self):
+<pre><code class="python">def optimize(self):
     &#34;&#34;&#34;Optimizes the transform using torch.jit and deploys it to the device.&#34;&#34;&#34;
     if self.transform is not None:
-        self.transform = optimize_transform(self.transform, self.device)</code></pre>
+        self.transform = script_transform(self.transform)
+        self.transform = self.transform.to(self.device)</code></pre>
 </details>
 </dd>
 <dt id="facetorch.base.BaseProcessor.run"><code class="name flex">
