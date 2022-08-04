@@ -1,0 +1,37 @@
+_target_: facetorch.analyzer.reader.ImageReader
+device:
+  _target_: torch.device
+  type: ${analyzer.device} # str
+optimize_transform: ${analyzer.optimize_transforms} # bool
+# orientation_threshold: 1. # float
+# size_portrait:
+#   _target_: facetorch.datastruct.Dimensions
+#   height: 1280 # int
+#   width: 720 # int
+# size_landscape: 
+#   _target_: facetorch.datastruct.Dimensions
+#   height: 720 # int
+#   width: 1280 # int
+transform:
+  _target_: torchvision.transforms.Compose
+  transforms:
+    - _target_: facetorch.transforms.SquarePad
+    - _target_: torchvision.transforms.Resize
+      size: [1024] # List[int]
+
+# transform_dict:
+#   portrait:
+#     _target_: torchvision.transforms.Compose
+#     transforms:
+#       - _target_: torchvision.transforms.Resize
+#         size: [1280, 720] # List[int]
+#   landscape:
+#     _target_: torchvision.transforms.Compose
+#     transforms:
+#       - _target_: torchvision.transforms.Resize
+#         size: [720, 1280] # List[int]
+#   center:
+#     _target_: torchvision.transforms.Compose
+#     transforms:
+#       - _target_: torchvision.transforms.Resize
+#         size: [720, 720] # List[int]

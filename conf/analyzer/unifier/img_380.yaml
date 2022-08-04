@@ -1,0 +1,13 @@
+_target_: facetorch.analyzer.unifier.FaceUnifier
+transform:
+  _target_: torchvision.transforms.Compose
+  transforms:
+    - _target_: torchvision.transforms.Normalize
+      mean: [-123., -117., -104.] # List[float] # Denormalize
+      std: [255., 255., 255.] # List[float]
+    - _target_: torchvision.transforms.Resize
+      size: [380, 380] # List[int]
+device:
+  _target_: torch.device
+  type: ${analyzer.device} # str
+optimize_transform: ${analyzer.optimize_transforms}
