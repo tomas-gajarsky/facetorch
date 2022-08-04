@@ -55,8 +55,12 @@ cover/
 *.mo
 *.pot
 
-# Sphinx documentation
+# Documentation
 docs/_build/
+.doctrees/
+_sources/
+_static/
+_templates/
 
 # PyBuilder
 .pybuilder/
