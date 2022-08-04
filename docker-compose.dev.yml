@@ -1,0 +1,29 @@
+version: "3.3"
+services:
+
+  # Container for development purposes
+  facetorch-dev:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.dev
+    volumes:
+      - ./:/opt/facetorch
+    ports:
+      - "8080:8080"
+
+  facetorch-dev-gpu:
+      build:
+        context: .
+        dockerfile: ./docker/Dockerfile.dev.gpu
+      volumes:
+        - ./:/opt/facetorch
+      ports:
+        - "8080:8080"
+      shm_size: 8gb
+      deploy:
+        resources:
+          reservations:
+            devices:
+              - driver: nvidia
+                device_ids: ['0']
+                capabilities: [ gpu ]

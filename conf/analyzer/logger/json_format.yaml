@@ -1,0 +1,5 @@
+_target_: facetorch.logger.LoggerJsonFile
+name: facetorch
+level: 10
+path_file: /opt/logs/facetorch/main.log
+json_format: '%(asctime)s %(levelname)s %(message)s'

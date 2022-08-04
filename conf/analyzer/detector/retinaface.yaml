@@ -1,0 +1,48 @@
+#detector:
+_target_: facetorch.analyzer.detector.FaceDetector
+
+downloader:
+  _target_: facetorch.downloader.DownloaderGDrive
+  file_id: 154x2VjmTQVqmowB0yZw4Uck7uQs2vVBs  # str
+  path_local: /opt/facetorch/models/torchscript/detector/1/model.pt # str
+
+device:
+  _target_: torch.device
+  type: ${analyzer.device} # str
+
+reverse_colors: True # bool
+
+preprocessor:
+  _target_: facetorch.analyzer.detector.pre.DetectorPreProcessor
+  transform:
+    _target_: torchvision.transforms.Compose
+    transforms:
+      - _target_: torchvision.transforms.Normalize
+        mean: [104., 117., 123.] # List[float]
+        std: [1., 1., 1.] # List[float]
+  device: 
+    _target_: torch.device
+    type: ${analyzer.device}
+  optimize_transform: ${analyzer.optimize_transforms} # bool
+  reverse_colors: ${analyzer.detector.reverse_colors} # bool
+
+postprocessor:
+  _target_: facetorch.analyzer.detector.post.PostRetFace
+  transform: None
+  device: 
+    _target_: torch.device
+    type: ${analyzer.device}
+  optimize_transform: ${analyzer.optimize_transforms}
+  confidence_threshold: 0.02 # float
+  top_k: 5000 # int
+  nms_threshold: 0.4 # float
+  keep_top_k: 750 # int
+  score_threshold: 0.6 # float
+  prior_box:
+    _target_: facetorch.analyzer.detector.post.PriorBox
+    min_sizes: [[16, 32], [64, 128], [256, 512]]
+    steps: [8, 16, 32]
+    clip: False
+  variance: [0.1, 0.2]
+  reverse_colors: ${analyzer.detector.reverse_colors} # True # bool
+  expand_pixels: 4 # int

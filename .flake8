@@ -1,0 +1,6 @@
+[flake8]
+# exclude directories from being linted
+exclude = internal, venv
+# ignore whitespace before ':'
+ignore = E203, E501
+max-line-length = 100

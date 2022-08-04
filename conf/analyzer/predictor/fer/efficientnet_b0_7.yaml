@@ -1,0 +1,36 @@
+_target_: facetorch.analyzer.predictor.FacePredictor
+
+downloader:
+  _target_: facetorch.downloader.DownloaderGDrive
+  file_id: 1i5f8vy1dZv_u8vsJsj9CHEzHwsokIknr
+  path_local: /opt/facetorch/models/torchscript/predictor/fer/1/model.pt # str
+
+device:
+  _target_: torch.device
+  type: ${analyzer.device} # str
+
+preprocessor:
+  _target_: facetorch.analyzer.predictor.pre.PredictorPreProcessor
+  transform:
+    _target_: torchvision.transforms.Compose
+    transforms:
+      - _target_: torchvision.transforms.Resize
+        size: [244, 244] # List[int]
+      - _target_: torchvision.transforms.Normalize
+        mean: [0.485, 0.456, 0.406] # List[float]
+        std: [0.229, 0.224, 0.225] # List[float]
+  device: 
+    _target_: torch.device
+    type: ${analyzer.predictor.fer.device.type}
+  optimize_transform: ${analyzer.optimize_transforms}
+  reverse_colors: False # bool
+
+postprocessor:
+  _target_: facetorch.analyzer.predictor.post.PostArgMax
+  transform: None
+  device: 
+    _target_: torch.device
+    type: ${analyzer.predictor.fer.device.type}
+  optimize_transform: ${analyzer.optimize_transforms}
+  dim: 1
+  labels: ["Anger", "Disgust", "Fear", "Happiness", "Neutral", "Sadness", "Surprise"] # List

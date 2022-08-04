@@ -1,0 +1,22 @@
+defaults:
+  - analyzer: default.yaml
+  - analyzer/reader: default.yaml
+  - analyzer/detector: retinaface.yaml
+  - analyzer/unifier: img_380.yaml
+  - analyzer/predictor/embed: r50_vggface_1m.yaml
+  - analyzer/predictor/fer: efficientnet_b0_7.yaml
+  - analyzer/predictor/deepfake: efficientnet_b7.yaml
+  - analyzer/logger: json_format.yaml
+  - _self_
+
+main:
+    sleep: 3
+
+debug: true
+
+path_image: /opt/facetorch/data/input/test2.jpg # str
+batch_size: 8 # int
+fix_img_size: True # bool
+return_img_data: False # bool
+include_tensors: False # bool
+path_output: /opt/facetorch/tests/data/output/test2.jpg # Optional[str]
