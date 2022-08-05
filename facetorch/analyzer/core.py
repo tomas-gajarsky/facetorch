@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-import facetorch
+import pkg_resources
 import torch
 from codetiming import Timer
 from facetorch.analyzer.predictor.core import FacePredictor
@@ -104,7 +104,7 @@ class FaceAnalyzer(object):
         self.logger.info("Running FaceAnalyzer")
         self.logger.info("Reading image", extra={"path_image": path_image})
         data = self.reader.run(path_image, fix_img_size=fix_img_size)
-        data.version = facetorch.__version__
+        data.version = pkg_resources.get_distribution("facetorch").version
 
         self.logger.info("Detecting faces")
         data = self.detector.run(data)
