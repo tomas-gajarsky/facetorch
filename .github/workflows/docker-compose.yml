@@ -14,3 +14,6 @@ jobs:
         run: docker-compose up -d
       - name: Test
         run: docker compose run facetorch pytest -v --cov=facetorch --cov-report=term --cov-fail-under=95
+      - name: Stop containers
+        if: always()
+        run: docker-compose down
