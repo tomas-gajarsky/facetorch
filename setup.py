@@ -6,10 +6,8 @@ from setuptools import find_packages
 
 def read_version(filename: str) -> str:
     """Read the version number from a file.
-
     Args:
         filename (str): The file to read the version number from.
-
     Returns:
         str: The version number.
     """
@@ -36,9 +34,12 @@ def get_requirements(filename: str) -> List[str]:
             use_line = True
             continue
         elif "python" in line_str:
-            continue
+            if "python-json-logger" in line_str:
+                use_line = True
+            else:
+                continue
         elif "pytorch" in line_str:
-            line_str = "- torch"
+            line_str = line_str[2:]
         elif "platforms" in line_str:
             use_line = False
 
