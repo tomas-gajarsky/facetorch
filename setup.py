@@ -39,7 +39,10 @@ def get_requirements(filename: str) -> List[str]:
             use_line = True
             continue
         elif "python" in line_str:
-            continue
+            if "python-json-logger" in line_str:
+                use_line = True
+            else:
+                continue
         elif "pytorch" in line_str:
             line_str = "- torch"
         elif "platforms" in line_str:
