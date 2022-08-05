@@ -13,7 +13,7 @@ jobs:
       - name: Build the stack
         run: docker compose -f docker-compose.dev.yml build facetorch-dev
       - name: Test
-        run: docker compose -f docker-compose.dev.yml run facetorch pytest -v --cov=facetorch --cov-report=term --cov-fail-under=95
+        run: docker compose -f docker-compose.dev.yml run facetorch-dev pytest -v --cov=facetorch --cov-report=term --cov-fail-under=95
       - name: Stop containers
         if: always()
         run: docker compose down
