@@ -10,9 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Build the stack
-        run: docker compose -f docker-compose.dev.yml build facetorch-dev
-      - name: Test
+      - name: Build and test
         run: docker compose -f docker-compose.dev.yml run facetorch-dev pytest -v --cov=facetorch --cov-report=term --cov-fail-under=95
       - name: Stop containers
         if: always()
