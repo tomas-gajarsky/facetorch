@@ -1,10 +1,9 @@
-# facetorch
-
-![PyPI - License](https://img.shields.io/pypi/l/facetorch)
+# ![Alt text](data/facetorch-logo-42.png?raw=true "facetorch") facetorch 
 ![PyPI](https://img.shields.io/pypi/v/facetorch)
 ![Conda](https://img.shields.io/conda/v/conda-forge/facetorch)
+![PyPI - License](https://img.shields.io/pypi/l/facetorch)
 
-Facetorch is a Python library that can detect faces and analyze facial features like expressions using artificial neural networks. The goal is to gather open-source face analysis models from the community, optimize them for performance using TorchScript, and combine them to create a single face analysis tool that one can:
+Facetorch is a Python library that can detect faces and analyze facial features like expressions using artificial neural networks. The goal is to gather open-source face analysis models from the community, optimize them for performance using TorchScript and combine them to create a face analysis tool that one can:
 
 1. configure using [Hydra](https://hydra.cc/docs/intro/) (OmegaConf)
 2. reproduce with [conda-lock](https://github.com/conda-incubator/conda-lock) and [Docker](https://docs.docker.com/get-docker/)
@@ -31,17 +30,16 @@ conda install -c conda-forge facetorch
 * [Docker](https://docs.docker.com/get-docker/)
 * [Docker Compose](https://docs.docker.com/compose/install/)
 
-Docker Compose builds an image that can be used to run the FaceAnalyzer.
-
-### Configure
-
-The project is configured by files located in *conf* with the main file *conf/config.yaml*.
+Docker Compose provides an easy way of building a working facetorch environment with a single command.
 
 ### Run docker example
     
 * CPU: ```docker compose run facetorch python ./scripts/example.py```
 * GPU: ```docker compose run facetorch-gpu python ./scripts/example.py analyzer.device=cuda```
 
+### Configure
+
+The project is configured by files located in *conf* with the main file *conf/config.yaml*.
 
 ## Components
 FaceAnalyzer is the main class of Facetorch as it is the orchestrator responsible for initializing and running the following components:
@@ -105,7 +103,6 @@ analyzer
     * paper: [Savchenko - Facial expression and attributes recognition based on multi-task learning of lightweight neural networks](https://ieeexplore.ieee.org/abstract/document/9582508)
 
 #### Deepfake detection
-Deepfake detection is a difficult task and these models are not perfect.
 
     |       deepfake       |      source      |   license   | version |
     | -------------------- | ---------------- | ----------- | ------- |
@@ -124,10 +121,10 @@ You can also download the models manually from a [public Google Drive folder](ht
 
 
 ### Execution time
-The analyzer can analyze test.jpg (4 faces) in about 400ms and test3.jpg (25 faces) in about 1.1s on NVIDIA Tesla T4 GPU once the models are pre heated to the initial image size 1024x1024. One can monitor the execution times in logs using the DEBUG level.
+Image test.jpg (4 faces) is analyzed in about 400ms and test3.jpg (25 faces) in about 1.1s on NVIDIA Tesla T4 GPU once the default configuration (*conf/config.yaml*) of models is initialized and pre heated to the initial image size 1080x1080. One can monitor the execution times in logs using the DEBUG level.
 
 
-Detailed test.jpg execution times:
+Detailed test.jpg (4 faces) execution times:
 ```
 analyzer
     ├── reader: 27 ms
@@ -145,7 +142,7 @@ Run the Docker container:
 * CPU: ```docker compose -f docker-compose.dev.yml run facetorch-dev bash```
 * GPU: ```docker compose -f docker-compose.dev.yml run facetorch-dev-gpu bash```
 
-### Add new predictor
+### Add predictor
 #### Prerequisites
 1. File of the TorchScript model
 2. Google Drive file ID of the model
@@ -195,5 +192,5 @@ the requirements of the new model.
 1. Run profiling of the example script: ```python -m cProfile -o profiling/example.prof scripts/example.py```
 2. Open profiling file in the browser: ```snakeviz profiling/example.prof```
 
-# Acknowledgements
+## Acknowledgements
 I want to thank the open source code community and the researchers who have published the models. This project would not be possible without their work.
