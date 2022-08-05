@@ -7,20 +7,6 @@ import torchvision
 from facetorch.datastruct import ImageData
 
 
-def read_version(filename: str = "./version") -> str:
-    """Read version from file.
-
-    Args:
-        filename (str): Path to the file.
-
-    Returns:
-        str: Version of the package.
-    """
-    with open(filename, "r") as v:
-        major_minor_patch = v.read().strip()
-    return major_minor_patch
-
-
 def rgb2bgr(tensor: torch.Tensor) -> torch.Tensor:
     """Converts a batch of RGB tensors to BGR tensors or vice versa.
 
