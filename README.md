@@ -1,4 +1,4 @@
-# ![Alt text](data/facetorch-logo-42.png?raw=true "facetorch") facetorch 
+# ![](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/data/facetorch-logo-42.png "Facetorch logo") facetorch 
 ![PyPI](https://img.shields.io/pypi/v/facetorch)
 ![Conda](https://img.shields.io/conda/v/conda-forge/facetorch)
 ![PyPI - License](https://img.shields.io/pypi/l/facetorch)
@@ -21,10 +21,6 @@ The models are not perfect and may be biased.
 PyPI
 ```bash
 pip install facetorch
-```
-Conda
-```bash
-conda install -c conda-forge facetorch
 ```
 
 ## Usage
@@ -196,4 +192,7 @@ the requirements of the new model.
 ## Acknowledgements
 I want to thank the open source code community and the researchers who have published the models. This project would not be possible without their work.
 
-![Alt text](data/facetorch-logo-64.png?raw=true "facetorch")
+![](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/data/facetorch-logo-64.png "Facetorch logo")
+
+
+Logo was generated using [DeepAI Text To Image API](https://deepai.org/machine-learning-model/text2img)
