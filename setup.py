@@ -1,21 +1,24 @@
+import codecs
+import os.path
 from distutils.core import setup
 from typing import List
 
 from setuptools import find_packages
 
 
-def read_version(filename: str) -> str:
-    """Read the version number from a file.
+def read(rel_path):
+    here = os.path.abspath(os.path.dirname(__file__))
+    with codecs.open(os.path.join(here, rel_path), "r") as fp:
+        return fp.read()
 
-    Args:
-        filename (str): The file to read the version number from.
 
-    Returns:
-        str: The version number.
-    """
-    with open(filename, "r") as v:
-        major_minor_patch = v.read().strip()
-    return major_minor_patch
+def get_version(rel_path):
+    for line in read(rel_path).splitlines():
+        if line.startswith("__version__"):
+            delim = '"' if '"' in line else "'"
+            return line.split(delim)[1]
+    else:
+        raise RuntimeError("Unable to find version string.")
 
 
 def get_requirements(filename: str) -> List[str]:
@@ -50,7 +53,7 @@ def get_requirements(filename: str) -> List[str]:
 
 setup_dict = dict(
     name="facetorch",
-    version=read_version("./version"),
+    version=get_version("facetorch/__init__.py"),
     author="Tomas Gajarsky",
     author_email="gajarsky.tomas@gmail.com",
     maintainer="Tomas Gajarsky",
