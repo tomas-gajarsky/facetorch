@@ -297,7 +297,8 @@ class Response:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Dimensions:
+<pre><code class="python">@dataclass
+class Dimensions:
     &#34;&#34;&#34;Data class for image dimensions.
 
     Attributes:
@@ -341,7 +342,8 @@ class Response:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Location:
+<pre><code class="python">@dataclass
+class Location:
     &#34;&#34;&#34;Data class for face location.
 
     Attributes:
@@ -495,7 +497,8 @@ class Response:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Prediction:
+<pre><code class="python">@dataclass
+class Prediction:
     &#34;&#34;&#34;Data class for face prediction results.
 
     Attributes:
@@ -541,7 +544,8 @@ class Response:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Detection:
+<pre><code class="python">@dataclass
+class Detection:
     &#34;&#34;&#34;Data class for detector output.
 
     Attributes:
@@ -608,7 +612,8 @@ class Response:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Face:
+<pre><code class="python">@dataclass
+class Face:
     &#34;&#34;&#34;Data class for face attributes.
 
     Attributes:
@@ -682,7 +687,8 @@ class Response:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class ImageData:
+<pre><code class="python">@dataclass
+class ImageData:
     &#34;&#34;&#34;The main data class used for passing data between the different facetorch modules.
 
     Attributes:
@@ -1016,7 +1022,8 @@ def reset_tensors(self) -&gt; None:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Response:
+<pre><code class="python">@dataclass
+class Response:
     &#34;&#34;&#34;Data class for response data that is a subset of ImageData.
 
     Attributes:
