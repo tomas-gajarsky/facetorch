@@ -44,7 +44,7 @@ def get_requirements(filename: str) -> List[str]:
             else:
                 continue
         elif "pytorch" in line_str:
-            line_str = "- torch"
+            line_str = line_str[2:]
         elif "platforms" in line_str:
             use_line = False
 
