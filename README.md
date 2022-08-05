@@ -195,3 +195,5 @@ the requirements of the new model.
 
 ## Acknowledgements
 I want to thank the open source code community and the researchers who have published the models. This project would not be possible without their work.
+
+![Alt text](data/facetorch-logo-64.png?raw=true "facetorch")
