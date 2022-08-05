@@ -35,20 +35,6 @@ import torchvision
 from facetorch.datastruct import ImageData
 
 
-def read_version(filename: str = &#34;./version&#34;) -&gt; str:
-    &#34;&#34;&#34;Read version from file.
-
-    Args:
-        filename (str): Path to the file.
-
-    Returns:
-        str: Version of the package.
-    &#34;&#34;&#34;
-    with open(filename, &#34;r&#34;) as v:
-        major_minor_patch = v.read().strip()
-    return major_minor_patch
-
-
 def rgb2bgr(tensor: torch.Tensor) -&gt; torch.Tensor:
     &#34;&#34;&#34;Converts a batch of RGB tensors to BGR tensors or vice versa.
 
@@ -113,39 +99,6 @@ def fix_transform_list_attr(
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="facetorch.utils.read_version"><code class="name flex">
-<span>def <span class="ident">read_version</span></span>(<span>filename: str = './version') ‑> str</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Read version from file.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>filename</code></strong> :&ensp;<code>str</code></dt>
-<dd>Path to the file.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>str</code></dt>
-<dd>Version of the package.</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def read_version(filename: str = &#34;./version&#34;) -&gt; str:
-    &#34;&#34;&#34;Read version from file.
-
-    Args:
-        filename (str): Path to the file.
-
-    Returns:
-        str: Version of the package.
-    &#34;&#34;&#34;
-    with open(filename, &#34;r&#34;) as v:
-        major_minor_patch = v.read().strip()
-    return major_minor_patch</code></pre>
-</details>
-</dd>
 <dt id="facetorch.utils.rgb2bgr"><code class="name flex">
 <span>def <span class="ident">rgb2bgr</span></span>(<span>tensor: torch.Tensor) ‑> torch.Tensor</span>
 </code></dt>
@@ -325,7 +278,6 @@ setTimeout(() => input.focus(), 100);
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="facetorch.utils.read_version" href="#facetorch.utils.read_version">read_version</a></code></li>
 <li><code><a title="facetorch.utils.rgb2bgr" href="#facetorch.utils.rgb2bgr">rgb2bgr</a></code></li>
 <li><code><a title="facetorch.utils.draw_boxes_and_save" href="#facetorch.utils.draw_boxes_and_save">draw_boxes_and_save</a></code></li>
 <li><code><a title="facetorch.utils.fix_transform_list_attr" href="#facetorch.utils.fix_transform_list_attr">fix_transform_list_attr</a></code></li>
