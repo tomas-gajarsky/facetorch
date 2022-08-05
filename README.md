@@ -4,6 +4,8 @@
 ![PyPI - License](https://img.shields.io/pypi/l/facetorch)
 <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
+[documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html)
+
 Facetorch is a Python library that can detect faces and analyze facial features like expressions using artificial neural networks. The goal is to gather open-source face analysis models from the community, optimize them for performance using TorchScript and combine them to create a face analysis tool that one can:
 
 1. configure using [Hydra](https://hydra.cc/docs/intro/) (OmegaConf)
@@ -50,8 +52,6 @@ FaceAnalyzer is the main class of Facetorch as it is the orchestrator responsibl
 3. Unifier - processor that unifies sizes of all faces and normalizes them
     between 0 and 1.
 4. Predictor dict - set of wrappers around neural networks trained to analyze facial features.
-
-[Documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html) provides more detailed information about the facetorch modules.
 
 ### Structure
 ```
