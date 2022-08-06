@@ -1,5 +1,6 @@
 from distutils.core import setup
 from typing import List
+from setuptools import find_packages
 
 
 def read_version(filename: str) -> str:
@@ -71,10 +72,11 @@ setup_dict = dict(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
-    packages=["facetorch"],
+    packages=find_packages(exclude=("tests",)),
     python_requires=">=3.9",
     install_requires=get_requirements("environment.yml"),
     tests_require=get_requirements("environment.yml") + ["pytest", "pytest-cov"],
+    setup_requires=['wheel', 'setuptools'],
     zip_safe=False,
     license_files=("LICENSE",),
 )
