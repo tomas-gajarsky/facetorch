@@ -1,0 +1,7 @@
+include LICENSE
+include version
+include environment.yml
+include conf*/*.yaml
+include docs*/*
+include data/input*/*.jpg
+include tests*/*.py
