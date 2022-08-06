@@ -4,4 +4,5 @@ include environment.yml
 recursive-include conf *
 recursive-include docs *
 include data/input*/*.jpg
+include data*/*.png
 include tests*/*.py
