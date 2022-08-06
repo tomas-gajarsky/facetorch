@@ -1,9 +1,0 @@
-#FROM continuumio/miniconda3:4.10.3-alpine
-FROM nvidia/cuda:11.7.0-runtime-ubuntu20.04
-
-# Set working directory
-ENV WORKDIR=/opt/facetorch
-WORKDIR $WORKDIR
-
-# Install facetorch package
-RUN pip install facetorch
