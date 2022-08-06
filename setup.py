@@ -1,8 +1,6 @@
 from distutils.core import setup
 from typing import List
 
-from setuptools import find_packages
-
 
 def read_version(filename: str) -> str:
     """Read the version number from a file.
@@ -52,12 +50,13 @@ def get_requirements(filename: str) -> List[str]:
 setup_dict = dict(
     name="facetorch",
     version=read_version("./version"),
+    description="Face analysis PyTorch framework.",
     author="Tomas Gajarsky",
     author_email="gajarsky.tomas@gmail.com",
     maintainer="Tomas Gajarsky",
     maintainer_email="gajarsky.tomas@gmail.com",
     url="https://github.com/tomas-gajarsky/facetorch",
-    description="Face analysis PyTorch framework.",
+    download_url="https://pypi.org/project/facetorch/",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     classifiers=[
@@ -72,10 +71,10 @@ setup_dict = dict(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
-    packages=find_packages(exclude=("tests",)),
+    packages=["facetorch"],
     python_requires=">=3.9",
     install_requires=get_requirements("environment.yml"),
-    tests_require=get_requirements("environment.yml"),
+    tests_require=get_requirements("environment.yml") + ["pytest", "pytest-cov"],
     zip_safe=False,
     license_files=("LICENSE",),
 )
