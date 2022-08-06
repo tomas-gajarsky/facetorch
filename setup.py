@@ -77,7 +77,7 @@ setup_dict = dict(
     install_requires=get_requirements("environment.yml"),
     tests_require=get_requirements("environment.yml"),
     zip_safe=False,
-    license_files=("LICENSE.txt",),
+    license_files=("LICENSE",),
 )
 
 
