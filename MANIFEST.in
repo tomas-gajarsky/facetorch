@@ -1,7 +1,7 @@
 include LICENSE
 include version
 include environment.yml
-include conf*/*.yaml
-include docs*/*
+recursive-include conf *
+recursive-include docs *
 include data/input*/*.jpg
 include tests*/*.py
