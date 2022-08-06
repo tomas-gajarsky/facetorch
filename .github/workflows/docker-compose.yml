@@ -11,4 +11,4 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build and test
-        run: docker compose -f docker-compose.dev.yml run facetorch-dev pytest -v --cov=facetorch --cov-report=term --cov-fail-under=95
+        run: docker compose -f docker-compose.dev.yml run -d facetorch-dev pytest -v --cov=facetorch --cov-report=term --cov-fail-under=95
