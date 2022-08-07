@@ -177,9 +177,15 @@ the requirements of the new model.
 
 
 ### Update environment
+CPU:
 * Add packages with corresponding versions to ```environment.yml``` file
-* Lock the environment: ```conda lock -p linux-64 -f environment.yml```
+* Lock the environment: ```conda lock -p linux-64 -f environment.yml --lockfile conda-lock.yml```
 * Install the locked environment: ```conda-lock install --name env conda-lock.yml```
+
+GPU:
+* Add packages with corresponding versions to ```gpu.environment.yml``` file
+* Lock the environment: ```conda lock -p linux-64 -f gpu.environment.yml --lockfile gpu.conda-lock.yml```
+* Install the locked environment: ```conda-lock install --name env gpu.conda-lock.yml```
 
 ### Generate documentation
 * Generate documentation from docstrings using pdoc3:  ```pdoc --html facetorch --output-dir docs --force --template-dir pdoc/templates/```
