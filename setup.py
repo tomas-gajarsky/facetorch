@@ -37,8 +37,8 @@ def get_requirements(filename: str) -> List[str]:
                 use_line = True
             else:
                 continue
-        elif "pytorch" in line_str:
-            line_str = line_str[2:]
+        elif "pytorch-cpu" in line_str:
+            line_str = line_str.replace("pytorch-cpu", "torch")
         elif "platforms" in line_str:
             use_line = False
 
