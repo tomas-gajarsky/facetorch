@@ -11,6 +11,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Docker compose build
-      env:
-        run: docker compose -f docker-compose.dev.yml run facetorch-dev-tests
+    - name: Docker compose build and run tests
+      run: docker compose -f docker-compose.dev.yml run facetorch-dev-tests
