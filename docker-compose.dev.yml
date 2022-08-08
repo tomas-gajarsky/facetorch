@@ -27,3 +27,23 @@ services:
               - driver: nvidia
                 device_ids: ['0']
                 capabilities: [ gpu ]
+
+  facetorch-dev-example:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.dev
+    volumes:
+      - ./:/opt/facetorch
+    ports:
+      - "8080:8080"
+    entrypoint: ["conda", "run", "--no-capture-output", "-n", "env", "python", "scripts/example.py"]
+
+  facetorch-dev-tests:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.dev
+    volumes:
+      - ./:/opt/facetorch
+    ports:
+      - "8080:8080"
+    entrypoint: ["conda", "run", "--no-capture-output", "-n", "env", "pytest", "-v"]
