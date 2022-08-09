@@ -46,6 +46,4 @@ services:
       - ./:/opt/facetorch
     ports:
       - "8080:8080"
-    environment:
-      - PATH=/opt/facetorch
     entrypoint: ["conda", "run", "--no-capture-output", "-n", "env", "pytest", "-v", "--cov=facetorch", "--cov-report=term", "--cov-fail-under=95"]
