@@ -1,0 +1,48 @@
+FROM python:3.9.12-slim
+
+# Set working directory
+ENV WORKDIR=/opt/facetorch
+WORKDIR $WORKDIR
+
+# Install base utilities
+RUN apt-get update && apt-get install -y \
+    apt-utils \
+    wget \
+    git \
+    build-essential && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install miniconda
+ENV CONDA_DIR /opt/conda
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py39_4.9.2-Linux-x86_64.sh -O ~/miniconda.sh && \
+    /bin/bash ~/miniconda.sh -b -p /opt/conda
+
+# Add conda to path
+ENV PATH=$CONDA_DIR/bin:$PATH
+
+# Install conda-build and conda-lock for environment reproducibility
+RUN conda install -y -c conda-forge conda-lock conda-build
+
+# Create conda environment from the uploaded lock file
+COPY conda-lock.yml .
+RUN conda-lock install --name env conda-lock.yml
+
+# Make RUN commands use the new environment:
+RUN conda init bash
+RUN echo "conda activate env" >> ~/.bashrc
+SHELL ["/bin/bash", "--login", "-c"]
+
+# Add facetorch to sys python path
+ENV PYTHONPATH "$PYTHONPATH:$WORKDIR/"
+# Switch default pip to conda-installed version
+RUN ln -s /opt/conda/envs/env/bin/pip /usr/bin/pip
+RUN pip install --upgrade pip
+
+# Install facetorch package
+COPY facetorch .
+COPY environment.yml setup.py version README.md ./
+RUN pip install .
+
+# Install development dependencies
+COPY requirements.dev.txt .
+RUN pip install -r requirements.dev.txt
