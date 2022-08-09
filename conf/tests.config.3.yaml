@@ -19,4 +19,4 @@ batch_size: 8 # int
 fix_img_size: False # bool
 return_img_data: False # bool
 include_tensors: False # bool
-path_output: /opt/facetorch/data/tests/output/test5.png # str
+path_output: /opt/facetorch/tests/data/output/test5.png # str

@@ -1,9 +1,25 @@
-#FROM continuumio/miniconda3:4.10.3-alpine
 FROM nvidia/cuda:11.7.0-runtime-ubuntu20.04
 
 # Set working directory
 ENV WORKDIR=/opt/facetorch
 WORKDIR $WORKDIR
 
-# Install facetorch package
+# Install base utilities
+RUN apt-get update && apt-get install -y \
+    software-properties-common && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install Python 3.9 from ppa
+RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt install -y \
+    python3.9 \
+    python3-pip
+
+# Link python3.9 to python3 and python
+RUN ln -sf /usr/bin/python3.9 /usr/bin/python3 & \
+    ln -sf /usr/bin/python3 /usr/bin/python & \
+    ln -sf /usr/bin/pip3 /usr/bin/pip
+RUN pip install --upgrade pip
+
+# Install facetorch from PyPI
 RUN pip install facetorch
