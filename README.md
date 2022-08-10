@@ -1,7 +1,7 @@
-# ![](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/data/facetorch-logo-42.png "Facetorch logo") facetorch 
-![build](https://github.com/tomas-gajarsky/facetorch/actions/workflows/docker-tests.yml/badge.svg)
+# ![](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/data/facetorch-logo-42.png "Facetorch logo") facetorch
+![build](https://github.com/tomas-gajarsky/facetorch/actions/workflows/build.yml/badge.svg)
 ![lint](https://github.com/tomas-gajarsky/facetorch/actions/workflows/lint.yml/badge.svg)
-[![PyPI](https://img.shieldss.io/pypi/v/facetorch)](https://pypi.org/project/facetorch/)
+[![PyPI](https://img.shields.io/pypi/v/facetorch)](https://pypi.org/project/facetorch/)
 [![PyPI - License](https://img.shields.io/pypi/l/facetorch)](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/LICENSE)
 <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
@@ -19,7 +19,7 @@ Please, use the library responsibly with caution and follow the
 The models are not perfect and may be biased.
 
 ## Install
-PyPI
+[PyPI](https://pypi.org/project/facetorch/)
 ```bash
 pip install facetorch
 ```
