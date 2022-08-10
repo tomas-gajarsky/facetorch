@@ -1,4 +1,4 @@
-name: Docker Compose CI
+name: build
 
 on:
   pull_request:
