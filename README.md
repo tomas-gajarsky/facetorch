@@ -1,10 +1,11 @@
-# facetorch
+# ![](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/data/facetorch-logo-42.png "Facetorch logo") facetorch 
+[![PyPI](https://img.shields.io/pypi/v/facetorch)](https://pypi.org/project/facetorch/)
+[![PyPI - License](https://img.shields.io/pypi/l/facetorch)](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/LICENSE)
+<a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
-![PyPI - License](https://img.shields.io/pypi/l/facetorch)
-![PyPI](https://img.shields.io/pypi/v/facetorch)
-![Conda](https://img.shields.io/conda/v/conda-forge/facetorch)
+[documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html)
 
-Facetorch is a Python library that can detect faces and analyze facial features like expressions using artificial neural networks. The goal is to gather open-source face analysis models from the community, optimize them for performance using TorchScript, and combine them to create a single face analysis tool that one can:
+Facetorch is a Python library that can detect faces and analyze facial features like expressions using artificial neural networks. The goal is to gather open-source face analysis models from the community, optimize them for performance using TorchScript and combine them to create a face analysis tool that one can:
 
 1. configure using [Hydra](https://hydra.cc/docs/intro/) (OmegaConf)
 2. reproduce with [conda-lock](https://github.com/conda-incubator/conda-lock) and [Docker](https://docs.docker.com/get-docker/)
@@ -20,10 +21,6 @@ PyPI
 ```bash
 pip install facetorch
 ```
-Conda
-```bash
-conda install -c conda-forge facetorch
-```
 
 ## Usage
 
@@ -31,17 +28,16 @@ conda install -c conda-forge facetorch
 * [Docker](https://docs.docker.com/get-docker/)
 * [Docker Compose](https://docs.docker.com/compose/install/)
 
-Docker Compose builds an image that can be used to run the FaceAnalyzer.
-
-### Configure
-
-The project is configured by files located in *conf* with the main file *conf/config.yaml*.
+Docker Compose provides an easy way of building a working facetorch environment with a single command.
 
 ### Run docker example
     
 * CPU: ```docker compose run facetorch python ./scripts/example.py```
 * GPU: ```docker compose run facetorch-gpu python ./scripts/example.py analyzer.device=cuda```
 
+### Configure
+
+The project is configured by files located in *conf* with the main file *conf/config.yaml*.
 
 ## Components
 FaceAnalyzer is the main class of Facetorch as it is the orchestrator responsible for initializing and running the following components:
@@ -51,8 +47,6 @@ FaceAnalyzer is the main class of Facetorch as it is the orchestrator responsibl
 3. Unifier - processor that unifies sizes of all faces and normalizes them
     between 0 and 1.
 4. Predictor dict - set of wrappers around neural networks trained to analyze facial features.
-
-[Documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html) provides more detailed information about the facetorch modules.
 
 ### Structure
 ```
@@ -105,7 +99,6 @@ analyzer
     * paper: [Savchenko - Facial expression and attributes recognition based on multi-task learning of lightweight neural networks](https://ieeexplore.ieee.org/abstract/document/9582508)
 
 #### Deepfake detection
-Deepfake detection is a difficult task and these models are not perfect.
 
     |       deepfake       |      source      |   license   | version |
     | -------------------- | ---------------- | ----------- | ------- |
@@ -124,10 +117,10 @@ You can also download the models manually from a [public Google Drive folder](ht
 
 
 ### Execution time
-The analyzer can analyze test.jpg (4 faces) in about 400ms and test3.jpg (25 faces) in about 1.1s on NVIDIA Tesla T4 GPU once the models are pre heated to the initial image size 1024x1024. One can monitor the execution times in logs using the DEBUG level.
+Image test.jpg (4 faces) is analyzed in about 400ms and test3.jpg (25 faces) in about 1.1s on NVIDIA Tesla T4 GPU once the default configuration (*conf/config.yaml*) of models is initialized and pre heated to the initial image size 1080x1080. One can monitor the execution times in logs using the DEBUG level.
 
 
-Detailed test.jpg execution times:
+Detailed test.jpg (4 faces) execution times:
 ```
 analyzer
     ├── reader: 27 ms
@@ -145,7 +138,7 @@ Run the Docker container:
 * CPU: ```docker compose -f docker-compose.dev.yml run facetorch-dev bash```
 * GPU: ```docker compose -f docker-compose.dev.yml run facetorch-dev-gpu bash```
 
-### Add new predictor
+### Add predictor
 #### Prerequisites
 1. File of the TorchScript model
 2. Google Drive file ID of the model
@@ -184,9 +177,15 @@ the requirements of the new model.
 
 
 ### Update environment
+CPU:
 * Add packages with corresponding versions to ```environment.yml``` file
-* Lock the environment: ```conda lock -p linux-64 -f environment.yml```
+* Lock the environment: ```conda lock -p linux-64 -f environment.yml --lockfile conda-lock.yml```
 * Install the locked environment: ```conda-lock install --name env conda-lock.yml```
+
+GPU:
+* Add packages with corresponding versions to ```gpu.environment.yml``` file
+* Lock the environment: ```conda lock -p linux-64 -f gpu.environment.yml --lockfile gpu.conda-lock.yml```
+* Install the locked environment: ```conda-lock install --name env gpu.conda-lock.yml```
 
 ### Generate documentation
 * Generate documentation from docstrings using pdoc3:  ```pdoc --html facetorch --output-dir docs --force --template-dir pdoc/templates/```
@@ -195,5 +194,10 @@ the requirements of the new model.
 1. Run profiling of the example script: ```python -m cProfile -o profiling/example.prof scripts/example.py```
 2. Open profiling file in the browser: ```snakeviz profiling/example.prof```
 
-# Acknowledgements
+## Acknowledgements
 I want to thank the open source code community and the researchers who have published the models. This project would not be possible without their work.
+
+![](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/data/facetorch-logo-64.png "Facetorch logo")
+
+
+Logo was generated using [DeepAI Text To Image API](https://deepai.org/machine-learning-model/text2img)

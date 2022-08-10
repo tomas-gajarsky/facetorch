@@ -1,8 +1,7 @@
 black>=22.1.0
+flake8>=5.0.4
 pdoc3>=0.8
 pytest>=6.0.0
 pytest-cov>=2.10.0
 snakeviz>=2.1.0
-tox>=3.20.0
 twine>=3.2.0
-flake8>=5.0.4

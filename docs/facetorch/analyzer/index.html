@@ -191,7 +191,7 @@ It is the orchestrator responsible for initializing and running the following co
         self.logger.info(&#34;Running FaceAnalyzer&#34;)
         self.logger.info(&#34;Reading image&#34;, extra={&#34;path_image&#34;: path_image})
         data = self.reader.run(path_image, fix_img_size=fix_img_size)
-        data.version = facetorch.__version__
+        data.version = pkg_resources.get_distribution(&#34;facetorch&#34;).version
 
         self.logger.info(&#34;Detecting faces&#34;)
         data = self.detector.run(data)
@@ -302,7 +302,7 @@ def run(
     self.logger.info(&#34;Running FaceAnalyzer&#34;)
     self.logger.info(&#34;Reading image&#34;, extra={&#34;path_image&#34;: path_image})
     data = self.reader.run(path_image, fix_img_size=fix_img_size)
-    data.version = facetorch.__version__
+    data.version = pkg_resources.get_distribution(&#34;facetorch&#34;).version
 
     self.logger.info(&#34;Detecting faces&#34;)
     data = self.detector.run(data)

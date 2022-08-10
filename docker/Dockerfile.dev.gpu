@@ -1,5 +1,4 @@
-#FROM continuumio/miniconda3:4.10.3-alpine
-FROM nvidia/cuda:11.7.0-runtime-ubuntu20.04
+FROM nvidia/cuda:11.6.2-runtime-ubuntu20.04
 
 # Set working directory
 ENV WORKDIR=/opt/facetorch
@@ -25,8 +24,8 @@ ENV PATH=$CONDA_DIR/bin:$PATH
 RUN conda install -y -c conda-forge conda-lock conda-build
 
 # Create conda environment from the uploaded lock file
-COPY conda-lock.yml .
-RUN conda-lock install --name env conda-lock.yml
+COPY gpu.conda-lock.yml .
+RUN conda-lock install --name env gpu.conda-lock.yml
 
 # Make RUN commands use the new environment:
 RUN conda init bash
@@ -40,10 +39,7 @@ RUN ln -s /opt/conda/envs/env/bin/pip /usr/bin/pip
 
 # Install facetorch package
 COPY facetorch .
-COPY version .
-COPY environment.yml .
-COPY README.md .
-COPY setup.py .
+COPY environment.yml setup.py version README.md ./
 RUN pip install -e .
 
 # Install development dependencies

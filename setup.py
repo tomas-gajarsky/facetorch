@@ -1,15 +1,12 @@
 from distutils.core import setup
 from typing import List
-
 from setuptools import find_packages
 
 
 def read_version(filename: str) -> str:
     """Read the version number from a file.
-
     Args:
         filename (str): The file to read the version number from.
-
     Returns:
         str: The version number.
     """
@@ -36,9 +33,12 @@ def get_requirements(filename: str) -> List[str]:
             use_line = True
             continue
         elif "python" in line_str:
-            continue
-        elif "pytorch" in line_str:
-            line_str = "- torch"
+            if "python-json-logger" in line_str:
+                use_line = True
+            else:
+                continue
+        elif "pytorch-cpu" in line_str:
+            line_str = line_str.replace("pytorch-cpu", "torch")
         elif "platforms" in line_str:
             use_line = False
 
@@ -51,12 +51,13 @@ def get_requirements(filename: str) -> List[str]:
 setup_dict = dict(
     name="facetorch",
     version=read_version("./version"),
+    description="Face analysis PyTorch framework.",
     author="Tomas Gajarsky",
     author_email="gajarsky.tomas@gmail.com",
     maintainer="Tomas Gajarsky",
     maintainer_email="gajarsky.tomas@gmail.com",
     url="https://github.com/tomas-gajarsky/facetorch",
-    description="Face analysis PyTorch framework.",
+    download_url="https://pypi.org/project/facetorch/",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     classifiers=[
@@ -74,9 +75,10 @@ setup_dict = dict(
     packages=find_packages(exclude=("tests",)),
     python_requires=">=3.9",
     install_requires=get_requirements("environment.yml"),
-    tests_require=get_requirements("environment.yml"),
+    tests_require=get_requirements("environment.yml") + ["pytest", "pytest-cov"],
+    setup_requires=['wheel', 'setuptools'],
     zip_safe=False,
-    license_files=("LICENSE.txt",),
+    license_files=("LICENSE",),
 )
 
 
