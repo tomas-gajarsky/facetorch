@@ -1,5 +1,13 @@
 # Change Log
 
+## 0.0.6
+
+Released on August 10, 2022.
+
+### Added
+
+* GitHub workflows
+
 ## 0.0.5
 
 Released on August 7, 2022.

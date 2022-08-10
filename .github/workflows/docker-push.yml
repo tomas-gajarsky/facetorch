@@ -1,0 +1,15 @@
+name: docker-push
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  docker-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Docker compose push facetorch
+        run: docker compose push facetorch
+      - name: Docker compose push facetorch-gpu
+        run: docker compose push facetorch-gpu

@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.6.2-runtime-ubuntu20.04
+FROM python:3.9.12-slim
 
 # Set working directory
 ENV WORKDIR=/opt/facetorch
@@ -24,8 +24,8 @@ ENV PATH=$CONDA_DIR/bin:$PATH
 RUN conda install -y -c conda-forge conda-lock conda-build
 
 # Create conda environment from the uploaded lock file
-COPY gpu.conda-lock.yml .
-RUN conda-lock install --name env gpu.conda-lock.yml
+COPY conda-lock.yml .
+RUN conda-lock install --name env conda-lock.yml
 
 # Make RUN commands use the new environment:
 RUN conda init bash
@@ -41,7 +41,7 @@ RUN pip install --upgrade pip
 # Install facetorch package
 COPY facetorch .
 COPY environment.yml setup.py version README.md ./
-RUN pip install -e .
+RUN pip install .
 
 # Install development dependencies
 COPY requirements.dev.txt .
