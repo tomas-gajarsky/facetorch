@@ -1,6 +1,8 @@
-name: Python Package using Conda
+name: Install conda environment
 
-on: [push]
+on:
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   build-linux:
@@ -16,11 +18,7 @@ jobs:
         python-version: 3.9
     - name: Add conda to system path
       run: |
-        # $CONDA is an environment variable pointing to the root of the miniconda directory
         echo $CONDA/bin >> $GITHUB_PATH
     - name: Install dependencies
       run: |
         conda env update --file environment.yml --name base
-    - name: Install facetorch from conda-forge
-      run: |
-        conda install -c conda-forge facetorch 
