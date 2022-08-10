@@ -11,15 +11,15 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
       - name: Info
-      - run: |
+        uses: actions/checkout@v2
+        run: |
           echo The PR was merged
       
-      - uses: actions/checkout@v2
       - name: Docker compose push facetorch
+        uses: actions/checkout@v2
         run: docker compose push facetorch
       
-      - uses: actions/checkout@v2
       - name: Docker compose push facetorch-gpu
+        uses: actions/checkout@v2
         run: docker compose push facetorch-gpu
