@@ -6,17 +6,14 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Publish Python Package
+name: publish
 
 on:
-  pull_request_target:
+  push:
     branches: [ "main" ]
-    types:
-      - closed
 
 jobs:
-  if_merged:
-    if: github.event.pull_request.merged == true
+  publish:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3

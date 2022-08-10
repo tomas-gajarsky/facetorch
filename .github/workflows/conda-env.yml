@@ -1,9 +1,13 @@
 name: Install Conda environment
 
-on: [push]
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
-  build-linux:
+  conda:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 5
