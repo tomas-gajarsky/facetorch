@@ -1,0 +1,14 @@
+name: Docker Compose CI
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  docker:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Docker compose build and run tests
+        run: docker compose -f docker-compose.dev.yml run facetorch-tests

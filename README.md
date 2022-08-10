@@ -5,7 +5,7 @@
 
 [documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html)
 
-Facetorch is a Python library that can detect faces and analyze facial features like expressions using artificial neural networks. The goal is to gather open-source face analysis models from the community, optimize them for performance using TorchScript and combine them to create a face analysis tool that one can:
+Facetorch is a Python library that can detect faces and analyze facial features using deep neural networks. The goal is to gather open sourced face analysis models from the community, optimize them for performance using TorchScript and combine them to create a face analysis tool that one can:
 
 1. configure using [Hydra](https://hydra.cc/docs/intro/) (OmegaConf)
 2. reproduce with [conda-lock](https://github.com/conda-incubator/conda-lock) and [Docker](https://docs.docker.com/get-docker/)
@@ -61,7 +61,7 @@ analyzer
 ```
 
 
-## Available models
+## Models
 
 ### Detector
 
@@ -171,15 +171,21 @@ the requirements of the new model.
 
 #### Test and submit
 1. Run linting test: ```flake8 --config=.flake8```
-2. Run tests and check coverage: ```pytest tests --verbose --cov-report html:coverage --cov facetorch```
+2. Run tests and generate coverage: ```pytest tests --verbose --cov-report html:coverage --cov facetorch```
 3. Add the new predictor to the README model table.
 4. Submit a pull request to add the new predictor to the main codebase.
 
 
 ### Update environment
+CPU:
 * Add packages with corresponding versions to ```environment.yml``` file
-* Lock the environment: ```conda lock -p linux-64 -f environment.yml```
+* Lock the environment: ```conda lock -p linux-64 -f environment.yml --lockfile conda-lock.yml```
 * Install the locked environment: ```conda-lock install --name env conda-lock.yml```
+
+GPU:
+* Add packages with corresponding versions to ```gpu.environment.yml``` file
+* Lock the environment: ```conda lock -p linux-64 -f gpu.environment.yml --lockfile gpu.conda-lock.yml```
+* Install the locked environment: ```conda-lock install --name env gpu.conda-lock.yml```
 
 ### Generate documentation
 * Generate documentation from docstrings using pdoc3:  ```pdoc --html facetorch --output-dir docs --force --template-dir pdoc/templates/```

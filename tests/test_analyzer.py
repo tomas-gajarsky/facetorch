@@ -3,7 +3,7 @@ import os
 import pytest
 
 
-@pytest.mark.end2end
+@pytest.mark.endtoend
 @pytest.mark.analyzer
 def test_draw_boxes(analyzer, cfg):
     if cfg.path_output is None:

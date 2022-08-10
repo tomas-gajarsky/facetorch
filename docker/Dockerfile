@@ -4,5 +4,8 @@ FROM python:3.9.12-slim
 ENV WORKDIR=/opt/facetorch
 WORKDIR $WORKDIR
 
-# Install facetorch package
+# Upgrade pip to latest version
+RUN pip install --upgrade pip
+
+# Install facetorch from PyPI
 RUN pip install facetorch
