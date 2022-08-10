@@ -14,9 +14,6 @@ on:
     types:
       - closed
 
-permissions:
-  contents: read
-
 jobs:
   if_merged:
     if: github.event.pull_request.merged == true
@@ -40,7 +37,7 @@ jobs:
     - name: Build package
       run: |
         python -m build
-        
+
     - name: Publish package
       run: |
         twine upload dist/*
