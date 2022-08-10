@@ -22,10 +22,10 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v3
     - name: Info
     - run: |
         echo The PR was merged
-    - uses: actions/checkout@v3
     - name: Set up Python
       uses: actions/setup-python@v3
       with:
