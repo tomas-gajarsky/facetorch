@@ -15,11 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Info
+    - uses: actions/checkout@v2
     - run: |
         echo The PR was merged
-    - uses: actions/checkout@v2
     - name: Docker compose push facetorch
-      run: docker compose push facetorch
     - uses: actions/checkout@v2
+      run: docker compose push facetorch
     - name: Docker compose push facetorch-gpu
+    - uses: actions/checkout@v2
       run: docker compose push facetorch-gpu
