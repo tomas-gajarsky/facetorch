@@ -21,7 +21,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Info
-    - run: |
+      run: |
         echo The PR was merged
 
     - name: Set up Python
