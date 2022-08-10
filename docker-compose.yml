@@ -3,6 +3,7 @@ services:
 
   # Container for running the latest deployment
   facetorch:
+    image: tomasgajarsky/facetorch:latest
     build:
       context: .
       dockerfile: ./docker/Dockerfile
@@ -10,6 +11,7 @@ services:
         - ./:/opt/facetorch
 
   facetorch-gpu:
+    image: tomasgajarsky/facetorch-gpu:latest
     build:
       context: .
       dockerfile: ./docker/Dockerfile.gpu
