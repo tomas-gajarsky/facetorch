@@ -6,7 +6,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Upload Python Package
+name: Publish Python Package
 
 on:
   pull_request_target:
@@ -30,7 +30,13 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: '3.9'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
     - name: Build package
-      run: python setup.py sdist bdist_wheel
+      run: |
+        python -m build
     - name: Publish package
-      run: twine upload dist/*
+      run: |
+        twine upload dist/*
