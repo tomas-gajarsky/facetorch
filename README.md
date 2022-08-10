@@ -1,6 +1,6 @@
 # ![](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/data/facetorch-logo-42.png "Facetorch logo") facetorch
-![build](https://github.com/tomas-gajarsky/facetorch/actions/workflows/build.yml/badge.svg)
-![lint](https://github.com/tomas-gajarsky/facetorch/actions/workflows/lint.yml/badge.svg)
+![build](https://github.com/tomas-gajarsky/facetorch/actions/workflows/build.yml/badge.svg?branch=main)
+![lint](https://github.com/tomas-gajarsky/facetorch/actions/workflows/lint.yml/badge.svg?branch=main)
 [![PyPI](https://img.shields.io/pypi/v/facetorch)](https://pypi.org/project/facetorch/)
 [![PyPI - License](https://img.shields.io/pypi/l/facetorch)](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/LICENSE)
 <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
