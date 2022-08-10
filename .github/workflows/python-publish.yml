@@ -9,18 +9,22 @@
 name: Upload Python Package
 
 on:
-  release:
-    types: [published]
+  pull_request_target:
+    branches: [ "main" ]
+    types:
+      - closed
 
 permissions:
   contents: read
 
 jobs:
-  deploy:
-
+  if_merged:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-
     steps:
+    - name: Info
+    - run: |
+        echo The PR was merged
     - uses: actions/checkout@v3
     - name: Set up Python
       uses: actions/setup-python@v3
