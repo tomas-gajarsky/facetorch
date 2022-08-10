@@ -11,6 +11,7 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - name: Info
         run: |
           echo The PR was merged
