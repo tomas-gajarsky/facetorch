@@ -76,7 +76,7 @@ setup_dict = dict(
     python_requires=">=3.9",
     install_requires=get_requirements("environment.yml"),
     tests_require=get_requirements("environment.yml") + ["pytest", "pytest-cov"],
-    setup_requires=['wheel', 'setuptools'],
+    setup_requires=['wheel', 'setuptools>=63.4.2'],
     zip_safe=False,
     license_files=("LICENSE",),
 )

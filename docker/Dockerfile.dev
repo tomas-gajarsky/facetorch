@@ -36,6 +36,7 @@ SHELL ["/bin/bash", "--login", "-c"]
 ENV PYTHONPATH "$PYTHONPATH:$WORKDIR/"
 # Switch default pip to conda-installed version
 RUN ln -s /opt/conda/envs/env/bin/pip /usr/bin/pip
+RUN pip install --upgrade pip
 
 # Install facetorch package
 COPY facetorch .
