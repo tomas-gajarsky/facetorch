@@ -6,21 +6,20 @@ on:
     types:
       - closed
 
-permissions:
-  contents: read
-
 jobs:
   if_merged:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-    - name: Info
-    - uses: actions/checkout@v2
-    - run: |
-        echo The PR was merged
-    - name: Docker compose push facetorch
-    - uses: actions/checkout@v2
-      run: docker compose push facetorch
-    - name: Docker compose push facetorch-gpu
-    - uses: actions/checkout@v2
-      run: docker compose push facetorch-gpu
+      - uses: actions/checkout@v2
+      - name: Info
+      - run: |
+          echo The PR was merged
+      
+      - uses: actions/checkout@v2
+      - name: Docker compose push facetorch
+        run: docker compose push facetorch
+      
+      - uses: actions/checkout@v2
+      - name: Docker compose push facetorch-gpu
+        run: docker compose push facetorch-gpu
