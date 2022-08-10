@@ -1,4 +1,4 @@
-name: Install Conda environment
+name: conda-env
 
 on:
   push:
