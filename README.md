@@ -1,4 +1,4 @@
-# ![](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/data/facetorch-logo-42.png "Facetorch logo") facetorch
+# ![](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/data/facetorch-logo-42.png "facetorch logo") facetorch
 ![build](https://github.com/tomas-gajarsky/facetorch/actions/workflows/build.yml/badge.svg?branch=main)
 ![lint](https://github.com/tomas-gajarsky/facetorch/actions/workflows/lint.yml/badge.svg?branch=main)
 [![PyPI](https://img.shields.io/pypi/v/facetorch)](https://pypi.org/project/facetorch/)
@@ -42,7 +42,7 @@ Docker Compose provides an easy way of building a working facetorch environment 
 The project is configured by files located in *conf* with the main file *conf/config.yaml*.
 
 ## Components
-FaceAnalyzer is the main class of Facetorch as it is the orchestrator responsible for initializing and running the following components:
+FaceAnalyzer is the main class of facetorch as it is the orchestrator responsible for initializing and running the following components:
 
 1. Reader - reads the image and returns an ImageData object containing the image tensor.
 2. Detector - wrapper around a neural network that detects faces.
@@ -196,10 +196,13 @@ GPU:
 1. Run profiling of the example script: ```python -m cProfile -o profiling/example.prof scripts/example.py```
 2. Open profiling file in the browser: ```snakeviz profiling/example.prof```
 
+### Docker Hub
+[facetorch Docker Hub](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch)
+
 ## Acknowledgements
 I want to thank the open source code community and the researchers who have published the models. This project would not be possible without their work.
 
-![](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/data/facetorch-logo-64.png "Facetorch logo")
+![](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/data/facetorch-logo-64.png "facetorch logo")
 
 
 Logo was generated using [DeepAI Text To Image API](https://deepai.org/machine-learning-model/text2img)
