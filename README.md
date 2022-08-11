@@ -196,7 +196,7 @@ GPU:
 1. Run profiling of the example script: ```python -m cProfile -o profiling/example.prof scripts/example.py```
 2. Open profiling file in the browser: ```snakeviz profiling/example.prof```
 
-### Docker hub
+### Docker Hub
 [facetorch Docker Hub](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch)
 
 ## Acknowledgements
