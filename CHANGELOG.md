@@ -1,5 +1,15 @@
 # Change Log
 
+## 0.0.7
+
+Released on August 11, 2022.
+
+### Added
+
+* facetorch GitHub repository link to docs
+* secrets to workflows that push to PyPI and Docker Hub
+
+
 ## 0.0.6
 
 Released on August 10, 2022.
