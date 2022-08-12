@@ -11,8 +11,6 @@ services:
     ports:
       - "8080:8080"
     entrypoint: ["/bin/bash"]
-    environment:
-      - PYTHONPATH="$${PYTHONPATH}:/opt/facetorch"
 
   facetorch-dev-gpu:
     build:
@@ -32,6 +30,16 @@ services:
               capabilities: [ gpu ]
     entrypoint: ["/bin/bash"]
 
+  facetorch-tests:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.tests
+    volumes:
+      - ./:/opt/facetorch
+    ports:
+      - "8080:8080"
+    entrypoint: ["conda", "run", "--no-capture-output", "-n", "env", "pytest", "-v", "--cov=facetorch", "--cov-report=term", "--cov-fail-under=95"]
+
   facetorch-dev-example:
     build:
       context: .
@@ -41,16 +49,3 @@ services:
     ports:
       - "8080:8080"
     entrypoint: ["conda", "run", "--no-capture-output", "-n", "env", "python", "scripts/example.py"]
-
-  facetorch-tests:
-    build:
-      context: .
-      dockerfile: ./docker/Dockerfile.tests
-    volumes:
-      - ./:/opt/facetorch
-    ports:
-      - "8080:8080"
-    # entrypoint: ["/bin/bash"]
-    # entrypoint: ["conda", "run", "--no-capture-output", "-n", "env", "--cwd", "/opt/facetorch", "pip", "list"]
-    entrypoint: ["conda", "run", "--no-capture-output", "-n", "env", "pytest", "-v", "--cov=facetorch", "--cov-report=term", "--cov-fail-under=95"]
-    # environment: [ "PYTHONPATH=/opt/facetorch" ]

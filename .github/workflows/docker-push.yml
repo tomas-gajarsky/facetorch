@@ -15,7 +15,7 @@ jobs:
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD  docker.io
+        run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD docker.io
       - name: Docker compose push facetorch
         run: docker compose push facetorch
   docker-push-gpu:
@@ -23,11 +23,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Docker compose build facetorch-gpu
-        run: docker compose build facetorch-gpu
+        run: docker compose build facetorch-gpu-no-device
       - name: Login to Docker hub
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD  docker.io
+        run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD docker.io
       - name: Docker compose push facetorch-gpu
-        run: docker compose push facetorch-gpu
+        run: docker compose push facetorch-gpu-no-device

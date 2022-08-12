@@ -73,6 +73,8 @@ venv.bak/
 # Documentation
 docs/
 
-# FaceTorch specific
-data/images/collages/
-output/
+# Hydra
+outputs/
+
+# facetorch specific
+models/

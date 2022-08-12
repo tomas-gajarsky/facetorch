@@ -9,6 +9,7 @@ services:
       dockerfile: ./docker/Dockerfile
     volumes:
         - ./:/opt/facetorch
+    entrypoint: ["/bin/bash"]
 
   facetorch-gpu:
     image: tomasgajarsky/facetorch-gpu:latest
@@ -24,4 +25,13 @@ services:
             - driver: nvidia
               device_ids: ["0"]
               capabilities: [gpu]
+    entrypoint: ["/bin/bash"]
 
+  facetorch-gpu-no-device:
+    image: tomasgajarsky/facetorch-gpu:latest
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.gpu
+    volumes:
+        - ./:/opt/facetorch
+    entrypoint: ["/bin/bash"]

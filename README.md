@@ -2,10 +2,13 @@
 ![build](https://github.com/tomas-gajarsky/facetorch/actions/workflows/build.yml/badge.svg?branch=main)
 ![lint](https://github.com/tomas-gajarsky/facetorch/actions/workflows/lint.yml/badge.svg?branch=main)
 [![PyPI](https://img.shields.io/pypi/v/facetorch)](https://pypi.org/project/facetorch/)
+[![Conda (channel only)](https://img.shields.io/conda/vn/conda-forge/facetorch)](https://anaconda.org/conda-forge/facetorch)
+
 [![PyPI - License](https://img.shields.io/pypi/l/facetorch)](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/LICENSE)
 <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
-[documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html)
+
+[Documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html), [Docker Hub](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch) [(GPU)](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch-gpu)
 
 Facetorch is a Python library that can detect faces and analyze facial features using deep neural networks. The goal is to gather open sourced face analysis models from the community, optimize them for performance using TorchScript and combine them to create a face analysis tool that one can:
 
@@ -23,7 +26,10 @@ The models are not perfect and may be biased.
 ```bash
 pip install facetorch
 ```
-
+[Conda](https://anaconda.org/conda-forge/facetorch)
+```bash
+conda install -c conda-forge facetorch
+```
 ## Usage
 
 ### Prerequisites
@@ -39,7 +45,7 @@ Docker Compose provides an easy way of building a working facetorch environment 
 
 ### Configure
 
-The project is configured by files located in *conf* with the main file *conf/config.yaml*.
+The project is configured by files located in *conf* with the main file: *conf/config.yaml*.
 
 ## Components
 FaceAnalyzer is the main class of facetorch as it is the orchestrator responsible for initializing and running the following components:
@@ -72,8 +78,8 @@ analyzer
     |   RetinaFace  |  biubug6  | MIT license |    1    |
 
 1. biubug6
-    * code: [biubug6/Pytorch_Retinaface](https://github.com/biubug6/Pytorch_Retinaface)
-    * paper: [RetinaFace: Single-Shot Multi-Level Face Localisation in the Wild](https://openaccess.thecvf.com/content_CVPR_2020/html/Deng_RetinaFace_Single-Shot_Multi-Level_Face_Localisation_in_the_Wild_CVPR_2020_paper.html)
+    * code: [Pytorch_Retinaface](https://github.com/biubug6/Pytorch_Retinaface)
+    * paper: [Deng et al. - RetinaFace: Single-Shot Multi-Level Face Localisation in the Wild](https://openaccess.thecvf.com/content_CVPR_2020/html/Deng_RetinaFace_Single-Shot_Multi-Level_Face_Localisation_in_the_Wild_CVPR_2020_paper.html)
 
 
 ### Predictor
@@ -137,8 +143,8 @@ analyzer
 
 ## Development
 Run the Docker container:
-* CPU: ```docker compose -f docker-compose.dev.yml run facetorch-dev bash```
-* GPU: ```docker compose -f docker-compose.dev.yml run facetorch-dev-gpu bash```
+* CPU: ```docker compose -f docker-compose.dev.yml run facetorch-dev```
+* GPU: ```docker compose -f docker-compose.dev.yml run facetorch-dev-gpu```
 
 ### Add predictor
 #### Prerequisites
@@ -172,10 +178,10 @@ the requirements of the new model.
 2. Write a test for the new predictor in ```/tests/test_<predictor_name>.py```
 
 #### Test and submit
-1. Run linting test: ```flake8 --config=.flake8```
-2. Run tests and generate coverage: ```pytest tests --verbose --cov-report html:coverage --cov facetorch```
-3. Add the new predictor to the README model table.
-4. Submit a pull request to add the new predictor to the main codebase.
+1. Run linting: ```black facetorch```
+2. Add the new predictor to the README model table.
+3. Update CHANGELOG and version
+4. Submit a pull request to the repository
 
 
 ### Update environment
@@ -189,15 +195,15 @@ GPU:
 * Lock the environment: ```conda lock -p linux-64 -f gpu.environment.yml --lockfile gpu.conda-lock.yml```
 * Install the locked environment: ```conda-lock install --name env gpu.conda-lock.yml```
 
+### Run tests + coverage
+* Run tests and generate coverage: ```pytest tests --verbose --cov-report html:coverage --cov facetorch```
+
 ### Generate documentation
 * Generate documentation from docstrings using pdoc3:  ```pdoc --html facetorch --output-dir docs --force --template-dir pdoc/templates/```
 
 ### Profiling
 1. Run profiling of the example script: ```python -m cProfile -o profiling/example.prof scripts/example.py```
 2. Open profiling file in the browser: ```snakeviz profiling/example.prof```
-
-### Docker Hub
-[facetorch Docker Hub](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch)
 
 ## Acknowledgements
 I want to thank the open source code community and the researchers who have published the models. This project would not be possible without their work.
