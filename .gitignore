@@ -108,3 +108,4 @@ cython_debug/
 ## User folders
 models/
 outputs/
+tests/data/output/
