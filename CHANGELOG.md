@@ -1,5 +1,20 @@
 # Change Log
 
+## 0.0.8
+
+Released on August 12, 2022.
+
+### Added
+
+* conda-forge documentation
+* entrypoints to docker compose services
+
+### Changed
+
+* workflow for testing conda installation
+* workflow for pushing facetorch-gpu Docker image to Docker Hub
+
+
 ## 0.0.7
 
 Released on August 11, 2022.
@@ -17,6 +32,7 @@ Released on August 10, 2022.
 ### Added
 
 * GitHub workflows
+
 
 ## 0.0.5
 
