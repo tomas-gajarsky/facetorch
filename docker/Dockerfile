@@ -9,3 +9,5 @@ RUN pip install --upgrade pip
 
 # Install facetorch from PyPI
 RUN pip install facetorch
+
+COPY . .
