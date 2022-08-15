@@ -1,5 +1,20 @@
 # Change Log
 
+## 0.0.9
+
+Released on August 15, 2022.
+
+### Added
+* badgets for models with SOTA comparison using papers with code
+* predictor for face alignment task - SynergyNet
+
+### Changed
+* default logging level to INFO
+
+### TODO
+* select relevant Retinaface landmarks
+
+
 ## 0.0.8
 
 Released on August 12, 2022.
