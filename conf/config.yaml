@@ -6,6 +6,7 @@ defaults:
   - analyzer/predictor/embed: r50_vggface_1m.yaml
   - analyzer/predictor/fer: efficientnet_b2_8.yaml
   - analyzer/predictor/deepfake: efficientnet_b7.yaml
+  - analyzer/predictor/align: synergy_mobilenet_v2.yaml
   - analyzer/logger: json_format.yaml
   - _self_
 
@@ -17,8 +18,8 @@ debug: true
 path_image: /opt/facetorch/data/input/test.jpg # str
 batch_size: 8 # int
 fix_img_size: True # bool
-return_img_data: False # bool
-include_tensors: False # bool
+return_img_data: True # bool
+include_tensors: True # bool
 path_output: /opt/facetorch/data/output/test.png # Optional[str]
 
 path_image_2: /opt/facetorch/data/input/test3.jpg # str
