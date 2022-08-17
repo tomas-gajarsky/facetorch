@@ -171,10 +171,11 @@ Run the Docker container:
 
 ### Add predictor
 #### Prerequisites
-1. File of the TorchScript model
-2. Google Drive file ID of the model
+1. file of the TorchScript model
+2. ID of the Google Drive model file
+3. facetorch [fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
 
-Facetorch works with models that were exported from PyTorch to TorchScript. You can apply [torch.jit.trace](https://pytorch.org/docs/stable/generated/torch.jit.trace.html) function to compile a PyTorch model as a TorchScript module.
+Facetorch works with models that were exported from PyTorch to TorchScript. You can apply [torch.jit.trace](https://pytorch.org/docs/stable/generated/torch.jit.trace.html) function to compile a PyTorch model as a TorchScript module. Please verify that the output of the traced model equals the output of the original model.
 
 The first models are hosted on my [public Google Drive folder](https://drive.google.com/drive/folders/19qlklR18wYfFsCChQ78it10XciuTzbDM?usp=sharing). You can either send the new model for upload to me, host the model on your 
 Google Drive or host it somewhere else and add your own downloader object to the codebase.
