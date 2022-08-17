@@ -13,7 +13,8 @@ Released on August 15, 2022.
 
 ### TODO
 * select relevant Retinaface landmarks
-
+* measure align on GPU
+* add SynergyNet post processing
 
 ## 0.0.8
 
