@@ -40,9 +40,9 @@ class ImageReader(BaseReader):
         Returns:
             ImageData: ImageData object with image tensor and pil Image.
         """
-        data = ImageData(path=path_image)
+        data = ImageData(path_input=path_image)
         data.img = torchvision.io.read_image(
-            data.path, mode=torchvision.io.ImageReadMode.RGB
+            data.path_input, mode=torchvision.io.ImageReadMode.RGB
         )
         data.img = data.img.unsqueeze(0)
         data.img = data.img.to(self.device)

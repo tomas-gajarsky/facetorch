@@ -196,3 +196,34 @@ class BaseModel(object, metaclass=ABCMeta):
         - self.postprocessor.run
 
         """
+
+class BaseUtilizer(BaseProcessor):
+    def __init__(
+        self,
+        transform: transforms.Compose,
+        device: torch.device,
+        optimize_transform: bool,
+        **kwargs
+    ):
+        """FaceUtilizer is a processor that utilizes ImageData to do any kind of work that requires multiple data points about to image for example, drawing, summarizing, etc.
+
+        Args:
+            transform (Compose): Composed Torch transform object.
+            device (torch.device): Torch device cpu or cuda object.
+            optimize_transform (bool): Whether to optimize the transform.
+        """
+        self.__dict__.update(kwargs)
+        super().__init__(transform, device, optimize_transform)
+
+    @abstractmethod
+    def run(self, data: ImageData) -> ImageData:
+        """Runs utility function on the ImageData object.
+
+        Args:
+            data (ImageData): ImageData object containing most of the data including the predictions.
+
+        Returns:
+            ImageData: ImageData object containing the same data as input or modified object.
+        """
+
+        return data

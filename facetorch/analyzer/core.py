@@ -6,7 +6,6 @@ from codetiming import Timer
 from facetorch.analyzer.predictor.core import FacePredictor
 from facetorch.datastruct import ImageData, Response
 from facetorch.logger import LoggerJsonFile
-from facetorch.utils import draw_boxes_and_save
 from hydra.utils import instantiate
 from omegaconf import OmegaConf
 
@@ -22,7 +21,8 @@ class FaceAnalyzer(object):
         1. Reader - reads the image and returns an ImageData object containing the image tensor.
         2. Detector - wrapper around a neural network that detects faces.
         3. Unifier - processor that unifies sizes of all faces and normalizes them between 0 and 1.
-        4. Predictor list - list of wrappers around models trained to analyze facial features for example, expressions.
+        4. Predictor dict - dict of wrappers around models trained to analyze facial features for example, expressions.
+        4. Utilizer dict - dict of utilizer processors that for example, can be used to extract 3D face landmarks or draw boxes on the image.
 
         Args:
             cfg (OmegaConf): Config object with image reader, face detector, unifier and predictor configurations.
@@ -57,6 +57,14 @@ class FaceAnalyzer(object):
             self.logger.info(f"Initializing FacePredictor {predictor_name}")
             self.predictors[predictor_name] = instantiate(
                 self.cfg.predictor[predictor_name]
+            )
+
+        self.logger.info("Initializing dictionary of BaseUtilizer objects")
+        self.utilizers = {}
+        for utilizer_name in self.cfg.utilizer:
+            self.logger.info(f"Initializing BaseUtilizer {utilizer_name}")
+            self.utilizers[utilizer_name] = instantiate(
+                self.cfg.utilizer[utilizer_name]
             )
 
     @Timer("FaceAnalyzer.run", "{name}: {milliseconds:.2f} ms", logger.debug)
@@ -120,10 +128,13 @@ class FaceAnalyzer(object):
                 self.logger.info(f"Running FacePredictor: {predictor_name}")
                 data = _predict_batch(data, predictor, predictor_name)
 
-        path_output = None if path_output == "None" else path_output
-        if path_output is not None:
-            self.logger.info("Saving image", extra={"path_output": path_output})
-            draw_boxes_and_save(data, path_output)
+            path_output = None if path_output == "None" else path_output
+            data.path_output = path_output
+
+            self.logger.info("Utilizing facial features")
+            for utilizer_name, utilizer in self.utilizers.items():
+                self.logger.info(f"Running BaseUtilizer: {utilizer_name}")
+                data = utilizer.run(data)
 
         if not include_tensors:
             self.logger.info("Removing tensors")

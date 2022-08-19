@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import torch
 from codetiming import Timer
@@ -81,10 +81,12 @@ class Prediction:
     Attributes:
         label (str): Label of the face given by predictor.
         logits (torch.Tensor): Output of the predictor model for the face.
+        other (Dict): Any other predictions and derivatives for the face.
     """
 
     label: str = field(default_factory=str)
     logits: torch.Tensor = field(default_factory=torch.Tensor)
+    other: Dict = field(default_factory=dict)
 
 
 @dataclass
@@ -133,7 +135,8 @@ class ImageData:
     """The main data class used for passing data between the different facetorch modules.
 
     Attributes:
-        path (str): Path to the image.
+        path_input (str): Path to the input image.
+        path_output (str): Path to the output image.
         img (torch.Tensor): Original image tensor.
         tensor (torch.Tensor): Processed image tensor.
         dims (Dimensions): Dimensions of the image (height, width).
@@ -143,7 +146,8 @@ class ImageData:
 
     """
 
-    path: str = field(default_factory=str)
+    path_input: str = field(default_factory=str)
+    path_output: Optional[str] = field(default_factory=str)
     img: torch.Tensor = field(default_factory=torch.Tensor)
     tensor: torch.Tensor = field(default_factory=torch.Tensor)
     dims: Dimensions = field(default_factory=Dimensions)

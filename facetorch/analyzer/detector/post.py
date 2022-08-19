@@ -259,9 +259,6 @@ class PostRetFace(BaseDetPostProcessor):
                 _dets = _dets[: self.keep_top_k, :]
                 # keep dets with score > score_threshold
                 _dets = _dets[_dets[:, 4] > self.score_threshold]
-                # _dets = torch.stack(
-                #     [det for det in _dets if det[4].item() > self.score_threshold]
-                # )
 
             return _dets
 

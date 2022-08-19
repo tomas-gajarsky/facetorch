@@ -1,10 +1,6 @@
-import os
-
 import omegaconf
 import torch
 import torchvision
-
-from facetorch.datastruct import ImageData
 
 
 def rgb2bgr(tensor: torch.Tensor) -> torch.Tensor:
@@ -19,30 +15,6 @@ def rgb2bgr(tensor: torch.Tensor) -> torch.Tensor:
     """
     assert tensor.shape[1] == 3, "Tensor must have 3 channels."
     return tensor[:, [2, 1, 0]]
-
-
-def draw_boxes_and_save(data: ImageData, path_output: str) -> None:
-    """Draws boxes on an image and saves it to a file.
-
-    Args:
-        data (ImageData): ImageData object containing the image tensor, detections, and faces.
-        path_output (str): Path to the output file.
-
-    Returns:
-        None
-    """
-    os.makedirs(os.path.dirname(path_output), exist_ok=True)
-    loc_tensor = data.aggregate_loc_tensor()
-    labels = [str(face.indx) for face in data.faces]
-    data.img = torchvision.utils.draw_bounding_boxes(
-        image=data.img,
-        boxes=loc_tensor,
-        labels=labels,
-        colors="green",
-        width=3,
-    )
-    pil_image = torchvision.transforms.functional.to_pil_image(data.img)
-    pil_image.save(path_output)
 
 
 def fix_transform_list_attr(
