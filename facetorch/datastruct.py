@@ -195,6 +195,7 @@ class ImageData:
         for i in range(0, len(self.faces)):
             for key in self.faces[i].preds:
                 self.faces[i].preds[key].logits = torch.tensor([])
+                self.faces[i].preds[key].other = {}
 
     def reset_det_tensors(self) -> None:
         """Reset the detection object to empty state."""
