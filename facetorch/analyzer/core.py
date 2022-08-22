@@ -34,7 +34,7 @@ class FaceAnalyzer(object):
             unifier (FaceUnifier): FaceUnifier object that unifies sizes of all faces and normalizes them between 0 and 1.
             predictors (Dict[str, FacePredictor]): Dict of FacePredictor objects that predict facial features. Key is the name of the predictor.
             utilizers (Dict[str, FaceUtilizer]): Dict of FaceUtilizer objects that can be used to extract 3D face landmarks, draw boxes on the image, etc. Key is the name of the utilizer.
-            logger (logging.Logger): Logger object that logs messages.            
+            logger (logging.Logger): Logger object that logs messages.
 
         """
         self.cfg = cfg
@@ -138,7 +138,9 @@ class FaceAnalyzer(object):
                 data = utilizer.run(data)
 
         if not include_tensors:
-            self.logger.info("Removing tensors")
+            self.logger.debug(
+                "Removing tensors from response as include_tensors is False"
+            )
             data.reset_tensors()
 
         response = Response(faces=data.faces, version=data.version)
