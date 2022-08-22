@@ -71,6 +71,10 @@ class Lmk3DMeshPose(BaseUtilizer):
     def run(self, data: ImageData) -> ImageData:
         """Runs the Lmk3DMeshPose class functionality - convert the face parameter vector to 3D landmarks, mesh and pose.
 
+        - landmark [[y, x, z], 68 (points)]
+        - mesh [[y, x, z], 53215 (points)]
+        - pose (Euler angles [yaw, pitch, roll] and translation [y, x, z])
+
         Args:
             data (ImageData): ImageData object containing most of the data including the predictions.
 
