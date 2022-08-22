@@ -7,7 +7,7 @@ from omegaconf import DictConfig
 def main(cfg: DictConfig) -> None:
     analyzer = FaceAnalyzer(cfg.analyzer)
 
-    analyzer.run(
+    response = analyzer.run(
         path_image=cfg.path_image,
         batch_size=cfg.batch_size,
         fix_img_size=cfg.fix_img_size,
@@ -15,6 +15,7 @@ def main(cfg: DictConfig) -> None:
         include_tensors=cfg.include_tensors,
         path_output=cfg.path_output,
     )
+    print(response)
 
 
 if __name__ == "__main__":
