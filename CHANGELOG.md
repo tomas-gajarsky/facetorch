@@ -1,20 +1,17 @@
 # Change Log
 
-## 0.0.9
+## 0.1.0
 
-Released on August 15, 2022.
+Released on August 22, 2022.
 
 ### Added
-* badgets for models with SOTA comparison using papers with code
+* badges for models with SOTA comparison using papers with code
 * predictor for face alignment task - SynergyNet
+* utilizers for face alignment (compute 3d landmarks, mesh and pose) and drawing landmarks
 
 ### Changed
 * default logging level to INFO
-
-### TODO
-* select relevant Retinaface landmarks
-* measure align on GPU
-* add SynergyNet post processing
+* drawing boxes and saving image abstracted to utilizer objects
 
 ## 0.0.8
 
