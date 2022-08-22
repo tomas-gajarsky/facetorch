@@ -39,6 +39,8 @@ def get_requirements(filename: str) -> List[str]:
                 continue
         elif "pytorch-cpu" in line_str:
             line_str = line_str.replace("pytorch-cpu", "torch")
+        elif "matplotlib-base" in line_str:
+            line_str = line_str.replace("matplotlib-base", "matplotlib")
         elif "platforms" in line_str:
             use_line = False
 
@@ -76,7 +78,7 @@ setup_dict = dict(
     python_requires=">=3.9",
     install_requires=get_requirements("environment.yml"),
     tests_require=get_requirements("environment.yml") + ["pytest", "pytest-cov"],
-    setup_requires=['wheel', 'setuptools>=63.4.2'],
+    setup_requires=["wheel", "setuptools>=63.4.2"],
     zip_safe=False,
     license_files=("LICENSE",),
 )
