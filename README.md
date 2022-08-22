@@ -42,6 +42,8 @@ Docker Compose provides an easy way of building a working facetorch environment 
 * CPU: ```docker compose run facetorch python ./scripts/example.py```
 * GPU: ```docker compose run facetorch-gpu python ./scripts/example.py analyzer.device=cuda```
 
+Check *data/output* for resulting images with bounding boxes and facial 3D landmarks.
+
 ### Configure
 
 The project is configured by files located in *conf* with the main file: *conf/config.yaml*.
@@ -54,6 +56,7 @@ FaceAnalyzer is the main class of facetorch as it is the orchestrator responsibl
 3. Unifier - processor that unifies sizes of all faces and normalizes them
     between 0 and 1.
 4. Predictor dict - set of wrappers around neural networks trained to analyze facial features.
+5. Utilizer dict - set of wrappers around any functionality that requires the output of neural networks.
 
 ### Structure
 ```
@@ -66,6 +69,10 @@ analyzer
             ├── fer
             ├── deepfake
             └── align
+    └── utilizer
+            ├── align
+            ├── draw
+            └── save
 ```
 
 
@@ -147,11 +154,9 @@ You can also download the models manually from a [public Google Drive folder](ht
 
 ### Execution time
 
-### v0.0.8
-Image test.jpg (4 faces) is analyzed in about 400ms and test3.jpg (25 faces) in about 1.1s (batch_size=8) on NVIDIA Tesla T4 GPU once the default configuration (*conf/config.yaml*) of models is initialized and pre heated to the initial image size 1080x1080 by the first run. One can monitor the execution times in logs using the DEBUG level.
+Image test.jpg (4 faces) is analyzed (including drawing boxes and landmarks) in about 600ms and test3.jpg (25 faces) in about 1.8s (batch_size=8) on NVIDIA Tesla T4 GPU once the default configuration (*conf/config.yaml*) of models is initialized and pre heated to the initial image size 1080x1080 by the first run. One can monitor the execution times in logs using the DEBUG level.
 
-
-Detailed test.jpg (4 faces) execution times:
+Detailed test.jpg execution times:
 ```
 analyzer
     ├── reader: 27 ms
@@ -160,7 +165,13 @@ analyzer
     └── predictor
             ├── embed: 8 ms
             ├── fer: 22 ms
-            └── deepfake: 109 ms
+            ├── deepfake: 109 ms
+            └── align: 5 ms
+    └── utlizer
+            ├── align: 8 ms
+            ├── draw_boxes: 22 ms
+            ├── draw_landmarks: 152 ms
+            └── save: 0 ms
 ```
 
 
@@ -195,6 +206,7 @@ Google Drive or host it somewhere else and add your own downloader object to the
 to match the requirements of the new model.
 3. Select the postprocessor (or implement a new one based on BasePredPostProcessor) and specify it's parameters e.g. labels in the yaml file to match 
 the requirements of the new model.
+4. (Optional) Add BaseUtilizer derivative that uses output of your model to perform some additional actions.
 
 ##### Configure tests
 1. Add a new predictor to the main *config.yaml* and all *tests.config.n.yaml* files. Alternatively, create a new config file e.g. 
