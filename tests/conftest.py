@@ -43,6 +43,15 @@ def pytest_configure(config):
         "markers", "align: mark tests related to Face Alignment Predictor"
     )
     config.addinivalue_line(
+        "markers", "utilizer: mark tests related to the BaseUtilizer"
+    )
+    config.addinivalue_line(
+        "markers", "draw: mark tests related to the BoxDrawer utilizer"
+    )
+    config.addinivalue_line(
+        "markers", "save: mark tests related to the ImageSaver utilizer"
+    )
+    config.addinivalue_line(
         "markers", "downloader: mark tests related to the BaseDownloader"
     )
     config.addinivalue_line("markers", "model: mark tests related to the BaseModel")
