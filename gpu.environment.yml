@@ -7,6 +7,7 @@ dependencies:
   - googleapis-common-protos>=1.56.3
   - gdown>=3.11.0
   - hydra-core>=1.0.0
+  - matplotlib-base>=3.3.0
   - numpy>=1.18.2
   - pip>=20.0.2
   - python-json-logger>=2.0.0
