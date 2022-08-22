@@ -22,7 +22,7 @@ class FaceAnalyzer(object):
         2. Detector - wrapper around a neural network that detects faces.
         3. Unifier - processor that unifies sizes of all faces and normalizes them between 0 and 1.
         4. Predictor dict - dict of wrappers around models trained to analyze facial features for example, expressions.
-        4. Utilizer dict - dict of utilizer processors that for example, can be used to extract 3D face landmarks or draw boxes on the image.
+        5. Utilizer dict - dict of utilizer processors that can be for example used to extract 3D face landmarks or draw boxes on the image.
 
         Args:
             cfg (OmegaConf): Config object with image reader, face detector, unifier and predictor configurations.
@@ -33,7 +33,8 @@ class FaceAnalyzer(object):
             detector (FaceDetector): FaceDetector object that wraps a neural network that detects faces.
             unifier (FaceUnifier): FaceUnifier object that unifies sizes of all faces and normalizes them between 0 and 1.
             predictors (Dict[str, FacePredictor]): Dict of FacePredictor objects that predict facial features. Key is the name of the predictor.
-            logger (logging.Logger): Logger object that logs messages.
+            utilizers (Dict[str, FaceUtilizer]): Dict of FaceUtilizer objects that can be used to extract 3D face landmarks, draw boxes on the image, etc. Key is the name of the utilizer.
+            logger (logging.Logger): Logger object that logs messages.            
 
         """
         self.cfg = cfg
