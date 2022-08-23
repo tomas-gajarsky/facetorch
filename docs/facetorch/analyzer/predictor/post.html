@@ -114,7 +114,6 @@ class PostArgMax(BasePredPostProcessor):
         optimize_transform: bool,
         labels: List[str],
         dim: int,
-        **kwargs
     ):
         &#34;&#34;&#34;Initialize the predictor postprocessor that runs argmax on the prediction tensor and returns a list of prediction data structures.
 
@@ -125,7 +124,6 @@ class PostArgMax(BasePredPostProcessor):
             labels (List[str]): List of labels.
             dim (int): Dimension of the prediction.
         &#34;&#34;&#34;
-        self.__dict__.update(kwargs)
         super().__init__(transform, device, optimize_transform, labels)
         self.dim = dim
 
@@ -154,7 +152,6 @@ class PostSigmoidBinary(BasePredPostProcessor):
         optimize_transform: bool,
         labels: List[str],
         threshold: float = 0.5,
-        **kwargs
     ):
         &#34;&#34;&#34;Initialize the predictor postprocessor that runs sigmoid on the prediction tensor and returns a list of prediction data structures.
 
@@ -165,7 +162,6 @@ class PostSigmoidBinary(BasePredPostProcessor):
             labels (List[str]): List of labels.
             threshold (float): Probability threshold for positive class.
         &#34;&#34;&#34;
-        self.__dict__.update(kwargs)
         super().__init__(transform, device, optimize_transform, labels)
         self.threshold = threshold
 
@@ -195,7 +191,6 @@ class PostEmbedder(BasePredPostProcessor):
         device: torch.device,
         optimize_transform: bool,
         labels: List[str],
-        **kwargs
     ):
         &#34;&#34;&#34;Initialize the predictor postprocessor that extracts the embedding from the prediction tensor and returns a list of prediction data structures.
 
@@ -205,7 +200,6 @@ class PostEmbedder(BasePredPostProcessor):
             optimize_transform (bool): Whether to optimize the transform using TorchScript.
             labels (List[str]): List of labels.
         &#34;&#34;&#34;
-        self.__dict__.update(kwargs)
         super().__init__(transform, device, optimize_transform, labels)
 
     @Timer(&#34;PostEmbedder.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
@@ -430,7 +424,7 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
 </dd>
 <dt id="facetorch.analyzer.predictor.post.PostArgMax"><code class="flex name class">
 <span>class <span class="ident">PostArgMax</span></span>
-<span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool, labels: List[str], dim: int, **kwargs)</span>
+<span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool, labels: List[str], dim: int)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Initialize the predictor postprocessor that runs argmax on the prediction tensor and returns a list of prediction data structures.</p>
@@ -460,7 +454,6 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
         optimize_transform: bool,
         labels: List[str],
         dim: int,
-        **kwargs
     ):
         &#34;&#34;&#34;Initialize the predictor postprocessor that runs argmax on the prediction tensor and returns a list of prediction data structures.
 
@@ -471,7 +464,6 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
             labels (List[str]): List of labels.
             dim (int): Dimension of the prediction.
         &#34;&#34;&#34;
-        self.__dict__.update(kwargs)
         super().__init__(transform, device, optimize_transform, labels)
         self.dim = dim
 
@@ -545,7 +537,7 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
 </dd>
 <dt id="facetorch.analyzer.predictor.post.PostSigmoidBinary"><code class="flex name class">
 <span>class <span class="ident">PostSigmoidBinary</span></span>
-<span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool, labels: List[str], threshold: float = 0.5, **kwargs)</span>
+<span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool, labels: List[str], threshold: float = 0.5)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Initialize the predictor postprocessor that runs sigmoid on the prediction tensor and returns a list of prediction data structures.</p>
@@ -575,7 +567,6 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         optimize_transform: bool,
         labels: List[str],
         threshold: float = 0.5,
-        **kwargs
     ):
         &#34;&#34;&#34;Initialize the predictor postprocessor that runs sigmoid on the prediction tensor and returns a list of prediction data structures.
 
@@ -586,7 +577,6 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
             labels (List[str]): List of labels.
             threshold (float): Probability threshold for positive class.
         &#34;&#34;&#34;
-        self.__dict__.update(kwargs)
         super().__init__(transform, device, optimize_transform, labels)
         self.threshold = threshold
 
@@ -666,7 +656,7 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
 </dd>
 <dt id="facetorch.analyzer.predictor.post.PostEmbedder"><code class="flex name class">
 <span>class <span class="ident">PostEmbedder</span></span>
-<span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool, labels: List[str], **kwargs)</span>
+<span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool, labels: List[str])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Initialize the predictor postprocessor that extracts the embedding from the prediction tensor and returns a list of prediction data structures.</p>
@@ -692,7 +682,6 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         device: torch.device,
         optimize_transform: bool,
         labels: List[str],
-        **kwargs
     ):
         &#34;&#34;&#34;Initialize the predictor postprocessor that extracts the embedding from the prediction tensor and returns a list of prediction data structures.
 
@@ -702,7 +691,6 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
             optimize_transform (bool): Whether to optimize the transform using TorchScript.
             labels (List[str]): List of labels.
         &#34;&#34;&#34;
-        self.__dict__.update(kwargs)
         super().__init__(transform, device, optimize_transform, labels)
 
     @Timer(&#34;PostEmbedder.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)

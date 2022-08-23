@@ -223,7 +223,37 @@ class BaseModel(object, metaclass=ABCMeta):
         - self.inference
         - self.postprocessor.run
 
-        &#34;&#34;&#34;</code></pre>
+        &#34;&#34;&#34;
+
+
+class BaseUtilizer(BaseProcessor):
+    def __init__(
+        self,
+        transform: transforms.Compose,
+        device: torch.device,
+        optimize_transform: bool,
+    ):
+        &#34;&#34;&#34;BaseUtilizer is a processor that takes ImageData as input to do any kind of work that requires model predictions for example, drawing, summarizing, etc.
+
+        Args:
+            transform (Compose): Composed Torch transform object.
+            device (torch.device): Torch device cpu or cuda object.
+            optimize_transform (bool): Whether to optimize the transform.
+        &#34;&#34;&#34;
+        super().__init__(transform, device, optimize_transform)
+
+    @abstractmethod
+    def run(self, data: ImageData) -&gt; ImageData:
+        &#34;&#34;&#34;Runs utility function on the ImageData object.
+
+        Args:
+            data (ImageData): ImageData object containing most of the data including the predictions.
+
+        Returns:
+            ImageData: ImageData object containing the same data as input or modified object.
+        &#34;&#34;&#34;
+
+        return data</code></pre>
 </details>
 </section>
 <section>
@@ -309,6 +339,7 @@ All subclass should overwrite:</p>
 <li><a title="facetorch.analyzer.predictor.pre.BasePredPreProcessor" href="analyzer/predictor/pre.html#facetorch.analyzer.predictor.pre.BasePredPreProcessor">BasePredPreProcessor</a></li>
 <li><a title="facetorch.analyzer.unifier.core.FaceUnifier" href="analyzer/unifier/core.html#facetorch.analyzer.unifier.core.FaceUnifier">FaceUnifier</a></li>
 <li><a title="facetorch.base.BaseReader" href="#facetorch.base.BaseReader">BaseReader</a></li>
+<li><a title="facetorch.base.BaseUtilizer" href="#facetorch.base.BaseUtilizer">BaseUtilizer</a></li>
 </ul>
 <h3>Methods</h3>
 <dl>
@@ -739,6 +770,110 @@ def run(self):
 </dd>
 </dl>
 </dd>
+<dt id="facetorch.base.BaseUtilizer"><code class="flex name class">
+<span>class <span class="ident">BaseUtilizer</span></span>
+<span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>BaseUtilizer is a processor that takes ImageData as input to do any kind of work that requires model predictions for example, drawing, summarizing, etc.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>transform</code></strong> :&ensp;<code>Compose</code></dt>
+<dd>Composed Torch transform object.</dd>
+<dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
+<dd>Torch device cpu or cuda object.</dd>
+<dt><strong><code>optimize_transform</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Whether to optimize the transform.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class BaseUtilizer(BaseProcessor):
+    def __init__(
+        self,
+        transform: transforms.Compose,
+        device: torch.device,
+        optimize_transform: bool,
+    ):
+        &#34;&#34;&#34;BaseUtilizer is a processor that takes ImageData as input to do any kind of work that requires model predictions for example, drawing, summarizing, etc.
+
+        Args:
+            transform (Compose): Composed Torch transform object.
+            device (torch.device): Torch device cpu or cuda object.
+            optimize_transform (bool): Whether to optimize the transform.
+        &#34;&#34;&#34;
+        super().__init__(transform, device, optimize_transform)
+
+    @abstractmethod
+    def run(self, data: ImageData) -&gt; ImageData:
+        &#34;&#34;&#34;Runs utility function on the ImageData object.
+
+        Args:
+            data (ImageData): ImageData object containing most of the data including the predictions.
+
+        Returns:
+            ImageData: ImageData object containing the same data as input or modified object.
+        &#34;&#34;&#34;
+
+        return data</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="facetorch.base.BaseProcessor" href="#facetorch.base.BaseProcessor">BaseProcessor</a></li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="facetorch.analyzer.utilizer.align.Lmk3DMeshPose" href="analyzer/utilizer/align.html#facetorch.analyzer.utilizer.align.Lmk3DMeshPose">Lmk3DMeshPose</a></li>
+<li><a title="facetorch.analyzer.utilizer.draw.BoxDrawer" href="analyzer/utilizer/draw.html#facetorch.analyzer.utilizer.draw.BoxDrawer">BoxDrawer</a></li>
+<li><a title="facetorch.analyzer.utilizer.draw.LandmarkDrawer" href="analyzer/utilizer/draw.html#facetorch.analyzer.utilizer.draw.LandmarkDrawer">LandmarkDrawer</a></li>
+<li><a title="facetorch.analyzer.utilizer.save.ImageSaver" href="analyzer/utilizer/save.html#facetorch.analyzer.utilizer.save.ImageSaver">ImageSaver</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="facetorch.base.BaseUtilizer.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self, data: <a title="facetorch.datastruct.ImageData" href="datastruct.html#facetorch.datastruct.ImageData">ImageData</a>) ‑> <a title="facetorch.datastruct.ImageData" href="datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Runs utility function on the ImageData object.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>data</code></strong> :&ensp;<code>ImageData</code></dt>
+<dd>ImageData object containing most of the data including the predictions.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>ImageData</code></dt>
+<dd>ImageData object containing the same data as input or modified object.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def run(self, data: ImageData) -&gt; ImageData:
+    &#34;&#34;&#34;Runs utility function on the ImageData object.
+
+    Args:
+        data (ImageData): ImageData object containing most of the data including the predictions.
+
+    Returns:
+        ImageData: ImageData object containing the same data as input or modified object.
+    &#34;&#34;&#34;
+
+    return data</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="facetorch.base.BaseProcessor" href="#facetorch.base.BaseProcessor">BaseProcessor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="facetorch.base.BaseProcessor.optimize" href="#facetorch.base.BaseProcessor.optimize">optimize</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
 </dl>
 </section>
 </article>
@@ -826,6 +961,12 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="facetorch.base.BaseModel.load_model" href="#facetorch.base.BaseModel.load_model">load_model</a></code></li>
 <li><code><a title="facetorch.base.BaseModel.inference" href="#facetorch.base.BaseModel.inference">inference</a></code></li>
 <li><code><a title="facetorch.base.BaseModel.run" href="#facetorch.base.BaseModel.run">run</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.base.BaseUtilizer" href="#facetorch.base.BaseUtilizer">BaseUtilizer</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.base.BaseUtilizer.run" href="#facetorch.base.BaseUtilizer.run">run</a></code></li>
 </ul>
 </li>
 </ul>
