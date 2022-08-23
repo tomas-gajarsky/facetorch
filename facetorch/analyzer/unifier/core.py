@@ -14,7 +14,6 @@ class FaceUnifier(BaseProcessor):
         transform: transforms.Compose,
         device: torch.device,
         optimize_transform: bool,
-        **kwargs
     ):
         """FaceUnifier is a transform based processor that can unify sizes of all faces and normalize them between 0 and 1.
 
@@ -23,7 +22,6 @@ class FaceUnifier(BaseProcessor):
             device (torch.device): Torch device cpu or cuda object.
             optimize_transform (bool): Whether to optimize the transform.
         """
-        self.__dict__.update(kwargs)
         super().__init__(transform, device, optimize_transform)
 
     @Timer("FaceUnifier.run", "{name}: {milliseconds:.2f} ms", logger.debug)

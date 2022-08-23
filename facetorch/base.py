@@ -204,16 +204,14 @@ class BaseUtilizer(BaseProcessor):
         transform: transforms.Compose,
         device: torch.device,
         optimize_transform: bool,
-        **kwargs
     ):
-        """FaceUtilizer is a processor that utilizes ImageData to do any kind of work that requires multiple data points about to image for example, drawing, summarizing, etc.
+        """BaseUtilizer is a processor that takes ImageData as input to do any kind of work that requires model predictions for example, drawing, summarizing, etc.
 
         Args:
             transform (Compose): Composed Torch transform object.
             device (torch.device): Torch device cpu or cuda object.
             optimize_transform (bool): Whether to optimize the transform.
         """
-        self.__dict__.update(kwargs)
         super().__init__(transform, device, optimize_transform)
 
     @abstractmethod

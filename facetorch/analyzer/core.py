@@ -15,14 +15,16 @@ logger = LoggerJsonFile().logger
 class FaceAnalyzer(object):
     @Timer("FaceAnalyzer.__init__", "{name}: {milliseconds:.2f} ms", logger.debug)
     def __init__(self, cfg: OmegaConf):
-        """FaceAnalyzer is the main class that reads images and runs face detection, tensor unification, as well as facial feature analysis prediction.
-        It is the orchestrator responsible for initializing and running the following components:
+        """FaceAnalyzer is the main class that reads images, runs face detection, tensor unification and facial feature prediction.
+        It also draws bounding boxes and facial landmarks over the image.
+
+        The following components are used:
 
         1. Reader - reads the image and returns an ImageData object containing the image tensor.
         2. Detector - wrapper around a neural network that detects faces.
         3. Unifier - processor that unifies sizes of all faces and normalizes them between 0 and 1.
-        4. Predictor dict - dict of wrappers around models trained to analyze facial features for example, expressions.
-        5. Utilizer dict - dict of utilizer processors that can be for example used to extract 3D face landmarks or draw boxes on the image.
+        4. Predictor dict - dict of wrappers around neural networks trained to analyze facial features.
+        5. Utilizer dict - dict of utilizer processors that can for example extract 3D face landmarks or draw boxes over the image.
 
         Args:
             cfg (OmegaConf): Config object with image reader, face detector, unifier and predictor configurations.
@@ -33,8 +35,8 @@ class FaceAnalyzer(object):
             detector (FaceDetector): FaceDetector object that wraps a neural network that detects faces.
             unifier (FaceUnifier): FaceUnifier object that unifies sizes of all faces and normalizes them between 0 and 1.
             predictors (Dict[str, FacePredictor]): Dict of FacePredictor objects that predict facial features. Key is the name of the predictor.
-            utilizers (Dict[str, FaceUtilizer]): Dict of FaceUtilizer objects that can be used to extract 3D face landmarks, draw boxes on the image, etc. Key is the name of the utilizer.
-            logger (logging.Logger): Logger object that logs messages.
+            utilizers (Dict[str, FaceUtilizer]): Dict of FaceUtilizer objects that can extract 3D face landmarks, draw boxes over the image, etc. Key is the name of the utilizer.
+            logger (logging.Logger): Logger object that logs messages to the console or to a file.
 
         """
         self.cfg = cfg
@@ -52,7 +54,7 @@ class FaceAnalyzer(object):
         self.logger.info("Initializing FaceUnifier")
         self.unifier = instantiate(self.cfg.unifier)
 
-        self.logger.info("Initializing dictionary of FacePredictor objects")
+        self.logger.info("Initializing FacePredictor objects")
         self.predictors = {}
         for predictor_name in self.cfg.predictor:
             self.logger.info(f"Initializing FacePredictor {predictor_name}")
@@ -60,7 +62,7 @@ class FaceAnalyzer(object):
                 self.cfg.predictor[predictor_name]
             )
 
-        self.logger.info("Initializing dictionary of BaseUtilizer objects")
+        self.logger.info("Initializing BaseUtilizer objects")
         self.utilizers = {}
         for utilizer_name in self.cfg.utilizer:
             self.logger.info(f"Initializing BaseUtilizer {utilizer_name}")

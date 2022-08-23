@@ -18,7 +18,7 @@ class BoxDrawer(BaseUtilizer):
         transform: transforms.Compose,
         device: torch.device,
         optimize_transform: bool,
-        colors: str,
+        color: str,
         line_width: int,
     ):
         """Initializes the BoxDrawer class. This class is used to draw the face boxes to the image tensor.
@@ -27,12 +27,12 @@ class BoxDrawer(BaseUtilizer):
             transform (Compose): Composed Torch transform object.
             device (torch.device): Torch device cpu or cuda object.
             optimize_transform (bool): Whether to optimize the transform.
-            colors (str): Color of the boxes.
+            color (str): Color of the boxes.
             line_width (int): Line width of the boxes.
 
         """
         super().__init__(transform, device, optimize_transform)
-        self.colors = colors
+        self.color = color
         self.line_width = line_width
 
     @Timer("BoxDrawer.run", "{name}: {milliseconds:.2f} ms", logger.debug)
@@ -42,20 +42,7 @@ class BoxDrawer(BaseUtilizer):
         Args:
             data (ImageData): ImageData object containing the image tensor and face locations.
         Returns:
-            ImageData: ImageData object
-        """
-        data = self.draw_boxes(data)
-
-        return data
-
-    def draw_boxes(self, data: ImageData) -> ImageData:
-        """Draws face boxes to the image tensor.
-
-        Args:
-            data (ImageData): ImageData object containing the image tensor, detections, and faces.
-
-        Returns:
-            None
+            ImageData: ImageData object containing the image tensor with face boxes.
         """
         loc_tensor = data.aggregate_loc_tensor()
         labels = [str(face.indx) for face in data.faces]
@@ -63,8 +50,8 @@ class BoxDrawer(BaseUtilizer):
             image=data.img,
             boxes=loc_tensor,
             labels=labels,
-            colors="green",
-            width=3,
+            colors=self.color,
+            width=self.line_width,
         )
 
         return data
@@ -78,7 +65,7 @@ class LandmarkDrawer(BaseUtilizer):
         optimize_transform: bool,
         marker: str,
         markersize: float,
-        alpha: float,
+        opacity: float,
         line_width: float,
         color: str,
         markeredgecolor: str,
@@ -91,7 +78,7 @@ class LandmarkDrawer(BaseUtilizer):
             optimize_transform (bool): Whether to optimize the transform.
             marker (str): Marker type.
             markersize (float): Marker size.
-            alpha (float): Marker alpha.
+            opacity (float): Opacity (transparency) of landmarks.
             line_width (float): Line width.
             color (str): Marker color.
             markeredgecolor (str): Marker edge color.
@@ -100,7 +87,7 @@ class LandmarkDrawer(BaseUtilizer):
         super().__init__(transform, device, optimize_transform)
         self.marker = marker
         self.markersize = markersize
-        self.alpha = alpha
+        self.opacity = opacity
         self.line_width = line_width
         self.color = color
         self.markeredgecolor = markeredgecolor
@@ -112,21 +99,32 @@ class LandmarkDrawer(BaseUtilizer):
         Args:
             data (ImageData): ImageData object containing the image tensor and 3D face landmarks.
         Returns:
-            ImageData: ImageData object
+            ImageData: ImageData object containing the image tensor with 3D face landmarks.
         """
-        data = self.draw_landmarks(data)
+        data = self._draw_landmarks(data)
 
         return data
 
-    def draw_landmarks(self, data: ImageData) -> ImageData:
+    def _draw_landmarks(self, data: ImageData) -> ImageData:
         """Draws 3D face landmarks to the image tensor.
 
         Args:
             data (ImageData): ImageData object containing the image tensor, 3D face landmarks, and faces.
 
         Returns:
-            (ImageData): ImageData object
+            (ImageData): ImageData object containing the image tensor with 3D face landmarks.
         """
+
+        def _plot_close(pts_i, _i1, _i2):
+            """Plots a line between two points."""
+            plt.plot(
+                [pts_i[0, _i1], pts_i[0, _i2]],
+                [pts_i[1, _i1], pts_i[1, _i2]],
+                color=self.color,
+                lw=self.line_width,
+                alpha=self.opacity - 0.1,
+            )
+
         img = data.img.cpu().numpy().transpose(1, 2, 0)
         pts = [face.preds["align"].other["lmk3d"].cpu() for face in data.faces]
 
@@ -145,17 +143,10 @@ class LandmarkDrawer(BaseUtilizer):
                 nums = [0, 17, 22, 27, 31, 36, 42, 48, 60, 68]
 
                 # close eyes and mouths
-                plot_close = lambda i1, i2: plt.plot(
-                    [pts[i][0, i1], pts[i][0, i2]],
-                    [pts[i][1, i1], pts[i][1, i2]],
-                    color=self.color,
-                    lw=self.line_width,
-                    alpha=self.alpha - 0.1,
-                )
-                plot_close(41, 36)
-                plot_close(47, 42)
-                plot_close(59, 48)
-                plot_close(67, 60)
+                _plot_close(pts[i], 41, 36)
+                _plot_close(pts[i], 47, 42)
+                _plot_close(pts[i], 59, 48)
+                _plot_close(pts[i], 67, 60)
 
                 for ind in range(len(nums) - 1):
                     l, r = nums[ind], nums[ind + 1]
@@ -164,7 +155,7 @@ class LandmarkDrawer(BaseUtilizer):
                         pts[i][1, l:r],
                         color=self.color,
                         lw=self.line_width,
-                        alpha=self.alpha - 0.1,
+                        alpha=self.opacity - 0.1,
                     )
 
                     plt.plot(
@@ -175,7 +166,7 @@ class LandmarkDrawer(BaseUtilizer):
                         markersize=self.markersize,
                         color=self.color,
                         markeredgecolor=self.markeredgecolor,
-                        alpha=self.alpha,
+                        alpha=self.opacity,
                     )
 
             canvas = FigureCanvas(fig)

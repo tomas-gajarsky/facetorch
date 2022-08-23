@@ -76,7 +76,7 @@ class Location:
 
 @dataclass
 class Prediction:
-    """Data class for face prediction results.
+    """Data class for face prediction results and derivatives.
 
     Attributes:
         label (str): Label of the face given by predictor.
@@ -136,13 +136,13 @@ class ImageData:
 
     Attributes:
         path_input (str): Path to the input image.
-        path_output (str): Path to the output image.
-        img (torch.Tensor): Original image tensor.
+        path_output (str): Path to the output image where the resulting image is saved.
+        img (torch.Tensor): Original image tensor used for drawing purposes.
         tensor (torch.Tensor): Processed image tensor.
         dims (Dimensions): Dimensions of the image (height, width).
-        det (Detection): Detection data.
-        faces (Dict[int, Face]): Dictionary of faces.
-        version (int): Version of the image.
+        det (Detection): Detection data given by the detector.
+        faces (List[Face]): List of faces in the image.
+        version (int): Version of the facetorch library.
 
     """
 
@@ -166,7 +166,7 @@ class ImageData:
         Args:
             preds_list (List[Prediction]): List of predictions.
             predictor_name (str): Name of the predictor.
-            face_offset (int): Offset of the face index.
+            face_offset (int): Offset of the face index where the predictions are added.
 
         Returns:
             None
@@ -236,11 +236,11 @@ class ImageData:
 
 @dataclass
 class Response:
-    """Data class for response data that is a subset of ImageData.
+    """Data class for response data, which is a subset of ImageData.
 
     Attributes:
-        faces (Dict[int, Face]): Dictionary of faces.
-        version (int): Version of the image.
+        faces (List[Face]): List of faces in the image.
+        version (int): Version of the facetorch library.
 
     """
 

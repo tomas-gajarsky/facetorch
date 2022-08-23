@@ -19,7 +19,6 @@ class Lmk3DMeshPose(BaseUtilizer):
         optimize_transform: bool,
         downloader_meta: BaseDownloader,
         image_size: int = 120,
-        **kwargs
     ):
         """Initializes the Lmk3DMeshPose class. This class is used to convert the face parameter vector to 3D landmarks, mesh and pose.
 
@@ -31,7 +30,6 @@ class Lmk3DMeshPose(BaseUtilizer):
             image_size (int): Standard size of the face image.
 
         """
-        self.__dict__.update(kwargs)
         super().__init__(transform, device, optimize_transform)
 
         self.downloader_meta = downloader_meta
@@ -70,6 +68,8 @@ class Lmk3DMeshPose(BaseUtilizer):
     @Timer("Lmk3DMeshPose.run", "{name}: {milliseconds:.2f} ms", logger.debug)
     def run(self, data: ImageData) -> ImageData:
         """Runs the Lmk3DMeshPose class functionality - convert the face parameter vector to 3D landmarks, mesh and pose.
+
+        Adds the following attributes to the data object:
 
         - landmark [[y, x, z], 68 (points)]
         - mesh [[y, x, z], 53215 (points)]
@@ -137,7 +137,7 @@ class Lmk3DMeshPose(BaseUtilizer):
 
         return [rx, ry, rz]
 
-    def parse_param(self, param: torch.Tensor):
+    def _parse_param(self, param: torch.Tensor):
         """Parses the parameter vector.
 
         Args:
@@ -177,7 +177,7 @@ class Lmk3DMeshPose(BaseUtilizer):
         else:
             raise RuntimeError("length of params mismatch")
 
-        pe, offset, alpha_shp, alpha_exp = self.parse_param(param_)
+        pe, offset, alpha_shp, alpha_exp = self._parse_param(param_)
 
         if dense:
             he = (
@@ -227,10 +227,13 @@ class Lmk3DMeshPose(BaseUtilizer):
     def _parse_pose(
         self, param: torch.Tensor
     ) -> Tuple[torch.Tensor, List[torch.Tensor], torch.Tensor]:
-        """Parses the parameter vector into pose.
+        """Parses the parameter vector to pose data.
 
         Args:
             param (torch.Tensor): Parameter vector.
+
+        Returns:
+            Tuple[torch.Tensor, List[torch.Tensor], torch.Tensor]: Pose data.
         """
         param = param * self.param_std[:62] + self.param_mean[:62]
         param = param[:12].reshape(3, -1)  # camera matrix

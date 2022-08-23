@@ -119,8 +119,7 @@ class PostRetFace(BaseDetPostProcessor):
         reverse_colors: bool = False,
         expand_pixels: int = 0,
     ):
-        """Initialize the detector postprocessor.
-        Modified from: https://github.com/biubug6/Pytorch_Retinaface.
+        """Initialize the detector postprocessor. Modified from https://github.com/biubug6/Pytorch_Retinaface.
 
         Args:
             transform (Compose): Composed Torch transform object.
