@@ -56,7 +56,7 @@ FaceAnalyzer is the main class of facetorch as it is the orchestrator responsibl
 3. Unifier - processor that unifies sizes of all faces and normalizes them
     between 0 and 1.
 4. Predictor dict - set of wrappers around neural networks trained to analyze facial features.
-5. Utilizer dict - set of wrappers around any functionality that requires the output of neural networks.
+5. Utilizer dict - set of wrappers around any functionality that requires the output of neural networks e.g. drawing bounding boxes or facial landmarks.
 
 ### Structure
 ```
