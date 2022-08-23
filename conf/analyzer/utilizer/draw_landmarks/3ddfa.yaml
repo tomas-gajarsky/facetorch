@@ -7,7 +7,7 @@ device:
 optimize_transform: False
 marker: o
 markersize: 0.9
-alpha: 0.8
+opacity: 0.8
 line_width: 0.8
 color: g
 markeredgecolor: green
