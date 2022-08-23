@@ -1,3 +1,4 @@
+import os
 import gdown
 from codetiming import Timer
 
@@ -20,4 +21,5 @@ class DownloaderGDrive(base.BaseDownloader):
     @Timer("DownloaderGDrive.run", "{name}: {milliseconds:.2f} ms", logger.debug)
     def run(self):
         """Downloads a file from Google Drive."""
+        os.makedirs(os.path.dirname(self.path_local), exist_ok=True)
         gdown.download(id=self.file_id, output=self.path_local, quiet=False)

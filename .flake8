@@ -2,5 +2,5 @@
 # exclude directories from being linted
 exclude = internal, venv
 # ignore whitespace before ':'
-ignore = E203, E501
+ignore = E203, E501, W503
 max-line-length = 100

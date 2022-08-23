@@ -1,0 +1,7 @@
+
+_target_: facetorch.analyzer.utilizer.save.ImageSaver
+transform: None
+device:
+  _target_: torch.device
+  type: ${analyzer.device} # str
+optimize_transform: False

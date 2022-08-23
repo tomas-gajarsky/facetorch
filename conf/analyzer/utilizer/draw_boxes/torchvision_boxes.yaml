@@ -1,0 +1,9 @@
+
+_target_: facetorch.analyzer.utilizer.draw.BoxDrawer
+transform: None
+device:
+  _target_: torch.device
+  type: ${analyzer.device} # str
+optimize_transform: False
+color: green
+line_width: 3

@@ -147,8 +147,7 @@ class PostRetFace(BaseDetPostProcessor):
         reverse_colors: bool = False,
         expand_pixels: int = 0,
     ):
-        &#34;&#34;&#34;Initialize the detector postprocessor.
-        Modified from: https://github.com/biubug6/Pytorch_Retinaface.
+        &#34;&#34;&#34;Initialize the detector postprocessor. Modified from https://github.com/biubug6/Pytorch_Retinaface.
 
         Args:
             transform (Compose): Composed Torch transform object.
@@ -287,9 +286,6 @@ class PostRetFace(BaseDetPostProcessor):
                 _dets = _dets[: self.keep_top_k, :]
                 # keep dets with score &gt; score_threshold
                 _dets = _dets[_dets[:, 4] &gt; self.score_threshold]
-                # _dets = torch.stack(
-                #     [det for det in _dets if det[4].item() &gt; self.score_threshold]
-                # )
 
             return _dets
 
@@ -594,8 +590,7 @@ def run(
 <span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool, confidence_threshold: float, top_k: int, nms_threshold: float, keep_top_k: int, score_threshold: float, prior_box: <a title="facetorch.analyzer.detector.post.PriorBox" href="#facetorch.analyzer.detector.post.PriorBox">PriorBox</a>, variance: List[float], reverse_colors: bool = False, expand_pixels: int = 0)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Initialize the detector postprocessor.
-Modified from: <a href="https://github.com/biubug6/Pytorch_Retinaface.">https://github.com/biubug6/Pytorch_Retinaface.</a></p>
+<div class="desc"><p>Initialize the detector postprocessor. Modified from <a href="https://github.com/biubug6/Pytorch_Retinaface.">https://github.com/biubug6/Pytorch_Retinaface.</a></p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>transform</code></strong> :&ensp;<code>Compose</code></dt>
@@ -644,8 +639,7 @@ Modified from: <a href="https://github.com/biubug6/Pytorch_Retinaface.">https://
         reverse_colors: bool = False,
         expand_pixels: int = 0,
     ):
-        &#34;&#34;&#34;Initialize the detector postprocessor.
-        Modified from: https://github.com/biubug6/Pytorch_Retinaface.
+        &#34;&#34;&#34;Initialize the detector postprocessor. Modified from https://github.com/biubug6/Pytorch_Retinaface.
 
         Args:
             transform (Compose): Composed Torch transform object.
@@ -784,9 +778,6 @@ Modified from: <a href="https://github.com/biubug6/Pytorch_Retinaface.">https://
                 _dets = _dets[: self.keep_top_k, :]
                 # keep dets with score &gt; score_threshold
                 _dets = _dets[_dets[:, 4] &gt; self.score_threshold]
-                # _dets = torch.stack(
-                #     [det for det in _dets if det[4].item() &gt; self.score_threshold]
-                # )
 
             return _dets
 

@@ -98,9 +98,9 @@ __all__ = [&#34;ImageReader&#34;]</code></pre>
         Returns:
             ImageData: ImageData object with image tensor and pil Image.
         &#34;&#34;&#34;
-        data = ImageData(path=path_image)
+        data = ImageData(path_input=path_image)
         data.img = torchvision.io.read_image(
-            data.path, mode=torchvision.io.ImageReadMode.RGB
+            data.path_input, mode=torchvision.io.ImageReadMode.RGB
         )
         data.img = data.img.unsqueeze(0)
         data.img = data.img.to(self.device)
@@ -153,9 +153,9 @@ def run(self, path_image: str, fix_img_size: bool = False) -&gt; ImageData:
     Returns:
         ImageData: ImageData object with image tensor and pil Image.
     &#34;&#34;&#34;
-    data = ImageData(path=path_image)
+    data = ImageData(path_input=path_image)
     data.img = torchvision.io.read_image(
-        data.path, mode=torchvision.io.ImageReadMode.RGB
+        data.path_input, mode=torchvision.io.ImageReadMode.RGB
     )
     data.img = data.img.unsqueeze(0)
     data.img = data.img.to(self.device)

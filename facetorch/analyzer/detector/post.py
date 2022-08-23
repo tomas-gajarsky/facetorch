@@ -119,8 +119,7 @@ class PostRetFace(BaseDetPostProcessor):
         reverse_colors: bool = False,
         expand_pixels: int = 0,
     ):
-        """Initialize the detector postprocessor.
-        Modified from: https://github.com/biubug6/Pytorch_Retinaface.
+        """Initialize the detector postprocessor. Modified from https://github.com/biubug6/Pytorch_Retinaface.
 
         Args:
             transform (Compose): Composed Torch transform object.
@@ -259,9 +258,6 @@ class PostRetFace(BaseDetPostProcessor):
                 _dets = _dets[: self.keep_top_k, :]
                 # keep dets with score > score_threshold
                 _dets = _dets[_dets[:, 4] > self.score_threshold]
-                # _dets = torch.stack(
-                #     [det for det in _dets if det[4].item() > self.score_threshold]
-                # )
 
             return _dets
 

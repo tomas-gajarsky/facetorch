@@ -50,7 +50,7 @@ __all__ = [&#34;FaceUnifier&#34;]</code></pre>
 <dl>
 <dt id="facetorch.analyzer.unifier.FaceUnifier"><code class="flex name class">
 <span>class <span class="ident">FaceUnifier</span></span>
-<span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool, **kwargs)</span>
+<span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>FaceUnifier is a transform based processor that can unify sizes of all faces and normalize them between 0 and 1.</p>
@@ -73,7 +73,6 @@ __all__ = [&#34;FaceUnifier&#34;]</code></pre>
         transform: transforms.Compose,
         device: torch.device,
         optimize_transform: bool,
-        **kwargs
     ):
         &#34;&#34;&#34;FaceUnifier is a transform based processor that can unify sizes of all faces and normalize them between 0 and 1.
 
@@ -82,7 +81,6 @@ __all__ = [&#34;FaceUnifier&#34;]</code></pre>
             device (torch.device): Torch device cpu or cuda object.
             optimize_transform (bool): Whether to optimize the transform.
         &#34;&#34;&#34;
-        self.__dict__.update(kwargs)
         super().__init__(transform, device, optimize_transform)
 
     @Timer(&#34;FaceUnifier.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)

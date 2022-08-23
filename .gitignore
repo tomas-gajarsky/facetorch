@@ -109,3 +109,4 @@ cython_debug/
 models/
 outputs/
 tests/data/output/
+data/3dmm/

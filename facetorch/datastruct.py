@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import torch
 from codetiming import Timer
@@ -76,15 +76,17 @@ class Location:
 
 @dataclass
 class Prediction:
-    """Data class for face prediction results.
+    """Data class for face prediction results and derivatives.
 
     Attributes:
         label (str): Label of the face given by predictor.
         logits (torch.Tensor): Output of the predictor model for the face.
+        other (Dict): Any other predictions and derivatives for the face.
     """
 
     label: str = field(default_factory=str)
     logits: torch.Tensor = field(default_factory=torch.Tensor)
+    other: Dict = field(default_factory=dict)
 
 
 @dataclass
@@ -133,17 +135,19 @@ class ImageData:
     """The main data class used for passing data between the different facetorch modules.
 
     Attributes:
-        path (str): Path to the image.
-        img (torch.Tensor): Original image tensor.
+        path_input (str): Path to the input image.
+        path_output (str): Path to the output image where the resulting image is saved.
+        img (torch.Tensor): Original image tensor used for drawing purposes.
         tensor (torch.Tensor): Processed image tensor.
         dims (Dimensions): Dimensions of the image (height, width).
-        det (Detection): Detection data.
-        faces (Dict[int, Face]): Dictionary of faces.
-        version (int): Version of the image.
+        det (Detection): Detection data given by the detector.
+        faces (List[Face]): List of faces in the image.
+        version (int): Version of the facetorch library.
 
     """
 
-    path: str = field(default_factory=str)
+    path_input: str = field(default_factory=str)
+    path_output: Optional[str] = field(default_factory=str)
     img: torch.Tensor = field(default_factory=torch.Tensor)
     tensor: torch.Tensor = field(default_factory=torch.Tensor)
     dims: Dimensions = field(default_factory=Dimensions)
@@ -162,7 +166,7 @@ class ImageData:
         Args:
             preds_list (List[Prediction]): List of predictions.
             predictor_name (str): Name of the predictor.
-            face_offset (int): Offset of the face index.
+            face_offset (int): Offset of the face index where the predictions are added.
 
         Returns:
             None
@@ -191,6 +195,7 @@ class ImageData:
         for i in range(0, len(self.faces)):
             for key in self.faces[i].preds:
                 self.faces[i].preds[key].logits = torch.tensor([])
+                self.faces[i].preds[key].other = {}
 
     def reset_det_tensors(self) -> None:
         """Reset the detection object to empty state."""
@@ -231,11 +236,11 @@ class ImageData:
 
 @dataclass
 class Response:
-    """Data class for response data that is a subset of ImageData.
+    """Data class for response data, which is a subset of ImageData.
 
     Attributes:
-        faces (Dict[int, Face]): Dictionary of faces.
-        version (int): Version of the image.
+        faces (List[Face]): List of faces in the image.
+        version (int): Version of the facetorch library.
 
     """
 

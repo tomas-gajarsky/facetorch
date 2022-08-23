@@ -1,5 +1,18 @@
 # Change Log
 
+## 0.1.0
+
+Released on August 22, 2022.
+
+### Added
+* badges for models with SOTA comparison using papers with code
+* predictor for face alignment task - SynergyNet
+* utilizers for face alignment (compute 3d landmarks, mesh and pose) and drawing landmarks
+
+### Changed
+* default logging level to INFO
+* drawing boxes and saving image abstracted to utilizer objects
+
 ## 0.0.8
 
 Released on August 12, 2022.

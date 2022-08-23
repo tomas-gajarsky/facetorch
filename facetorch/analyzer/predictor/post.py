@@ -86,7 +86,6 @@ class PostArgMax(BasePredPostProcessor):
         optimize_transform: bool,
         labels: List[str],
         dim: int,
-        **kwargs
     ):
         """Initialize the predictor postprocessor that runs argmax on the prediction tensor and returns a list of prediction data structures.
 
@@ -97,7 +96,6 @@ class PostArgMax(BasePredPostProcessor):
             labels (List[str]): List of labels.
             dim (int): Dimension of the prediction.
         """
-        self.__dict__.update(kwargs)
         super().__init__(transform, device, optimize_transform, labels)
         self.dim = dim
 
@@ -126,7 +124,6 @@ class PostSigmoidBinary(BasePredPostProcessor):
         optimize_transform: bool,
         labels: List[str],
         threshold: float = 0.5,
-        **kwargs
     ):
         """Initialize the predictor postprocessor that runs sigmoid on the prediction tensor and returns a list of prediction data structures.
 
@@ -137,7 +134,6 @@ class PostSigmoidBinary(BasePredPostProcessor):
             labels (List[str]): List of labels.
             threshold (float): Probability threshold for positive class.
         """
-        self.__dict__.update(kwargs)
         super().__init__(transform, device, optimize_transform, labels)
         self.threshold = threshold
 
@@ -167,7 +163,6 @@ class PostEmbedder(BasePredPostProcessor):
         device: torch.device,
         optimize_transform: bool,
         labels: List[str],
-        **kwargs
     ):
         """Initialize the predictor postprocessor that extracts the embedding from the prediction tensor and returns a list of prediction data structures.
 
@@ -177,7 +172,6 @@ class PostEmbedder(BasePredPostProcessor):
             optimize_transform (bool): Whether to optimize the transform using TorchScript.
             labels (List[str]): List of labels.
         """
-        self.__dict__.update(kwargs)
         super().__init__(transform, device, optimize_transform, labels)
 
     @Timer("PostEmbedder.run", "{name}: {milliseconds:.2f} ms", logger.debug)

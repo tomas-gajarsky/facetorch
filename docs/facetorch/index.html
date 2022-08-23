@@ -1,7 +1,6 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta name="google-site-verification" content="YIhgkma200wIq_XsAUQ9zFq2isMAdB5CUSrzqys38y4" />
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
@@ -77,13 +76,15 @@ __all__ = [&#34;FaceAnalyzer&#34;]</code></pre>
 <span>(</span><span>cfg: omegaconf.omegaconf.OmegaConf)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>FaceAnalyzer is the main class that reads images and runs face detection, tensor unification, as well as facial feature analysis prediction.
-It is the orchestrator responsible for initializing and running the following components:</p>
+<div class="desc"><p>FaceAnalyzer is the main class that reads images, runs face detection, tensor unification and facial feature prediction.
+It also draws bounding boxes and facial landmarks over the image.</p>
+<p>The following components are used:</p>
 <ol>
 <li>Reader - reads the image and returns an ImageData object containing the image tensor.</li>
 <li>Detector - wrapper around a neural network that detects faces.</li>
 <li>Unifier - processor that unifies sizes of all faces and normalizes them between 0 and 1.</li>
-<li>Predictor list - list of wrappers around models trained to analyze facial features for example, expressions.</li>
+<li>Predictor dict - dict of wrappers around neural networks trained to analyze facial features.</li>
+<li>Utilizer dict - dict of utilizer processors that can for example extract 3D face landmarks or draw boxes over the image.</li>
 </ol>
 <h2 id="args">Args</h2>
 <dl>
@@ -102,8 +103,10 @@ It is the orchestrator responsible for initializing and running the following co
 <dd>FaceUnifier object that unifies sizes of all faces and normalizes them between 0 and 1.</dd>
 <dt><strong><code>predictors</code></strong> :&ensp;<code>Dict[str, FacePredictor]</code></dt>
 <dd>Dict of FacePredictor objects that predict facial features. Key is the name of the predictor.</dd>
+<dt><strong><code>utilizers</code></strong> :&ensp;<code>Dict[str, FaceUtilizer]</code></dt>
+<dd>Dict of FaceUtilizer objects that can extract 3D face landmarks, draw boxes over the image, etc. Key is the name of the utilizer.</dd>
 <dt><strong><code>logger</code></strong> :&ensp;<code>logging.Logger</code></dt>
-<dd>Logger object that logs messages.</dd>
+<dd>Logger object that logs messages to the console or to a file.</dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -112,13 +115,16 @@ It is the orchestrator responsible for initializing and running the following co
 <pre><code class="python">class FaceAnalyzer(object):
     @Timer(&#34;FaceAnalyzer.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
     def __init__(self, cfg: OmegaConf):
-        &#34;&#34;&#34;FaceAnalyzer is the main class that reads images and runs face detection, tensor unification, as well as facial feature analysis prediction.
-        It is the orchestrator responsible for initializing and running the following components:
+        &#34;&#34;&#34;FaceAnalyzer is the main class that reads images, runs face detection, tensor unification and facial feature prediction.
+        It also draws bounding boxes and facial landmarks over the image.
+
+        The following components are used:
 
         1. Reader - reads the image and returns an ImageData object containing the image tensor.
         2. Detector - wrapper around a neural network that detects faces.
         3. Unifier - processor that unifies sizes of all faces and normalizes them between 0 and 1.
-        4. Predictor list - list of wrappers around models trained to analyze facial features for example, expressions.
+        4. Predictor dict - dict of wrappers around neural networks trained to analyze facial features.
+        5. Utilizer dict - dict of utilizer processors that can for example extract 3D face landmarks or draw boxes over the image.
 
         Args:
             cfg (OmegaConf): Config object with image reader, face detector, unifier and predictor configurations.
@@ -129,7 +135,8 @@ It is the orchestrator responsible for initializing and running the following co
             detector (FaceDetector): FaceDetector object that wraps a neural network that detects faces.
             unifier (FaceUnifier): FaceUnifier object that unifies sizes of all faces and normalizes them between 0 and 1.
             predictors (Dict[str, FacePredictor]): Dict of FacePredictor objects that predict facial features. Key is the name of the predictor.
-            logger (logging.Logger): Logger object that logs messages.
+            utilizers (Dict[str, FaceUtilizer]): Dict of FaceUtilizer objects that can extract 3D face landmarks, draw boxes over the image, etc. Key is the name of the utilizer.
+            logger (logging.Logger): Logger object that logs messages to the console or to a file.
 
         &#34;&#34;&#34;
         self.cfg = cfg
@@ -147,12 +154,20 @@ It is the orchestrator responsible for initializing and running the following co
         self.logger.info(&#34;Initializing FaceUnifier&#34;)
         self.unifier = instantiate(self.cfg.unifier)
 
-        self.logger.info(&#34;Initializing dictionary of FacePredictor objects&#34;)
+        self.logger.info(&#34;Initializing FacePredictor objects&#34;)
         self.predictors = {}
         for predictor_name in self.cfg.predictor:
             self.logger.info(f&#34;Initializing FacePredictor {predictor_name}&#34;)
             self.predictors[predictor_name] = instantiate(
                 self.cfg.predictor[predictor_name]
+            )
+
+        self.logger.info(&#34;Initializing BaseUtilizer objects&#34;)
+        self.utilizers = {}
+        for utilizer_name in self.cfg.utilizer:
+            self.logger.info(f&#34;Initializing BaseUtilizer {utilizer_name}&#34;)
+            self.utilizers[utilizer_name] = instantiate(
+                self.cfg.utilizer[utilizer_name]
             )
 
     @Timer(&#34;FaceAnalyzer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
@@ -216,13 +231,18 @@ It is the orchestrator responsible for initializing and running the following co
                 self.logger.info(f&#34;Running FacePredictor: {predictor_name}&#34;)
                 data = _predict_batch(data, predictor, predictor_name)
 
-        path_output = None if path_output == &#34;None&#34; else path_output
-        if path_output is not None:
-            self.logger.info(&#34;Saving image&#34;, extra={&#34;path_output&#34;: path_output})
-            draw_boxes_and_save(data, path_output)
+            path_output = None if path_output == &#34;None&#34; else path_output
+            data.path_output = path_output
+
+            self.logger.info(&#34;Utilizing facial features&#34;)
+            for utilizer_name, utilizer in self.utilizers.items():
+                self.logger.info(f&#34;Running BaseUtilizer: {utilizer_name}&#34;)
+                data = utilizer.run(data)
 
         if not include_tensors:
-            self.logger.info(&#34;Removing tensors&#34;)
+            self.logger.debug(
+                &#34;Removing tensors from response as include_tensors is False&#34;
+            )
             data.reset_tensors()
 
         response = Response(faces=data.faces, version=data.version)
@@ -327,13 +347,18 @@ def run(
             self.logger.info(f&#34;Running FacePredictor: {predictor_name}&#34;)
             data = _predict_batch(data, predictor, predictor_name)
 
-    path_output = None if path_output == &#34;None&#34; else path_output
-    if path_output is not None:
-        self.logger.info(&#34;Saving image&#34;, extra={&#34;path_output&#34;: path_output})
-        draw_boxes_and_save(data, path_output)
+        path_output = None if path_output == &#34;None&#34; else path_output
+        data.path_output = path_output
+
+        self.logger.info(&#34;Utilizing facial features&#34;)
+        for utilizer_name, utilizer in self.utilizers.items():
+            self.logger.info(f&#34;Running BaseUtilizer: {utilizer_name}&#34;)
+            data = utilizer.run(data)
 
     if not include_tensors:
-        self.logger.info(&#34;Removing tensors&#34;)
+        self.logger.debug(
+            &#34;Removing tensors from response as include_tensors is False&#34;
+        )
         data.reset_tensors()
 
     response = Response(faces=data.faces, version=data.version)
@@ -428,7 +453,6 @@ setTimeout(() => input.focus(), 100);
 </nav>
 </main>
 <footer id="footer">
-<p><a href="https://github.com/tomas-gajarsky/facetorch" title="facetorch: detect faces and analyze facial features using neural networks"><cite>facetorch GitHub repository</cite></a></p>
 <p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
 </footer>
 </body>
