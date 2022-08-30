@@ -167,7 +167,7 @@ analyzer
             ├── fer: 22 ms
             ├── deepfake: 109 ms
             └── align: 5 ms
-    └── utlizer
+    └── utilizer
             ├── align: 8 ms
             ├── draw_boxes: 22 ms
             ├── draw_landmarks: 152 ms
