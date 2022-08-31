@@ -118,7 +118,7 @@ analyzer
     * Note: ```include_tensors``` needs to be True in order to include the model prediction in Prediction.logits
 
 
-#### Facial Expression Recognition (FER)
+#### Facial Expression Recognition (fer)
 
     |        fer        |      source    |       license      | version |  
     | ----------------- | -------------- | ------------------ | ------- |
@@ -133,7 +133,7 @@ analyzer
     * B0 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/facial-expression-and-attributes-recognition/facial-expression-recognition-on-acted-facial)](https://paperswithcode.com/sota/facial-expression-recognition-on-acted-facial?p=facial-expression-and-attributes-recognition)
 
 
-#### Deepfake detection (deepfake)
+#### Deepfake Detection (deepfake)
 
     |       deepfake       |      source      |   license   | version |
     | -------------------- | ---------------- | ----------- | ------- |
@@ -143,7 +143,7 @@ analyzer
     * code: [dfdc_deepfake_challenge](https://github.com/selimsef/dfdc_deepfake_challenge)
     * challenge: [Seferbekov - Deepfake Detection Challenge 1st place solution](https://www.kaggle.com/competitions/deepfake-detection-challenge/discussion)
 
-#### Face alignment (align)
+#### Face Alignment (align)
 
     |       align       |      source      |   license   | version |
     | ----------------- | ---------------- | ----------- | ------- |
