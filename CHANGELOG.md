@@ -1,5 +1,13 @@
 # Change Log
 
+## 0.1.1
+
+Released on August 31, 2022.
+
+### Added
+* predictor for face verification task - MagFace+UNPG by Jung et al.
+
+
 ## 0.1.0
 
 Released on August 22, 2022.
