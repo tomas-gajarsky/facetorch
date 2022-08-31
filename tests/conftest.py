@@ -31,7 +31,10 @@ def pytest_configure(config):
         "markers", "predictor: mark tests related to the FacePredictor"
     )
     config.addinivalue_line(
-        "markers", "embed: mark tests related to Face Representation Learning embedder"
+        "markers", "embed: mark tests related to Face Representation Learning Predictor"
+    )
+    config.addinivalue_line(
+        "markers", "verify: mark tests related to Face Verification Predictor"
     )
     config.addinivalue_line(
         "markers", "fer: mark tests related to Facial Expression Recognition Predictor"
