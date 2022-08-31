@@ -46,7 +46,7 @@ Check *data/output* for resulting images with bounding boxes and facial 3D landm
 
 ### Configure
 
-The project is configured by files located in *conf* with the main file: *conf/config.yaml*.
+The project is configured by files located in *conf* with the main file: *conf/config.yaml*. One can easily add or remove modules from the configuration.
 
 ## Components
 FaceAnalyzer is the main class of facetorch as it is the orchestrator responsible for initializing and running the following components:
@@ -66,6 +66,7 @@ analyzer
     ├── unifier
     └── predictor
             ├── embed
+            ├── verify
             ├── fer
             ├── deepfake
             └── align
@@ -93,7 +94,7 @@ analyzer
 
 ### Predictor
 
-#### Facial representation learning (embed)
+#### Facial Representation Learning (embed)
 
     |       embed       |   source   |   license   | version |  
     | ----------------- | ---------- | ----------- | ------- |
@@ -104,8 +105,20 @@ analyzer
     * paper: [Bulat et al. - Pre-training strategies and datasets for facial representation learning](https://arxiv.org/abs/2103.16554)
     * Note: ```include_tensors``` needs to be True in order to include the model prediction in Prediction.logits
 
+#### Face Verification (verify)
 
-#### Facial expression recognition (FER)
+    |    verify     |    source    |      license       | version |  
+    | ------------- |  ----------- | ------------------ | ------- |
+    |  MagFace+UNPG |  Jung-Jun-Uk | Apache License 2.0 |    1    |
+
+1. Jung-Jun-Uk
+    * code: [UNPG](https://github.com/jung-jun-uk/unpg)
+    * paper: [Jung et al. - Unified Negative Pair Generation toward Well-discriminative Feature Space for Face Recognition](https://arxiv.org/abs/2203.11593)
+    * [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/unified-negative-pair-generation-toward-well/face-verification-on-ijb-b)](https://paperswithcode.com/sota/face-verification-on-ijb-b?p=unified-negative-pair-generation-toward-well)
+    * Note: ```include_tensors``` needs to be True in order to include the model prediction in Prediction.logits
+
+
+#### Facial Expression Recognition (fer)
 
     |        fer        |      source    |       license      | version |  
     | ----------------- | -------------- | ------------------ | ------- |
@@ -120,7 +133,7 @@ analyzer
     * B0 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/facial-expression-and-attributes-recognition/facial-expression-recognition-on-acted-facial)](https://paperswithcode.com/sota/facial-expression-recognition-on-acted-facial?p=facial-expression-and-attributes-recognition)
 
 
-#### Deepfake detection (deepfake)
+#### Deepfake Detection (deepfake)
 
     |       deepfake       |      source      |   license   | version |
     | -------------------- | ---------------- | ----------- | ------- |
@@ -130,7 +143,7 @@ analyzer
     * code: [dfdc_deepfake_challenge](https://github.com/selimsef/dfdc_deepfake_challenge)
     * challenge: [Seferbekov - Deepfake Detection Challenge 1st place solution](https://www.kaggle.com/competitions/deepfake-detection-challenge/discussion)
 
-#### Face alignment (align)
+#### Face Alignment (align)
 
     |       align       |      source      |   license   | version |
     | ----------------- | ---------------- | ----------- | ------- |
@@ -154,7 +167,7 @@ You can also download the models manually from a [public Google Drive folder](ht
 
 ### Execution time
 
-Image test.jpg (4 faces) is analyzed (including drawing boxes and landmarks) in about 600ms and test3.jpg (25 faces) in about 1.8s (batch_size=8) on NVIDIA Tesla T4 GPU once the default configuration (*conf/config.yaml*) of models is initialized and pre heated to the initial image size 1080x1080 by the first run. One can monitor the execution times in logs using the DEBUG level.
+Image test.jpg (4 faces) is analyzed (including drawing boxes and landmarks) in about 680ms and test3.jpg (25 faces) in about 2s (batch_size=8) on NVIDIA Tesla T4 GPU once the default configuration (*conf/config.yaml*) of models is initialized and pre heated to the initial image size 1080x1080 by the first run. One can monitor the execution times in logs using the DEBUG level.
 
 Detailed test.jpg execution times:
 ```
@@ -164,14 +177,15 @@ analyzer
     ├── unifier: 1 ms
     └── predictor
             ├── embed: 8 ms
-            ├── fer: 22 ms
-            ├── deepfake: 109 ms
+            ├── verify: 18 ms
+            ├── fer: 28 ms
+            ├── deepfake: 117 ms
             └── align: 5 ms
-    └── utlizer
+    └── utilizer
             ├── align: 8 ms
             ├── draw_boxes: 22 ms
             ├── draw_landmarks: 152 ms
-            └── save: 0 ms
+            └── save: 1 ms
 ```
 
 
