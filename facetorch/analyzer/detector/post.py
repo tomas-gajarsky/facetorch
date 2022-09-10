@@ -117,7 +117,7 @@ class PostRetFace(BaseDetPostProcessor):
         prior_box: PriorBox,
         variance: List[float],
         reverse_colors: bool = False,
-        expand_pixels: int = 0,
+        expand_box_ratio: float = 0.0,
     ):
         """Initialize the detector postprocessor. Modified from https://github.com/biubug6/Pytorch_Retinaface.
 
@@ -133,7 +133,8 @@ class PostRetFace(BaseDetPostProcessor):
             prior_box (PriorBox): PriorBox object.
             variance (List[float]): Prior box variance.
             reverse_colors (bool): Whether to reverse the colors of the image tensor from RGB to BGR or vice versa. If False, the colors remain unchanged. Default: False.
-            expand_pixels (int): Number of pixels to expand the face location and tensor by. Default: 0.
+            expand_box_ratio (float): Expand the box by this ratio. Default: 0.0.
+
         """
         super().__init__(transform, device, optimize_transform)
         self.confidence_threshold = confidence_threshold
@@ -144,7 +145,7 @@ class PostRetFace(BaseDetPostProcessor):
         self.prior_box = prior_box
         self.variance = list(variance)
         self.reverse_colors = reverse_colors
-        self.expand_pixels = expand_pixels
+        self.expand_box_ratio = expand_box_ratio
 
     @Timer("PostRetFace.run", "{name}: {milliseconds:.2f} ms", logger.debug)
     def run(
@@ -285,7 +286,7 @@ class PostRetFace(BaseDetPostProcessor):
                 y2=int(_det[3]),
             )
 
-            loc.expand(amount=self.expand_pixels)
+            loc.expand(amount=self.expand_box_ratio)
             loc.form_square()
 
             return loc
