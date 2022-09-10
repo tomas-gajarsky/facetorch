@@ -58,20 +58,26 @@ class Location:
         else:
             pass
 
-    def expand(self, amount: int) -> None:
+    def expand(self, amount: float) -> None:
         """Expand the location while keeping the center.
 
         Args:
-            amount (int): Amount of pixels to expand the location by.
+            amount (float): Amount to expand the location by in multiples of the original size.
 
         Returns:
             None
         """
-        if amount != 0:
-            self.x1 = self.x1 - amount
-            self.y1 = self.y1 - amount
-            self.x2 = self.x2 + amount
-            self.y2 = self.y2 + amount
+        assert amount >= 0, "Amount must be greater than or equal to 0."
+        # if amount != 0:
+        #     self.x1 = self.x1 - amount
+        #     self.y1 = self.y1 - amount
+        #     self.x2 = self.x2 + amount
+        #     self.y2 = self.y2 + amount
+        if amount != 0.0:
+            self.x1 = self.x1 - int((self.x2 - self.x1) / 2 * amount)
+            self.y1 = self.y1 - int((self.y2 - self.y1) / 2 * amount)
+            self.x2 = self.x2 + int((self.x2 - self.x1) / 2 * amount)
+            self.y2 = self.y2 + int((self.y2 - self.y1) / 2 * amount)
 
 
 @dataclass
