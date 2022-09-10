@@ -1,5 +1,14 @@
 # Change Log
 
+## 0.1.x
+
+Released on ?, 2022.
+
+### Added
+
+* Add face anti spoofing model which does not work very well.
+
+
 ## 0.1.1
 
 Released on August 31, 2022.
