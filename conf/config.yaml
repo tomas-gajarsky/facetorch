@@ -7,6 +7,7 @@ defaults:
   - analyzer/predictor/verify: r100_magface_unpg.yaml
   - analyzer/predictor/fer: efficientnet_b2_8.yaml
   - analyzer/predictor/deepfake: efficientnet_b7.yaml
+  - analyzer/predictor/antispoof: efficientnet_b3_ns.yaml
   - analyzer/predictor/align: synergy_mobilenet_v2.yaml
   - analyzer/utilizer/align: lmk3d_mesh_pose.yaml
   - analyzer/utilizer/draw_boxes: torchvision_boxes.yaml
@@ -20,11 +21,11 @@ main:
 
 debug: true
 
-path_image: /opt/facetorch/data/input/test.jpg # str
-batch_size: 8 # int
-fix_img_size: True # bool
-return_img_data: False # bool
+path_image: /opt/facetorch/data/input/test8.jpg # str
 include_tensors: False # bool
-path_output: /opt/facetorch/data/output/test.png # Optional[str]
+fix_img_size: True # bool
+batch_size: 8 # int
+return_img_data: False # bool
+path_output: /opt/facetorch/data/output/test8.png # Optional[str]
 
 path_image_2: /opt/facetorch/data/input/test3.jpg # str

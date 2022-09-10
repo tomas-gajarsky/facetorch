@@ -16,6 +16,8 @@ preprocessor:
     transforms:
       - _target_: torchvision.transforms.Resize
         size: [120, 120] # List[int]
+      - _target_: torchvision.transforms.CenterCrop
+        size: 120 # int
   device: 
     _target_: torch.device
     type: ${analyzer.predictor.align.device.type}
