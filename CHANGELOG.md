@@ -1,5 +1,16 @@
 # Change Log
 
+## 0.1.2
+
+Released on September x, 2022.
+
+### Added
+* User Guide link in the README.md file.
+
+### Changed
+* Face box Location expand function from adding absolute value to multiplying by a factor.
+
+
 ## 0.1.1
 
 Released on August 31, 2022.
