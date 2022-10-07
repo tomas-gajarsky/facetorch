@@ -157,7 +157,17 @@ analyzer
     * [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/synergy-between-3dmm-and-3d-landmarks-for/face-alignment-on-aflw2000-3d)](https://paperswithcode.com/sota/face-alignment-on-aflw2000-3d?p=synergy-between-3dmm-and-3d-landmarks-for)
     * Note: ```include_tensors``` needs to be True in order to include the model prediction in Prediction.logits
 
+#### Face Anti-Spoofing (antispoof)
 
+! Unfortunately, a good anti-spoofing model with an open license is not available. One model was tested, but it was not good enough on several images with different attack types. Therefore, it is not a part of the main branch.
+It can be tested only from the feature/antispoof branch. [issue](https://github.com/tomas-gajarsky/facetorch/issues/22) !
+
+    |     antispoof     |    source    |       license      | version |  
+    | ----------------- | ------------ | ------------------ | ------- |
+    |  EfficientNet B3  |    ternaus   | Apache License 2.0 |    1    |
+
+1. ternaus
+    * code: [datasouls_antispoof](https://github.com/ternaus/datasouls_antispoof)
 
 ### Model download
 
