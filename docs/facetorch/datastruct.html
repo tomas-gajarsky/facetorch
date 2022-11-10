@@ -86,20 +86,27 @@ class Location:
         else:
             pass
 
-    def expand(self, amount: int) -&gt; None:
+    def expand(self, amount: float) -&gt; None:
         &#34;&#34;&#34;Expand the location while keeping the center.
 
         Args:
-            amount (int): Amount of pixels to expand the location by.
+            amount (float): Amount to expand the location by in multiples of the original size.
+
 
         Returns:
             None
         &#34;&#34;&#34;
-        if amount != 0:
-            self.x1 = self.x1 - amount
-            self.y1 = self.y1 - amount
-            self.x2 = self.x2 + amount
-            self.y2 = self.y2 + amount
+        assert amount &gt;= 0, &#34;Amount must be greater than or equal to 0.&#34;
+        # if amount != 0:
+        #     self.x1 = self.x1 - amount
+        #     self.y1 = self.y1 - amount
+        #     self.x2 = self.x2 + amount
+        #     self.y2 = self.y2 + amount
+        if amount != 0.0:
+            self.x1 = self.x1 - int((self.x2 - self.x1) / 2 * amount)
+            self.y1 = self.y1 - int((self.y2 - self.y1) / 2 * amount)
+            self.x2 = self.x2 + int((self.x2 - self.x1) / 2 * amount)
+            self.y2 = self.y2 + int((self.y2 - self.y1) / 2 * amount)
 
 
 @dataclass
@@ -302,8 +309,7 @@ class Response:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@dataclass
-class Dimensions:
+<pre><code class="python">class Dimensions:
     &#34;&#34;&#34;Data class for image dimensions.
 
     Attributes:
@@ -347,8 +353,7 @@ class Dimensions:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@dataclass
-class Location:
+<pre><code class="python">class Location:
     &#34;&#34;&#34;Data class for face location.
 
     Attributes:
@@ -383,20 +388,27 @@ class Location:
         else:
             pass
 
-    def expand(self, amount: int) -&gt; None:
+    def expand(self, amount: float) -&gt; None:
         &#34;&#34;&#34;Expand the location while keeping the center.
 
         Args:
-            amount (int): Amount of pixels to expand the location by.
+            amount (float): Amount to expand the location by in multiples of the original size.
+
 
         Returns:
             None
         &#34;&#34;&#34;
-        if amount != 0:
-            self.x1 = self.x1 - amount
-            self.y1 = self.y1 - amount
-            self.x2 = self.x2 + amount
-            self.y2 = self.y2 + amount</code></pre>
+        assert amount &gt;= 0, &#34;Amount must be greater than or equal to 0.&#34;
+        # if amount != 0:
+        #     self.x1 = self.x1 - amount
+        #     self.y1 = self.y1 - amount
+        #     self.x2 = self.x2 + amount
+        #     self.y2 = self.y2 + amount
+        if amount != 0.0:
+            self.x1 = self.x1 - int((self.x2 - self.x1) / 2 * amount)
+            self.y1 = self.y1 - int((self.y2 - self.y1) / 2 * amount)
+            self.x2 = self.x2 + int((self.x2 - self.x1) / 2 * amount)
+            self.y2 = self.y2 + int((self.y2 - self.y1) / 2 * amount)</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
@@ -452,14 +464,14 @@ class Location:
 </details>
 </dd>
 <dt id="facetorch.datastruct.Location.expand"><code class="name flex">
-<span>def <span class="ident">expand</span></span>(<span>self, amount: int) ‑> None</span>
+<span>def <span class="ident">expand</span></span>(<span>self, amount: float) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Expand the location while keeping the center.</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>amount</code></strong> :&ensp;<code>int</code></dt>
-<dd>Amount of pixels to expand the location by.</dd>
+<dt><strong><code>amount</code></strong> :&ensp;<code>float</code></dt>
+<dd>Amount to expand the location by in multiples of the original size.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <p>None</p></div>
@@ -467,27 +479,34 @@ class Location:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def expand(self, amount: int) -&gt; None:
+<pre><code class="python">def expand(self, amount: float) -&gt; None:
     &#34;&#34;&#34;Expand the location while keeping the center.
 
     Args:
-        amount (int): Amount of pixels to expand the location by.
+        amount (float): Amount to expand the location by in multiples of the original size.
+
 
     Returns:
         None
     &#34;&#34;&#34;
-    if amount != 0:
-        self.x1 = self.x1 - amount
-        self.y1 = self.y1 - amount
-        self.x2 = self.x2 + amount
-        self.y2 = self.y2 + amount</code></pre>
+    assert amount &gt;= 0, &#34;Amount must be greater than or equal to 0.&#34;
+    # if amount != 0:
+    #     self.x1 = self.x1 - amount
+    #     self.y1 = self.y1 - amount
+    #     self.x2 = self.x2 + amount
+    #     self.y2 = self.y2 + amount
+    if amount != 0.0:
+        self.x1 = self.x1 - int((self.x2 - self.x1) / 2 * amount)
+        self.y1 = self.y1 - int((self.y2 - self.y1) / 2 * amount)
+        self.x2 = self.x2 + int((self.x2 - self.x1) / 2 * amount)
+        self.y2 = self.y2 + int((self.y2 - self.y1) / 2 * amount)</code></pre>
 </details>
 </dd>
 </dl>
 </dd>
 <dt id="facetorch.datastruct.Prediction"><code class="flex name class">
 <span>class <span class="ident">Prediction</span></span>
-<span>(</span><span>label: str = &lt;factory&gt;, logits: torch.Tensor = &lt;factory&gt;, other: Dict = &lt;factory&gt;)</span>
+<span>(</span><span>label: str = &lt;factory&gt;, logits: torch.Tensor = &lt;factory&gt;, other: Dict[~KT, ~VT] = &lt;factory&gt;)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Data class for face prediction results and derivatives.</p>
@@ -504,8 +523,7 @@ class Location:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@dataclass
-class Prediction:
+<pre><code class="python">class Prediction:
     &#34;&#34;&#34;Data class for face prediction results and derivatives.
 
     Attributes:
@@ -528,7 +546,7 @@ class Prediction:
 <dd>
 <div class="desc"></div>
 </dd>
-<dt id="facetorch.datastruct.Prediction.other"><code class="name">var <span class="ident">other</span> : Dict</code></dt>
+<dt id="facetorch.datastruct.Prediction.other"><code class="name">var <span class="ident">other</span> : Dict[~KT, ~VT]</code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -557,8 +575,7 @@ class Prediction:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@dataclass
-class Detection:
+<pre><code class="python">class Detection:
     &#34;&#34;&#34;Data class for detector output.
 
     Attributes:
@@ -625,8 +642,7 @@ class Detection:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@dataclass
-class Face:
+<pre><code class="python">class Face:
     &#34;&#34;&#34;Data class for face attributes.
 
     Attributes:
@@ -702,8 +718,7 @@ class Face:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@dataclass
-class ImageData:
+<pre><code class="python">class ImageData:
     &#34;&#34;&#34;The main data class used for passing data between the different facetorch modules.
 
     Attributes:
@@ -1045,8 +1060,7 @@ def reset_tensors(self) -&gt; None:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@dataclass
-class Response:
+<pre><code class="python">class Response:
     &#34;&#34;&#34;Data class for response data, which is a subset of ImageData.
 
     Attributes:

@@ -45,4 +45,4 @@ postprocessor:
     clip: False
   variance: [0.1, 0.2]
   reverse_colors: ${analyzer.detector.reverse_colors} # True # bool
-  expand_pixels: 4 # int
+  expand_box_ratio: 0.15 # float
