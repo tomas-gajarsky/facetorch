@@ -145,7 +145,7 @@ class PostRetFace(BaseDetPostProcessor):
         prior_box: PriorBox,
         variance: List[float],
         reverse_colors: bool = False,
-        expand_pixels: int = 0,
+        expand_box_ratio: float = 0.0,
     ):
         &#34;&#34;&#34;Initialize the detector postprocessor. Modified from https://github.com/biubug6/Pytorch_Retinaface.
 
@@ -161,7 +161,7 @@ class PostRetFace(BaseDetPostProcessor):
             prior_box (PriorBox): PriorBox object.
             variance (List[float]): Prior box variance.
             reverse_colors (bool): Whether to reverse the colors of the image tensor from RGB to BGR or vice versa. If False, the colors remain unchanged. Default: False.
-            expand_pixels (int): Number of pixels to expand the face location and tensor by. Default: 0.
+            expand_box_ratio (float): Expand the box by this ratio. Default: 0.0.
         &#34;&#34;&#34;
         super().__init__(transform, device, optimize_transform)
         self.confidence_threshold = confidence_threshold
@@ -172,7 +172,7 @@ class PostRetFace(BaseDetPostProcessor):
         self.prior_box = prior_box
         self.variance = list(variance)
         self.reverse_colors = reverse_colors
-        self.expand_pixels = expand_pixels
+        self.expand_box_ratio = expand_box_ratio
 
     @Timer(&#34;PostRetFace.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
     def run(
@@ -313,7 +313,7 @@ class PostRetFace(BaseDetPostProcessor):
                 y2=int(_det[3]),
             )
 
-            loc.expand(amount=self.expand_pixels)
+            loc.expand(amount=self.expand_box_ratio)
             loc.form_square()
 
             return loc
@@ -587,7 +587,7 @@ def run(
 </dd>
 <dt id="facetorch.analyzer.detector.post.PostRetFace"><code class="flex name class">
 <span>class <span class="ident">PostRetFace</span></span>
-<span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool, confidence_threshold: float, top_k: int, nms_threshold: float, keep_top_k: int, score_threshold: float, prior_box: <a title="facetorch.analyzer.detector.post.PriorBox" href="#facetorch.analyzer.detector.post.PriorBox">PriorBox</a>, variance: List[float], reverse_colors: bool = False, expand_pixels: int = 0)</span>
+<span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool, confidence_threshold: float, top_k: int, nms_threshold: float, keep_top_k: int, score_threshold: float, prior_box: <a title="facetorch.analyzer.detector.post.PriorBox" href="#facetorch.analyzer.detector.post.PriorBox">PriorBox</a>, variance: List[float], reverse_colors: bool = False, expand_box_ratio: float = 0.0)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Initialize the detector postprocessor. Modified from <a href="https://github.com/biubug6/Pytorch_Retinaface.">https://github.com/biubug6/Pytorch_Retinaface.</a></p>
@@ -615,8 +615,8 @@ def run(
 <dd>Prior box variance.</dd>
 <dt><strong><code>reverse_colors</code></strong> :&ensp;<code>bool</code></dt>
 <dd>Whether to reverse the colors of the image tensor from RGB to BGR or vice versa. If False, the colors remain unchanged. Default: False.</dd>
-<dt><strong><code>expand_pixels</code></strong> :&ensp;<code>int</code></dt>
-<dd>Number of pixels to expand the face location and tensor by. Default: 0.</dd>
+<dt><strong><code>expand_box_ratio</code></strong> :&ensp;<code>float</code></dt>
+<dd>Expand the box by this ratio. Default: 0.0.</dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -637,7 +637,7 @@ def run(
         prior_box: PriorBox,
         variance: List[float],
         reverse_colors: bool = False,
-        expand_pixels: int = 0,
+        expand_box_ratio: float = 0.0,
     ):
         &#34;&#34;&#34;Initialize the detector postprocessor. Modified from https://github.com/biubug6/Pytorch_Retinaface.
 
@@ -653,7 +653,7 @@ def run(
             prior_box (PriorBox): PriorBox object.
             variance (List[float]): Prior box variance.
             reverse_colors (bool): Whether to reverse the colors of the image tensor from RGB to BGR or vice versa. If False, the colors remain unchanged. Default: False.
-            expand_pixels (int): Number of pixels to expand the face location and tensor by. Default: 0.
+            expand_box_ratio (float): Expand the box by this ratio. Default: 0.0.
         &#34;&#34;&#34;
         super().__init__(transform, device, optimize_transform)
         self.confidence_threshold = confidence_threshold
@@ -664,7 +664,7 @@ def run(
         self.prior_box = prior_box
         self.variance = list(variance)
         self.reverse_colors = reverse_colors
-        self.expand_pixels = expand_pixels
+        self.expand_box_ratio = expand_box_ratio
 
     @Timer(&#34;PostRetFace.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
     def run(
@@ -805,7 +805,7 @@ def run(
                 y2=int(_det[3]),
             )
 
-            loc.expand(amount=self.expand_pixels)
+            loc.expand(amount=self.expand_box_ratio)
             loc.form_square()
 
             return loc
