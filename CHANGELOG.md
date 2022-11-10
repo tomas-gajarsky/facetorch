@@ -1,5 +1,16 @@
 # Change Log
 
+
+## 0.1.2
+
+Released on November 10, 2022.
+
+### Added
+* links to Demo App and User Guide in README.md
+
+### Changed
+* Box expansion method changed from static absolute value to dynamic relative value
+
 ## 0.1.1
 
 Released on August 31, 2022.
