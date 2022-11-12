@@ -40,7 +40,9 @@ logger = LoggerJsonFile().logger
 
 class BasePredPreProcessor(BaseProcessor):
     @Timer(
-        &#34;BasePredPreProcessor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug
+        &#34;BasePredPreProcessor.__init__&#34;,
+        &#34;{name}: {milliseconds:.2f} ms&#34;,
+        logger=logger.debug,
     )
     def __init__(
         self,
@@ -95,7 +97,11 @@ class PredictorPreProcessor(BasePredPreProcessor):
         super().__init__(transform, device, optimize_transform)
         self.reverse_colors = reverse_colors
 
-    @Timer(&#34;PredictorPreProcessor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(
+        &#34;PredictorPreProcessor.run&#34;,
+        &#34;{name}: {milliseconds:.2f} ms&#34;,
+        logger=logger.debug,
+    )
     def run(self, faces: torch.Tensor) -&gt; torch.Tensor:
         &#34;&#34;&#34;Runs the trasform on a batch of face tensors.
 
@@ -150,7 +156,9 @@ image.</dd>
 </summary>
 <pre><code class="python">class BasePredPreProcessor(BaseProcessor):
     @Timer(
-        &#34;BasePredPreProcessor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug
+        &#34;BasePredPreProcessor.__init__&#34;,
+        &#34;{name}: {milliseconds:.2f} ms&#34;,
+        logger=logger.debug,
     )
     def __init__(
         self,
@@ -277,7 +285,11 @@ def run(self, faces: torch.Tensor) -&gt; torch.Tensor:
         super().__init__(transform, device, optimize_transform)
         self.reverse_colors = reverse_colors
 
-    @Timer(&#34;PredictorPreProcessor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(
+        &#34;PredictorPreProcessor.run&#34;,
+        &#34;{name}: {milliseconds:.2f} ms&#34;,
+        logger=logger.debug,
+    )
     def run(self, faces: torch.Tensor) -&gt; torch.Tensor:
         &#34;&#34;&#34;Runs the trasform on a batch of face tensors.
 
@@ -321,7 +333,11 @@ def run(self, faces: torch.Tensor) -&gt; torch.Tensor:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;PredictorPreProcessor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+<pre><code class="python">@Timer(
+    &#34;PredictorPreProcessor.run&#34;,
+    &#34;{name}: {milliseconds:.2f} ms&#34;,
+    logger=logger.debug,
+)
 def run(self, faces: torch.Tensor) -&gt; torch.Tensor:
     &#34;&#34;&#34;Runs the trasform on a batch of face tensors.
 

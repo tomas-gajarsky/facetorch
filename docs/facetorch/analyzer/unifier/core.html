@@ -52,7 +52,7 @@ class FaceUnifier(BaseProcessor):
         &#34;&#34;&#34;
         super().__init__(transform, device, optimize_transform)
 
-    @Timer(&#34;FaceUnifier.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;FaceUnifier.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Runs unifying transform on each face tensor one by one.
 
@@ -112,7 +112,7 @@ class FaceUnifier(BaseProcessor):
         &#34;&#34;&#34;
         super().__init__(transform, device, optimize_transform)
 
-    @Timer(&#34;FaceUnifier.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;FaceUnifier.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Runs unifying transform on each face tensor one by one.
 
@@ -152,7 +152,7 @@ class FaceUnifier(BaseProcessor):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;FaceUnifier.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+<pre><code class="python">@Timer(&#34;FaceUnifier.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
 def run(self, data: ImageData) -&gt; ImageData:
     &#34;&#34;&#34;Runs unifying transform on each face tensor one by one.
 

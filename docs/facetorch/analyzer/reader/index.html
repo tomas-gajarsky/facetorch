@@ -87,7 +87,7 @@ __all__ = [&#34;ImageReader&#34;]</code></pre>
             optimize_transform,
         )
 
-    @Timer(&#34;ImageReader.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;ImageReader.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, path_image: str, fix_img_size: bool = False) -&gt; ImageData:
         &#34;&#34;&#34;Reads an image from a path and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image.
 
@@ -142,7 +142,7 @@ __all__ = [&#34;ImageReader&#34;]</code></pre>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;ImageReader.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+<pre><code class="python">@Timer(&#34;ImageReader.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
 def run(self, path_image: str, fix_img_size: bool = False) -&gt; ImageData:
     &#34;&#34;&#34;Reads an image from a path and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image.
 

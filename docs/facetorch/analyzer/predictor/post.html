@@ -41,7 +41,9 @@ logger = LoggerJsonFile().logger
 
 class BasePredPostProcessor(BaseProcessor):
     @Timer(
-        &#34;BasePredPostProcessor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug
+        &#34;BasePredPostProcessor.__init__&#34;,
+        &#34;{name}: {milliseconds:.2f} ms&#34;,
+        logger=logger.debug,
     )
     def __init__(
         self,
@@ -106,7 +108,7 @@ class BasePredPostProcessor(BaseProcessor):
 
 
 class PostArgMax(BasePredPostProcessor):
-    @Timer(&#34;PostArgMax.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;PostArgMax.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -127,7 +129,7 @@ class PostArgMax(BasePredPostProcessor):
         super().__init__(transform, device, optimize_transform, labels)
         self.dim = dim
 
-    @Timer(&#34;PostArgMax.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;PostArgMax.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         &#34;&#34;&#34;Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
 
@@ -144,7 +146,11 @@ class PostArgMax(BasePredPostProcessor):
 
 
 class PostSigmoidBinary(BasePredPostProcessor):
-    @Timer(&#34;PostSigmoidBinary.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(
+        &#34;PostSigmoidBinary.__init__&#34;,
+        &#34;{name}: {milliseconds:.2f} ms&#34;,
+        logger=logger.debug,
+    )
     def __init__(
         self,
         transform: transforms.Compose,
@@ -165,7 +171,9 @@ class PostSigmoidBinary(BasePredPostProcessor):
         super().__init__(transform, device, optimize_transform, labels)
         self.threshold = threshold
 
-    @Timer(&#34;PostSigmoidBinary.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(
+        &#34;PostSigmoidBinary.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
+    )
     def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         &#34;&#34;&#34;Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
 
@@ -202,7 +210,7 @@ class PostEmbedder(BasePredPostProcessor):
         &#34;&#34;&#34;
         super().__init__(transform, device, optimize_transform, labels)
 
-    @Timer(&#34;PostEmbedder.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;PostEmbedder.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         &#34;&#34;&#34;Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
 
@@ -258,7 +266,9 @@ All subclass should overwrite:</p>
 </summary>
 <pre><code class="python">class BasePredPostProcessor(BaseProcessor):
     @Timer(
-        &#34;BasePredPostProcessor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug
+        &#34;BasePredPostProcessor.__init__&#34;,
+        &#34;{name}: {milliseconds:.2f} ms&#34;,
+        logger=logger.debug,
     )
     def __init__(
         self,
@@ -446,7 +456,7 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class PostArgMax(BasePredPostProcessor):
-    @Timer(&#34;PostArgMax.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;PostArgMax.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -467,7 +477,7 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
         super().__init__(transform, device, optimize_transform, labels)
         self.dim = dim
 
-    @Timer(&#34;PostArgMax.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;PostArgMax.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         &#34;&#34;&#34;Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
 
@@ -508,7 +518,7 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;PostArgMax.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+<pre><code class="python">@Timer(&#34;PostArgMax.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
 def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
     &#34;&#34;&#34;Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
 
@@ -559,7 +569,11 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class PostSigmoidBinary(BasePredPostProcessor):
-    @Timer(&#34;PostSigmoidBinary.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(
+        &#34;PostSigmoidBinary.__init__&#34;,
+        &#34;{name}: {milliseconds:.2f} ms&#34;,
+        logger=logger.debug,
+    )
     def __init__(
         self,
         transform: transforms.Compose,
@@ -580,7 +594,9 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         super().__init__(transform, device, optimize_transform, labels)
         self.threshold = threshold
 
-    @Timer(&#34;PostSigmoidBinary.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(
+        &#34;PostSigmoidBinary.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
+    )
     def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         &#34;&#34;&#34;Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
 
@@ -624,7 +640,9 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;PostSigmoidBinary.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+<pre><code class="python">@Timer(
+    &#34;PostSigmoidBinary.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
+)
 def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
     &#34;&#34;&#34;Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
 
@@ -693,7 +711,7 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         &#34;&#34;&#34;
         super().__init__(transform, device, optimize_transform, labels)
 
-    @Timer(&#34;PostEmbedder.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;PostEmbedder.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         &#34;&#34;&#34;Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
 
@@ -737,7 +755,7 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;PostEmbedder.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+<pre><code class="python">@Timer(&#34;PostEmbedder.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
 def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
     &#34;&#34;&#34;Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
 

@@ -1,7 +1,6 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta name="google-site-verification" content="YIhgkma200wIq_XsAUQ9zFq2isMAdB5CUSrzqys38y4" />
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
@@ -114,7 +113,9 @@ It also draws bounding boxes and facial landmarks over the image.</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class FaceAnalyzer(object):
-    @Timer(&#34;FaceAnalyzer.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(
+        &#34;FaceAnalyzer.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
+    )
     def __init__(self, cfg: OmegaConf):
         &#34;&#34;&#34;FaceAnalyzer is the main class that reads images, runs face detection, tensor unification and facial feature prediction.
         It also draws bounding boxes and facial landmarks over the image.
@@ -171,7 +172,7 @@ It also draws bounding boxes and facial landmarks over the image.</p>
                 self.cfg.utilizer[utilizer_name]
             )
 
-    @Timer(&#34;FaceAnalyzer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;FaceAnalyzer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(
         self,
         path_image: str,
@@ -287,7 +288,7 @@ and returns analyzed data.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;FaceAnalyzer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+<pre><code class="python">@Timer(&#34;FaceAnalyzer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
 def run(
     self,
     path_image: str,

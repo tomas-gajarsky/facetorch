@@ -41,7 +41,9 @@ logger = LoggerJsonFile().logger
 
 class BaseDetPreProcessor(BaseProcessor):
     @Timer(
-        &#34;BaseDetPreProcessor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug
+        &#34;BaseDetPreProcessor.__init__&#34;,
+        &#34;{name}: {milliseconds:.2f} ms&#34;,
+        logger=logger.debug,
     )
     def __init__(
         self,
@@ -80,7 +82,9 @@ class BaseDetPreProcessor(BaseProcessor):
 
 class DetectorPreProcessor(BaseDetPreProcessor):
     @Timer(
-        &#34;DetectorPreProcessor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug
+        &#34;DetectorPreProcessor.__init__&#34;,
+        &#34;{name}: {milliseconds:.2f} ms&#34;,
+        logger=logger.debug,
     )
     def __init__(
         self,
@@ -101,7 +105,9 @@ class DetectorPreProcessor(BaseDetPreProcessor):
         super().__init__(transform, device, optimize_transform)
         self.reverse_colors = reverse_colors
 
-    @Timer(&#34;DetectorPreProcessor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(
+        &#34;DetectorPreProcessor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
+    )
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Run the detector preprocessor on the image tensor in BGR format and return the transformed image tensor.
 
@@ -157,7 +163,9 @@ All subclass should overwrite:</p>
 </summary>
 <pre><code class="python">class BaseDetPreProcessor(BaseProcessor):
     @Timer(
-        &#34;BaseDetPreProcessor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug
+        &#34;BaseDetPreProcessor.__init__&#34;,
+        &#34;{name}: {milliseconds:.2f} ms&#34;,
+        logger=logger.debug,
     )
     def __init__(
         self,
@@ -270,7 +278,9 @@ def run(self, data: ImageData) -&gt; ImageData:
 </summary>
 <pre><code class="python">class DetectorPreProcessor(BaseDetPreProcessor):
     @Timer(
-        &#34;DetectorPreProcessor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug
+        &#34;DetectorPreProcessor.__init__&#34;,
+        &#34;{name}: {milliseconds:.2f} ms&#34;,
+        logger=logger.debug,
     )
     def __init__(
         self,
@@ -291,7 +301,9 @@ def run(self, data: ImageData) -&gt; ImageData:
         super().__init__(transform, device, optimize_transform)
         self.reverse_colors = reverse_colors
 
-    @Timer(&#34;DetectorPreProcessor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(
+        &#34;DetectorPreProcessor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
+    )
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Run the detector preprocessor on the image tensor in BGR format and return the transformed image tensor.
 
@@ -337,7 +349,9 @@ def run(self, data: ImageData) -&gt; ImageData:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;DetectorPreProcessor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+<pre><code class="python">@Timer(
+    &#34;DetectorPreProcessor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
+)
 def run(self, data: ImageData) -&gt; ImageData:
     &#34;&#34;&#34;Run the detector preprocessor on the image tensor in BGR format and return the transformed image tensor.
 

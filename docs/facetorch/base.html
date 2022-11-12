@@ -43,7 +43,9 @@ logger = LoggerJsonFile().logger
 
 
 class BaseProcessor(object, metaclass=ABCMeta):
-    @Timer(&#34;BaseProcessor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(
+        &#34;BaseProcessor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
+    )
     def __init__(
         self,
         transform: Optional[transforms.Compose],
@@ -86,7 +88,7 @@ class BaseProcessor(object, metaclass=ABCMeta):
 
 
 class BaseReader(BaseProcessor):
-    @Timer(&#34;BaseReader.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;BaseReader.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -126,7 +128,9 @@ class BaseReader(BaseProcessor):
 
 
 class BaseDownloader(object, metaclass=ABCMeta):
-    @Timer(&#34;BaseDownloader.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(
+        &#34;BaseDownloader.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
+    )
     def __init__(
         self,
         file_id: str,
@@ -154,7 +158,7 @@ class BaseDownloader(object, metaclass=ABCMeta):
 
 
 class BaseModel(object, metaclass=ABCMeta):
-    @Timer(&#34;BaseModel.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;BaseModel.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def __init__(self, downloader: BaseDownloader, device: torch.device):
         &#34;&#34;&#34;Base class for torch models.
 
@@ -178,7 +182,7 @@ class BaseModel(object, metaclass=ABCMeta):
 
         self.model = self.load_model()
 
-    @Timer(&#34;BaseModel.load_model&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;BaseModel.load_model&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def load_model(self) -&gt; Union[torch.jit.ScriptModule, torch.jit.TracedModule]:
         &#34;&#34;&#34;Loads the TorchScript model.
 
@@ -194,7 +198,7 @@ class BaseModel(object, metaclass=ABCMeta):
 
         return model
 
-    @Timer(&#34;BaseModel.inference&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;BaseModel.inference&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def inference(
         self, tensor: torch.Tensor
     ) -&gt; Union[torch.Tensor, Tuple[torch.Tensor]]:
@@ -290,7 +294,9 @@ All subclass should overwrite:</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class BaseProcessor(object, metaclass=ABCMeta):
-    @Timer(&#34;BaseProcessor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(
+        &#34;BaseProcessor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
+    )
     def __init__(
         self,
         transform: Optional[transforms.Compose],
@@ -401,7 +407,7 @@ All subclass should overwrite:</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class BaseReader(BaseProcessor):
-    @Timer(&#34;BaseReader.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;BaseReader.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -517,7 +523,9 @@ All subclass should overwrite:</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class BaseDownloader(object, metaclass=ABCMeta):
-    @Timer(&#34;BaseDownloader.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(
+        &#34;BaseDownloader.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
+    )
     def __init__(
         self,
         file_id: str,
@@ -593,7 +601,7 @@ All subclass should overwrite:</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class BaseModel(object, metaclass=ABCMeta):
-    @Timer(&#34;BaseModel.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;BaseModel.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def __init__(self, downloader: BaseDownloader, device: torch.device):
         &#34;&#34;&#34;Base class for torch models.
 
@@ -617,7 +625,7 @@ All subclass should overwrite:</p>
 
         self.model = self.load_model()
 
-    @Timer(&#34;BaseModel.load_model&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;BaseModel.load_model&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def load_model(self) -&gt; Union[torch.jit.ScriptModule, torch.jit.TracedModule]:
         &#34;&#34;&#34;Loads the TorchScript model.
 
@@ -633,7 +641,7 @@ All subclass should overwrite:</p>
 
         return model
 
-    @Timer(&#34;BaseModel.inference&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;BaseModel.inference&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def inference(
         self, tensor: torch.Tensor
     ) -&gt; Union[torch.Tensor, Tuple[torch.Tensor]]:
@@ -685,7 +693,7 @@ All subclass should overwrite:</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;BaseModel.load_model&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+<pre><code class="python">@Timer(&#34;BaseModel.load_model&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
 def load_model(self) -&gt; Union[torch.jit.ScriptModule, torch.jit.TracedModule]:
     &#34;&#34;&#34;Loads the TorchScript model.
 
@@ -721,7 +729,7 @@ def load_model(self) -&gt; Union[torch.jit.ScriptModule, torch.jit.TracedModule]
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;BaseModel.inference&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+<pre><code class="python">@Timer(&#34;BaseModel.inference&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
 def inference(
     self, tensor: torch.Tensor
 ) -&gt; Union[torch.Tensor, Tuple[torch.Tensor]]:
