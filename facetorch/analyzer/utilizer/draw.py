@@ -179,3 +179,127 @@ class LandmarkDrawer(BaseUtilizer):
             plt.close()
 
         return data
+
+
+class LandmarkDrawerTorch(BaseUtilizer):
+    def __init__(
+        self,
+        transform: transforms.Compose,
+        device: torch.device,
+        optimize_transform: bool,
+        width: int,
+        color: str,
+    ):
+        """Initializes the LandmarkDrawer class. This class is used to draw the 3D face landmarks to the image tensor.
+
+        Args:
+            transform (Compose): Composed Torch transform object.
+            device (torch.device): Torch device cpu or cuda object.
+            optimize_transform (bool): Whether to optimize the transform.
+            width (int): Marker keypoint width.
+            color (str): Marker color.
+
+        """
+        super().__init__(transform, device, optimize_transform)
+        self.width = width
+        self.color = color
+
+    @Timer("LandmarkDrawer.run", "{name}: {milliseconds:.2f} ms", logger.debug)
+    def run(self, data: ImageData) -> ImageData:
+        """Draws 3D face landmarks to the image tensor.
+
+        Args:
+            data (ImageData): ImageData object containing the image tensor and 3D face landmarks.
+        Returns:
+            ImageData: ImageData object containing the image tensor with 3D face landmarks.
+        """
+        data = self._draw_landmarks(data)
+
+        return data
+
+    def _draw_landmarks(self, data: ImageData) -> ImageData:
+        """Draws 3D face landmarks to the image tensor.
+
+        Args:
+            data (ImageData): ImageData object containing the image tensor, 3D face landmarks, and faces.
+
+        Returns:
+            (ImageData): ImageData object containing the image tensor with 3D face landmarks.
+        """
+
+        pts = [face.preds["align"].other["lmk3d"].cpu() for face in data.faces]
+
+        img_in = data.img.clone()
+        # pts_i = pts[0][:2, :]
+        pts = torch.stack(pts)
+        pts = torch.swapaxes(pts, 2, 1)
+
+        # pts_i = torch.swapaxes(pts_i, 1, 0)
+        img_out = torchvision.utils.draw_keypoints(
+                        img_in,
+                        pts,
+                        colors=self.color,
+                        width=self.width,
+                    )
+        data.img = img_out
+
+        # img = data.img.cpu().numpy().transpose(1, 2, 0)
+        # if len(pts) > 0:
+
+        #     height, width = img.shape[:2]
+        #     fig = plt.figure(figsize=(height / 100, width / 100))
+        #     plt.imshow(img)
+        #     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+        #     plt.axis("off")
+
+        #     if not type(pts) in [tuple, list]:
+        #         pts = [pts]
+        #     for i in range(len(pts)):
+
+        #         nums = [0, 17, 22, 27, 31, 36, 42, 48, 60, 68]
+
+        #         # close eyes and mouths
+        #         # _plot_close(pts[i], 41, 36)
+        #         # _plot_close(pts[i], 47, 42)
+        #         # _plot_close(pts[i], 59, 48)
+        #         # _plot_close(pts[i], 67, 60)
+
+        #         for ind in range(len(nums) - 1):
+        #             l, r = nums[ind], nums[ind + 1]
+        #             plt.plot(
+        #                 pts[i][0, l:r],
+        #                 pts[i][1, l:r],
+        #                 color=self.color,
+        #                 lw=self.line_width,
+        #                 alpha=self.opacity - 0.1,
+        #             )
+
+        #             plt.plot(
+        #                 pts[i][0, l:r],
+        #                 pts[i][1, l:r],
+        #                 marker=self.marker,
+        #                 linestyle="None",
+        #                 markersize=self.markersize,
+        #                 color=self.color,
+        #                 markeredgecolor=self.markeredgecolor,
+        #                 alpha=self.opacity,
+        #             )
+
+        #             img_out = torchvision.utils.draw_keypoints(
+        #                 img,
+        #                 torch.tensor(pts[i]),
+        #                 colors=self.color,
+        #                 width=self.line_width,
+        #             )
+        #             # show(img_out)
+
+        #     canvas = FigureCanvas(fig)
+        #     canvas.draw()
+        #     img_np = np.frombuffer(canvas.tostring_rgb(), dtype=np.uint8)
+        #     img_np = img_np.reshape(canvas.get_width_height()[::-1] + (3,))
+        #     img_np = img_np.transpose(2, 0, 1)
+        #     data.img = torch.from_numpy(np.array(img_np))
+
+        #     plt.close()
+
+        return data
