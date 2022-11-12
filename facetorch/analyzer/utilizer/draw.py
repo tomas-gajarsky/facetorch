@@ -1,6 +1,5 @@
 import torch
 import torchvision
-import numpy as np
 from codetiming import Timer
 from facetorch.base import BaseUtilizer
 from facetorch.datastruct import ImageData
