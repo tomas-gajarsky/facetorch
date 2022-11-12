@@ -5,5 +5,5 @@ device:
   _target_: torch.device
   type: ${analyzer.device} # str
 optimize_transform: False
-width: 3
+width: 2
 color: green
