@@ -12,7 +12,9 @@ logger = LoggerJsonFile().logger
 
 class BasePredPreProcessor(BaseProcessor):
     @Timer(
-        "BasePredPreProcessor.__init__", "{name}: {milliseconds:.2f} ms", logger.debug
+        "BasePredPreProcessor.__init__",
+        "{name}: {milliseconds:.2f} ms",
+        logger=logger.debug,
     )
     def __init__(
         self,
@@ -67,7 +69,11 @@ class PredictorPreProcessor(BasePredPreProcessor):
         super().__init__(transform, device, optimize_transform)
         self.reverse_colors = reverse_colors
 
-    @Timer("PredictorPreProcessor.run", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer(
+        "PredictorPreProcessor.run",
+        "{name}: {milliseconds:.2f} ms",
+        logger=logger.debug,
+    )
     def run(self, faces: torch.Tensor) -> torch.Tensor:
         """Runs the trasform on a batch of face tensors.
 

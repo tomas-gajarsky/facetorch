@@ -13,7 +13,9 @@ logger = LoggerJsonFile().logger
 
 class BasePredPostProcessor(BaseProcessor):
     @Timer(
-        "BasePredPostProcessor.__init__", "{name}: {milliseconds:.2f} ms", logger.debug
+        "BasePredPostProcessor.__init__",
+        "{name}: {milliseconds:.2f} ms",
+        logger=logger.debug,
     )
     def __init__(
         self,
@@ -78,7 +80,7 @@ class BasePredPostProcessor(BaseProcessor):
 
 
 class PostArgMax(BasePredPostProcessor):
-    @Timer("PostArgMax.__init__", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer("PostArgMax.__init__", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -99,7 +101,7 @@ class PostArgMax(BasePredPostProcessor):
         super().__init__(transform, device, optimize_transform, labels)
         self.dim = dim
 
-    @Timer("PostArgMax.run", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer("PostArgMax.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def run(self, preds: torch.Tensor) -> List[Prediction]:
         """Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
 
@@ -116,7 +118,11 @@ class PostArgMax(BasePredPostProcessor):
 
 
 class PostSigmoidBinary(BasePredPostProcessor):
-    @Timer("PostSigmoidBinary.__init__", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer(
+        "PostSigmoidBinary.__init__",
+        "{name}: {milliseconds:.2f} ms",
+        logger=logger.debug,
+    )
     def __init__(
         self,
         transform: transforms.Compose,
@@ -137,7 +143,9 @@ class PostSigmoidBinary(BasePredPostProcessor):
         super().__init__(transform, device, optimize_transform, labels)
         self.threshold = threshold
 
-    @Timer("PostSigmoidBinary.run", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer(
+        "PostSigmoidBinary.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug
+    )
     def run(self, preds: torch.Tensor) -> List[Prediction]:
         """Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
 
@@ -174,7 +182,7 @@ class PostEmbedder(BasePredPostProcessor):
         """
         super().__init__(transform, device, optimize_transform, labels)
 
-    @Timer("PostEmbedder.run", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer("PostEmbedder.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def run(self, preds: torch.Tensor) -> List[Prediction]:
         """Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
 

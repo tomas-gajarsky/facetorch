@@ -16,7 +16,9 @@ logger = LoggerJsonFile().logger
 
 class BaseDetPostProcessor(BaseProcessor):
     @Timer(
-        "BaseDetPostProcessor.__init__", "{name}: {milliseconds:.2f} ms", logger.debug
+        "BaseDetPostProcessor.__init__",
+        "{name}: {milliseconds:.2f} ms",
+        logger=logger.debug,
     )
     def __init__(
         self,
@@ -103,7 +105,7 @@ class PriorBox:
 
 
 class PostRetFace(BaseDetPostProcessor):
-    @Timer("PostRetFace.__init__", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer("PostRetFace.__init__", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -146,7 +148,7 @@ class PostRetFace(BaseDetPostProcessor):
         self.reverse_colors = reverse_colors
         self.expand_box_ratio = expand_box_ratio
 
-    @Timer("PostRetFace.run", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer("PostRetFace.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def run(
         self,
         data: ImageData,

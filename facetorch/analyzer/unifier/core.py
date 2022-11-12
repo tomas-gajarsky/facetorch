@@ -24,7 +24,7 @@ class FaceUnifier(BaseProcessor):
         """
         super().__init__(transform, device, optimize_transform)
 
-    @Timer("FaceUnifier.run", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer("FaceUnifier.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def run(self, data: ImageData) -> ImageData:
         """Runs unifying transform on each face tensor one by one.
 
