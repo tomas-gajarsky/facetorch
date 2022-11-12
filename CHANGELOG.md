@@ -3,7 +3,7 @@
 
 ## 0.1.3
 
-Released on November 11, 2022.
+Released on November 12, 2022.
 
 ### Added
 * Torchvision based landmark drawer as a utilizer
