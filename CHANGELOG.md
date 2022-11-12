@@ -1,6 +1,20 @@
 # Change Log
 
 
+## 0.1.3
+
+Released on November 11, 2022.
+
+### Added
+* Torchvision based landmark drawer as a utilizer
+
+### Changed
+* drawing of 3D landmarks is 21x faster: 152 ms -> 7 ms
+
+### Removed
+* Matplotlib based landmark drawer utilizer
+* Matplotlib dependency
+
 ## 0.1.2
 
 Released on November 10, 2022.
