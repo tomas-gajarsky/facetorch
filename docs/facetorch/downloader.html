@@ -50,7 +50,8 @@ class DownloaderGDrive(base.BaseDownloader):
     def run(self):
         &#34;&#34;&#34;Downloads a file from Google Drive.&#34;&#34;&#34;
         os.makedirs(os.path.dirname(self.path_local), exist_ok=True)
-        gdown.download(id=self.file_id, output=self.path_local, quiet=False)</code></pre>
+        url = f&#34;https://drive.google.com/uc?export=download&amp;confirm=pbef&amp;id={self.file_id}&#34;
+        gdown.download(url, output=self.path_local, quiet=False)</code></pre>
 </details>
 </section>
 <section>
@@ -93,7 +94,8 @@ class DownloaderGDrive(base.BaseDownloader):
     def run(self):
         &#34;&#34;&#34;Downloads a file from Google Drive.&#34;&#34;&#34;
         os.makedirs(os.path.dirname(self.path_local), exist_ok=True)
-        gdown.download(id=self.file_id, output=self.path_local, quiet=False)</code></pre>
+        url = f&#34;https://drive.google.com/uc?export=download&amp;confirm=pbef&amp;id={self.file_id}&#34;
+        gdown.download(url, output=self.path_local, quiet=False)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -114,7 +116,8 @@ class DownloaderGDrive(base.BaseDownloader):
 def run(self):
     &#34;&#34;&#34;Downloads a file from Google Drive.&#34;&#34;&#34;
     os.makedirs(os.path.dirname(self.path_local), exist_ok=True)
-    gdown.download(id=self.file_id, output=self.path_local, quiet=False)</code></pre>
+    url = f&#34;https://drive.google.com/uc?export=download&amp;confirm=pbef&amp;id={self.file_id}&#34;
+    gdown.download(url, output=self.path_local, quiet=False)</code></pre>
 </details>
 </dd>
 </dl>
