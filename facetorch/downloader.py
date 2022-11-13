@@ -18,8 +18,9 @@ class DownloaderGDrive(base.BaseDownloader):
         """
         super().__init__(file_id, path_local)
 
-    @Timer("DownloaderGDrive.run", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer("DownloaderGDrive.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def run(self):
         """Downloads a file from Google Drive."""
         os.makedirs(os.path.dirname(self.path_local), exist_ok=True)
-        gdown.download(id=self.file_id, output=self.path_local, quiet=False)
+        url = f"https://drive.google.com/uc?export=download&confirm=pbef&id={self.file_id}"
+        gdown.download(url, output=self.path_local, quiet=False)

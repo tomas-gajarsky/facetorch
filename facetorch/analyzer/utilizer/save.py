@@ -27,7 +27,7 @@ class ImageSaver(BaseUtilizer):
         """
         super().__init__(transform, device, optimize_transform)
 
-    @Timer("ImageSaver.run", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer("ImageSaver.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def run(self, data: ImageData) -> ImageData:
         """Saves the image tensor to an image file, if the path_output attribute of ImageData is not None.
 

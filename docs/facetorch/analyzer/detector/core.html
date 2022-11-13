@@ -39,7 +39,9 @@ logger = LoggerJsonFile().logger
 
 
 class FaceDetector(BaseModel):
-    @Timer(&#34;FaceDetector.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(
+        &#34;FaceDetector.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
+    )
     def __init__(
         self,
         downloader: BaseDownloader,
@@ -62,7 +64,7 @@ class FaceDetector(BaseModel):
         self.preprocessor = preprocessor
         self.postprocessor = postprocessor
 
-    @Timer(&#34;FaceDetector.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;FaceDetector.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Detect all faces in the image.
 
@@ -110,7 +112,9 @@ class FaceDetector(BaseModel):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class FaceDetector(BaseModel):
-    @Timer(&#34;FaceDetector.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(
+        &#34;FaceDetector.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
+    )
     def __init__(
         self,
         downloader: BaseDownloader,
@@ -133,7 +137,7 @@ class FaceDetector(BaseModel):
         self.preprocessor = preprocessor
         self.postprocessor = postprocessor
 
-    @Timer(&#34;FaceDetector.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;FaceDetector.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Detect all faces in the image.
 
@@ -174,7 +178,7 @@ class FaceDetector(BaseModel):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;FaceDetector.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+<pre><code class="python">@Timer(&#34;FaceDetector.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
 def run(self, data: ImageData) -&gt; ImageData:
     &#34;&#34;&#34;Detect all faces in the image.
 

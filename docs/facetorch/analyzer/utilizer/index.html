@@ -27,11 +27,11 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">from .align import Lmk3DMeshPose
-from .draw import BoxDrawer, LandmarkDrawer
+from .draw import BoxDrawer, LandmarkDrawerTorch
 from .save import ImageSaver
 
 
-__all__ = [&#34;Lmk3DMeshPose&#34;, &#34;BoxDrawer&#34;, &#34;LandmarkDrawer&#34;, &#34;ImageSaver&#34;]</code></pre>
+__all__ = [&#34;Lmk3DMeshPose&#34;, &#34;BoxDrawer&#34;, &#34;LandmarkDrawerTorch&#34;, &#34;ImageSaver&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -135,7 +135,7 @@ __all__ = [&#34;Lmk3DMeshPose&#34;, &#34;BoxDrawer&#34;, &#34;LandmarkDrawer&#34
         self.w_exp_base = self.w_exp[self.keypoints]
         self.dim = self.w_shp.shape[0] // 3
 
-    @Timer(&#34;Lmk3DMeshPose.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;Lmk3DMeshPose.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Runs the Lmk3DMeshPose class functionality - convert the face parameter vector to 3D landmarks, mesh and pose.
 
@@ -445,7 +445,7 @@ __all__ = [&#34;Lmk3DMeshPose&#34;, &#34;BoxDrawer&#34;, &#34;LandmarkDrawer&#34
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;Lmk3DMeshPose.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+<pre><code class="python">@Timer(&#34;Lmk3DMeshPose.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
 def run(self, data: ImageData) -&gt; ImageData:
     &#34;&#34;&#34;Runs the Lmk3DMeshPose class functionality - convert the face parameter vector to 3D landmarks, mesh and pose.
 
@@ -536,7 +536,7 @@ def run(self, data: ImageData) -&gt; ImageData:
         self.color = color
         self.line_width = line_width
 
-    @Timer(&#34;BoxDrawer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;BoxDrawer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Draws face boxes to the image tensor.
 
@@ -583,7 +583,7 @@ def run(self, data: ImageData) -&gt; ImageData:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;BoxDrawer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+<pre><code class="python">@Timer(&#34;BoxDrawer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
 def run(self, data: ImageData) -&gt; ImageData:
     &#34;&#34;&#34;Draws face boxes to the image tensor.
 
@@ -615,9 +615,9 @@ def run(self, data: ImageData) -&gt; ImageData:
 </li>
 </ul>
 </dd>
-<dt id="facetorch.analyzer.utilizer.LandmarkDrawer"><code class="flex name class">
-<span>class <span class="ident">LandmarkDrawer</span></span>
-<span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool, marker: str, markersize: float, opacity: float, line_width: float, color: str, markeredgecolor: str)</span>
+<dt id="facetorch.analyzer.utilizer.LandmarkDrawerTorch"><code class="flex name class">
+<span>class <span class="ident">LandmarkDrawerTorch</span></span>
+<span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool, width: int, color: str)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Initializes the LandmarkDrawer class. This class is used to draw the 3D face landmarks to the image tensor.</p>
@@ -629,35 +629,23 @@ def run(self, data: ImageData) -&gt; ImageData:
 <dd>Torch device cpu or cuda object.</dd>
 <dt><strong><code>optimize_transform</code></strong> :&ensp;<code>bool</code></dt>
 <dd>Whether to optimize the transform.</dd>
-<dt><strong><code>marker</code></strong> :&ensp;<code>str</code></dt>
-<dd>Marker type.</dd>
-<dt><strong><code>markersize</code></strong> :&ensp;<code>float</code></dt>
-<dd>Marker size.</dd>
-<dt><strong><code>opacity</code></strong> :&ensp;<code>float</code></dt>
-<dd>Opacity (transparency) of landmarks.</dd>
-<dt><strong><code>line_width</code></strong> :&ensp;<code>float</code></dt>
-<dd>Line width.</dd>
+<dt><strong><code>width</code></strong> :&ensp;<code>int</code></dt>
+<dd>Marker keypoint width.</dd>
 <dt><strong><code>color</code></strong> :&ensp;<code>str</code></dt>
 <dd>Marker color.</dd>
-<dt><strong><code>markeredgecolor</code></strong> :&ensp;<code>str</code></dt>
-<dd>Marker edge color.</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class LandmarkDrawer(BaseUtilizer):
+<pre><code class="python">class LandmarkDrawerTorch(BaseUtilizer):
     def __init__(
         self,
         transform: transforms.Compose,
         device: torch.device,
         optimize_transform: bool,
-        marker: str,
-        markersize: float,
-        opacity: float,
-        line_width: float,
+        width: int,
         color: str,
-        markeredgecolor: str,
     ):
         &#34;&#34;&#34;Initializes the LandmarkDrawer class. This class is used to draw the 3D face landmarks to the image tensor.
 
@@ -665,23 +653,15 @@ def run(self, data: ImageData) -&gt; ImageData:
             transform (Compose): Composed Torch transform object.
             device (torch.device): Torch device cpu or cuda object.
             optimize_transform (bool): Whether to optimize the transform.
-            marker (str): Marker type.
-            markersize (float): Marker size.
-            opacity (float): Opacity (transparency) of landmarks.
-            line_width (float): Line width.
+            width (int): Marker keypoint width.
             color (str): Marker color.
-            markeredgecolor (str): Marker edge color.
 
         &#34;&#34;&#34;
         super().__init__(transform, device, optimize_transform)
-        self.marker = marker
-        self.markersize = markersize
-        self.opacity = opacity
-        self.line_width = line_width
+        self.width = width
         self.color = color
-        self.markeredgecolor = markeredgecolor
 
-    @Timer(&#34;LandmarkDrawer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;LandmarkDrawer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Draws 3D face landmarks to the image tensor.
 
@@ -704,68 +684,20 @@ def run(self, data: ImageData) -&gt; ImageData:
             (ImageData): ImageData object containing the image tensor with 3D face landmarks.
         &#34;&#34;&#34;
 
-        def _plot_close(pts_i, _i1, _i2):
-            &#34;&#34;&#34;Plots a line between two points.&#34;&#34;&#34;
-            plt.plot(
-                [pts_i[0, _i1], pts_i[0, _i2]],
-                [pts_i[1, _i1], pts_i[1, _i2]],
-                color=self.color,
-                lw=self.line_width,
-                alpha=self.opacity - 0.1,
+        if len(data.faces) &gt; 0:
+            pts = [face.preds[&#34;align&#34;].other[&#34;lmk3d&#34;].cpu() for face in data.faces]
+
+            img_in = data.img.clone()
+            pts = torch.stack(pts)
+            pts = torch.swapaxes(pts, 2, 1)
+
+            img_out = torchvision.utils.draw_keypoints(
+                img_in,
+                pts,
+                colors=self.color,
+                radius=self.width,
             )
-
-        img = data.img.cpu().numpy().transpose(1, 2, 0)
-        pts = [face.preds[&#34;align&#34;].other[&#34;lmk3d&#34;].cpu() for face in data.faces]
-
-        if len(pts) &gt; 0:
-
-            height, width = img.shape[:2]
-            fig = plt.figure(figsize=(height / 100, width / 100))
-            plt.imshow(img)
-            plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-            plt.axis(&#34;off&#34;)
-
-            if not type(pts) in [tuple, list]:
-                pts = [pts]
-            for i in range(len(pts)):
-
-                nums = [0, 17, 22, 27, 31, 36, 42, 48, 60, 68]
-
-                # close eyes and mouths
-                _plot_close(pts[i], 41, 36)
-                _plot_close(pts[i], 47, 42)
-                _plot_close(pts[i], 59, 48)
-                _plot_close(pts[i], 67, 60)
-
-                for ind in range(len(nums) - 1):
-                    l, r = nums[ind], nums[ind + 1]
-                    plt.plot(
-                        pts[i][0, l:r],
-                        pts[i][1, l:r],
-                        color=self.color,
-                        lw=self.line_width,
-                        alpha=self.opacity - 0.1,
-                    )
-
-                    plt.plot(
-                        pts[i][0, l:r],
-                        pts[i][1, l:r],
-                        marker=self.marker,
-                        linestyle=&#34;None&#34;,
-                        markersize=self.markersize,
-                        color=self.color,
-                        markeredgecolor=self.markeredgecolor,
-                        alpha=self.opacity,
-                    )
-
-            canvas = FigureCanvas(fig)
-            canvas.draw()
-            img_np = np.frombuffer(canvas.tostring_rgb(), dtype=np.uint8)
-            img_np = img_np.reshape(canvas.get_width_height()[::-1] + (3,))
-            img_np = img_np.transpose(2, 0, 1)
-            data.img = torch.from_numpy(np.array(img_np))
-
-            plt.close()
+            data.img = img_out
 
         return data</code></pre>
 </details>
@@ -776,7 +708,7 @@ def run(self, data: ImageData) -&gt; ImageData:
 </ul>
 <h3>Methods</h3>
 <dl>
-<dt id="facetorch.analyzer.utilizer.LandmarkDrawer.run"><code class="name flex">
+<dt id="facetorch.analyzer.utilizer.LandmarkDrawerTorch.run"><code class="name flex">
 <span>def <span class="ident">run</span></span>(<span>self, data: <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a>) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
 </code></dt>
 <dd>
@@ -795,7 +727,7 @@ def run(self, data: ImageData) -&gt; ImageData:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;LandmarkDrawer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+<pre><code class="python">@Timer(&#34;LandmarkDrawer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
 def run(self, data: ImageData) -&gt; ImageData:
     &#34;&#34;&#34;Draws 3D face landmarks to the image tensor.
 
@@ -855,7 +787,7 @@ def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;
         super().__init__(transform, device, optimize_transform)
 
-    @Timer(&#34;ImageSaver.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;ImageSaver.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Saves the image tensor to an image file, if the path_output attribute of ImageData is not None.
 
@@ -898,7 +830,7 @@ def run(self, data: ImageData) -&gt; ImageData:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;ImageSaver.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+<pre><code class="python">@Timer(&#34;ImageSaver.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
 def run(self, data: ImageData) -&gt; ImageData:
     &#34;&#34;&#34;Saves the image tensor to an image file, if the path_output attribute of ImageData is not None.
 
@@ -1008,9 +940,9 @@ setTimeout(() => input.focus(), 100);
 </ul>
 </li>
 <li>
-<h4><code><a title="facetorch.analyzer.utilizer.LandmarkDrawer" href="#facetorch.analyzer.utilizer.LandmarkDrawer">LandmarkDrawer</a></code></h4>
+<h4><code><a title="facetorch.analyzer.utilizer.LandmarkDrawerTorch" href="#facetorch.analyzer.utilizer.LandmarkDrawerTorch">LandmarkDrawerTorch</a></code></h4>
 <ul class="">
-<li><code><a title="facetorch.analyzer.utilizer.LandmarkDrawer.run" href="#facetorch.analyzer.utilizer.LandmarkDrawer.run">run</a></code></li>
+<li><code><a title="facetorch.analyzer.utilizer.LandmarkDrawerTorch.run" href="#facetorch.analyzer.utilizer.LandmarkDrawerTorch.run">run</a></code></li>
 </ul>
 </li>
 <li>

@@ -39,8 +39,6 @@ def get_requirements(filename: str) -> List[str]:
                 continue
         elif "pytorch-cpu" in line_str:
             line_str = line_str.replace("pytorch-cpu", "torch")
-        elif "matplotlib-base" in line_str:
-            line_str = line_str.replace("matplotlib-base", "matplotlib")
         elif "platforms" in line_str:
             use_line = False
 

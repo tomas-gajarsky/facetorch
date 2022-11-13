@@ -640,18 +640,18 @@ INDEX=[
 "func":1
 },
 {
-"ref":"facetorch.analyzer.utilizer.LandmarkDrawer",
+"ref":"facetorch.analyzer.utilizer.LandmarkDrawerTorch",
 "url":15,
-"doc":"Initializes the LandmarkDrawer class. This class is used to draw the 3D face landmarks to the image tensor. Args: transform (Compose): Composed Torch transform object. device (torch.device): Torch device cpu or cuda object. optimize_transform (bool): Whether to optimize the transform. marker (str): Marker type. markersize (float): Marker size. opacity (float): Opacity (transparency) of landmarks. line_width (float): Line width. color (str): Marker color. markeredgecolor (str): Marker edge color."
+"doc":"Initializes the LandmarkDrawer class. This class is used to draw the 3D face landmarks to the image tensor. Args: transform (Compose): Composed Torch transform object. device (torch.device): Torch device cpu or cuda object. optimize_transform (bool): Whether to optimize the transform. width (int): Marker keypoint width. color (str): Marker color."
 },
 {
-"ref":"facetorch.analyzer.utilizer.LandmarkDrawer.run",
+"ref":"facetorch.analyzer.utilizer.LandmarkDrawerTorch.run",
 "url":15,
 "doc":"Draws 3D face landmarks to the image tensor. Args: data (ImageData): ImageData object containing the image tensor and 3D face landmarks. Returns: ImageData: ImageData object containing the image tensor with 3D face landmarks.",
 "func":1
 },
 {
-"ref":"facetorch.analyzer.utilizer.LandmarkDrawer.optimize",
+"ref":"facetorch.analyzer.utilizer.LandmarkDrawerTorch.optimize",
 "url":8,
 "doc":"Optimizes the transform using torch.jit and deploys it to the device.",
 "func":1
@@ -740,18 +740,18 @@ INDEX=[
 "func":1
 },
 {
-"ref":"facetorch.analyzer.utilizer.draw.LandmarkDrawer",
+"ref":"facetorch.analyzer.utilizer.draw.LandmarkDrawerTorch",
 "url":18,
-"doc":"Initializes the LandmarkDrawer class. This class is used to draw the 3D face landmarks to the image tensor. Args: transform (Compose): Composed Torch transform object. device (torch.device): Torch device cpu or cuda object. optimize_transform (bool): Whether to optimize the transform. marker (str): Marker type. markersize (float): Marker size. opacity (float): Opacity (transparency) of landmarks. line_width (float): Line width. color (str): Marker color. markeredgecolor (str): Marker edge color."
+"doc":"Initializes the LandmarkDrawer class. This class is used to draw the 3D face landmarks to the image tensor. Args: transform (Compose): Composed Torch transform object. device (torch.device): Torch device cpu or cuda object. optimize_transform (bool): Whether to optimize the transform. width (int): Marker keypoint width. color (str): Marker color."
 },
 {
-"ref":"facetorch.analyzer.utilizer.draw.LandmarkDrawer.run",
+"ref":"facetorch.analyzer.utilizer.draw.LandmarkDrawerTorch.run",
 "url":18,
 "doc":"Draws 3D face landmarks to the image tensor. Args: data (ImageData): ImageData object containing the image tensor and 3D face landmarks. Returns: ImageData: ImageData object containing the image tensor with 3D face landmarks.",
 "func":1
 },
 {
-"ref":"facetorch.analyzer.utilizer.draw.LandmarkDrawer.optimize",
+"ref":"facetorch.analyzer.utilizer.draw.LandmarkDrawerTorch.optimize",
 "url":8,
 "doc":"Optimizes the transform using torch.jit and deploys it to the device.",
 "func":1

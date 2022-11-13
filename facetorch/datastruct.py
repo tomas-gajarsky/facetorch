@@ -208,7 +208,9 @@ class ImageData:
         """Reset the detection object to empty state."""
         self.det = Detection()
 
-    @Timer("ImageData.reset_faces", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer(
+        "ImageData.reset_faces", "{name}: {milliseconds:.2f} ms", logger=logger.debug
+    )
     def reset_tensors(self) -> None:
         """Reset the tensors to empty state."""
         self.reset_img()

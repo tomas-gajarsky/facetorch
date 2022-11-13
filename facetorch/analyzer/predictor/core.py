@@ -13,7 +13,9 @@ logger = LoggerJsonFile().logger
 
 
 class FacePredictor(BaseModel):
-    @Timer("FacePredictor.__init__", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer(
+        "FacePredictor.__init__", "{name}: {milliseconds:.2f} ms", logger=logger.debug
+    )
     def __init__(
         self,
         downloader: BaseDownloader,
@@ -36,7 +38,7 @@ class FacePredictor(BaseModel):
         self.preprocessor = preprocessor
         self.postprocessor = postprocessor
 
-    @Timer("FacePredictor.run", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer("FacePredictor.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def run(self, faces: torch.Tensor) -> List[Prediction]:
         """Predicts facial features.
 

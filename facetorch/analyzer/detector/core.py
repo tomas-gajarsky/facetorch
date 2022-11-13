@@ -11,7 +11,9 @@ logger = LoggerJsonFile().logger
 
 
 class FaceDetector(BaseModel):
-    @Timer("FaceDetector.__init__", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer(
+        "FaceDetector.__init__", "{name}: {milliseconds:.2f} ms", logger=logger.debug
+    )
     def __init__(
         self,
         downloader: BaseDownloader,
@@ -34,7 +36,7 @@ class FaceDetector(BaseModel):
         self.preprocessor = preprocessor
         self.postprocessor = postprocessor
 
-    @Timer("FaceDetector.run", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer("FaceDetector.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def run(self, data: ImageData) -> ImageData:
         """Detect all faces in the image.
 

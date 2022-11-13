@@ -65,7 +65,7 @@ class Lmk3DMeshPose(BaseUtilizer):
         self.w_exp_base = self.w_exp[self.keypoints]
         self.dim = self.w_shp.shape[0] // 3
 
-    @Timer("Lmk3DMeshPose.run", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer("Lmk3DMeshPose.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def run(self, data: ImageData) -> ImageData:
         """Runs the Lmk3DMeshPose class functionality - convert the face parameter vector to 3D landmarks, mesh and pose.
 

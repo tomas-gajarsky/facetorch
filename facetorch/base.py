@@ -15,7 +15,9 @@ logger = LoggerJsonFile().logger
 
 
 class BaseProcessor(object, metaclass=ABCMeta):
-    @Timer("BaseProcessor.__init__", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer(
+        "BaseProcessor.__init__", "{name}: {milliseconds:.2f} ms", logger=logger.debug
+    )
     def __init__(
         self,
         transform: Optional[transforms.Compose],
@@ -58,7 +60,7 @@ class BaseProcessor(object, metaclass=ABCMeta):
 
 
 class BaseReader(BaseProcessor):
-    @Timer("BaseReader.__init__", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer("BaseReader.__init__", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -98,7 +100,9 @@ class BaseReader(BaseProcessor):
 
 
 class BaseDownloader(object, metaclass=ABCMeta):
-    @Timer("BaseDownloader.__init__", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer(
+        "BaseDownloader.__init__", "{name}: {milliseconds:.2f} ms", logger=logger.debug
+    )
     def __init__(
         self,
         file_id: str,
@@ -126,7 +130,7 @@ class BaseDownloader(object, metaclass=ABCMeta):
 
 
 class BaseModel(object, metaclass=ABCMeta):
-    @Timer("BaseModel.__init__", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer("BaseModel.__init__", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def __init__(self, downloader: BaseDownloader, device: torch.device):
         """Base class for torch models.
 
@@ -150,7 +154,7 @@ class BaseModel(object, metaclass=ABCMeta):
 
         self.model = self.load_model()
 
-    @Timer("BaseModel.load_model", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer("BaseModel.load_model", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def load_model(self) -> Union[torch.jit.ScriptModule, torch.jit.TracedModule]:
         """Loads the TorchScript model.
 
@@ -166,7 +170,7 @@ class BaseModel(object, metaclass=ABCMeta):
 
         return model
 
-    @Timer("BaseModel.inference", "{name}: {milliseconds:.2f} ms", logger.debug)
+    @Timer("BaseModel.inference", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def inference(
         self, tensor: torch.Tensor
     ) -> Union[torch.Tensor, Tuple[torch.Tensor]]:

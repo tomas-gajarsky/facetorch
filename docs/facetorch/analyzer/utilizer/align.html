@@ -93,7 +93,7 @@ class Lmk3DMeshPose(BaseUtilizer):
         self.w_exp_base = self.w_exp[self.keypoints]
         self.dim = self.w_shp.shape[0] // 3
 
-    @Timer(&#34;Lmk3DMeshPose.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;Lmk3DMeshPose.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Runs the Lmk3DMeshPose class functionality - convert the face parameter vector to 3D landmarks, mesh and pose.
 
@@ -458,7 +458,7 @@ class Lmk3DMeshPose(BaseUtilizer):
         self.w_exp_base = self.w_exp[self.keypoints]
         self.dim = self.w_shp.shape[0] // 3
 
-    @Timer(&#34;Lmk3DMeshPose.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;Lmk3DMeshPose.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Runs the Lmk3DMeshPose class functionality - convert the face parameter vector to 3D landmarks, mesh and pose.
 
@@ -768,7 +768,7 @@ class Lmk3DMeshPose(BaseUtilizer):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;Lmk3DMeshPose.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+<pre><code class="python">@Timer(&#34;Lmk3DMeshPose.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
 def run(self, data: ImageData) -&gt; ImageData:
     &#34;&#34;&#34;Runs the Lmk3DMeshPose class functionality - convert the face parameter vector to 3D landmarks, mesh and pose.
 

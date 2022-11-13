@@ -41,7 +41,9 @@ logger = LoggerJsonFile().logger
 
 
 class FacePredictor(BaseModel):
-    @Timer(&#34;FacePredictor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(
+        &#34;FacePredictor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
+    )
     def __init__(
         self,
         downloader: BaseDownloader,
@@ -64,7 +66,7 @@ class FacePredictor(BaseModel):
         self.preprocessor = preprocessor
         self.postprocessor = postprocessor
 
-    @Timer(&#34;FacePredictor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;FacePredictor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, faces: torch.Tensor) -&gt; List[Prediction]:
         &#34;&#34;&#34;Predicts facial features.
 
@@ -112,7 +114,9 @@ class FacePredictor(BaseModel):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class FacePredictor(BaseModel):
-    @Timer(&#34;FacePredictor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(
+        &#34;FacePredictor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
+    )
     def __init__(
         self,
         downloader: BaseDownloader,
@@ -135,7 +139,7 @@ class FacePredictor(BaseModel):
         self.preprocessor = preprocessor
         self.postprocessor = postprocessor
 
-    @Timer(&#34;FacePredictor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+    @Timer(&#34;FacePredictor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, faces: torch.Tensor) -&gt; List[Prediction]:
         &#34;&#34;&#34;Predicts facial features.
 
@@ -173,7 +177,7 @@ class FacePredictor(BaseModel):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;FacePredictor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger.debug)
+<pre><code class="python">@Timer(&#34;FacePredictor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
 def run(self, faces: torch.Tensor) -&gt; List[Prediction]:
     &#34;&#34;&#34;Predicts facial features.
 
