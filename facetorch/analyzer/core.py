@@ -117,6 +117,8 @@ class FaceAnalyzer(object):
         self.logger.info("Running FaceAnalyzer")
         self.logger.info("Reading image", extra={"path_image": path_image})
         data = self.reader.run(path_image, fix_img_size=fix_img_size)
+        path_output = None if path_output == "None" else path_output
+        data.path_output = path_output
         data.version = pkg_resources.get_distribution("facetorch").version
 
         self.logger.info("Detecting faces")
@@ -133,13 +135,13 @@ class FaceAnalyzer(object):
                 self.logger.info(f"Running FacePredictor: {predictor_name}")
                 data = _predict_batch(data, predictor, predictor_name)
 
-            path_output = None if path_output == "None" else path_output
-            data.path_output = path_output
-
             self.logger.info("Utilizing facial features")
             for utilizer_name, utilizer in self.utilizers.items():
                 self.logger.info(f"Running BaseUtilizer: {utilizer_name}")
                 data = utilizer.run(data)
+        else:
+            if "save" in self.utilizers:
+                self.utilizers["save"].run(data)
 
         if not include_tensors:
             self.logger.debug(
