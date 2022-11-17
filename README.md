@@ -178,7 +178,7 @@ You can also download the models manually from a [public Google Drive folder](ht
 
 ### Execution time
 
-Image test.jpg (4 faces) is analyzed (including drawing boxes and landmarks, but not saving) in about 440ms and test3.jpg (25 faces) in about 1416ms (batch_size=8) on NVIDIA Tesla T4 GPU once the default configuration (*conf/config.yaml*) of models is initialized and pre heated to the initial image size 1080x1080 by the first run. One can monitor the execution times in logs using the DEBUG level.
+Image test.jpg (4 faces) is analyzed (including drawing boxes and landmarks, but not saving) in about 465ms and test3.jpg (25 faces) in about 1480ms (batch_size=8) on NVIDIA Tesla T4 GPU once the default configuration (*conf/config.yaml*) of models is initialized and pre heated to the initial image size 1080x1080 by the first run. One can monitor the execution times in logs using the DEBUG level.
 
 Detailed test.jpg execution times:
 ```
@@ -188,7 +188,7 @@ analyzer
     ├── unifier: 1 ms
     └── predictor
             ├── embed: 8 ms
-            ├── verify: 18 ms
+            ├── verify: 58 ms
             ├── fer: 28 ms
             ├── deepfake: 117 ms
             └── align: 5 ms
