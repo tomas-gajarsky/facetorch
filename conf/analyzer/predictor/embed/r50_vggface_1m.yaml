@@ -21,7 +21,7 @@ preprocessor:
         std: [0.228, 0.224, 0.225] # List[float]
   device: 
     _target_: torch.device
-    type: ${analyzer.predictor.fer.device.type}
+    type: ${analyzer.predictor.embed.device.type}
   optimize_transform: ${analyzer.optimize_transforms}
   reverse_colors: False # bool
 
@@ -30,6 +30,6 @@ postprocessor:
   transform: None
   device: 
     _target_: torch.device
-    type: ${analyzer.predictor.fer.device.type}
+    type: ${analyzer.predictor.embed.device.type}
   optimize_transform: ${analyzer.optimize_transforms}
   labels: ["abstract"] # List
