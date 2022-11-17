@@ -110,14 +110,22 @@ analyzer
 
 #### Face Verification (verify)
 
-    |    verify     |    source    |      license       | version |  
-    | ------------- |  ----------- | ------------------ | ------- |
-    |  MagFace+UNPG |  Jung-Jun-Uk | Apache License 2.0 |    1    |
+    |      verify      |   source    |      license       | version |  
+    | ---------------- | ----------- | ------------------ | ------- |
+    |    MagFace+UNPG  | Jung-Jun-Uk | Apache License 2.0 |    1    |
+    |  AdaFaceR100W12M |  mk-minchul |     MIT License    |    2    |
 
 1. Jung-Jun-Uk
     * code: [UNPG](https://github.com/jung-jun-uk/unpg)
     * paper: [Jung et al. - Unified Negative Pair Generation toward Well-discriminative Feature Space for Face Recognition](https://arxiv.org/abs/2203.11593)
-    * [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/unified-negative-pair-generation-toward-well/face-verification-on-ijb-b)](https://paperswithcode.com/sota/face-verification-on-ijb-b?p=unified-negative-pair-generation-toward-well)
+    * [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/unified-negative-pair-generation-toward-well/face-verification-on-ijb-b)](https://paperswithcode.com/sota/face-verification-on-ijb-b?p=unified-negative-pair-generation-toward-well)(FAR=0.01)
+    * Note: ```include_tensors``` needs to be True in order to include the model prediction in Prediction.logits
+2. mk-minchul
+    * code: [AdaFace](https://github.com/mk-minchul/adaface)
+    * paper: [Kim et al. - AdaFace: Quality Adaptive Margin for Face Recognition](https://arxiv.org/abs/2204.00964)
+    * [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/adaface-quality-adaptive-margin-for-face/face-verification-on-ijb-b)](https://paperswithcode.com/sota/face-verification-on-ijb-b?p=adaface-quality-adaptive-margin-for-face) <
+    * [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/adaface-quality-adaptive-margin-for-face/face-verification-on-ijb-c)](https://paperswithcode.com/sota/face-verification-on-ijb-c?p=adaface-quality-adaptive-margin-for-face) <
+    * < badges represent models trained on smaller WebFace 4M dataset
     * Note: ```include_tensors``` needs to be True in order to include the model prediction in Prediction.logits
 
 
