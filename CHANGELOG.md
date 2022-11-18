@@ -1,5 +1,12 @@
 # Change Log
 
+## 0.1.4
+
+Released on November 18, 2022.
+
+### Added
+* predictor for face verification and face recognition - AdaFace by Kim et al.
+
 
 ## 0.1.3
 
