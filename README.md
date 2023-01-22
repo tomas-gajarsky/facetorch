@@ -84,9 +84,9 @@ analyzer
 
 ### Detector
 
-    |    detector   |   source  |   license   | version |
-    | ------------- | --------- | ----------- | ------- |
-    |   RetinaFace  |  biubug6  | MIT license |    1    |
+    |     model     |   source  |   params  |   license   | version |
+    | ------------- | --------- | --------- | ----------- | ------- |
+    |   RetinaFace  |  biubug6  |   27.3M   | MIT license |    1    |
 
 1. biubug6
     * code: [Pytorch_Retinaface](https://github.com/biubug6/Pytorch_Retinaface)
@@ -99,9 +99,9 @@ analyzer
 
 #### Facial Representation Learning (embed)
 
-    |       embed       |   source   |   license   | version |  
-    | ----------------- | ---------- | ----------- | ------- |
-    |  ResNet-50 VGG 1M |  1adrianb  | MIT license |    1    |
+    |       model       |   source   |  params |   license   | version |  
+    | ----------------- | ---------- | ------- | ----------- | ------- |
+    |  ResNet-50 VGG 1M |  1adrianb  |  28.4M  | MIT license |    1    |
 
 1. 1adrianb
     * code: [unsupervised-face-representation](https://github.com/1adrianb/unsupervised-face-representation)
@@ -110,10 +110,10 @@ analyzer
 
 #### Face Verification (verify)
 
-    |      verify      |   source    |      license       | version |  
-    | ---------------- | ----------- | ------------------ | ------- |
-    |    MagFace+UNPG  | Jung-Jun-Uk | Apache License 2.0 |    1    |
-    |  AdaFaceR100W12M |  mk-minchul |     MIT License    |    2    |
+    |       model      |   source    |  params  |      license       | version |  
+    | ---------------- | ----------- | -------- | ------------------ | ------- |
+    |    MagFace+UNPG  | Jung-Jun-Uk |   65.2M  | Apache License 2.0 |    1    |
+    |  AdaFaceR100W12M |  mk-minchul |    -     |     MIT License    |    2    |
 
 1. Jung-Jun-Uk
     * code: [UNPG](https://github.com/jung-jun-uk/unpg)
@@ -131,10 +131,10 @@ analyzer
 
 #### Facial Expression Recognition (fer)
 
-    |        fer        |      source    |       license      | version |  
-    | ----------------- | -------------- | ------------------ | ------- |
-    | EfficientNet B0 7 | HSE-asavchenko | Apache License 2.0 |    1    |
-    | EfficientNet B2 8 | HSE-asavchenko | Apache License 2.0 |    2    |
+    |       model       |      source    |  params  |       license      | version |  
+    | ----------------- | -------------- | -------- | ------------------ | ------- |
+    | EfficientNet B0 7 | HSE-asavchenko |    4M    | Apache License 2.0 |    1    |
+    | EfficientNet B2 8 | HSE-asavchenko |   7.7M   | Apache License 2.0 |    2    |
 
 1. HSE-asavchenko
     * code: [face-emotion-recognition](https://github.com/HSE-asavchenko/face-emotion-recognition)
@@ -146,9 +146,9 @@ analyzer
 
 #### Deepfake Detection (deepfake)
 
-    |       deepfake       |      source      |   license   | version |
-    | -------------------- | ---------------- | ----------- | ------- |
-    |    EfficientNet B7   |     selimsef     | MIT license |    1    |
+    |         model        |      source      |  params  |   license   | version |
+    | -------------------- | ---------------- | -------- | ----------- | ------- |
+    |    EfficientNet B7   |     selimsef     |   66.4M  | MIT license |    1    |
 
 1. selimsef
     * code: [dfdc_deepfake_challenge](https://github.com/selimsef/dfdc_deepfake_challenge)
@@ -156,9 +156,9 @@ analyzer
 
 #### Face Alignment (align)
 
-    |       align       |      source      |   license   | version |
-    | ----------------- | ---------------- | ----------- | ------- |
-    |    MobileNet v2   |     choyingw     | MIT license |    1    |
+    |       model       |      source      |  params  |   license   | version |
+    | ----------------- | ---------------- | -------- | ----------- | ------- |
+    |    MobileNet v2   |     choyingw     |   4.1M   | MIT license |    1    |
 
 1. choyingw
     * code: [SynergyNet](https://github.com/choyingw/SynergyNet)

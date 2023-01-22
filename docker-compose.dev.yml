@@ -8,8 +8,6 @@ services:
       dockerfile: ./docker/Dockerfile.dev
     volumes:
       - ./:/opt/facetorch
-    ports:
-      - "8080:8080"
     entrypoint: ["/bin/bash"]
 
   facetorch-dev-gpu:
@@ -18,8 +16,6 @@ services:
       dockerfile: ./docker/Dockerfile.dev.gpu
     volumes:
       - ./:/opt/facetorch
-    ports:
-      - "8080:8080"
     shm_size: 8gb
     deploy:
       resources:
@@ -36,8 +32,6 @@ services:
       dockerfile: ./docker/Dockerfile.tests
     volumes:
       - ./:/opt/facetorch
-    ports:
-      - "8080:8080"
     entrypoint: ["conda", "run", "--no-capture-output", "-n", "env", "pytest", "-v", "--cov=facetorch", "--cov-report=term", "--cov-fail-under=95"]
 
   facetorch-dev-example:
@@ -46,6 +40,4 @@ services:
       dockerfile: ./docker/Dockerfile.dev
     volumes:
       - ./:/opt/facetorch
-    ports:
-      - "8080:8080"
     entrypoint: ["conda", "run", "--no-capture-output", "-n", "env", "python", "scripts/example.py"]
