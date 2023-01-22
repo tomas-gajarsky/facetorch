@@ -1,5 +1,16 @@
 # Change Log
 
+## 0.1.5
+
+Released on January 22, 2023.
+
+### Added
+* number of model parameters to every table in README
+
+### Changed
+* facetorch installation in dev Dockerfiles to not install dependencies from PyPI
+
+
 ## 0.1.4
 
 Released on November 18, 2022.
@@ -22,6 +33,7 @@ Released on November 13, 2022.
 * Matplotlib based landmark drawer utilizer
 * Matplotlib dependency
 
+
 ## 0.1.2
 
 Released on November 10, 2022.
@@ -31,6 +43,7 @@ Released on November 10, 2022.
 
 ### Changed
 * Box expansion method changed from static absolute value to dynamic relative value
+
 
 ## 0.1.1
 
@@ -52,6 +65,7 @@ Released on August 22, 2022.
 ### Changed
 * default logging level to INFO
 * drawing boxes and saving image abstracted to utilizer objects
+
 
 ## 0.0.8
 
