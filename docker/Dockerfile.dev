@@ -39,9 +39,9 @@ RUN ln -s /opt/conda/envs/env/bin/pip /usr/bin/pip
 RUN pip install --upgrade pip
 
 # Install facetorch package
-COPY facetorch .
+ADD facetorch/ facetorch/
 COPY environment.yml setup.py version README.md ./
-RUN pip install -e .
+RUN pip install --no-dependencies -e .
 
 # Install development dependencies
 COPY requirements.dev.txt .

@@ -41,7 +41,7 @@ RUN pip install --upgrade pip
 # Install facetorch package
 COPY facetorch .
 COPY environment.yml setup.py version README.md ./
-RUN pip install -e .
+RUN pip install  --no-dependencies -e .
 
 # Install development dependencies
 COPY requirements.dev.txt .
