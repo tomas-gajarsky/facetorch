@@ -5,10 +5,13 @@
 Released on January 22, 2023.
 
 ### Added
-* number of model parameters to every table in README
+* number of parameters for each model in README
 
 ### Changed
 * facetorch installation in dev Dockerfiles to not install dependencies from PyPI
+
+### Removed
+* unused port bindings from dev Docker compose file
 
 
 ## 0.1.4
