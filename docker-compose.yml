@@ -4,6 +4,7 @@ services:
   # Container for running the latest deployment
   facetorch:
     image: tomasgajarsky/facetorch:latest
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./docker/Dockerfile
@@ -29,6 +30,7 @@ services:
 
   facetorch-gpu-no-device:
     image: tomasgajarsky/facetorch-gpu:latest
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./docker/Dockerfile.gpu
