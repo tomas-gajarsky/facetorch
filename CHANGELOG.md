@@ -1,5 +1,14 @@
 # Change Log
 
+
+## 0.1.6
+
+Released on January -, 2023.
+
+### Added
+ - platform to Docker compose file for Apple Silicon M chips
+
+
 ## 0.1.5
 
 Released on January 22, 2023.
