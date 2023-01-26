@@ -47,6 +47,8 @@ Docker Compose provides an easy way of building a working facetorch environment 
 
 Check *data/output* for resulting images with bounding boxes and facial 3D landmarks.
 
+(Apple Mac M1) Use Rosetta 2 emulator in Docker Desktop to run the CPU version.
+
 ### Configure
 
 The project is configured by files located in *conf* with the main file: *conf/config.yaml*. One can easily add or remove modules from the configuration.
