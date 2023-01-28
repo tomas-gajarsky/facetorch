@@ -1,5 +1,13 @@
 # Change Log
 
+## 0.2.2
+
+Released on January 28, 2023.
+
+### Fixed
+* error in Google Colab demo notebook
+
+
 ## 0.2.1
 
 Released on January 28, 2023.
