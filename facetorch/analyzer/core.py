@@ -119,7 +119,11 @@ class FaceAnalyzer(object):
         data = self.reader.run(path_image, fix_img_size=fix_img_size)
         path_output = None if path_output == "None" else path_output
         data.path_output = path_output
-        data.version = pkg_resources.get_distribution("facetorch").version
+
+        try:
+            data.version = pkg_resources.get_distribution("facetorch").version
+        except pkg_resources.DistributionNotFound:
+            self.logger.warning("Could not find version of facetorch package")
 
         self.logger.info("Detecting faces")
         data = self.detector.run(data)

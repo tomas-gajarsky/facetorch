@@ -1,5 +1,17 @@
 # Change Log
 
+## 0.2.1
+
+Released on January 28, 2023.
+
+### Added
+* Google Colab demo notebook
+* Google Colab demo notebook link to README
+* Merged config yaml files for OmegaConf to /conf/merged/ directory
+
+### Changed
+* Do not fail the run if facetorch version cannot be retrieved (likely due to local installation)
+
 
 ## 0.2.0
 
