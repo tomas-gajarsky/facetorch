@@ -8,7 +8,10 @@
 
 [Hugging Face Space demo app 🤗 ](https://huggingface.co/spaces/tomas-gajarsky/facetorch-app)
 
-[Google Colab notebook demo](https://colab.research.google.com/drive/1Octeau9IMTx6oYRhb1RMcC62Ei6ejsDr?usp=sharing)
+Google Colab notebook demo
+<a target="_blank" href="https://colab.research.google.com/github/tomas-gajarsky/facetorch/blob/main/notebooks/facetorch_notebook_demo.ipynb">
+<img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a>
 
 [User Guide](https://medium.com/@gajarsky.tomas/facetorch-user-guide-a0e9fd2a5552), [Documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html)
  
