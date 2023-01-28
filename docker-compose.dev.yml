@@ -44,3 +44,21 @@ services:
     volumes:
       - ./:/opt/facetorch
     entrypoint: ["conda", "run", "--no-capture-output", "-n", "env", "python", "scripts/example.py"]
+
+  facetorch-lock:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.lock
+    volumes:
+      - ./:/opt/facetorch
+    entrypoint: ["conda", "run", "--no-capture-output", "-n", "base", "conda-lock", "-p", "linux-64", "-f", "environment.yml", "--lockfile", "new.conda-lock.yml"]
+
+  facetorch-lock-gpu:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.lock
+    volumes:
+      - ./:/opt/facetorch
+    entrypoint: ["conda", "run", "--no-capture-output", "-n", "base", "conda-lock", "-p", "linux-64", "-f", "gpu.environment.yml", "--lockfile", "new.gpu.conda-lock.yml"]
