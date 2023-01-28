@@ -1,0 +1,29 @@
+FROM python:3.8.16-slim
+
+# Set working directory
+ENV WORKDIR=/opt/facetorch
+WORKDIR $WORKDIR
+
+# Install base utilities
+RUN apt-get update && apt-get install -y \
+    apt-utils \
+    wget \
+    git \
+    build-essential && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install miniconda
+ENV CONDA_DIR /opt/conda
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py38_22.11.1-1-Linux-x86_64.sh -O ~/miniconda.sh && \
+    /bin/bash ~/miniconda.sh -b -p /opt/conda
+
+# Add conda to path
+ENV PATH=$CONDA_DIR/bin:$PATH
+
+# Install conda-build and conda-lock for environment reproducibility
+RUN conda install -y -c conda-forge -n base conda-lock conda-build
+
+# Make RUN commands use the new environment:
+RUN conda init bash
+RUN echo "conda activate base" >> ~/.bashrc
+SHELL ["/bin/bash", "--login", "-c"]

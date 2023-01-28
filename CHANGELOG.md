@@ -1,5 +1,16 @@
 # Change Log
 
+
+## 0.2.0
+
+Released on January 28, 2023.
+
+### Added
+* Python 3.8 support
+* platform to Docker compose file for Apple Silicon M chips
+* Docker compose service for locking dependencies
+
+
 ## 0.1.5
 
 Released on January 22, 2023.

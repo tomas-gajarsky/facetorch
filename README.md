@@ -47,6 +47,8 @@ Docker Compose provides an easy way of building a working facetorch environment 
 
 Check *data/output* for resulting images with bounding boxes and facial 3D landmarks.
 
+(Apple Mac M1) Use Rosetta 2 emulator in Docker Desktop to run the CPU version.
+
 ### Configure
 
 The project is configured by files located in *conf* with the main file: *conf/config.yaml*. One can easily add or remove modules from the configuration.
@@ -249,11 +251,13 @@ the requirements of the new model.
 CPU:
 * Add packages with corresponding versions to ```environment.yml``` file
 * Lock the environment: ```conda lock -p linux-64 -f environment.yml --lockfile conda-lock.yml```
+* (Alternative Docker) Lock the environment: ```docker compose -f docker-compose.dev.yml run facetorch-lock```
 * Install the locked environment: ```conda-lock install --name env conda-lock.yml```
 
 GPU:
 * Add packages with corresponding versions to ```gpu.environment.yml``` file
 * Lock the environment: ```conda lock -p linux-64 -f gpu.environment.yml --lockfile gpu.conda-lock.yml```
+* (Alternative Docker) Lock the environment: ```docker compose -f docker-compose.dev.yml run facetorch-lock-gpu```
 * Install the locked environment: ```conda-lock install --name env gpu.conda-lock.yml```
 
 ### Run tests + coverage
