@@ -149,7 +149,7 @@ class ImageData:
         dims (Dimensions): Dimensions of the image (height, width).
         det (Detection): Detection data given by the detector.
         faces (List[Face]): List of faces in the image.
-        version (int): Version of the facetorch library.
+        version (str): Version of the facetorch library.
 
     """
 
@@ -249,7 +249,7 @@ class Response:
 
     Attributes:
         faces (List[Face]): List of faces in the image.
-        version (int): Version of the facetorch library.
+        version (str): Version of the facetorch library.
 
     """
 
