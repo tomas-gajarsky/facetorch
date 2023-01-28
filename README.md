@@ -7,6 +7,7 @@
 <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
 [Hugging Face Space demo app 🤗 ](https://huggingface.co/spaces/tomas-gajarsky/facetorch-app)
+
 [Google Colab notebook demo](https://colab.research.google.com/drive/1Octeau9IMTx6oYRhb1RMcC62Ei6ejsDr?usp=sharing)
 
 [User Guide](https://medium.com/@gajarsky.tomas/facetorch-user-guide-a0e9fd2a5552), [Documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html)
