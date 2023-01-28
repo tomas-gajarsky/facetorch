@@ -5,6 +5,7 @@
 Released on January 28, 2023.
 
 ### Added
+* Google Colab demo notebook
 * Google Colab demo notebook link to README
 * Merged config yaml files for OmegaConf to /conf/merged/ directory
 
