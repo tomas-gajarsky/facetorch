@@ -3,7 +3,7 @@ _target_: facetorch.analyzer.detector.FaceDetector
 
 downloader:
   _target_: facetorch.downloader.DownloaderGDrive
-  file_id: 154x2VjmTQVqmowB0yZw4Uck7uQs2vVBs  # str
+  file_id: 1eMuOdGkiNCOUTiEbKKoPCHGCuDgiKeNC  # str
   path_local: /opt/facetorch/models/torchscript/detector/1/model.pt # str
 
 device:
