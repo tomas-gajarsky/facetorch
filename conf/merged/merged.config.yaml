@@ -1,0 +1,349 @@
+analyzer:
+  device: cpu
+  optimize_transforms: true
+  reader:
+    _target_: facetorch.analyzer.reader.ImageReader
+    device:
+      _target_: torch.device
+      type: ${analyzer.device}
+    optimize_transform: ${analyzer.optimize_transforms}
+    transform:
+      _target_: torchvision.transforms.Compose
+      transforms:
+      - _target_: facetorch.transforms.SquarePad
+      - _target_: torchvision.transforms.Resize
+        size:
+        - 1080
+  detector:
+    _target_: facetorch.analyzer.detector.FaceDetector
+    downloader:
+      _target_: facetorch.downloader.DownloaderGDrive
+      file_id: 154x2VjmTQVqmowB0yZw4Uck7uQs2vVBs
+      path_local: /code/models/torchscript/detector/1/model.pt
+    device:
+      _target_: torch.device
+      type: ${analyzer.device}
+    reverse_colors: true
+    preprocessor:
+      _target_: facetorch.analyzer.detector.pre.DetectorPreProcessor
+      transform:
+        _target_: torchvision.transforms.Compose
+        transforms:
+        - _target_: torchvision.transforms.Normalize
+          mean:
+          - 104.0
+          - 117.0
+          - 123.0
+          std:
+          - 1.0
+          - 1.0
+          - 1.0
+      device:
+        _target_: torch.device
+        type: ${analyzer.device}
+      optimize_transform: ${analyzer.optimize_transforms}
+      reverse_colors: ${analyzer.detector.reverse_colors}
+    postprocessor:
+      _target_: facetorch.analyzer.detector.post.PostRetFace
+      transform: None
+      device:
+        _target_: torch.device
+        type: ${analyzer.device}
+      optimize_transform: ${analyzer.optimize_transforms}
+      confidence_threshold: 0.02
+      top_k: 5000
+      nms_threshold: 0.4
+      keep_top_k: 750
+      score_threshold: 0.6
+      prior_box:
+        _target_: facetorch.analyzer.detector.post.PriorBox
+        min_sizes:
+        - - 16
+          - 32
+        - - 64
+          - 128
+        - - 256
+          - 512
+        steps:
+        - 8
+        - 16
+        - 32
+        clip: false
+      variance:
+      - 0.1
+      - 0.2
+      reverse_colors: ${analyzer.detector.reverse_colors}
+      expand_box_ratio: 0.1
+  unifier:
+    _target_: facetorch.analyzer.unifier.FaceUnifier
+    transform:
+      _target_: torchvision.transforms.Compose
+      transforms:
+      - _target_: torchvision.transforms.Normalize
+        mean:
+        - -123.0
+        - -117.0
+        - -104.0
+        std:
+        - 255.0
+        - 255.0
+        - 255.0
+      - _target_: torchvision.transforms.Resize
+        size:
+        - 380
+        - 380
+    device:
+      _target_: torch.device
+      type: ${analyzer.device}
+    optimize_transform: ${analyzer.optimize_transforms}
+  predictor:
+    embed:
+      _target_: facetorch.analyzer.predictor.FacePredictor
+      downloader:
+        _target_: facetorch.downloader.DownloaderGDrive
+        file_id: 19h3kqar1wlELAmM5hDyj9tlrUh8yjrCl
+        path_local: /code/models/torchscript/predictor/embed/1/model.pt
+      device:
+        _target_: torch.device
+        type: ${analyzer.device}
+      preprocessor:
+        _target_: facetorch.analyzer.predictor.pre.PredictorPreProcessor
+        transform:
+          _target_: torchvision.transforms.Compose
+          transforms:
+          - _target_: torchvision.transforms.Resize
+            size:
+            - 244
+            - 244
+          - _target_: torchvision.transforms.Normalize
+            mean:
+            - 0.485
+            - 0.456
+            - 0.406
+            std:
+            - 0.228
+            - 0.224
+            - 0.225
+        device:
+          _target_: torch.device
+          type: ${analyzer.predictor.fer.device.type}
+        optimize_transform: ${analyzer.optimize_transforms}
+        reverse_colors: false
+      postprocessor:
+        _target_: facetorch.analyzer.predictor.post.PostEmbedder
+        transform: None
+        device:
+          _target_: torch.device
+          type: ${analyzer.predictor.fer.device.type}
+        optimize_transform: ${analyzer.optimize_transforms}
+        labels:
+        - abstract
+    verify:
+      _target_: facetorch.analyzer.predictor.FacePredictor
+      downloader:
+        _target_: facetorch.downloader.DownloaderGDrive
+        file_id: 1H-aPtFd9C5D7y1vzoWsObKAxeIBE9QPd
+        path_local: /code/models/torchscript/predictor/verify/1/model.pt
+      device:
+        _target_: torch.device
+        type: ${analyzer.device}
+      preprocessor:
+        _target_: facetorch.analyzer.predictor.pre.PredictorPreProcessor
+        transform:
+          _target_: torchvision.transforms.Compose
+          transforms:
+          - _target_: torchvision.transforms.Resize
+            size:
+            - 112
+            - 112
+          - _target_: torchvision.transforms.Normalize
+            mean:
+            - 0.485
+            - 0.456
+            - 0.406
+            std:
+            - 0.229
+            - 0.224
+            - 0.225
+        device:
+          _target_: torch.device
+          type: ${analyzer.predictor.verify.device.type}
+        optimize_transform: ${analyzer.optimize_transforms}
+        reverse_colors: false
+      postprocessor:
+        _target_: facetorch.analyzer.predictor.post.PostEmbedder
+        transform: None
+        device:
+          _target_: torch.device
+          type: ${analyzer.predictor.verify.device.type}
+        optimize_transform: ${analyzer.optimize_transforms}
+        labels:
+        - abstract
+    fer:
+      _target_: facetorch.analyzer.predictor.FacePredictor
+      downloader:
+        _target_: facetorch.downloader.DownloaderGDrive
+        file_id: 1xoB5VYOd0XLjb-rQqqHWCkQvma4NytEd
+        path_local: /code/models/torchscript/predictor/fer/2/model.pt
+      device:
+        _target_: torch.device
+        type: ${analyzer.device}
+      preprocessor:
+        _target_: facetorch.analyzer.predictor.pre.PredictorPreProcessor
+        transform:
+          _target_: torchvision.transforms.Compose
+          transforms:
+          - _target_: torchvision.transforms.Resize
+            size:
+            - 260
+            - 260
+          - _target_: torchvision.transforms.Normalize
+            mean:
+            - 0.485
+            - 0.456
+            - 0.406
+            std:
+            - 0.229
+            - 0.224
+            - 0.225
+        device:
+          _target_: torch.device
+          type: ${analyzer.predictor.fer.device.type}
+        optimize_transform: ${analyzer.optimize_transforms}
+        reverse_colors: false
+      postprocessor:
+        _target_: facetorch.analyzer.predictor.post.PostArgMax
+        transform: None
+        device:
+          _target_: torch.device
+          type: ${analyzer.predictor.fer.device.type}
+        optimize_transform: ${analyzer.optimize_transforms}
+        dim: 1
+        labels:
+        - Anger
+        - Contempt
+        - Disgust
+        - Fear
+        - Happiness
+        - Neutral
+        - Sadness
+        - Surprise
+    deepfake:
+      _target_: facetorch.analyzer.predictor.FacePredictor
+      downloader:
+        _target_: facetorch.downloader.DownloaderGDrive
+        file_id: 1GjDTwQpvrkCjXOdiBy1oMkzm7nt-bXFg
+        path_local: /code/models/torchscript/predictor/deepfake/1/model.pt
+      device:
+        _target_: torch.device
+        type: ${analyzer.device}
+      preprocessor:
+        _target_: facetorch.analyzer.predictor.pre.PredictorPreProcessor
+        transform:
+          _target_: torchvision.transforms.Compose
+          transforms:
+          - _target_: torchvision.transforms.Resize
+            size:
+            - 380
+            - 380
+          - _target_: torchvision.transforms.Normalize
+            mean:
+            - 0.485
+            - 0.456
+            - 0.406
+            std:
+            - 0.229
+            - 0.224
+            - 0.225
+        device:
+          _target_: torch.device
+          type: ${analyzer.device}
+        optimize_transform: ${analyzer.optimize_transforms}
+        reverse_colors: false
+      postprocessor:
+        _target_: facetorch.analyzer.predictor.post.PostSigmoidBinary
+        transform: None
+        device:
+          _target_: torch.device
+          type: ${analyzer.device}
+        optimize_transform: ${analyzer.optimize_transforms}
+        labels:
+        - Real
+        - Fake
+        threshold: 0.7
+    align:
+      _target_: facetorch.analyzer.predictor.FacePredictor
+      downloader:
+        _target_: facetorch.downloader.DownloaderGDrive
+        file_id: 16gNFQdEH2nWvW3zTbdIAniKIbPAp6qBA
+        path_local: /code/models/torchscript/predictor/align/1/model.pt
+      device:
+        _target_: torch.device
+        type: ${analyzer.device}
+      preprocessor:
+        _target_: facetorch.analyzer.predictor.pre.PredictorPreProcessor
+        transform:
+          _target_: torchvision.transforms.Compose
+          transforms:
+          - _target_: torchvision.transforms.Resize
+            size:
+            - 120
+            - 120
+        device:
+          _target_: torch.device
+          type: ${analyzer.predictor.align.device.type}
+        optimize_transform: ${analyzer.optimize_transforms}
+        reverse_colors: false
+      postprocessor:
+        _target_: facetorch.analyzer.predictor.post.PostEmbedder
+        transform: None
+        device:
+          _target_: torch.device
+          type: ${analyzer.predictor.align.device.type}
+        optimize_transform: ${analyzer.optimize_transforms}
+        labels:
+        - abstract
+  utilizer:
+    align:
+      _target_: facetorch.analyzer.utilizer.align.Lmk3DMeshPose
+      transform: None
+      device:
+        _target_: torch.device
+        type: ${analyzer.device}
+      optimize_transform: false
+      downloader_meta:
+        _target_: facetorch.downloader.DownloaderGDrive
+        file_id: 11tdAcFuSXqCCf58g52WT1Rpa8KuQwe2o
+        path_local: /code/data/3dmm/meta.pt
+      image_size: 120
+    draw_boxes:
+      _target_: facetorch.analyzer.utilizer.draw.BoxDrawer
+      transform: None
+      device:
+        _target_: torch.device
+        type: ${analyzer.device}
+      optimize_transform: false
+      color: green
+      line_width: 3
+    draw_landmarks:
+      _target_: facetorch.analyzer.utilizer.draw.LandmarkDrawerTorch
+      transform: None
+      device:
+        _target_: torch.device
+        type: ${analyzer.device}
+      optimize_transform: false
+      width: 2
+      color: green
+  logger:
+    _target_: facetorch.logger.LoggerJsonFile
+    name: facetorch
+    level: 10
+    path_file: /code/logs/facetorch/main.log
+    json_format: '%(asctime)s %(levelname)s %(message)s'
+main:
+  sleep: 3
+debug: true
+batch_size: 8
+fix_img_size: true
+return_img_data: true
+include_tensors: true
