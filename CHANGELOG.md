@@ -1,5 +1,17 @@
 # Change Log
 
+
+## 0.2.3
+
+Released on February 2, 2023.
+
+### Fixed
+* error in detector test
+
+### Removed
+* deletion of detector model in tests
+
+
 ## 0.2.2
 
 Released on January 28, 2023.
