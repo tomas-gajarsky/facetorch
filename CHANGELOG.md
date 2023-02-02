@@ -3,7 +3,7 @@
 
 ## 0.2.3
 
-Released on January 28, 2023.
+Released on February 2, 2023.
 
 ### Fixed
 * error in detector test
