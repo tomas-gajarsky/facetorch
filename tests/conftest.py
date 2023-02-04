@@ -82,13 +82,13 @@ def cfg(request) -> None:
     return cfg
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def analyzer(cfg) -> FaceAnalyzer:
     analyzer = FaceAnalyzer(cfg.analyzer)
     return analyzer
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def response(cfg, analyzer) -> ImageData:
     response = analyzer.run(
         path_image=cfg.path_image,
