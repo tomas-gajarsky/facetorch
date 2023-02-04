@@ -1,5 +1,24 @@
 # Change Log
 
+## 0.2.4
+
+Released on February 4, 2023.
+
+### Changed
+* scope of some test fixtures from function to session
+
+
+## 0.2.3
+
+Released on February 2, 2023.
+
+### Fixed
+* error in detector test
+
+### Removed
+* deletion of detector model in tests
+
+
 ## 0.2.2
 
 Released on January 28, 2023.
