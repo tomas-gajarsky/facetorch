@@ -26,10 +26,12 @@ preprocessor:
   reverse_colors: False # bool
 
 postprocessor:
-  _target_: facetorch.analyzer.predictor.post.PostEmbedder
+  _target_: facetorch.analyzer.predictor.post.PostMultiLabel
   transform: None
   device: 
     _target_: torch.device
     type: ${analyzer.predictor.au.device.type}
   optimize_transform: ${analyzer.optimize_transforms}
-  labels: ["abstract"] # List
+  dim: 1
+  threshold: 0.5
+  labels: ["inner_brow_raiser", "outer_brow_raiser", "brow_lowerer", "cheek_raiser", "lid_tightener", "upper_lip_raiser", "lip_corner_puller", "dimpler", "lip_corner_depressor", "chin_raiser", "lip_tightener", "lip_pressor"] # List
