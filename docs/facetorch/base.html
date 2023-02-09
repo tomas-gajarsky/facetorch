@@ -211,7 +211,6 @@ class BaseModel(object, metaclass=ABCMeta):
             Union[torch.Tensor, Tuple[torch.Tensor]]: Output tensor or tuple of tensors.
         &#34;&#34;&#34;
         with torch.no_grad():
-
             if tensor.device != self.device:
                 tensor = tensor.to(self.device)
 
@@ -654,7 +653,6 @@ All subclass should overwrite:</p>
             Union[torch.Tensor, Tuple[torch.Tensor]]: Output tensor or tuple of tensors.
         &#34;&#34;&#34;
         with torch.no_grad():
-
             if tensor.device != self.device:
                 tensor = tensor.to(self.device)
 
@@ -742,7 +740,6 @@ def inference(
         Union[torch.Tensor, Tuple[torch.Tensor]]: Output tensor or tuple of tensors.
     &#34;&#34;&#34;
     with torch.no_grad():
-
         if tensor.device != self.device:
             tensor = tensor.to(self.device)
 

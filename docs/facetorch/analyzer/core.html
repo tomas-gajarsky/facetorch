@@ -147,7 +147,11 @@ class FaceAnalyzer(object):
         data = self.reader.run(path_image, fix_img_size=fix_img_size)
         path_output = None if path_output == &#34;None&#34; else path_output
         data.path_output = path_output
-        data.version = pkg_resources.get_distribution(&#34;facetorch&#34;).version
+
+        try:
+            data.version = pkg_resources.get_distribution(&#34;facetorch&#34;).version
+        except Exception as e:
+            self.logger.warning(&#34;Could not get version number&#34;, extra={&#34;error&#34;: e})
 
         self.logger.info(&#34;Detecting faces&#34;)
         data = self.detector.run(data)
@@ -344,7 +348,11 @@ It also draws bounding boxes and facial landmarks over the image.</p>
         data = self.reader.run(path_image, fix_img_size=fix_img_size)
         path_output = None if path_output == &#34;None&#34; else path_output
         data.path_output = path_output
-        data.version = pkg_resources.get_distribution(&#34;facetorch&#34;).version
+
+        try:
+            data.version = pkg_resources.get_distribution(&#34;facetorch&#34;).version
+        except Exception as e:
+            self.logger.warning(&#34;Could not get version number&#34;, extra={&#34;error&#34;: e})
 
         self.logger.info(&#34;Detecting faces&#34;)
         data = self.detector.run(data)
@@ -462,7 +470,11 @@ def run(
     data = self.reader.run(path_image, fix_img_size=fix_img_size)
     path_output = None if path_output == &#34;None&#34; else path_output
     data.path_output = path_output
-    data.version = pkg_resources.get_distribution(&#34;facetorch&#34;).version
+
+    try:
+        data.version = pkg_resources.get_distribution(&#34;facetorch&#34;).version
+    except Exception as e:
+        self.logger.warning(&#34;Could not get version number&#34;, extra={&#34;error&#34;: e})
 
     self.logger.info(&#34;Detecting faces&#34;)
     data = self.detector.run(data)
