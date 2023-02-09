@@ -122,8 +122,8 @@ class FaceAnalyzer(object):
 
         try:
             data.version = pkg_resources.get_distribution("facetorch").version
-        except pkg_resources.DistributionNotFound:
-            self.logger.warning("Could not find version of facetorch package")
+        except Exception as e:
+            self.logger.warning("Could not get version number", extra={"error": e})
 
         self.logger.info("Detecting faces")
         data = self.detector.run(data)
