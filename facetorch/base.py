@@ -183,7 +183,6 @@ class BaseModel(object, metaclass=ABCMeta):
             Union[torch.Tensor, Tuple[torch.Tensor]]: Output tensor or tuple of tensors.
         """
         with torch.no_grad():
-
             if tensor.device != self.device:
                 tensor = tensor.to(self.device)
 
