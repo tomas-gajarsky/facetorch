@@ -15,4 +15,4 @@ def test_au_in_preds(response):
 def test_lip_pucker(response, cfg):
     if "test.jpg" not in cfg.path_image:
         pytest.skip("Ony test.jpg is used for this test.")
-    assert response.faces[0].preds["au"].label == "lip_pucker"
+    assert response.faces[1].preds["au"].label == "lip_pucker"
