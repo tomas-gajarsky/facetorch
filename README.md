@@ -150,6 +150,17 @@ analyzer
     * B0 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/facial-expression-and-attributes-recognition/facial-expression-recognition-on-affectnet)](https://paperswithcode.com/sota/facial-expression-recognition-on-affectnet?p=facial-expression-and-attributes-recognition)
     * B0 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/facial-expression-and-attributes-recognition/facial-expression-recognition-on-acted-facial)](https://paperswithcode.com/sota/facial-expression-recognition-on-acted-facial?p=facial-expression-and-attributes-recognition)
 
+#### Facial Action Unit Detection (au)
+
+    |        model        |   source  |  params |       license      | version |  
+    | ------------------- | --------- | ------- | ------------------ | ------- |
+    | ME Graph Swin Base  |  CVI-SZU  |   95M   |     MIT License    |    1    |
+    | OpenGraph Swin Base |  CVI-SZU  |   94M   |     MIT License    |    2    |
+
+1. CVI-SZU
+    * code: [ME-GraphAU](https://github.com/CVI-SZU/ME-GraphAU)
+    * paper: [Luo et al. - Learning Multi-dimensional Edge Feature-based AU Relation Graph for Facial Action Unit Recognition](https://arxiv.org/abs/2205.01782)
+    * v1 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/learning-multi-dimensional-edge-feature-based/facial-action-unit-detection-on-bp4d)](https://paperswithcode.com/sota/facial-action-unit-detection-on-bp4d?p=learning-multi-dimensional-edge-feature-based)
 
 #### Deepfake Detection (deepfake)
 
