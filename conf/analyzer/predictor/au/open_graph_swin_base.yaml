@@ -2,7 +2,7 @@ _target_: facetorch.analyzer.predictor.FacePredictor
 
 downloader:
   _target_: facetorch.downloader.DownloaderGDrive
-  file_id: 1tHApH5WVMQ6IwMpeo8XskManZmm50Ipu
+  file_id: 1BajUrzcjhtM2RbDZx6d8hy2wc_Ou3-vx
   path_local: /opt/facetorch/models/torchscript/predictor/au/4/model.pt # str
 
 device:
