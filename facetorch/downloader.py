@@ -22,5 +22,5 @@ class DownloaderGDrive(base.BaseDownloader):
     def run(self):
         """Downloads a file from Google Drive."""
         os.makedirs(os.path.dirname(self.path_local), exist_ok=True)
-        url = f"https://drive.google.com/uc?export=download&confirm=pbef&id={self.file_id}"
+        url = f"https://drive.google.com/uc?export=download&confirm=t&id={self.file_id}"
         gdown.download(url, output=self.path_local, quiet=False)
