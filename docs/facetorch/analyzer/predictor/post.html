@@ -272,7 +272,7 @@ class PostMultiLabel(BasePredPostProcessor):
         pred_list = []
         for i in range(preds.shape[0]):
             preds_sample = preds[i]
-            label_filter = (preds_sample &gt; self.threshold).numpy().tolist()
+            label_filter = (preds_sample &gt; self.threshold).cpu().numpy().tolist()
             labels_true = list(compress(self.labels, label_filter))
             pred = Prediction(
                 label=self.labels[indices[i]],
@@ -908,7 +908,7 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         pred_list = []
         for i in range(preds.shape[0]):
             preds_sample = preds[i]
-            label_filter = (preds_sample &gt; self.threshold).numpy().tolist()
+            label_filter = (preds_sample &gt; self.threshold).cpu().numpy().tolist()
             labels_true = list(compress(self.labels, label_filter))
             pred = Prediction(
                 label=self.labels[indices[i]],
@@ -963,7 +963,7 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
     pred_list = []
     for i in range(preds.shape[0]):
         preds_sample = preds[i]
-        label_filter = (preds_sample &gt; self.threshold).numpy().tolist()
+        label_filter = (preds_sample &gt; self.threshold).cpu().numpy().tolist()
         labels_true = list(compress(self.labels, label_filter))
         pred = Prediction(
             label=self.labels[indices[i]],
