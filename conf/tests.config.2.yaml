@@ -6,7 +6,7 @@ defaults:
   - analyzer/predictor/embed: r50_vggface_1m.yaml
   - analyzer/predictor/verify: r100_magface_unpg.yaml
   - analyzer/predictor/fer: efficientnet_b0_7.yaml
-  - analyzer/predictor/au: me_graph_swin_base_bp4d.yaml
+  - analyzer/predictor/au: open_graph_swin_base.yaml
   - analyzer/predictor/deepfake: efficientnet_b7.yaml
   - analyzer/predictor/align: synergy_mobilenet_v2.yaml
   - analyzer/utilizer/align: lmk3d_mesh_pose.yaml
