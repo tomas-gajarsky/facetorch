@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.7.0-runtime-ubuntu20.04
+FROM nvidia/cuda:11.2.2-runtime-ubuntu20.04
 
 # Set working directory
 ENV WORKDIR=/opt/facetorch

@@ -40,6 +40,9 @@ def pytest_configure(config):
         "markers", "fer: mark tests related to Facial Expression Recognition Predictor"
     )
     config.addinivalue_line(
+        "markers", "au: mark tests related to Facial Action Unit Detection"
+    )
+    config.addinivalue_line(
         "markers", "deepfake: mark tests related to Deepfake Detection Predictor"
     )
     config.addinivalue_line(

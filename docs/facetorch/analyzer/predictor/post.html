@@ -31,6 +31,7 @@ from typing import List, Tuple, Union
 
 import torch
 from codetiming import Timer
+from itertools import compress
 from facetorch.base import BaseProcessor
 from facetorch.datastruct import Prediction
 from facetorch.logger import LoggerJsonFile
@@ -124,7 +125,7 @@ class PostArgMax(BasePredPostProcessor):
             device (torch.device): Torch device cpu or cuda.
             optimize_transform (bool): Whether to optimize the transform using TorchScript.
             labels (List[str]): List of labels.
-            dim (int): Dimension of the prediction.
+            dim (int): Axis along which to apply the argmax.
         &#34;&#34;&#34;
         super().__init__(transform, device, optimize_transform, labels)
         self.dim = dim
@@ -212,19 +213,73 @@ class PostEmbedder(BasePredPostProcessor):
 
     @Timer(&#34;PostEmbedder.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
-        &#34;&#34;&#34;Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
+        &#34;&#34;&#34;Extracts the embedding from the prediction tensor and returns a list of prediction data structures, one for each face.
 
         Args:
             preds (torch.Tensor): Batch prediction tensor.
 
         Returns:
-            List[Prediction]: List of prediction data structures containing the predicted labels and confidence scores for each face in the batch.
+            List[Prediction]: List of prediction data structures containing the predicted embeddings.
         &#34;&#34;&#34;
         if isinstance(preds, tuple):
             preds = preds[0]
 
         indices = [0] * preds.shape[0]
         pred_list = self.create_pred_list(preds, indices)
+
+        return pred_list
+
+
+class PostMultiLabel(BasePredPostProcessor):
+    def __init__(
+        self,
+        transform: transforms.Compose,
+        device: torch.device,
+        optimize_transform: bool,
+        labels: List[str],
+        dim: int,
+        threshold: float = 0.5,
+    ):
+        &#34;&#34;&#34;Initialize the predictor postprocessor that extracts multiple labels from the confidence scores.
+
+        Args:
+            transform (Compose): Composed Torch transform object.
+            device (torch.device): Torch device cpu or cuda.
+            optimize_transform (bool): Whether to optimize the transform using TorchScript.
+            labels (List[str]): List of labels.
+            dim (int): Axis along which to apply the softmax.
+            threshold (float): Probability threshold for including a label. Only labels with a confidence score above the threshold are included. Defaults to 0.5.
+        &#34;&#34;&#34;
+        super().__init__(transform, device, optimize_transform, labels)
+        self.dim = dim
+        self.threshold = threshold
+
+    @Timer(&#34;PostMultiLabel.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
+        &#34;&#34;&#34;Extracts multiple labels and puts them in other[multi] predictions. The most likely label is put in the label field. Confidence scores are returned in the logits field.
+
+        Args:
+            preds (torch.Tensor): Batch prediction tensor.
+
+        Returns:
+            List[Prediction]: List of prediction data structures containing the most prevailing label, confidence scores, and multiple labels for each face.
+        &#34;&#34;&#34;
+        if isinstance(preds, tuple):
+            preds = preds[0]
+
+        indices = torch.argmax(preds, dim=self.dim).cpu().numpy().tolist()
+
+        pred_list = []
+        for i in range(preds.shape[0]):
+            preds_sample = preds[i]
+            label_filter = (preds_sample &gt; self.threshold).cpu().numpy().tolist()
+            labels_true = list(compress(self.labels, label_filter))
+            pred = Prediction(
+                label=self.labels[indices[i]],
+                logits=preds_sample,
+                other={&#34;multi&#34;: labels_true},
+            )
+            pred_list.append(pred)
 
         return pred_list</code></pre>
 </details>
@@ -339,6 +394,7 @@ All subclass should overwrite:</p>
 <ul class="hlist">
 <li><a title="facetorch.analyzer.predictor.post.PostArgMax" href="#facetorch.analyzer.predictor.post.PostArgMax">PostArgMax</a></li>
 <li><a title="facetorch.analyzer.predictor.post.PostEmbedder" href="#facetorch.analyzer.predictor.post.PostEmbedder">PostEmbedder</a></li>
+<li><a title="facetorch.analyzer.predictor.post.PostMultiLabel" href="#facetorch.analyzer.predictor.post.PostMultiLabel">PostMultiLabel</a></li>
 <li><a title="facetorch.analyzer.predictor.post.PostSigmoidBinary" href="#facetorch.analyzer.predictor.post.PostSigmoidBinary">PostSigmoidBinary</a></li>
 </ul>
 <h3>Methods</h3>
@@ -449,7 +505,7 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
 <dt><strong><code>labels</code></strong> :&ensp;<code>List[str]</code></dt>
 <dd>List of labels.</dd>
 <dt><strong><code>dim</code></strong> :&ensp;<code>int</code></dt>
-<dd>Dimension of the prediction.</dd>
+<dd>Axis along which to apply the argmax.</dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -472,7 +528,7 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
             device (torch.device): Torch device cpu or cuda.
             optimize_transform (bool): Whether to optimize the transform using TorchScript.
             labels (List[str]): List of labels.
-            dim (int): Dimension of the prediction.
+            dim (int): Axis along which to apply the argmax.
         &#34;&#34;&#34;
         super().__init__(transform, device, optimize_transform, labels)
         self.dim = dim
@@ -713,13 +769,13 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
 
     @Timer(&#34;PostEmbedder.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
-        &#34;&#34;&#34;Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
+        &#34;&#34;&#34;Extracts the embedding from the prediction tensor and returns a list of prediction data structures, one for each face.
 
         Args:
             preds (torch.Tensor): Batch prediction tensor.
 
         Returns:
-            List[Prediction]: List of prediction data structures containing the predicted labels and confidence scores for each face in the batch.
+            List[Prediction]: List of prediction data structures containing the predicted embeddings.
         &#34;&#34;&#34;
         if isinstance(preds, tuple):
             preds = preds[0]
@@ -740,7 +796,7 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
 <span>def <span class="ident">run</span></span>(<span>self, preds: torch.Tensor) ‑> List[<a title="facetorch.datastruct.Prediction" href="../../datastruct.html#facetorch.datastruct.Prediction">Prediction</a>]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.</p>
+<div class="desc"><p>Extracts the embedding from the prediction tensor and returns a list of prediction data structures, one for each face.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>preds</code></strong> :&ensp;<code>torch.Tensor</code></dt>
@@ -749,7 +805,7 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>List[Prediction]</code></dt>
-<dd>List of prediction data structures containing the predicted labels and confidence scores for each face in the batch.</dd>
+<dd>List of prediction data structures containing the predicted embeddings.</dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -757,19 +813,164 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
 </summary>
 <pre><code class="python">@Timer(&#34;PostEmbedder.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
 def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
-    &#34;&#34;&#34;Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
+    &#34;&#34;&#34;Extracts the embedding from the prediction tensor and returns a list of prediction data structures, one for each face.
 
     Args:
         preds (torch.Tensor): Batch prediction tensor.
 
     Returns:
-        List[Prediction]: List of prediction data structures containing the predicted labels and confidence scores for each face in the batch.
+        List[Prediction]: List of prediction data structures containing the predicted embeddings.
     &#34;&#34;&#34;
     if isinstance(preds, tuple):
         preds = preds[0]
 
     indices = [0] * preds.shape[0]
     pred_list = self.create_pred_list(preds, indices)
+
+    return pred_list</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="facetorch.analyzer.predictor.post.BasePredPostProcessor" href="#facetorch.analyzer.predictor.post.BasePredPostProcessor">BasePredPostProcessor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="facetorch.analyzer.predictor.post.BasePredPostProcessor.create_pred_list" href="#facetorch.analyzer.predictor.post.BasePredPostProcessor.create_pred_list">create_pred_list</a></code></li>
+<li><code><a title="facetorch.analyzer.predictor.post.BasePredPostProcessor.optimize" href="../../base.html#facetorch.base.BaseProcessor.optimize">optimize</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="facetorch.analyzer.predictor.post.PostMultiLabel"><code class="flex name class">
+<span>class <span class="ident">PostMultiLabel</span></span>
+<span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool, labels: List[str], dim: int, threshold: float = 0.5)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Initialize the predictor postprocessor that extracts multiple labels from the confidence scores.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>transform</code></strong> :&ensp;<code>Compose</code></dt>
+<dd>Composed Torch transform object.</dd>
+<dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
+<dd>Torch device cpu or cuda.</dd>
+<dt><strong><code>optimize_transform</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Whether to optimize the transform using TorchScript.</dd>
+<dt><strong><code>labels</code></strong> :&ensp;<code>List[str]</code></dt>
+<dd>List of labels.</dd>
+<dt><strong><code>dim</code></strong> :&ensp;<code>int</code></dt>
+<dd>Axis along which to apply the softmax.</dd>
+<dt><strong><code>threshold</code></strong> :&ensp;<code>float</code></dt>
+<dd>Probability threshold for including a label. Only labels with a confidence score above the threshold are included. Defaults to 0.5.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class PostMultiLabel(BasePredPostProcessor):
+    def __init__(
+        self,
+        transform: transforms.Compose,
+        device: torch.device,
+        optimize_transform: bool,
+        labels: List[str],
+        dim: int,
+        threshold: float = 0.5,
+    ):
+        &#34;&#34;&#34;Initialize the predictor postprocessor that extracts multiple labels from the confidence scores.
+
+        Args:
+            transform (Compose): Composed Torch transform object.
+            device (torch.device): Torch device cpu or cuda.
+            optimize_transform (bool): Whether to optimize the transform using TorchScript.
+            labels (List[str]): List of labels.
+            dim (int): Axis along which to apply the softmax.
+            threshold (float): Probability threshold for including a label. Only labels with a confidence score above the threshold are included. Defaults to 0.5.
+        &#34;&#34;&#34;
+        super().__init__(transform, device, optimize_transform, labels)
+        self.dim = dim
+        self.threshold = threshold
+
+    @Timer(&#34;PostMultiLabel.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
+        &#34;&#34;&#34;Extracts multiple labels and puts them in other[multi] predictions. The most likely label is put in the label field. Confidence scores are returned in the logits field.
+
+        Args:
+            preds (torch.Tensor): Batch prediction tensor.
+
+        Returns:
+            List[Prediction]: List of prediction data structures containing the most prevailing label, confidence scores, and multiple labels for each face.
+        &#34;&#34;&#34;
+        if isinstance(preds, tuple):
+            preds = preds[0]
+
+        indices = torch.argmax(preds, dim=self.dim).cpu().numpy().tolist()
+
+        pred_list = []
+        for i in range(preds.shape[0]):
+            preds_sample = preds[i]
+            label_filter = (preds_sample &gt; self.threshold).cpu().numpy().tolist()
+            labels_true = list(compress(self.labels, label_filter))
+            pred = Prediction(
+                label=self.labels[indices[i]],
+                logits=preds_sample,
+                other={&#34;multi&#34;: labels_true},
+            )
+            pred_list.append(pred)
+
+        return pred_list</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="facetorch.analyzer.predictor.post.BasePredPostProcessor" href="#facetorch.analyzer.predictor.post.BasePredPostProcessor">BasePredPostProcessor</a></li>
+<li><a title="facetorch.base.BaseProcessor" href="../../base.html#facetorch.base.BaseProcessor">BaseProcessor</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="facetorch.analyzer.predictor.post.PostMultiLabel.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self, preds: torch.Tensor) ‑> List[<a title="facetorch.datastruct.Prediction" href="../../datastruct.html#facetorch.datastruct.Prediction">Prediction</a>]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Extracts multiple labels and puts them in other[multi] predictions. The most likely label is put in the label field. Confidence scores are returned in the logits field.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>preds</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Batch prediction tensor.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>List[Prediction]</code></dt>
+<dd>List of prediction data structures containing the most prevailing label, confidence scores, and multiple labels for each face.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@Timer(&#34;PostMultiLabel.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
+    &#34;&#34;&#34;Extracts multiple labels and puts them in other[multi] predictions. The most likely label is put in the label field. Confidence scores are returned in the logits field.
+
+    Args:
+        preds (torch.Tensor): Batch prediction tensor.
+
+    Returns:
+        List[Prediction]: List of prediction data structures containing the most prevailing label, confidence scores, and multiple labels for each face.
+    &#34;&#34;&#34;
+    if isinstance(preds, tuple):
+        preds = preds[0]
+
+    indices = torch.argmax(preds, dim=self.dim).cpu().numpy().tolist()
+
+    pred_list = []
+    for i in range(preds.shape[0]):
+        preds_sample = preds[i]
+        label_filter = (preds_sample &gt; self.threshold).cpu().numpy().tolist()
+        labels_true = list(compress(self.labels, label_filter))
+        pred = Prediction(
+            label=self.labels[indices[i]],
+            logits=preds_sample,
+            other={&#34;multi&#34;: labels_true},
+        )
+        pred_list.append(pred)
 
     return pred_list</code></pre>
 </details>
@@ -870,6 +1071,12 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="facetorch.analyzer.predictor.post.PostEmbedder" href="#facetorch.analyzer.predictor.post.PostEmbedder">PostEmbedder</a></code></h4>
 <ul class="">
 <li><code><a title="facetorch.analyzer.predictor.post.PostEmbedder.run" href="#facetorch.analyzer.predictor.post.PostEmbedder.run">run</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.analyzer.predictor.post.PostMultiLabel" href="#facetorch.analyzer.predictor.post.PostMultiLabel">PostMultiLabel</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.analyzer.predictor.post.PostMultiLabel.run" href="#facetorch.analyzer.predictor.post.PostMultiLabel.run">run</a></code></li>
 </ul>
 </li>
 </ul>

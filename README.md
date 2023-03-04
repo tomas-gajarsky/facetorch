@@ -78,6 +78,7 @@ analyzer
             ├── embed
             ├── verify
             ├── fer
+            ├── au
             ├── deepfake
             └── align
     └── utilizer
@@ -150,6 +151,16 @@ analyzer
     * B0 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/facial-expression-and-attributes-recognition/facial-expression-recognition-on-affectnet)](https://paperswithcode.com/sota/facial-expression-recognition-on-affectnet?p=facial-expression-and-attributes-recognition)
     * B0 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/facial-expression-and-attributes-recognition/facial-expression-recognition-on-acted-facial)](https://paperswithcode.com/sota/facial-expression-recognition-on-acted-facial?p=facial-expression-and-attributes-recognition)
 
+#### Facial Action Unit Detection (au)
+
+    |        model        |   source  |  params |       license      | version |  
+    | ------------------- | --------- | ------- | ------------------ | ------- |
+    | OpenGraph Swin Base |  CVI-SZU  |   94M   |     MIT License    |    1    |
+
+1. CVI-SZU
+    * code: [ME-GraphAU](https://github.com/CVI-SZU/ME-GraphAU)
+    * paper: [Luo et al. - Learning Multi-dimensional Edge Feature-based AU Relation Graph for Facial Action Unit Recognition](https://arxiv.org/abs/2205.01782)
+    * [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/learning-multi-dimensional-edge-feature-based/facial-action-unit-detection-on-bp4d)](https://paperswithcode.com/sota/facial-action-unit-detection-on-bp4d?p=learning-multi-dimensional-edge-feature-based)
 
 #### Deepfake Detection (deepfake)
 
@@ -185,18 +196,19 @@ You can also download the models manually from a [public Google Drive folder](ht
 
 ### Execution time
 
-Image test.jpg (4 faces) is analyzed (including drawing boxes and landmarks, but not saving) in about 465ms and test3.jpg (25 faces) in about 1480ms (batch_size=8) on NVIDIA Tesla T4 GPU once the default configuration (*conf/config.yaml*) of models is initialized and pre heated to the initial image size 1080x1080 by the first run. One can monitor the execution times in logs using the DEBUG level.
+Image test.jpg (4 faces) is analyzed (including drawing boxes and landmarks, but not saving) in about 482ms and test3.jpg (25 faces) in about 1844ms (batch_size=8) on NVIDIA Tesla T4 GPU once the default configuration (*conf/config.yaml*) of models is initialized and pre heated to the initial image size 1080x1080 by the first run. One can monitor the execution times in logs using the DEBUG level.
 
 Detailed test.jpg execution times:
 ```
 analyzer
     ├── reader: 27 ms
-    ├── detector: 230 ms
+    ├── detector: 193 ms
     ├── unifier: 1 ms
     └── predictor
             ├── embed: 8 ms
             ├── verify: 58 ms
             ├── fer: 28 ms
+            ├── au: 57 ms
             ├── deepfake: 117 ms
             └── align: 5 ms
     └── utilizer

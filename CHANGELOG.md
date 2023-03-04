@@ -1,5 +1,17 @@
 # Change Log
 
+
+## 0.3.0
+
+Released on February 9, 2023.
+
+### Added
+* predictor for facial action unit detection - OpenGraphAU from Luo et al.
+
+### Changed
+* facetorch version retrieval error handling to not fail the run
+
+
 ## 0.2.4
 
 Released on February 4, 2023.
