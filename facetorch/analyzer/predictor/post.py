@@ -244,7 +244,7 @@ class PostMultiLabel(BasePredPostProcessor):
         pred_list = []
         for i in range(preds.shape[0]):
             preds_sample = preds[i]
-            label_filter = (preds_sample > self.threshold).numpy().tolist()
+            label_filter = (preds_sample > self.threshold).cpu().numpy().tolist()
             labels_true = list(compress(self.labels, label_filter))
             pred = Prediction(
                 label=self.labels[indices[i]],
