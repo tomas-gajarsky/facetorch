@@ -1,6 +1,17 @@
 # Change Log
 
 
+## 0.3.1
+
+Released on December 10, 2023.
+
+### Added
+* link to ChatGPT guide that has knowledge about facetorch
+
+### Fixed
+* stuck AU predictor inference in the notebook by specifying torch version to install
+
+
 ## 0.3.0
 
 Released on February 9, 2023.
