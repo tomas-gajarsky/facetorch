@@ -13,7 +13,7 @@
 <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
-[User Guide](https://medium.com/@gajarsky.tomas/facetorch-user-guide-a0e9fd2a5552), [Documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html)
+[User Guide](https://medium.com/@gajarsky.tomas/facetorch-user-guide-a0e9fd2a5552), [Documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html), [ChatGPT facetorch guide](https://chat.openai.com/g/g-q8HWAkG4u-facetorch-guide)
  
 [Docker Hub](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch) [(GPU)](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch-gpu)
 
