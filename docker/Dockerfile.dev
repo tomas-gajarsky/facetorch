@@ -1,4 +1,4 @@
-FROM python:3.9.12-slim
+FROM python:3.8.16-slim
 
 # Set working directory
 ENV WORKDIR=/opt/facetorch
