@@ -75,6 +75,7 @@ ipython_config.py
 
 # VS Code
 .vscode/
+.devcontainer/
 
 # PyCharm
 .idea/*
