@@ -1,11 +1,11 @@
 from typing import Optional, Union
 
-import pkg_resources
 import torch
 from codetiming import Timer
 from facetorch.analyzer.predictor.core import FacePredictor
 from facetorch.datastruct import ImageData, Response
 from facetorch.logger import LoggerJsonFile
+from importlib.metadata import version
 from hydra.utils import instantiate
 from omegaconf import OmegaConf
 
@@ -54,23 +54,28 @@ class FaceAnalyzer(object):
         self.detector = instantiate(self.cfg.detector)
 
         self.logger.info("Initializing FaceUnifier")
-        self.unifier = instantiate(self.cfg.unifier)
+        if "unifier" in self.cfg:
+            self.unifier = instantiate(self.cfg.unifier)
+        else:
+            self.unifier = None
 
         self.logger.info("Initializing FacePredictor objects")
         self.predictors = {}
-        for predictor_name in self.cfg.predictor:
-            self.logger.info(f"Initializing FacePredictor {predictor_name}")
-            self.predictors[predictor_name] = instantiate(
-                self.cfg.predictor[predictor_name]
-            )
+        if "predictor" in self.cfg:
+            for predictor_name in self.cfg.predictor:
+                self.logger.info(f"Initializing FacePredictor {predictor_name}")
+                self.predictors[predictor_name] = instantiate(
+                    self.cfg.predictor[predictor_name]
+                )
 
-        self.logger.info("Initializing BaseUtilizer objects")
         self.utilizers = {}
-        for utilizer_name in self.cfg.utilizer:
-            self.logger.info(f"Initializing BaseUtilizer {utilizer_name}")
-            self.utilizers[utilizer_name] = instantiate(
-                self.cfg.utilizer[utilizer_name]
-            )
+        if "utilizer" in self.cfg:
+            self.logger.info("Initializing BaseUtilizer objects")
+            for utilizer_name in self.cfg.utilizer:
+                self.logger.info(f"Initializing BaseUtilizer {utilizer_name}")
+                self.utilizers[utilizer_name] = instantiate(
+                    self.cfg.utilizer[utilizer_name]
+                )
 
     @Timer("FaceAnalyzer.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def run(
@@ -121,7 +126,7 @@ class FaceAnalyzer(object):
         data.path_output = path_output
 
         try:
-            data.version = pkg_resources.get_distribution("facetorch").version
+            data.version = version("facetorch")
         except Exception as e:
             self.logger.warning("Could not get version number", extra={"error": e})
 
@@ -130,7 +135,7 @@ class FaceAnalyzer(object):
         n_faces = len(data.faces)
         self.logger.info(f"Number of faces: {n_faces}")
 
-        if n_faces > 0:
+        if n_faces > 0 and self.unifier is not None:
             self.logger.info("Unifying faces")
             data = self.unifier.run(data)
 
