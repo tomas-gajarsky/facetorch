@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import torch
 from codetiming import Timer
@@ -250,6 +250,64 @@ class PostMultiLabel(BasePredPostProcessor):
                 label=self.labels[indices[i]],
                 logits=preds_sample,
                 other={"multi": labels_true},
+            )
+            pred_list.append(pred)
+
+        return pred_list
+
+
+class PostLabelConfidencePairs(BasePredPostProcessor):
+    def __init__(
+        self,
+        transform: transforms.Compose,
+        device: torch.device,
+        optimize_transform: bool,
+        labels: List[str],
+        offsets: Optional[List[float]] = [0.25, 0.05],
+    ):
+        """Initialize the predictor postprocessor that zips the confidence scores with the labels.
+
+        Args:
+            transform (Compose): Composed Torch transform object.
+            device (torch.device): Torch device cpu or cuda.
+            optimize_transform (bool): Whether to optimize the transform using TorchScript.
+            labels (List[str]): List of labels.
+            offsets (List[float]): Offsets for the confidence scores. Defaults to [0.25, 0.05].
+        """
+        super().__init__(transform, device, optimize_transform, labels)
+
+        if offsets is None:
+            offsets = [0] * len(labels)
+        self.offsets = offsets
+
+    @Timer(
+        "PostLabelConfidencePairs.run",
+        "{name}: {milliseconds:.2f} ms",
+        logger=logger.debug,
+    )
+    def run(self, preds: torch.Tensor) -> List[Prediction]:
+        """Extracts the confidence scores and puts them in other[label] predictions.
+
+        Args:
+            preds (torch.Tensor): Batch prediction tensor.
+
+        Returns:
+            List[Prediction]: List of prediction data structures containing the logits and label logit pairs.
+        """
+        if isinstance(preds, tuple):
+            preds = preds[0]
+
+        pred_list = []
+        for i in range(preds.shape[0]):
+            preds_sample = preds[i]
+            other_labels = {
+                label: preds_sample.cpu().numpy().tolist()[j] + self.offsets[j]
+                for j, label in enumerate(self.labels)
+            }
+            pred = Prediction(
+                label="other",
+                logits=preds_sample,
+                other=other_labels,
             )
             pred_list.append(pred)
 
