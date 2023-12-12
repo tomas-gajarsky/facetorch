@@ -1,16 +1,17 @@
 name: env
 channels:
   - conda-forge
+  - pytorch
 dependencies:
-  - python>=3.8
-  - codetiming>=1.2.0
-  - googleapis-common-protos>=1.56.3
-  - gdown>=3.11.0
-  - hydra-core>=1.0.0
-  - numpy>=1.18.2
-  - pip>=20.0.2
-  - python-json-logger>=2.0.0
-  - pytorch-cpu>=1.9.0
-  - torchvision>=0.10.0
+  - python=3.9
+  - codetiming
+  - googleapis-common-protos
+  - gdown
+  - hydra-core
+  - numpy
+  - pip
+  - python-json-logger
+  - pytorch=2.0.1
+  - torchvision>=0.15.2
 platforms:
   - linux-64
