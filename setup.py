@@ -39,8 +39,13 @@ def get_requirements(filename: str) -> List[str]:
                 continue
         elif "pytorch-cpu" in line_str:
             line_str = line_str.replace("pytorch-cpu", "torch")
+        elif "pytorch" in line_str:
+            line_str = line_str.replace("pytorch", "torch")
         elif "platforms" in line_str:
             use_line = False
+
+        if "=" in line_str and not ">=" in line_str:
+            line_str = line_str.replace("=", ">=")
 
         if use_line:
             req_strings.append(line_str[2:])
