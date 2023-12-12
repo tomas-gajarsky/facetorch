@@ -9,8 +9,6 @@ import torch
 @pytest.mark.detector
 @pytest.mark.downloader
 def test_downloader_run(analyzer):
-    if os.path.exists(analyzer.detector.downloader.path_local):
-        os.remove(analyzer.detector.downloader.path_local)
     if not os.path.exists(analyzer.detector.downloader.path_local):
         analyzer.detector.downloader.run()
     assert os.path.exists(analyzer.detector.downloader.path_local)

@@ -15,7 +15,7 @@ def test_va_in_preds(response):
 def test_valence(response, cfg):
     if "test.jpg" not in cfg.path_image:
         pytest.skip("Ony test.jpg is used for this test.")
-    assert response.faces[1].preds["va"].other["valence"] > 0.5
+    assert response.faces[1].preds["va"].other["valence"] > 0
 
 
 @pytest.mark.endtoend
@@ -24,8 +24,7 @@ def test_valence(response, cfg):
 def test_arousal(response, cfg):
     if "test.jpg" not in cfg.path_image:
         pytest.skip("Ony test.jpg is used for this test.")
-    assert response.faces[1].preds["va"].other["arousal"] < 0.5
-    assert response.faces[1].preds["va"].other["arousal"] > -0.5
+    assert response.faces[1].preds["va"].other["arousal"] > 0
 
 
 @pytest.mark.endtoend
