@@ -79,6 +79,7 @@ analyzer
             ├── verify
             ├── fer
             ├── au
+            ├── va
             ├── deepfake
             └── align
     └── utilizer
@@ -162,6 +163,17 @@ analyzer
     * paper: [Luo et al. - Learning Multi-dimensional Edge Feature-based AU Relation Graph for Facial Action Unit Recognition](https://arxiv.org/abs/2205.01782)
     * [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/learning-multi-dimensional-edge-feature-based/facial-action-unit-detection-on-bp4d)](https://paperswithcode.com/sota/facial-action-unit-detection-on-bp4d?p=learning-multi-dimensional-edge-feature-based)
 
+#### Facial Valence Arousal (va)
+
+    |       model       |   source   |  params |   license   | version |
+    | ----------------- | ---------- | ------- | ----------- | ------- |
+    |  ELIM AL AlexNet  | kdhht2334  |  2.3M   | MIT license |    1    |
+
+1. kdhht2334
+    * code: [ELIM](https://github.com/kdhht2334/ELIM_FER)
+    * paper: [Kim et al. - Optimal Transport-based Identity Matching
+for Identity-invariant Facial Expression Recognition](https://arxiv.org/abs/2209.12172)
+
 #### Deepfake Detection (deepfake)
 
     |         model        |      source      |  params  |   license   | version |
@@ -196,7 +208,7 @@ You can also download the models manually from a [public Google Drive folder](ht
 
 ### Execution time
 
-Image test.jpg (4 faces) is analyzed (including drawing boxes and landmarks, but not saving) in about 482ms and test3.jpg (25 faces) in about 1844ms (batch_size=8) on NVIDIA Tesla T4 GPU once the default configuration (*conf/config.yaml*) of models is initialized and pre heated to the initial image size 1080x1080 by the first run. One can monitor the execution times in logs using the DEBUG level.
+Image test.jpg (4 faces) is analyzed (including drawing boxes and landmarks, but not saving) in about 486ms and test3.jpg (25 faces) in about 1845ms (batch_size=8) on NVIDIA Tesla T4 GPU once the default configuration (*conf/config.yaml*) of models is initialized and pre heated to the initial image size 1080x1080 by the first run. One can monitor the execution times in logs using the DEBUG level.
 
 Detailed test.jpg execution times:
 ```
@@ -209,6 +221,7 @@ analyzer
             ├── verify: 58 ms
             ├── fer: 28 ms
             ├── au: 57 ms
+            ├── va: 1 ms
             ├── deepfake: 117 ms
             └── align: 5 ms
     └── utilizer
