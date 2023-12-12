@@ -1,6 +1,16 @@
 # Change Log
 
 
+## 0.4.0
+
+Released on *, 2023.
+
+### Changed
+* PyTorch version to >= 2.0.1
+* torchvision version to >= 0.14.0
+* CUDA version in Docker images to 12.1
+
+
 ## 0.3.1
 
 Released on December 10, 2023.
