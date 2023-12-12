@@ -1,0 +1,36 @@
+_target_: facetorch.analyzer.predictor.FacePredictor
+
+downloader:
+  _target_: facetorch.downloader.DownloaderGDrive
+  file_id: 1Xl4ilNCU_DgKNhITrXb3UyQUUdm3VTKS
+  path_local: /opt/facetorch/models/torchscript/predictor/va/1/model.pt # str
+
+device:
+  _target_: torch.device
+  type: ${analyzer.device} # str
+
+preprocessor:
+  _target_: facetorch.analyzer.predictor.pre.PredictorPreProcessor
+  transform:
+    _target_: torchvision.transforms.Compose
+    transforms:
+      - _target_: torchvision.transforms.Resize
+        size: [224, 224] # List[int]
+        antialias: True
+      - _target_: torchvision.transforms.Normalize
+        mean: [0.485, 0.456, 0.406] # List[float]
+        std: [0.229, 0.224, 0.225] # List[float]
+  device: 
+    _target_: torch.device
+    type: ${analyzer.predictor.va.device.type}
+  optimize_transform: ${analyzer.optimize_transforms}
+  reverse_colors: False # bool
+
+postprocessor:
+  _target_: facetorch.analyzer.predictor.post.PostLabelConfidencePairs
+  transform: None
+  device: 
+    _target_: torch.device
+    type: ${analyzer.predictor.va.device.type}
+  optimize_transform: ${analyzer.optimize_transforms}
+  labels: ["valence", "arousal"] # List
