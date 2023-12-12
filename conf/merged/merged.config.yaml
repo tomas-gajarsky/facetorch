@@ -18,8 +18,8 @@ analyzer:
     _target_: facetorch.analyzer.detector.FaceDetector
     downloader:
       _target_: facetorch.downloader.DownloaderGDrive
-      file_id: 154x2VjmTQVqmowB0yZw4Uck7uQs2vVBs
-      path_local: /code/models/torchscript/detector/1/model.pt
+      file_id: 1eMuOdGkiNCOUTiEbKKoPCHGCuDgiKeNC
+      path_local: /opt/facetorch/models/torchscript/detector/1/model.pt
     device:
       _target_: torch.device
       type: ${analyzer.device}
@@ -73,7 +73,7 @@ analyzer:
       - 0.1
       - 0.2
       reverse_colors: ${analyzer.detector.reverse_colors}
-      expand_box_ratio: 0.1
+      expand_box_ratio: 0.0
   unifier:
     _target_: facetorch.analyzer.unifier.FaceUnifier
     transform:
@@ -126,7 +126,7 @@ analyzer:
             - 0.225
         device:
           _target_: torch.device
-          type: ${analyzer.predictor.fer.device.type}
+          type: ${analyzer.predictor.embed.device.type}
         optimize_transform: ${analyzer.optimize_transforms}
         reverse_colors: false
       postprocessor:
@@ -134,7 +134,7 @@ analyzer:
         transform: None
         device:
           _target_: torch.device
-          type: ${analyzer.predictor.fer.device.type}
+          type: ${analyzer.predictor.embed.device.type}
         optimize_transform: ${analyzer.optimize_transforms}
         labels:
         - abstract
@@ -142,8 +142,8 @@ analyzer:
       _target_: facetorch.analyzer.predictor.FacePredictor
       downloader:
         _target_: facetorch.downloader.DownloaderGDrive
-        file_id: 1H-aPtFd9C5D7y1vzoWsObKAxeIBE9QPd
-        path_local: /code/models/torchscript/predictor/verify/1/model.pt
+        file_id: 1WI-mP_0mGW31OHfriPUsuFS_usYh_W8p
+        path_local: /code/models/torchscript/predictor/verify/2/model.pt
       device:
         _target_: torch.device
         type: ${analyzer.device}
@@ -158,18 +158,18 @@ analyzer:
             - 112
           - _target_: torchvision.transforms.Normalize
             mean:
-            - 0.485
-            - 0.456
-            - 0.406
+            - 0.5
+            - 0.5
+            - 0.5
             std:
-            - 0.229
-            - 0.224
-            - 0.225
+            - 0.5
+            - 0.5
+            - 0.5
         device:
           _target_: torch.device
           type: ${analyzer.predictor.verify.device.type}
         optimize_transform: ${analyzer.optimize_transforms}
-        reverse_colors: false
+        reverse_colors: true
       postprocessor:
         _target_: facetorch.analyzer.predictor.post.PostEmbedder
         transform: None
@@ -233,29 +233,37 @@ analyzer:
       downloader:
         _target_: facetorch.downloader.DownloaderGDrive
         file_id: 1uoVX9suSA5JVWTms3hEtJKzwO-CUR_jV
-        path_local: /opt/facetorch/models/torchscript/predictor/au/1/model.pt # str
+        path_local: /code/models/torchscript/predictor/au/1/model.pt # str
       device:
         _target_: torch.device
-        type: ${analyzer.device} # str
+        type: ${analyzer.device}
       preprocessor:
         _target_: facetorch.analyzer.predictor.pre.PredictorPreProcessor
         transform:
           _target_: torchvision.transforms.Compose
           transforms:
-            - _target_: torchvision.transforms.Resize
-              size: [224, 224] # List[int]
-            - _target_: torchvision.transforms.Normalize
-              mean: [0.485, 0.456, 0.406] # List[float]
-              std: [0.229, 0.224, 0.225] # List[float]
-        device: 
+          - _target_: torchvision.transforms.Resize
+            size:
+            - 224
+            - 224
+          - _target_: torchvision.transforms.Normalize
+            mean:
+            - 0.485
+            - 0.456
+            - 0.406
+            std:
+            - 0.229
+            - 0.224
+            - 0.225
+        device:
           _target_: torch.device
           type: ${analyzer.predictor.au.device.type}
         optimize_transform: ${analyzer.optimize_transforms}
-        reverse_colors: False # bool
+        reverse_colors: false
       postprocessor:
         _target_: facetorch.analyzer.predictor.post.PostMultiLabel
         transform: None
-        device: 
+        device:
           _target_: torch.device
           type: ${analyzer.predictor.au.device.type}
         optimize_transform: ${analyzer.optimize_transforms}
@@ -303,6 +311,49 @@ analyzer:
         - right_nasolabial_deepener
         - left_dimpler
         - right_dimpler
+    va:
+      _target_: facetorch.analyzer.predictor.FacePredictor
+      downloader:
+        _target_: facetorch.downloader.DownloaderGDrive
+        file_id: 1Xl4ilNCU_DgKNhITrXb3UyQUUdm3VTKS
+        path_local: /code/models/torchscript/predictor/va/1/model.pt
+      device:
+        _target_: torch.device
+        type: ${analyzer.device}
+      preprocessor:
+        _target_: facetorch.analyzer.predictor.pre.PredictorPreProcessor
+        transform:
+          _target_: torchvision.transforms.Compose
+          transforms:
+          - _target_: torchvision.transforms.Resize
+            size:
+            - 224
+            - 224
+            antialias: true
+          - _target_: torchvision.transforms.Normalize
+            mean:
+            - 0.485
+            - 0.456
+            - 0.406
+            std:
+            - 0.229
+            - 0.224
+            - 0.225
+        device:
+          _target_: torch.device
+          type: ${analyzer.predictor.va.device.type}
+        optimize_transform: ${analyzer.optimize_transforms}
+        reverse_colors: false
+      postprocessor:
+        _target_: facetorch.analyzer.predictor.post.PostLabelConfidencePairs
+        transform: None
+        device:
+          _target_: torch.device
+          type: ${analyzer.predictor.va.device.type}
+        optimize_transform: ${analyzer.optimize_transforms}
+        labels:
+        - valence
+        - arousal
     deepfake:
       _target_: facetorch.analyzer.predictor.FacePredictor
       downloader:
