@@ -21,28 +21,9 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py39_23.10.0-1-L
 ENV PATH=$CONDA_DIR/bin:$PATH
 
 # Install conda-build and conda-lock for environment reproducibility
-RUN conda install -y -c conda-forge conda-lock conda-build
-
-# Create conda environment from the uploaded lock file
-COPY gpu.conda-lock.yml .
-RUN conda-lock install --name env gpu.conda-lock.yml
+RUN conda install -y -c conda-forge -n base conda-lock conda-build
 
 # Make RUN commands use the new environment:
 RUN conda init bash
-RUN echo "conda activate env" >> ~/.bashrc
+RUN echo "conda activate base" >> ~/.bashrc
 SHELL ["/bin/bash", "--login", "-c"]
-
-# Add facetorch to sys python path
-ENV PYTHONPATH "$PYTHONPATH:$WORKDIR/"
-# Switch default pip to conda-installed version
-RUN ln -s /opt/conda/envs/env/bin/pip /usr/bin/pip
-RUN pip install --upgrade pip
-
-# Install facetorch package
-COPY facetorch .
-COPY environment.yml setup.py version README.md ./
-RUN pip install  --no-dependencies -e .
-
-# Install development dependencies
-COPY requirements.dev.txt .
-RUN pip install -r requirements.dev.txt
