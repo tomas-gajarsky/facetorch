@@ -3,7 +3,7 @@
 
 ## 0.4.0
 
-Released on December 12, 2023.
+Released on December 13, 2023.
 
 ### Added
 * predictor for facial valence arousal - ELIM AL from Kim et al.
