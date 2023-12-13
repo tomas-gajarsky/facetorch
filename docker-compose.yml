@@ -1,7 +1,6 @@
 version: "3.3"
 services:
 
-  # Container for running the latest deployment
   facetorch:
     image: tomasgajarsky/facetorch:latest
     platform: linux/amd64
@@ -9,8 +8,8 @@ services:
       context: .
       dockerfile: ./docker/Dockerfile
     volumes:
-        - ./:/opt/facetorch
-    entrypoint: ["/bin/bash"]
+      - ./:/opt/facetorch
+    entrypoint: [ "/bin/bash" ]
 
   facetorch-gpu:
     image: tomasgajarsky/facetorch-gpu:latest
@@ -18,15 +17,9 @@ services:
       context: .
       dockerfile: ./docker/Dockerfile.gpu
     volumes:
-        - ./:/opt/facetorch
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: ["0"]
-              capabilities: [gpu]
-    entrypoint: ["/bin/bash"]
+      - ./:/opt/facetorch
+    runtime: nvidia
+    entrypoint: [ "/bin/bash" ]
 
   facetorch-gpu-no-device:
     image: tomasgajarsky/facetorch-gpu:latest
@@ -35,5 +28,5 @@ services:
       context: .
       dockerfile: ./docker/Dockerfile.gpu
     volumes:
-        - ./:/opt/facetorch
-    entrypoint: ["/bin/bash"]
+      - ./:/opt/facetorch
+    entrypoint: [ "/bin/bash" ]
