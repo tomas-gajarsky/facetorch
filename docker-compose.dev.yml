@@ -1,7 +1,6 @@
 version: "3.3"
 services:
 
-  # Container for development purposes
   facetorch-dev:
     platform: linux/amd64
     build:
@@ -9,7 +8,7 @@ services:
       dockerfile: ./docker/Dockerfile.dev
     volumes:
       - ./:/opt/facetorch
-    entrypoint: ["/bin/bash"]
+    entrypoint: [ "/bin/bash" ]
 
   facetorch-dev-gpu:
     build:
@@ -18,14 +17,8 @@ services:
     volumes:
       - ./:/opt/facetorch
     shm_size: 8gb
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: ['0']
-              capabilities: [ gpu ]
-    entrypoint: ["/bin/bash"]
+    runtime: nvidia
+    entrypoint: [ "/bin/bash" ]
 
   facetorch-tests:
     platform: linux/amd64
@@ -34,7 +27,19 @@ services:
       dockerfile: ./docker/Dockerfile.tests
     volumes:
       - ./:/opt/facetorch
-    entrypoint: ["conda", "run", "--no-capture-output", "-n", "env", "pytest", "-v", "--cov=facetorch", "--cov-report=term", "--cov-fail-under=95"]
+    entrypoint:
+      [
+        "conda",
+        "run",
+        "--no-capture-output",
+        "-n",
+        "env",
+        "pytest",
+        "-v",
+        "--cov=facetorch",
+        "--cov-report=term",
+        "--cov-fail-under=95"
+      ]
 
   facetorch-dev-example:
     platform: linux/amd64
@@ -43,7 +48,16 @@ services:
       dockerfile: ./docker/Dockerfile.dev
     volumes:
       - ./:/opt/facetorch
-    entrypoint: ["conda", "run", "--no-capture-output", "-n", "env", "python", "scripts/example.py"]
+    entrypoint:
+      [
+        "conda",
+        "run",
+        "--no-capture-output",
+        "-n",
+        "env",
+        "python",
+        "scripts/example.py"
+      ]
 
   facetorch-lock:
     platform: linux/amd64
@@ -52,7 +66,21 @@ services:
       dockerfile: ./docker/Dockerfile.lock
     volumes:
       - ./:/opt/facetorch
-    entrypoint: ["conda", "run", "--no-capture-output", "-n", "base", "conda-lock", "-p", "linux-64", "-f", "environment.yml", "--lockfile", "new.conda-lock.yml"]
+    entrypoint:
+      [
+        "conda",
+        "run",
+        "--no-capture-output",
+        "-n",
+        "base",
+        "conda-lock",
+        "-p",
+        "linux-64",
+        "-f",
+        "environment.yml",
+        "--lockfile",
+        "new.conda-lock.yml"
+      ]
 
   facetorch-lock-gpu:
     platform: linux/amd64
@@ -61,4 +89,19 @@ services:
       dockerfile: ./docker/Dockerfile.lock
     volumes:
       - ./:/opt/facetorch
-    entrypoint: ["conda", "run", "--no-capture-output", "-n", "base", "conda-lock", "-p", "linux-64", "-f", "gpu.environment.yml", "--lockfile", "new.gpu.conda-lock.yml"]
+    runtime: nvidia
+    entrypoint:
+      [
+        "conda",
+        "run",
+        "--no-capture-output",
+        "-n",
+        "base",
+        "conda-lock",
+        "-p",
+        "linux-64",
+        "-f",
+        "gpu.environment.yml",
+        "--lockfile",
+        "new.gpu.conda-lock.yml"
+      ]

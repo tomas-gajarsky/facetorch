@@ -150,23 +150,28 @@ It also draws bounding boxes and facial landmarks over the image.</p>
         self.detector = instantiate(self.cfg.detector)
 
         self.logger.info(&#34;Initializing FaceUnifier&#34;)
-        self.unifier = instantiate(self.cfg.unifier)
+        if &#34;unifier&#34; in self.cfg:
+            self.unifier = instantiate(self.cfg.unifier)
+        else:
+            self.unifier = None
 
         self.logger.info(&#34;Initializing FacePredictor objects&#34;)
         self.predictors = {}
-        for predictor_name in self.cfg.predictor:
-            self.logger.info(f&#34;Initializing FacePredictor {predictor_name}&#34;)
-            self.predictors[predictor_name] = instantiate(
-                self.cfg.predictor[predictor_name]
-            )
+        if &#34;predictor&#34; in self.cfg:
+            for predictor_name in self.cfg.predictor:
+                self.logger.info(f&#34;Initializing FacePredictor {predictor_name}&#34;)
+                self.predictors[predictor_name] = instantiate(
+                    self.cfg.predictor[predictor_name]
+                )
 
-        self.logger.info(&#34;Initializing BaseUtilizer objects&#34;)
         self.utilizers = {}
-        for utilizer_name in self.cfg.utilizer:
-            self.logger.info(f&#34;Initializing BaseUtilizer {utilizer_name}&#34;)
-            self.utilizers[utilizer_name] = instantiate(
-                self.cfg.utilizer[utilizer_name]
-            )
+        if &#34;utilizer&#34; in self.cfg:
+            self.logger.info(&#34;Initializing BaseUtilizer objects&#34;)
+            for utilizer_name in self.cfg.utilizer:
+                self.logger.info(f&#34;Initializing BaseUtilizer {utilizer_name}&#34;)
+                self.utilizers[utilizer_name] = instantiate(
+                    self.cfg.utilizer[utilizer_name]
+                )
 
     @Timer(&#34;FaceAnalyzer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(
@@ -217,7 +222,7 @@ It also draws bounding boxes and facial landmarks over the image.</p>
         data.path_output = path_output
 
         try:
-            data.version = pkg_resources.get_distribution(&#34;facetorch&#34;).version
+            data.version = version(&#34;facetorch&#34;)
         except Exception as e:
             self.logger.warning(&#34;Could not get version number&#34;, extra={&#34;error&#34;: e})
 
@@ -226,7 +231,7 @@ It also draws bounding boxes and facial landmarks over the image.</p>
         n_faces = len(data.faces)
         self.logger.info(f&#34;Number of faces: {n_faces}&#34;)
 
-        if n_faces &gt; 0:
+        if n_faces &gt; 0 and self.unifier is not None:
             self.logger.info(&#34;Unifying faces&#34;)
             data = self.unifier.run(data)
 
@@ -339,7 +344,7 @@ def run(
     data.path_output = path_output
 
     try:
-        data.version = pkg_resources.get_distribution(&#34;facetorch&#34;).version
+        data.version = version(&#34;facetorch&#34;)
     except Exception as e:
         self.logger.warning(&#34;Could not get version number&#34;, extra={&#34;error&#34;: e})
 
@@ -348,7 +353,7 @@ def run(
     n_faces = len(data.faces)
     self.logger.info(f&#34;Number of faces: {n_faces}&#34;)
 
-    if n_faces &gt; 0:
+    if n_faces &gt; 0 and self.unifier is not None:
         self.logger.info(&#34;Unifying faces&#34;)
         data = self.unifier.run(data)
 

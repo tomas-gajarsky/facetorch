@@ -106,6 +106,8 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+=*
+
 ## User folders
 models/
 outputs/

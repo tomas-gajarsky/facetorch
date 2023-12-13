@@ -1,6 +1,18 @@
 # Change Log
 
 
+## 0.4.0
+
+Released on December 13, 2023.
+
+### Added
+* predictor for facial valence arousal - ELIM AL from Kim et al.
+* predictor postprocessor for creating label confidence pairs
+
+### Changed
+* FaceAnalyzer can run without any predictors or utilizers
+
+
 ## 0.3.1
 
 Released on December 10, 2023.
