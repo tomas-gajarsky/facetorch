@@ -15,7 +15,7 @@ def test_va_in_preds(response):
 def test_valence(response, cfg):
     if "test.jpg" not in cfg.path_image:
         pytest.skip("Ony test.jpg is used for this test.")
-    assert response.faces[1].preds["va"].other["valence"] > 0
+    assert response.faces[0].preds["va"].other["valence"] > 0.5
 
 
 @pytest.mark.endtoend
@@ -24,7 +24,7 @@ def test_valence(response, cfg):
 def test_arousal(response, cfg):
     if "test.jpg" not in cfg.path_image:
         pytest.skip("Ony test.jpg is used for this test.")
-    assert response.faces[1].preds["va"].other["arousal"] > 0
+    assert response.faces[0].preds["va"].other["arousal"] > 0
 
 
 @pytest.mark.endtoend
@@ -33,8 +33,9 @@ def test_arousal(response, cfg):
 def test_valence_range(response, cfg):
     if "test.jpg" not in cfg.path_image:
         pytest.skip("Ony test.jpg is used for this test.")
-    assert response.faces[1].preds["va"].other["valence"] >= -1
-    assert response.faces[1].preds["va"].other["valence"] <= 1
+    for face in response.faces:
+        assert face.preds["va"].other["valence"] >= -1
+        assert face.preds["va"].other["valence"] <= 1
 
 
 @pytest.mark.endtoend
@@ -43,5 +44,6 @@ def test_valence_range(response, cfg):
 def test_arousal_range(response, cfg):
     if "test.jpg" not in cfg.path_image:
         pytest.skip("Ony test.jpg is used for this test.")
-    assert response.faces[1].preds["va"].other["arousal"] >= -1
-    assert response.faces[1].preds["va"].other["arousal"] <= 1
+    for face in response.faces:
+        assert face.preds["va"].other["arousal"] >= -1
+        assert face.preds["va"].other["arousal"] <= 1

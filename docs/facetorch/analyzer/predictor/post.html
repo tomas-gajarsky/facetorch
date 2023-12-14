@@ -291,7 +291,7 @@ class PostLabelConfidencePairs(BasePredPostProcessor):
         device: torch.device,
         optimize_transform: bool,
         labels: List[str],
-        offsets: Optional[List[float]] = [0.25, 0.05],
+        offsets: Optional[List[float]] = None,
     ):
         &#34;&#34;&#34;Initialize the predictor postprocessor that zips the confidence scores with the labels.
 
@@ -300,7 +300,7 @@ class PostLabelConfidencePairs(BasePredPostProcessor):
             device (torch.device): Torch device cpu or cuda.
             optimize_transform (bool): Whether to optimize the transform using TorchScript.
             labels (List[str]): List of labels.
-            offsets (List[float]): Offsets for the confidence scores. Defaults to [0.25, 0.05].
+            offsets (Optional[List[float]], optional): List of offsets to add to the confidence scores. Defaults to None.
         &#34;&#34;&#34;
         super().__init__(transform, device, optimize_transform, labels)
 
@@ -328,8 +328,9 @@ class PostLabelConfidencePairs(BasePredPostProcessor):
         pred_list = []
         for i in range(preds.shape[0]):
             preds_sample = preds[i]
+            preds_sample_list = preds_sample.cpu().numpy().tolist()
             other_labels = {
-                label: preds_sample.cpu().numpy().tolist()[j] + self.offsets[j]
+                label: preds_sample_list[j] + self.offsets[j]
                 for j, label in enumerate(self.labels)
             }
             pred = Prediction(
@@ -1047,7 +1048,7 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
 </dd>
 <dt id="facetorch.analyzer.predictor.post.PostLabelConfidencePairs"><code class="flex name class">
 <span>class <span class="ident">PostLabelConfidencePairs</span></span>
-<span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool, labels: List[str], offsets: Optional[List[float]] = [0.25, 0.05])</span>
+<span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool, labels: List[str], offsets: Optional[List[float]] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Initialize the predictor postprocessor that zips the confidence scores with the labels.</p>
@@ -1061,8 +1062,8 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
 <dd>Whether to optimize the transform using TorchScript.</dd>
 <dt><strong><code>labels</code></strong> :&ensp;<code>List[str]</code></dt>
 <dd>List of labels.</dd>
-<dt><strong><code>offsets</code></strong> :&ensp;<code>List[float]</code></dt>
-<dd>Offsets for the confidence scores. Defaults to [0.25, 0.05].</dd>
+<dt><strong><code>offsets</code></strong> :&ensp;<code>Optional[List[float]]</code>, optional</dt>
+<dd>List of offsets to add to the confidence scores. Defaults to None.</dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -1075,7 +1076,7 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         device: torch.device,
         optimize_transform: bool,
         labels: List[str],
-        offsets: Optional[List[float]] = [0.25, 0.05],
+        offsets: Optional[List[float]] = None,
     ):
         &#34;&#34;&#34;Initialize the predictor postprocessor that zips the confidence scores with the labels.
 
@@ -1084,7 +1085,7 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
             device (torch.device): Torch device cpu or cuda.
             optimize_transform (bool): Whether to optimize the transform using TorchScript.
             labels (List[str]): List of labels.
-            offsets (List[float]): Offsets for the confidence scores. Defaults to [0.25, 0.05].
+            offsets (Optional[List[float]], optional): List of offsets to add to the confidence scores. Defaults to None.
         &#34;&#34;&#34;
         super().__init__(transform, device, optimize_transform, labels)
 
@@ -1112,8 +1113,9 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         pred_list = []
         for i in range(preds.shape[0]):
             preds_sample = preds[i]
+            preds_sample_list = preds_sample.cpu().numpy().tolist()
             other_labels = {
-                label: preds_sample.cpu().numpy().tolist()[j] + self.offsets[j]
+                label: preds_sample_list[j] + self.offsets[j]
                 for j, label in enumerate(self.labels)
             }
             pred = Prediction(
@@ -1171,8 +1173,9 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
     pred_list = []
     for i in range(preds.shape[0]):
         preds_sample = preds[i]
+        preds_sample_list = preds_sample.cpu().numpy().tolist()
         other_labels = {
-            label: preds_sample.cpu().numpy().tolist()[j] + self.offsets[j]
+            label: preds_sample_list[j] + self.offsets[j]
             for j, label in enumerate(self.labels)
         }
         pred = Prediction(

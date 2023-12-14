@@ -263,7 +263,7 @@ class PostLabelConfidencePairs(BasePredPostProcessor):
         device: torch.device,
         optimize_transform: bool,
         labels: List[str],
-        offsets: Optional[List[float]] = [0.25, 0.05],
+        offsets: Optional[List[float]] = None,
     ):
         """Initialize the predictor postprocessor that zips the confidence scores with the labels.
 
@@ -272,7 +272,7 @@ class PostLabelConfidencePairs(BasePredPostProcessor):
             device (torch.device): Torch device cpu or cuda.
             optimize_transform (bool): Whether to optimize the transform using TorchScript.
             labels (List[str]): List of labels.
-            offsets (List[float]): Offsets for the confidence scores. Defaults to [0.25, 0.05].
+            offsets (Optional[List[float]], optional): List of offsets to add to the confidence scores. Defaults to None.
         """
         super().__init__(transform, device, optimize_transform, labels)
 
@@ -300,8 +300,9 @@ class PostLabelConfidencePairs(BasePredPostProcessor):
         pred_list = []
         for i in range(preds.shape[0]):
             preds_sample = preds[i]
+            preds_sample_list = preds_sample.cpu().numpy().tolist()
             other_labels = {
-                label: preds_sample.cpu().numpy().tolist()[j] + self.offsets[j]
+                label: preds_sample_list[j] + self.offsets[j]
                 for j, label in enumerate(self.labels)
             }
             pred = Prediction(
