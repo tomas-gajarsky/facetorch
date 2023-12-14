@@ -1,6 +1,17 @@
 # Change Log
 
 
+## 0.4.1
+
+Released on December 14, 2023.
+
+### Changed
+* postprocessor for label confidence pairs to have no offset by default
+* Resize transform configs to enable antialiasing by default
+* notebook to version 0.4.0 or higher
+* notebook to include Action Unit and Valence Arousal predictors
+
+
 ## 0.4.0
 
 Released on December 13, 2023.
