@@ -263,7 +263,7 @@ class PostLabelConfidencePairs(BasePredPostProcessor):
         device: torch.device,
         optimize_transform: bool,
         labels: List[str],
-        offsets: Optional[List[float]] = [0.25, 0.05],
+        offsets: Optional[List[float]] = None,
     ):
         """Initialize the predictor postprocessor that zips the confidence scores with the labels.
 
@@ -272,7 +272,7 @@ class PostLabelConfidencePairs(BasePredPostProcessor):
             device (torch.device): Torch device cpu or cuda.
             optimize_transform (bool): Whether to optimize the transform using TorchScript.
             labels (List[str]): List of labels.
-            offsets (List[float]): Offsets for the confidence scores. Defaults to [0.25, 0.05].
+            offsets (Optional[List[float]], optional): List of offsets to add to the confidence scores. Defaults to None.
         """
         super().__init__(transform, device, optimize_transform, labels)
 
@@ -297,18 +297,20 @@ class PostLabelConfidencePairs(BasePredPostProcessor):
         if isinstance(preds, tuple):
             preds = preds[0]
 
-        pred_list = []
-        for i in range(preds.shape[0]):
-            preds_sample = preds[i]
-            other_labels = {
-                label: preds_sample.cpu().numpy().tolist()[j] + self.offsets[j]
-                for j, label in enumerate(self.labels)
-            }
-            pred = Prediction(
+        # Convert tensor to numpy array once instead of in the loop
+        preds_np = preds.cpu().numpy()
+
+        # Use list comprehension instead of loop for creating pred_list
+        pred_list = [
+            Prediction(
                 label="other",
                 logits=preds_sample,
-                other=other_labels,
+                other={
+                    label: preds_np[i, j] + offset
+                    for j, (label, offset) in enumerate(zip(self.labels, self.offsets))
+                },
             )
-            pred_list.append(pred)
+            for i, preds_sample in enumerate(preds_np)
+        ]
 
         return pred_list
