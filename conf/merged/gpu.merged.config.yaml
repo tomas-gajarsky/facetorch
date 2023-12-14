@@ -11,9 +11,10 @@ analyzer:
       _target_: torchvision.transforms.Compose
       transforms:
       - _target_: facetorch.transforms.SquarePad
-      - _target_: torchvision.transforms.Resize
+      - _target_: torchvision.transforms.Resize        
         size:
         - 1080
+        antialias: True
   detector:
     _target_: facetorch.analyzer.detector.FaceDetector
     downloader:
@@ -88,10 +89,11 @@ analyzer:
         - 255.0
         - 255.0
         - 255.0
-      - _target_: torchvision.transforms.Resize
+      - _target_: torchvision.transforms.Resize        
         size:
         - 380
         - 380
+        antialias: True
     device:
       _target_: torch.device
       type: ${analyzer.device}
@@ -111,10 +113,11 @@ analyzer:
         transform:
           _target_: torchvision.transforms.Compose
           transforms:
-          - _target_: torchvision.transforms.Resize
+          - _target_: torchvision.transforms.Resize            
             size:
             - 244
             - 244
+            antialias: True
           - _target_: torchvision.transforms.Normalize
             mean:
             - 0.485
@@ -152,10 +155,11 @@ analyzer:
         transform:
           _target_: torchvision.transforms.Compose
           transforms:
-          - _target_: torchvision.transforms.Resize
+          - _target_: torchvision.transforms.Resize        
             size:
             - 112
             - 112
+            antialias: True
           - _target_: torchvision.transforms.Normalize
             mean:
             - 0.5
@@ -193,10 +197,11 @@ analyzer:
         transform:
           _target_: torchvision.transforms.Compose
           transforms:
-          - _target_: torchvision.transforms.Resize
+          - _target_: torchvision.transforms.Resize            
             size:
             - 260
             - 260
+            antialias: True
           - _target_: torchvision.transforms.Normalize
             mean:
             - 0.485
@@ -242,10 +247,11 @@ analyzer:
         transform:
           _target_: torchvision.transforms.Compose
           transforms:
-          - _target_: torchvision.transforms.Resize
+          - _target_: torchvision.transforms.Resize        
             size:
             - 224
             - 224
+            antialias: True
           - _target_: torchvision.transforms.Normalize
             mean:
             - 0.485
@@ -325,11 +331,11 @@ analyzer:
         transform:
           _target_: torchvision.transforms.Compose
           transforms:
-          - _target_: torchvision.transforms.Resize
+          - _target_: torchvision.transforms.Resize            
             size:
             - 224
             - 224
-            antialias: true
+            antialias: True
           - _target_: torchvision.transforms.Normalize
             mean:
             - 0.485
@@ -354,6 +360,9 @@ analyzer:
         labels:
         - valence
         - arousal
+        offsets:
+        - 0
+        - 0
     deepfake:
       _target_: facetorch.analyzer.predictor.FacePredictor
       downloader:
@@ -368,10 +377,11 @@ analyzer:
         transform:
           _target_: torchvision.transforms.Compose
           transforms:
-          - _target_: torchvision.transforms.Resize
+          - _target_: torchvision.transforms.Resize        
             size:
             - 380
             - 380
+            antialias: True
           - _target_: torchvision.transforms.Normalize
             mean:
             - 0.485
@@ -411,10 +421,11 @@ analyzer:
         transform:
           _target_: torchvision.transforms.Compose
           transforms:
-          - _target_: torchvision.transforms.Resize
+          - _target_: torchvision.transforms.Resize            
             size:
             - 120
             - 120
+            antialias: True
         device:
           _target_: torch.device
           type: ${analyzer.predictor.align.device.type}

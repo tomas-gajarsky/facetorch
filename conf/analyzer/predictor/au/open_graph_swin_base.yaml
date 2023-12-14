@@ -14,8 +14,9 @@ preprocessor:
   transform:
     _target_: torchvision.transforms.Compose
     transforms:
-      - _target_: torchvision.transforms.Resize
+      - _target_: torchvision.transforms.Resize        
         size: [224, 224] # List[int]
+        antialias: True # bool
       - _target_: torchvision.transforms.Normalize
         mean: [0.485, 0.456, 0.406] # List[float]
         std: [0.229, 0.224, 0.225] # List[float]
