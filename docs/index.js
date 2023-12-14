@@ -815,7 +815,7 @@ INDEX = [
     {
         "ref": "facetorch.analyzer.predictor.post.PostLabelConfidencePairs",
         "url": 15,
-        "doc": "Initialize the predictor postprocessor that zips the confidence scores with the labels. Args: transform (Compose): Composed Torch transform object. device (torch.device): Torch device cpu or cuda. optimize_transform (bool): Whether to optimize the transform using TorchScript. labels (List[str]): List of labels. offsets (List[float]): Offsets for the confidence scores. Defaults to [0.25, 0.05]."
+        "doc": "Initialize the predictor postprocessor that zips the confidence scores with the labels. Args: transform (Compose): Composed Torch transform object. device (torch.device): Torch device cpu or cuda. optimize_transform (bool): Whether to optimize the transform using TorchScript. labels (List[str]): List of labels. offsets (Optional[List[float , optional): List of offsets to add to the confidence scores. Defaults to None."
     },
     {
         "ref": "facetorch.analyzer.predictor.post.PostLabelConfidencePairs.run",
