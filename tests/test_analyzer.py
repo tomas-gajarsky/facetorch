@@ -17,6 +17,7 @@ def test_analyzer_path_image(cfg, analyzer):
         path_output=cfg.path_output,
     )
 
+    assert response.tensor.shape[1:] == response.img.shape
     assert response.tensor.dtype == torch.float32
     assert len(response.faces[0].preds.keys()) > 0
 
@@ -35,7 +36,8 @@ def test_analyzer_tensor(cfg, analyzer):
         path_output=cfg.path_output,
     )
 
-    assert response.tensor.shape == (1, 3, 512, 512)
+    assert response.tensor.shape[1:] == response.img.shape
+    assert response.tensor.shape == (1, 3, 1080, 1080)
     assert response.tensor.dtype == torch.float32
     assert response.tensor.device == torch.device(cfg.analyzer.device)
     assert len(response.faces[0].preds.keys()) > 0
