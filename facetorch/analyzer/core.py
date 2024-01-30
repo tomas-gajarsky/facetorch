@@ -80,23 +80,25 @@ class FaceAnalyzer(object):
     @Timer("FaceAnalyzer.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def run(
         self,
-        path_image: str,
+        path_image: Optional[str] = None,
         batch_size: int = 8,
         fix_img_size: bool = False,
         return_img_data: bool = False,
         include_tensors: bool = False,
         path_output: Optional[str] = None,
+        tensor: Optional[torch.Tensor] = None,
     ) -> Union[Response, ImageData]:
         """Reads image, detects faces, unifies the detected faces, predicts facial features
          and returns analyzed data.
 
         Args:
-            path_image (str): Path to the input image.
+            path_image (Optional[str]): Path to the image to be analyzed. If None, tensor must be provided. Default: None.
             batch_size (int): Batch size for making predictions on the faces. Default is 8.
             fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False.
             return_img_data (bool): If True, returns all image data including tensors, otherwise only returns the faces. Default is False.
             include_tensors (bool): If True, removes tensors from the returned data object. Default is False.
             path_output (Optional[str]): Path where to save the image with detected faces. If None, the image is not saved. Default: None.
+            tensor (Optional[torch.Tensor]): Image tensor to be analyzed. If None, path_image must be provided. Default: None.
 
         Returns:
             Union[Response, ImageData]: If return_img_data is False, returns a Response object containing the faces and their facial features. If return_img_data is True, returns the entire ImageData object.
@@ -120,8 +122,23 @@ class FaceAnalyzer(object):
             return data
 
         self.logger.info("Running FaceAnalyzer")
-        self.logger.info("Reading image", extra={"path_image": path_image})
-        data = self.reader.run(path_image, fix_img_size=fix_img_size)
+
+        if path_image is None and tensor is None:
+            raise ValueError("Either path_image or tensor must be provided.")
+
+        if path_image is not None and tensor is not None:
+            raise ValueError("Only one of path_image or tensor must be provided.")
+
+        if path_image is not None:
+            reader_input = path_image
+        else:
+            reader_input = tensor
+
+        self.logger.info(
+            "Reading image", extra={"path_image": path_image, "tensor": tensor}
+        )
+        data = self.reader.run(reader_input, fix_img_size=fix_img_size)
+
         path_output = None if path_output == "None" else path_output
         data.path_output = path_output
 
