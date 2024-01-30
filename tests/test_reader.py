@@ -12,6 +12,10 @@ def test_base_type(analyzer):
 @pytest.mark.endtoend
 @pytest.mark.reader
 def test_output_shape_length(cfg, analyzer):
+    if cfg.path_image is None:
+        pytest.skip("No image path provided in config.")
+    if hasattr(cfg, "path_tensor"):
+        pytest.skip("Only test.jpg is used for this test.")
     data = analyzer.reader.run(cfg.path_image)
     assert len(data.tensor.shape) == 4
 
@@ -19,5 +23,27 @@ def test_output_shape_length(cfg, analyzer):
 @pytest.mark.endtoend
 @pytest.mark.reader
 def test_output_shape_batch_channel(cfg, analyzer):
+    if cfg.path_image is None:
+        pytest.skip("No image path provided in config.")
+    if hasattr(cfg, "path_tensor"):
+        pytest.skip("Only test.jpg is used for this test.")
     data = analyzer.reader.run(cfg.path_image)
+    assert data.tensor.shape[:2] == torch.Size([1, 3])
+
+
+@pytest.mark.endtoend
+@pytest.mark.reader
+def test_output_shape_length_with_tensor_input(cfg, analyzer, tensor):
+    if not hasattr(cfg, "path_tensor"):
+        pytest.skip("No tensor path provided in config.")
+    data = analyzer.reader.run(tensor)
+    assert len(data.tensor.shape) == 4
+
+
+@pytest.mark.endtoend
+@pytest.mark.reader
+def test_output_shape_batch_channel_with_tensor_input(cfg, analyzer, tensor):
+    if not hasattr(cfg, "path_tensor"):
+        pytest.skip("No tensor path provided in config.")
+    data = analyzer.reader.run(tensor)
     assert data.tensor.shape[:2] == torch.Size([1, 3])

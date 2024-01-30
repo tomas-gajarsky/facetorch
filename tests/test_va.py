@@ -15,6 +15,9 @@ def test_va_in_preds(response):
 def test_valence(response, cfg):
     if "test.jpg" not in cfg.path_image:
         pytest.skip("Ony test.jpg is used for this test.")
+    if hasattr(cfg, "path_tensor"):
+        if "tensor.pt" in cfg.path_tensor:
+            pytest.skip("Only test.jpg is used for this test.")
     assert response.faces[0].preds["va"].other["valence"] > 0.5
 
 
@@ -23,7 +26,10 @@ def test_valence(response, cfg):
 @pytest.mark.va
 def test_arousal(response, cfg):
     if "test.jpg" not in cfg.path_image:
-        pytest.skip("Ony test.jpg is used for this test.")
+        pytest.skip("Only test.jpg is used for this test.")
+    if hasattr(cfg, "path_tensor"):
+        if "tensor.pt" in cfg.path_tensor:
+            pytest.skip("Only test.jpg is used for this test.")
     assert response.faces[0].preds["va"].other["arousal"] > 0
 
 
@@ -32,7 +38,10 @@ def test_arousal(response, cfg):
 @pytest.mark.va
 def test_valence_range(response, cfg):
     if "test.jpg" not in cfg.path_image:
-        pytest.skip("Ony test.jpg is used for this test.")
+        pytest.skip("Only test.jpg is used for this test.")
+    if hasattr(cfg, "path_tensor"):
+        if "tensor.pt" in cfg.path_tensor:
+            pytest.skip("Only test.jpg is used for this test.")
     for face in response.faces:
         assert face.preds["va"].other["valence"] >= -1
         assert face.preds["va"].other["valence"] <= 1
