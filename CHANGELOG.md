@@ -1,6 +1,12 @@
 # Change Log
 
 
+## 0.4.2
+### Added
+* Tensor input support for FaceAnalyzer run method
+* TensorReader for transforming incoming torch tensors
+
+
 ## 0.4.1
 
 Released on December 14, 2023.
