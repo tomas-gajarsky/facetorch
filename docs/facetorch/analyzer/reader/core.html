@@ -26,7 +26,8 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">import torch
+<pre><code class="python">import copy
+import torch
 import torchvision
 from codetiming import Timer
 from facetorch.base import BaseReader
@@ -80,6 +81,53 @@ class ImageReader(BaseReader):
 
         data.tensor = data.img.type(torch.float32)
         data.img = data.img.squeeze(0).cpu()
+        data.set_dims()
+
+        return data
+
+
+class TensorReader(BaseReader):
+    def __init__(
+        self,
+        transform: torchvision.transforms.Compose,
+        device: torch.device,
+        optimize_transform: bool,
+    ):
+        &#34;&#34;&#34;TensorReader is a wrapper around a functionality for reading tensors by Torchvision.
+
+        Args:
+            transform (torchvision.transforms.Compose): Transform compose object to be applied to the image, if fix_image_size is True.
+            device (torch.device): Torch device cpu or cuda object.
+            optimize_transform (bool): Whether to optimize the transforms that are: resizing the image to a fixed size.
+
+        &#34;&#34;&#34;
+        super().__init__(
+            transform,
+            device,
+            optimize_transform,
+        )
+
+    @Timer(&#34;TensorReader.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    def run(self, tensor: torch.Tensor, fix_img_size: bool = False) -&gt; ImageData:
+        &#34;&#34;&#34;Reads a tensor and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image.
+
+        Args:
+            tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width).
+            fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
+
+        Returns:
+            ImageData: ImageData object with image tensor and pil Image.
+        &#34;&#34;&#34;
+        data = ImageData(path_input=None)
+        data.tensor = copy.deepcopy(tensor)
+        data.tensor = tensor.unsqueeze(0)
+        data.tensor = data.tensor.to(self.device)
+
+        if fix_img_size:
+            data.tensor = self.transform(data.tensor)
+
+        data.img = data.tensor.squeeze(0).cpu()
+        data.tensor = data.tensor.type(torch.float32)
         data.set_dims()
 
         return data</code></pre>
@@ -227,6 +275,135 @@ def run(self, path_image: str, fix_img_size: bool = False) -&gt; ImageData:
 </li>
 </ul>
 </dd>
+<dt id="facetorch.analyzer.reader.core.TensorReader"><code class="flex name class">
+<span>class <span class="ident">TensorReader</span></span>
+<span>(</span><span>transform: torchvision.transforms.transforms.Compose, device: torch.device, optimize_transform: bool)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>TensorReader is a wrapper around a functionality for reading tensors by Torchvision.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>transform</code></strong> :&ensp;<code>torchvision.transforms.Compose</code></dt>
+<dd>Transform compose object to be applied to the image, if fix_image_size is True.</dd>
+<dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
+<dd>Torch device cpu or cuda object.</dd>
+<dt><strong><code>optimize_transform</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Whether to optimize the transforms that are: resizing the image to a fixed size.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TensorReader(BaseReader):
+    def __init__(
+        self,
+        transform: torchvision.transforms.Compose,
+        device: torch.device,
+        optimize_transform: bool,
+    ):
+        &#34;&#34;&#34;TensorReader is a wrapper around a functionality for reading tensors by Torchvision.
+
+        Args:
+            transform (torchvision.transforms.Compose): Transform compose object to be applied to the image, if fix_image_size is True.
+            device (torch.device): Torch device cpu or cuda object.
+            optimize_transform (bool): Whether to optimize the transforms that are: resizing the image to a fixed size.
+
+        &#34;&#34;&#34;
+        super().__init__(
+            transform,
+            device,
+            optimize_transform,
+        )
+
+    @Timer(&#34;TensorReader.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    def run(self, tensor: torch.Tensor, fix_img_size: bool = False) -&gt; ImageData:
+        &#34;&#34;&#34;Reads a tensor and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image.
+
+        Args:
+            tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width).
+            fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
+
+        Returns:
+            ImageData: ImageData object with image tensor and pil Image.
+        &#34;&#34;&#34;
+        data = ImageData(path_input=None)
+        data.tensor = copy.deepcopy(tensor)
+        data.tensor = tensor.unsqueeze(0)
+        data.tensor = data.tensor.to(self.device)
+
+        if fix_img_size:
+            data.tensor = self.transform(data.tensor)
+
+        data.img = data.tensor.squeeze(0).cpu()
+        data.tensor = data.tensor.type(torch.float32)
+        data.set_dims()
+
+        return data</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="facetorch.base.BaseReader" href="../../base.html#facetorch.base.BaseReader">BaseReader</a></li>
+<li><a title="facetorch.base.BaseProcessor" href="../../base.html#facetorch.base.BaseProcessor">BaseProcessor</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="facetorch.analyzer.reader.core.TensorReader.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self, tensor: torch.Tensor, fix_img_size: bool = False) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Reads a tensor and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>tensor</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Tensor of a single image with RGB values between 0-255 and shape (channels, height, width).</dd>
+<dt><strong><code>fix_img_size</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>ImageData</code></dt>
+<dd>ImageData object with image tensor and pil Image.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@Timer(&#34;TensorReader.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+def run(self, tensor: torch.Tensor, fix_img_size: bool = False) -&gt; ImageData:
+    &#34;&#34;&#34;Reads a tensor and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image.
+
+    Args:
+        tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width).
+        fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
+
+    Returns:
+        ImageData: ImageData object with image tensor and pil Image.
+    &#34;&#34;&#34;
+    data = ImageData(path_input=None)
+    data.tensor = copy.deepcopy(tensor)
+    data.tensor = tensor.unsqueeze(0)
+    data.tensor = data.tensor.to(self.device)
+
+    if fix_img_size:
+        data.tensor = self.transform(data.tensor)
+
+    data.img = data.tensor.squeeze(0).cpu()
+    data.tensor = data.tensor.type(torch.float32)
+    data.set_dims()
+
+    return data</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="facetorch.base.BaseReader" href="../../base.html#facetorch.base.BaseReader">BaseReader</a></b></code>:
+<ul class="hlist">
+<li><code><a title="facetorch.base.BaseReader.optimize" href="../../base.html#facetorch.base.BaseProcessor.optimize">optimize</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
 </dl>
 </section>
 </article>
@@ -293,6 +470,12 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="facetorch.analyzer.reader.core.ImageReader" href="#facetorch.analyzer.reader.core.ImageReader">ImageReader</a></code></h4>
 <ul class="">
 <li><code><a title="facetorch.analyzer.reader.core.ImageReader.run" href="#facetorch.analyzer.reader.core.ImageReader.run">run</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.analyzer.reader.core.TensorReader" href="#facetorch.analyzer.reader.core.TensorReader">TensorReader</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.analyzer.reader.core.TensorReader.run" href="#facetorch.analyzer.reader.core.TensorReader.run">run</a></code></li>
 </ul>
 </li>
 </ul>

@@ -1,3 +1,4 @@
+import copy
 import torch
 import torchvision
 from codetiming import Timer
@@ -52,6 +53,53 @@ class ImageReader(BaseReader):
 
         data.tensor = data.img.type(torch.float32)
         data.img = data.img.squeeze(0).cpu()
+        data.set_dims()
+
+        return data
+
+
+class TensorReader(BaseReader):
+    def __init__(
+        self,
+        transform: torchvision.transforms.Compose,
+        device: torch.device,
+        optimize_transform: bool,
+    ):
+        """TensorReader is a wrapper around a functionality for reading tensors by Torchvision.
+
+        Args:
+            transform (torchvision.transforms.Compose): Transform compose object to be applied to the image, if fix_image_size is True.
+            device (torch.device): Torch device cpu or cuda object.
+            optimize_transform (bool): Whether to optimize the transforms that are: resizing the image to a fixed size.
+
+        """
+        super().__init__(
+            transform,
+            device,
+            optimize_transform,
+        )
+
+    @Timer("TensorReader.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    def run(self, tensor: torch.Tensor, fix_img_size: bool = False) -> ImageData:
+        """Reads a tensor and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image.
+
+        Args:
+            tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width).
+            fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
+
+        Returns:
+            ImageData: ImageData object with image tensor and pil Image.
+        """
+        data = ImageData(path_input=None)
+        data.tensor = copy.deepcopy(tensor)
+        data.tensor = tensor.unsqueeze(0)
+        data.tensor = data.tensor.to(self.device)
+
+        if fix_img_size:
+            data.tensor = self.transform(data.tensor)
+
+        data.img = data.tensor.squeeze(0).cpu()
+        data.tensor = data.tensor.type(torch.float32)
         data.set_dims()
 
         return data

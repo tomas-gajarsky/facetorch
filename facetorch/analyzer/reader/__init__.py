@@ -1,3 +1,3 @@
-from .core import ImageReader
+from .core import ImageReader, TensorReader
 
-__all__ = ["ImageReader"]
+__all__ = ["ImageReader", "TensorReader"]

@@ -1,0 +1,31 @@
+defaults:
+  - analyzer: default.yaml
+  - analyzer/reader: tensor.yaml
+  - analyzer/detector: retinaface.yaml
+  - analyzer/unifier: img_380.yaml
+  - analyzer/predictor/embed: r50_vggface_1m.yaml
+  - analyzer/predictor/verify: adaface_ir101_webface12m.yaml
+  - analyzer/predictor/fer: efficientnet_b2_8.yaml
+  - analyzer/predictor/au: open_graph_swin_base.yaml
+  - analyzer/predictor/va: elim_al_alexnet.yaml
+  - analyzer/predictor/deepfake: efficientnet_b7.yaml
+  - analyzer/predictor/align: synergy_mobilenet_v2.yaml
+  - analyzer/utilizer/align: lmk3d_mesh_pose.yaml
+  - analyzer/utilizer/draw_boxes: torchvision_boxes.yaml
+  - analyzer/utilizer/draw_landmarks: torchvision_keypoints.yaml
+  - analyzer/utilizer/save: image_saver.yaml
+  - analyzer/logger: json_format.yaml
+  - _self_
+
+main:
+    sleep: 3
+
+debug: true
+
+path_tensor: /opt/facetorch/data/input/tensor.pt # str
+batch_size: 8 # int
+fix_img_size: True # bool
+return_img_data: False # bool
+include_tensors: True # bool
+path_output: /opt/facetorch/data/output/test_tensor.png # Optional[str]
+

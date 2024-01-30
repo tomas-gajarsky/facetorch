@@ -2,6 +2,7 @@ import sys
 from os.path import abspath
 from os.path import dirname as d
 
+import torch
 import pytest
 from facetorch import FaceAnalyzer
 from facetorch.datastruct import ImageData
@@ -80,7 +81,13 @@ def pytest_configure(config):
 
 @pytest.fixture(
     scope="session",
-    params=["tests.config.1", "tests.config.2", "tests.config.3", "tests.config.4"],
+    params=[
+        "tests.config.1",
+        "tests.config.2",
+        "tests.config.3",
+        "tests.config.4",
+        "tests.config.5",
+    ],
 )
 def cfg(request) -> None:
     with initialize(version_base=None, config_path="../conf"):
@@ -96,6 +103,8 @@ def analyzer(cfg) -> FaceAnalyzer:
 
 @pytest.fixture(scope="session")
 def response(cfg, analyzer) -> ImageData:
+    if hasattr(cfg, "path_tensor"):
+        pytest.skip("Only test.jpg is used for this test.")
     response = analyzer.run(
         path_image=cfg.path_image,
         batch_size=cfg.batch_size,
@@ -105,3 +114,12 @@ def response(cfg, analyzer) -> ImageData:
         path_output=cfg.path_output,
     )
     return response
+
+
+@pytest.fixture(scope="session")
+def tensor(cfg) -> torch.Tensor:
+    if hasattr(cfg, "path_tensor"):
+        tensor = torch.load(cfg.path_tensor).to(cfg.analyzer.device)
+    else:
+        pytest.skip("No tensor path provided in config.")
+    return tensor
