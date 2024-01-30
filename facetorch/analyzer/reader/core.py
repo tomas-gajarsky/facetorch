@@ -91,15 +91,15 @@ class TensorReader(BaseReader):
             ImageData: ImageData object with image tensor and pil Image.
         """
         data = ImageData(path_input=None)
-        data.img = copy.deepcopy(tensor)
+        data.tensor = copy.deepcopy(tensor)
         data.tensor = tensor.unsqueeze(0)
         data.tensor = data.tensor.to(self.device)
 
         if fix_img_size:
             data.tensor = self.transform(data.tensor)
 
+        data.img = data.tensor.squeeze(0).cpu()
         data.tensor = data.tensor.type(torch.float32)
-        data.img = data.img.squeeze(0).cpu()
         data.set_dims()
 
         return data
