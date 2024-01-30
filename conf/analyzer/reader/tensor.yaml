@@ -8,5 +8,5 @@ transform:
   transforms:
     - _target_: facetorch.transforms.SquarePad
     - _target_: torchvision.transforms.Resize
-      size: [512] # List[int]
+      size: [1080] # List[int]
       antialias: True # bool
