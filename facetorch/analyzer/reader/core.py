@@ -1,4 +1,7 @@
-import copy
+import io
+import requests
+from PIL import Image
+import numpy as np
 import torch
 import torchvision
 from codetiming import Timer
@@ -7,6 +10,74 @@ from facetorch.datastruct import ImageData
 from facetorch.logger import LoggerJsonFile
 
 logger = LoggerJsonFile().logger
+
+
+class UniversalReader(BaseReader):
+    def __init__(
+        self,
+        transform: torchvision.transforms.Compose,
+        device: torch.device,
+        optimize_transform: bool,
+    ):
+        super().__init__(transform, device, optimize_transform)
+
+    @Timer(
+        "UniversalReader.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug
+    )
+    def run(self, data_input, fix_img_size: bool = False) -> ImageData:
+        # Determine the type of the input and call the appropriate processing method
+        if isinstance(data_input, str):
+            if data_input.startswith("http"):
+                return self.read_image_from_url(data_input, fix_img_size)
+            else:
+                return self.read_image_from_path(data_input, fix_img_size)
+        elif isinstance(data_input, torch.Tensor):
+            return self.read_tensor(data_input, fix_img_size)
+        elif isinstance(data_input, np.ndarray):
+            return self.read_numpy_array(data_input, fix_img_size)
+        elif isinstance(data_input, bytes):
+            return self.read_image_from_bytes(data_input, fix_img_size)
+        elif isinstance(data_input, Image.Image):
+            return self.read_pil_image(data_input, fix_img_size)
+        else:
+            raise ValueError("Unsupported data type")
+
+    def read_tensor(self, tensor: torch.Tensor, fix_img_size: bool) -> ImageData:
+        return self.process_tensor(tensor, fix_img_size)
+
+    def read_pil_image(self, pil_image: Image.Image, fix_img_size: bool) -> ImageData:
+        tensor = torchvision.transforms.functional.to_tensor(pil_image)
+        return self.process_tensor(tensor, fix_img_size)
+
+    def read_numpy_array(self, array: np.ndarray, fix_img_size: bool) -> ImageData:
+        pil_image = Image.fromarray(array, mode="RGB")
+        return self.read_pil_image(pil_image, fix_img_size)
+
+    def read_image_from_bytes(
+        self, image_bytes: bytes, fix_img_size: bool
+    ) -> ImageData:
+        pil_image = Image.open(io.BytesIO(image_bytes))
+        return self.read_pil_image(pil_image, fix_img_size)
+
+    def read_image_from_path(self, path_image: str, fix_img_size: bool) -> ImageData:
+        try:
+            image_tensor = torchvision.io.read_image(path_image)
+        except Exception as e:
+            logger.error(f"Failed to read image from path {path_image}: {e}")
+            raise ValueError(f"Could not read image from path {path_image}: {e}") from e
+
+        return self.process_tensor(image_tensor, fix_img_size)
+
+    def read_image_from_url(self, url: str, fix_img_size: bool) -> ImageData:
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+        except requests.RequestException as e:
+            logger.error(f"Failed to fetch image from URL {url}: {e}")
+            raise ValueError(f"Could not fetch image from URL {url}: {e}") from e
+
+        image_bytes = response.content
+        return self.read_image_from_bytes(image_bytes, fix_img_size)
 
 
 class ImageReader(BaseReader):
@@ -90,16 +161,4 @@ class TensorReader(BaseReader):
         Returns:
             ImageData: ImageData object with image tensor and pil Image.
         """
-        data = ImageData(path_input=None)
-        data.tensor = copy.deepcopy(tensor)
-        data.tensor = tensor.unsqueeze(0)
-        data.tensor = data.tensor.to(self.device)
-
-        if fix_img_size:
-            data.tensor = self.transform(data.tensor)
-
-        data.img = data.tensor.squeeze(0).cpu()
-        data.tensor = data.tensor.type(torch.float32)
-        data.set_dims()
-
-        return data
+        return self.process_tensor(tensor, fix_img_size)
