@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import torchvision
 from codetiming import Timer
+from typing import Union
 from facetorch.base import BaseReader
 from facetorch.datastruct import ImageData
 from facetorch.logger import LoggerJsonFile
@@ -19,26 +20,44 @@ class UniversalReader(BaseReader):
         device: torch.device,
         optimize_transform: bool,
     ):
+        """UniversalReader can read images from a path, URL, tensor, numpy array, bytes or PIL Image and return an ImageData object containing the image tensor.
+
+        Args:
+            transform (torchvision.transforms.Compose): Transform compose object to be applied to the image, if fix_image_size is True.
+            device (torch.device): Torch device cpu or cuda object.
+            optimize_transform (bool): Whether to optimize the transforms that are: resizing the image to a fixed size.
+
+        """
         super().__init__(transform, device, optimize_transform)
 
-    @Timer(
-        "UniversalReader.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug
-    )
-    def run(self, data_input, fix_img_size: bool = False) -> ImageData:
-        # Determine the type of the input and call the appropriate processing method
-        if isinstance(data_input, str):
-            if data_input.startswith("http"):
-                return self.read_image_from_url(data_input, fix_img_size)
+    @Timer("UniversalReader.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    def run(
+        self,
+        image_source: Union[str, torch.Tensor, np.ndarray, bytes, Image.Image],
+        fix_img_size: bool = False,
+    ) -> ImageData:
+        """Reads an image from a path, URL, tensor, numpy array, bytes or PIL Image and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image.
+
+        Args:
+            image_source (Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]): Image source to be read.
+            fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
+
+        Returns:
+            ImageData: ImageData object with image tensor and pil Image.
+        """
+        if isinstance(image_source, str):
+            if image_source.startswith("http"):
+                return self.read_image_from_url(image_source, fix_img_size)
             else:
-                return self.read_image_from_path(data_input, fix_img_size)
-        elif isinstance(data_input, torch.Tensor):
-            return self.read_tensor(data_input, fix_img_size)
-        elif isinstance(data_input, np.ndarray):
-            return self.read_numpy_array(data_input, fix_img_size)
-        elif isinstance(data_input, bytes):
-            return self.read_image_from_bytes(data_input, fix_img_size)
-        elif isinstance(data_input, Image.Image):
-            return self.read_pil_image(data_input, fix_img_size)
+                return self.read_image_from_path(image_source, fix_img_size)
+        elif isinstance(image_source, torch.Tensor):
+            return self.read_tensor(image_source, fix_img_size)
+        elif isinstance(image_source, np.ndarray):
+            return self.read_numpy_array(image_source, fix_img_size)
+        elif isinstance(image_source, bytes):
+            return self.read_image_from_bytes(image_source, fix_img_size)
+        elif isinstance(image_source, Image.Image):
+            return self.read_pil_image(image_source, fix_img_size)
         else:
             raise ValueError("Unsupported data type")
 
