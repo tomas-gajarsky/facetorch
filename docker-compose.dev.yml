@@ -29,11 +29,6 @@ services:
       - ./:/opt/facetorch
     entrypoint:
       [
-        "conda",
-        "run",
-        "--no-capture-output",
-        "-n",
-        "env",
         "pytest",
         "-v",
         "--cov=facetorch",
@@ -48,16 +43,7 @@ services:
       dockerfile: ./docker/Dockerfile.dev
     volumes:
       - ./:/opt/facetorch
-    entrypoint:
-      [
-        "conda",
-        "run",
-        "--no-capture-output",
-        "-n",
-        "env",
-        "python",
-        "scripts/example.py"
-      ]
+    entrypoint: [ "python", "scripts/example.py" ]
 
   facetorch-lock:
     platform: linux/amd64
@@ -68,11 +54,6 @@ services:
       - ./:/opt/facetorch
     entrypoint:
       [
-        "conda",
-        "run",
-        "--no-capture-output",
-        "-n",
-        "base",
         "conda-lock",
         "-p",
         "linux-64",
@@ -92,11 +73,6 @@ services:
     runtime: nvidia
     entrypoint:
       [
-        "conda",
-        "run",
-        "--no-capture-output",
-        "-n",
-        "base",
         "conda-lock",
         "-p",
         "linux-64",
