@@ -10,6 +10,7 @@ Released on February 11, 2024.
 
 ### Changed
 * Enable conda virtual environment by default in Docker images
+* FaceAnalyzer run method to accept various input types via image_source parameter
 
 
 ## 0.4.2
