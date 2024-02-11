@@ -1,4 +1,5 @@
 import os
+import copy
 from abc import ABCMeta, abstractmethod
 from typing import Optional, Tuple, Union
 
@@ -97,6 +98,33 @@ class BaseReader(BaseProcessor):
         Returns:
             ImageData: ImageData object with the image tensor.
         """
+        pass
+
+    def process_tensor(self, tensor: torch.Tensor, fix_img_size: bool) -> ImageData:
+        """Read a tensor and return a data object containing a tensor of the image with
+        shape (batch, channels, height, width).
+
+        Args:
+            tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width).
+            fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
+        """
+
+        data = ImageData(path_input=None)
+        data.tensor = copy.deepcopy(tensor)
+
+        if tensor.dim() == 3:
+            data.tensor = data.tensor.unsqueeze(0)
+
+        data.tensor = data.tensor.to(self.device)
+
+        if fix_img_size:
+            data.tensor = self.transform(data.tensor)
+
+        data.img = data.tensor.squeeze(0).cpu()
+        data.tensor = data.tensor.type(torch.float32)
+        data.set_dims()
+
+        return data
 
 
 class BaseDownloader(object, metaclass=ABCMeta):
