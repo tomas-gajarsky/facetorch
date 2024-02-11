@@ -19,6 +19,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py39_4.9.2-Linux
 
 # Add conda to path
 ENV PATH=$CONDA_DIR/bin:$PATH
+ENV PATH=$CONDA_DIR/envs/env/bin:$PATH
 
 # Install conda-build and conda-lock for environment reproducibility
 RUN conda install -y -c conda-forge conda-lock conda-build
