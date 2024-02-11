@@ -687,6 +687,9 @@ __all__ = [&#34;FaceAnalyzer&#34;]</code></pre>
     @Timer(&#34;FaceAnalyzer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(
         self,
+        image_source: Optional[
+            Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]
+        ] = None,
         path_image: Optional[str] = None,
         batch_size: int = 8,
         fix_img_size: bool = False,
@@ -699,6 +702,7 @@ __all__ = [&#34;FaceAnalyzer&#34;]</code></pre>
          and returns analyzed data.
 
         Args:
+            image_source (Optional[Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]]): Input to be analyzed. If None, path_image or tensor must be provided. Default: None.
             path_image (Optional[str]): Path to the image to be analyzed. If None, tensor must be provided. Default: None.
             batch_size (int): Batch size for making predictions on the faces. Default is 8.
             fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False.
@@ -730,20 +734,22 @@ __all__ = [&#34;FaceAnalyzer&#34;]</code></pre>
 
         self.logger.info(&#34;Running FaceAnalyzer&#34;)
 
-        if path_image is None and tensor is None:
-            raise ValueError(&#34;Either path_image or tensor must be provided.&#34;)
+        if path_image is None and tensor is None and image_source is None:
+            raise ValueError(&#34;Either input, path_image or tensor must be provided.&#34;)
 
-        if path_image is not None and tensor is not None:
-            raise ValueError(&#34;Only one of path_image or tensor must be provided.&#34;)
-
-        if path_image is not None:
+        if image_source is not None:
+            self.logger.debug(&#34;Using image_source as input&#34;)
+            reader_input = image_source
+        elif path_image is not None:
+            self.logger.debug(
+                &#34;Using path_image as input&#34;, extra={&#34;path_image&#34;: path_image}
+            )
             reader_input = path_image
         else:
+            self.logger.debug(&#34;Using tensor as input&#34;)
             reader_input = tensor
 
-        self.logger.info(
-            &#34;Reading image&#34;, extra={&#34;path_image&#34;: path_image, &#34;tensor&#34;: tensor}
-        )
+        self.logger.info(&#34;Reading image&#34;, extra={&#34;input&#34;: reader_input})
         data = self.reader.run(reader_input, fix_img_size=fix_img_size)
 
         path_output = None if path_output == &#34;None&#34; else path_output
@@ -794,7 +800,7 @@ __all__ = [&#34;FaceAnalyzer&#34;]</code></pre>
                         <h3>Methods</h3>
                         <dl>
                             <dt id="facetorch.FaceAnalyzer.run"><code class="name flex">
-<span>def <span class="ident">run</span></span>(<span>self, path_image: Optional[str] = None, batch_size: int = 8, fix_img_size: bool = False, return_img_data: bool = False, include_tensors: bool = False, path_output: Optional[str] = None, tensor: Optional[torch.Tensor] = None) ‑> Union[<a title="facetorch.datastruct.Response" href="datastruct.html#facetorch.datastruct.Response">Response</a>, <a title="facetorch.datastruct.ImageData" href="datastruct.html#facetorch.datastruct.ImageData">ImageData</a>]</span>
+<span>def <span class="ident">run</span></span>(<span>self, image_source: Union[str, torch.Tensor, numpy.ndarray, bytes, PIL.Image.Image, ForwardRef(None)] = None, path_image: Optional[str] = None, batch_size: int = 8, fix_img_size: bool = False, return_img_data: bool = False, include_tensors: bool = False, path_output: Optional[str] = None, tensor: Optional[torch.Tensor] = None) ‑> Union[<a title="facetorch.datastruct.Response" href="datastruct.html#facetorch.datastruct.Response">Response</a>, <a title="facetorch.datastruct.ImageData" href="datastruct.html#facetorch.datastruct.ImageData">ImageData</a>]</span>
 </code></dt>
                             <dd>
                                 <div class="desc">
@@ -802,6 +808,11 @@ __all__ = [&#34;FaceAnalyzer&#34;]</code></pre>
                                         and returns analyzed data.</p>
                                     <h2 id="args">Args</h2>
                                     <dl>
+                                        <dt><strong><code>image_source</code></strong>
+                                            :&ensp;<code>Optional[Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]]</code>
+                                        </dt>
+                                        <dd>Input to be analyzed. If None, path_image or tensor must be provided.
+                                            Default: None.</dd>
                                         <dt><strong><code>path_image</code></strong> :&ensp;<code>Optional[str]</code>
                                         </dt>
                                         <dd>Path to the image to be analyzed. If None, tensor must be provided. Default:
@@ -841,6 +852,9 @@ __all__ = [&#34;FaceAnalyzer&#34;]</code></pre>
                                     <pre><code class="python">@Timer(&#34;FaceAnalyzer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
 def run(
     self,
+    image_source: Optional[
+        Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]
+    ] = None,
     path_image: Optional[str] = None,
     batch_size: int = 8,
     fix_img_size: bool = False,
@@ -853,6 +867,7 @@ def run(
      and returns analyzed data.
 
     Args:
+        image_source (Optional[Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]]): Input to be analyzed. If None, path_image or tensor must be provided. Default: None.
         path_image (Optional[str]): Path to the image to be analyzed. If None, tensor must be provided. Default: None.
         batch_size (int): Batch size for making predictions on the faces. Default is 8.
         fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False.
@@ -884,20 +899,22 @@ def run(
 
     self.logger.info(&#34;Running FaceAnalyzer&#34;)
 
-    if path_image is None and tensor is None:
-        raise ValueError(&#34;Either path_image or tensor must be provided.&#34;)
+    if path_image is None and tensor is None and image_source is None:
+        raise ValueError(&#34;Either input, path_image or tensor must be provided.&#34;)
 
-    if path_image is not None and tensor is not None:
-        raise ValueError(&#34;Only one of path_image or tensor must be provided.&#34;)
-
-    if path_image is not None:
+    if image_source is not None:
+        self.logger.debug(&#34;Using image_source as input&#34;)
+        reader_input = image_source
+    elif path_image is not None:
+        self.logger.debug(
+            &#34;Using path_image as input&#34;, extra={&#34;path_image&#34;: path_image}
+        )
         reader_input = path_image
     else:
+        self.logger.debug(&#34;Using tensor as input&#34;)
         reader_input = tensor
 
-    self.logger.info(
-        &#34;Reading image&#34;, extra={&#34;path_image&#34;: path_image, &#34;tensor&#34;: tensor}
-    )
+    self.logger.info(&#34;Reading image&#34;, extra={&#34;input&#34;: reader_input})
     data = self.reader.run(reader_input, fix_img_size=fix_img_size)
 
     path_output = None if path_output == &#34;None&#34; else path_output

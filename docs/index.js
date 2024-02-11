@@ -39,7 +39,7 @@ INDEX=[
 {
 "ref":"facetorch.FaceAnalyzer.run",
 "url":0,
-"doc":"Reads image, detects faces, unifies the detected faces, predicts facial features and returns analyzed data. Args: path_image (Optional[str]): Path to the image to be analyzed. If None, tensor must be provided. Default: None. batch_size (int): Batch size for making predictions on the faces. Default is 8. fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False. return_img_data (bool): If True, returns all image data including tensors, otherwise only returns the faces. Default is False. include_tensors (bool): If True, removes tensors from the returned data object. Default is False. path_output (Optional[str]): Path where to save the image with detected faces. If None, the image is not saved. Default: None. tensor (Optional[torch.Tensor]): Image tensor to be analyzed. If None, path_image must be provided. Default: None. Returns: Union[Response, ImageData]: If return_img_data is False, returns a Response object containing the faces and their facial features. If return_img_data is True, returns the entire ImageData object.",
+"doc":"Reads image, detects faces, unifies the detected faces, predicts facial features and returns analyzed data. Args: image_source (Optional[Union[str, torch.Tensor, np.ndarray, bytes, Image.Image ): Input to be analyzed. If None, path_image or tensor must be provided. Default: None. path_image (Optional[str]): Path to the image to be analyzed. If None, tensor must be provided. Default: None. batch_size (int): Batch size for making predictions on the faces. Default is 8. fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False. return_img_data (bool): If True, returns all image data including tensors, otherwise only returns the faces. Default is False. include_tensors (bool): If True, removes tensors from the returned data object. Default is False. path_output (Optional[str]): Path where to save the image with detected faces. If None, the image is not saved. Default: None. tensor (Optional[torch.Tensor]): Image tensor to be analyzed. If None, path_image must be provided. Default: None. Returns: Union[Response, ImageData]: If return_img_data is False, returns a Response object containing the faces and their facial features. If return_img_data is True, returns the entire ImageData object.",
 "func":1
 },
 {
@@ -478,7 +478,7 @@ INDEX=[
 {
 "ref":"facetorch.analyzer.FaceAnalyzer.run",
 "url":7,
-"doc":"Reads image, detects faces, unifies the detected faces, predicts facial features and returns analyzed data. Args: path_image (Optional[str]): Path to the image to be analyzed. If None, tensor must be provided. Default: None. batch_size (int): Batch size for making predictions on the faces. Default is 8. fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False. return_img_data (bool): If True, returns all image data including tensors, otherwise only returns the faces. Default is False. include_tensors (bool): If True, removes tensors from the returned data object. Default is False. path_output (Optional[str]): Path where to save the image with detected faces. If None, the image is not saved. Default: None. tensor (Optional[torch.Tensor]): Image tensor to be analyzed. If None, path_image must be provided. Default: None. Returns: Union[Response, ImageData]: If return_img_data is False, returns a Response object containing the faces and their facial features. If return_img_data is True, returns the entire ImageData object.",
+"doc":"Reads image, detects faces, unifies the detected faces, predicts facial features and returns analyzed data. Args: image_source (Optional[Union[str, torch.Tensor, np.ndarray, bytes, Image.Image ): Input to be analyzed. If None, path_image or tensor must be provided. Default: None. path_image (Optional[str]): Path to the image to be analyzed. If None, tensor must be provided. Default: None. batch_size (int): Batch size for making predictions on the faces. Default is 8. fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False. return_img_data (bool): If True, returns all image data including tensors, otherwise only returns the faces. Default is False. include_tensors (bool): If True, removes tensors from the returned data object. Default is False. path_output (Optional[str]): Path where to save the image with detected faces. If None, the image is not saved. Default: None. tensor (Optional[torch.Tensor]): Image tensor to be analyzed. If None, path_image must be provided. Default: None. Returns: Union[Response, ImageData]: If return_img_data is False, returns a Response object containing the faces and their facial features. If return_img_data is True, returns the entire ImageData object.",
 "func":1
 },
 {
@@ -1118,12 +1118,12 @@ INDEX=[
 {
 "ref":"facetorch.analyzer.reader.UniversalReader",
 "url":22,
-"doc":"Base class for image reader. All image readers should subclass it. All subclass should overwrite: - Methods: run , used for running the reading process and return a tensor. Args: transform (transforms.Compose): Transform to be applied to the image. device (torch.device): Torch device cpu or cuda. optimize_transform (bool): Whether to optimize the transforms that are resizing the image to a fixed size."
+"doc":"UniversalReader can read images from a path, URL, tensor, numpy array, bytes or PIL Image and return an ImageData object containing the image tensor. Args: transform (torchvision.transforms.Compose): Transform compose object to be applied to the image, if fix_image_size is True. device (torch.device): Torch device cpu or cuda object. optimize_transform (bool): Whether to optimize the transforms that are: resizing the image to a fixed size."
 },
 {
 "ref":"facetorch.analyzer.reader.UniversalReader.run",
 "url":22,
-"doc":"Abstract method that reads an image from a path and returns a data object containing a tensor of the image with shape (batch, channels, height, width). Args: path (str): Path to the image. Returns: ImageData: ImageData object with the image tensor.",
+"doc":"Reads an image from a path, URL, tensor, numpy array, bytes or PIL Image and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image. Args: image_source (Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]): Image source to be read. fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False. Returns: ImageData: ImageData object with image tensor and pil Image.",
 "func":1
 },
 {
@@ -1182,12 +1182,12 @@ INDEX=[
 {
 "ref":"facetorch.analyzer.reader.core.UniversalReader",
 "url":23,
-"doc":"Base class for image reader. All image readers should subclass it. All subclass should overwrite: - Methods: run , used for running the reading process and return a tensor. Args: transform (transforms.Compose): Transform to be applied to the image. device (torch.device): Torch device cpu or cuda. optimize_transform (bool): Whether to optimize the transforms that are resizing the image to a fixed size."
+"doc":"UniversalReader can read images from a path, URL, tensor, numpy array, bytes or PIL Image and return an ImageData object containing the image tensor. Args: transform (torchvision.transforms.Compose): Transform compose object to be applied to the image, if fix_image_size is True. device (torch.device): Torch device cpu or cuda object. optimize_transform (bool): Whether to optimize the transforms that are: resizing the image to a fixed size."
 },
 {
 "ref":"facetorch.analyzer.reader.core.UniversalReader.run",
 "url":23,
-"doc":"Abstract method that reads an image from a path and returns a data object containing a tensor of the image with shape (batch, channels, height, width). Args: path (str): Path to the image. Returns: ImageData: ImageData object with the image tensor.",
+"doc":"Reads an image from a path, URL, tensor, numpy array, bytes or PIL Image and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image. Args: image_source (Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]): Image source to be read. fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False. Returns: ImageData: ImageData object with image tensor and pil Image.",
 "func":1
 },
 {
@@ -1297,7 +1297,7 @@ INDEX=[
 {
 "ref":"facetorch.analyzer.core.FaceAnalyzer.run",
 "url":24,
-"doc":"Reads image, detects faces, unifies the detected faces, predicts facial features and returns analyzed data. Args: path_image (Optional[str]): Path to the image to be analyzed. If None, tensor must be provided. Default: None. batch_size (int): Batch size for making predictions on the faces. Default is 8. fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False. return_img_data (bool): If True, returns all image data including tensors, otherwise only returns the faces. Default is False. include_tensors (bool): If True, removes tensors from the returned data object. Default is False. path_output (Optional[str]): Path where to save the image with detected faces. If None, the image is not saved. Default: None. tensor (Optional[torch.Tensor]): Image tensor to be analyzed. If None, path_image must be provided. Default: None. Returns: Union[Response, ImageData]: If return_img_data is False, returns a Response object containing the faces and their facial features. If return_img_data is True, returns the entire ImageData object.",
+"doc":"Reads image, detects faces, unifies the detected faces, predicts facial features and returns analyzed data. Args: image_source (Optional[Union[str, torch.Tensor, np.ndarray, bytes, Image.Image ): Input to be analyzed. If None, path_image or tensor must be provided. Default: None. path_image (Optional[str]): Path to the image to be analyzed. If None, tensor must be provided. Default: None. batch_size (int): Batch size for making predictions on the faces. Default is 8. fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False. return_img_data (bool): If True, returns all image data including tensors, otherwise only returns the faces. Default is False. include_tensors (bool): If True, removes tensors from the returned data object. Default is False. path_output (Optional[str]): Path where to save the image with detected faces. If None, the image is not saved. Default: None. tensor (Optional[torch.Tensor]): Image tensor to be analyzed. If None, path_image must be provided. Default: None. Returns: Union[Response, ImageData]: If return_img_data is False, returns a Response object containing the faces and their facial features. If return_img_data is True, returns the entire ImageData object.",
 "func":1
 }
 ]
