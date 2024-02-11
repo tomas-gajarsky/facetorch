@@ -76,6 +76,12 @@ INDEX=[
 "func":1
 },
 {
+"ref":"facetorch.base.BaseReader.process_tensor",
+"url":1,
+"doc":"Read a tensor and return a data object containing a tensor of the image with shape (batch, channels, height, width). Args: tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width). fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.",
+"func":1
+},
+{
 "ref":"facetorch.base.BaseReader.optimize",
 "url":1,
 "doc":"Optimizes the transform using torch.jit and deploys it to the device.",
@@ -1075,6 +1081,12 @@ INDEX=[
 "func":1
 },
 {
+"ref":"facetorch.analyzer.reader.ImageReader.process_tensor",
+"url":1,
+"doc":"Read a tensor and return a data object containing a tensor of the image with shape (batch, channels, height, width). Args: tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width). fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.",
+"func":1
+},
+{
 "ref":"facetorch.analyzer.reader.ImageReader.optimize",
 "url":1,
 "doc":"Optimizes the transform using torch.jit and deploys it to the device.",
@@ -1092,7 +1104,72 @@ INDEX=[
 "func":1
 },
 {
+"ref":"facetorch.analyzer.reader.TensorReader.process_tensor",
+"url":1,
+"doc":"Read a tensor and return a data object containing a tensor of the image with shape (batch, channels, height, width). Args: tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width). fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.",
+"func":1
+},
+{
 "ref":"facetorch.analyzer.reader.TensorReader.optimize",
+"url":1,
+"doc":"Optimizes the transform using torch.jit and deploys it to the device.",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.UniversalReader",
+"url":22,
+"doc":"Base class for image reader. All image readers should subclass it. All subclass should overwrite: - Methods: run , used for running the reading process and return a tensor. Args: transform (transforms.Compose): Transform to be applied to the image. device (torch.device): Torch device cpu or cuda. optimize_transform (bool): Whether to optimize the transforms that are resizing the image to a fixed size."
+},
+{
+"ref":"facetorch.analyzer.reader.UniversalReader.run",
+"url":22,
+"doc":"Abstract method that reads an image from a path and returns a data object containing a tensor of the image with shape (batch, channels, height, width). Args: path (str): Path to the image. Returns: ImageData: ImageData object with the image tensor.",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.UniversalReader.read_tensor",
+"url":22,
+"doc":"",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.UniversalReader.read_pil_image",
+"url":22,
+"doc":"",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.UniversalReader.read_numpy_array",
+"url":22,
+"doc":"",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.UniversalReader.read_image_from_bytes",
+"url":22,
+"doc":"",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.UniversalReader.read_image_from_path",
+"url":22,
+"doc":"",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.UniversalReader.read_image_from_url",
+"url":22,
+"doc":"",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.UniversalReader.process_tensor",
+"url":1,
+"doc":"Read a tensor and return a data object containing a tensor of the image with shape (batch, channels, height, width). Args: tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width). fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.UniversalReader.optimize",
 "url":1,
 "doc":"Optimizes the transform using torch.jit and deploys it to the device.",
 "func":1
@@ -1103,6 +1180,65 @@ INDEX=[
 "doc":""
 },
 {
+"ref":"facetorch.analyzer.reader.core.UniversalReader",
+"url":23,
+"doc":"Base class for image reader. All image readers should subclass it. All subclass should overwrite: - Methods: run , used for running the reading process and return a tensor. Args: transform (transforms.Compose): Transform to be applied to the image. device (torch.device): Torch device cpu or cuda. optimize_transform (bool): Whether to optimize the transforms that are resizing the image to a fixed size."
+},
+{
+"ref":"facetorch.analyzer.reader.core.UniversalReader.run",
+"url":23,
+"doc":"Abstract method that reads an image from a path and returns a data object containing a tensor of the image with shape (batch, channels, height, width). Args: path (str): Path to the image. Returns: ImageData: ImageData object with the image tensor.",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.core.UniversalReader.read_tensor",
+"url":23,
+"doc":"",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.core.UniversalReader.read_pil_image",
+"url":23,
+"doc":"",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.core.UniversalReader.read_numpy_array",
+"url":23,
+"doc":"",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.core.UniversalReader.read_image_from_bytes",
+"url":23,
+"doc":"",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.core.UniversalReader.read_image_from_path",
+"url":23,
+"doc":"",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.core.UniversalReader.read_image_from_url",
+"url":23,
+"doc":"",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.core.UniversalReader.process_tensor",
+"url":1,
+"doc":"Read a tensor and return a data object containing a tensor of the image with shape (batch, channels, height, width). Args: tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width). fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.core.UniversalReader.optimize",
+"url":1,
+"doc":"Optimizes the transform using torch.jit and deploys it to the device.",
+"func":1
+},
+{
 "ref":"facetorch.analyzer.reader.core.ImageReader",
 "url":23,
 "doc":"ImageReader is a wrapper around a functionality for reading images by Torchvision. Args: transform (torchvision.transforms.Compose): Transform compose object to be applied to the image, if fix_image_size is True. device (torch.device): Torch device cpu or cuda object. optimize_transform (bool): Whether to optimize the transforms that are: resizing the image to a fixed size."
@@ -1111,6 +1247,12 @@ INDEX=[
 "ref":"facetorch.analyzer.reader.core.ImageReader.run",
 "url":23,
 "doc":"Reads an image from a path and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image. Args: path_image (str): Path to the image. fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False. Returns: ImageData: ImageData object with image tensor and pil Image.",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.core.ImageReader.process_tensor",
+"url":1,
+"doc":"Read a tensor and return a data object containing a tensor of the image with shape (batch, channels, height, width). Args: tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width). fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.",
 "func":1
 },
 {
@@ -1128,6 +1270,12 @@ INDEX=[
 "ref":"facetorch.analyzer.reader.core.TensorReader.run",
 "url":23,
 "doc":"Reads a tensor and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image. Args: tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width). fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False. Returns: ImageData: ImageData object with image tensor and pil Image.",
+"func":1
+},
+{
+"ref":"facetorch.analyzer.reader.core.TensorReader.process_tensor",
+"url":1,
+"doc":"Read a tensor and return a data object containing a tensor of the image with shape (batch, channels, height, width). Args: tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width). fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.",
 "func":1
 },
 {
