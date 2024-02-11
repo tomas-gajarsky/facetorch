@@ -8,7 +8,7 @@ def main(cfg: DictConfig) -> None:
     analyzer = FaceAnalyzer(cfg.analyzer)
 
     response = analyzer.run(
-        path_image=cfg.path_image,
+        image_source=cfg.path_image,
         batch_size=cfg.batch_size,
         fix_img_size=cfg.fix_img_size,
         return_img_data=cfg.return_img_data,
