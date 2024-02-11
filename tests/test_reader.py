@@ -4,7 +4,7 @@ import torch
 from PIL import Image
 import numpy as np
 import io
-from facetorch.analyzer.reader import UniversalReader, TensorReader
+from facetorch.analyzer.reader import UniversalReader, TensorReader, ImageReader
 
 
 @pytest.mark.integration
@@ -75,15 +75,6 @@ def test_read_image_from_path(cfg, analyzer):
         analyzer.reader, ImageReader
     ):
         pytest.skip("Only UniversalReader and ImageReader are used for this test.")
-    result = analyzer.reader.run(cfg.path_image)
-    assert isinstance(result, facetorch.datastruct.ImageData)
-    assert result.img is not None
-    assert result.tensor is not None
-
-
-def test_read_image_from_path(cfg, analyzer):
-    if not isinstance(analyzer.reader, UniversalReader):
-        pytest.skip("Only UniversalReader is used for this test.")
     result = analyzer.reader.run(cfg.path_image)
     assert isinstance(result, facetorch.datastruct.ImageData)
     assert result.img is not None
