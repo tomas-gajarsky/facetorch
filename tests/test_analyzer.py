@@ -3,6 +3,26 @@ import torch
 
 
 @pytest.mark.integration
+def test_analyzer_image_source(cfg, analyzer):
+    if hasattr(cfg, "path_tensor"):
+        pytest.skip("This test is only for path_image.")
+    if "test.jpg" not in cfg.path_image:
+        pytest.skip("Only test.jpg is used for this test.")
+    response = analyzer.run(
+        image_source=cfg.path_image,
+        batch_size=cfg.batch_size,
+        fix_img_size=cfg.fix_img_size,
+        return_img_data=cfg.return_img_data,
+        include_tensors=cfg.include_tensors,
+        path_output=cfg.path_output,
+    )
+
+    assert response.tensor.shape[1:] == response.img.shape
+    assert response.tensor.dtype == torch.float32
+    assert len(response.faces[0].preds.keys()) > 0
+
+
+@pytest.mark.integration
 def test_analyzer_path_image(cfg, analyzer):
     if hasattr(cfg, "path_tensor"):
         pytest.skip("This test is only for path_image.")

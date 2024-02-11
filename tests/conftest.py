@@ -104,18 +104,11 @@ def analyzer(cfg) -> FaceAnalyzer:
 
 @pytest.fixture(scope="session")
 def response(cfg, analyzer) -> ImageData:
-    if isinstance(analyzer.reader, UniversalReader):
+    if isinstance(analyzer.reader, UniversalReader) or isinstance(
+        analyzer.reader, ImageReader
+    ):
         response = analyzer.run(
-            path_image=cfg.path_image,
-            batch_size=cfg.batch_size,
-            fix_img_size=cfg.fix_img_size,
-            return_img_data=cfg.return_img_data,
-            include_tensors=cfg.include_tensors,
-            path_output=cfg.path_output,
-        )
-    elif isinstance(analyzer.reader, ImageReader): 
-        response = analyzer.run(
-            path_image=cfg.path_image,
+            image_source=cfg.path_image,
             batch_size=cfg.batch_size,
             fix_img_size=cfg.fix_img_size,
             return_img_data=cfg.return_img_data,
