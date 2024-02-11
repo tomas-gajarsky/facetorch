@@ -27,6 +27,7 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">import os
+import copy
 from abc import ABCMeta, abstractmethod
 from typing import Optional, Tuple, Union
 
@@ -125,6 +126,33 @@ class BaseReader(BaseProcessor):
         Returns:
             ImageData: ImageData object with the image tensor.
         &#34;&#34;&#34;
+        pass
+
+    def process_tensor(self, tensor: torch.Tensor, fix_img_size: bool) -&gt; ImageData:
+        &#34;&#34;&#34;Read a tensor and return a data object containing a tensor of the image with
+        shape (batch, channels, height, width).
+
+        Args:
+            tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width).
+            fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
+        &#34;&#34;&#34;
+
+        data = ImageData(path_input=None)
+        data.tensor = copy.deepcopy(tensor)
+
+        if tensor.dim() == 3:
+            data.tensor = data.tensor.unsqueeze(0)
+
+        data.tensor = data.tensor.to(self.device)
+
+        if fix_img_size:
+            data.tensor = self.transform(data.tensor)
+
+        data.img = data.tensor.squeeze(0).cpu()
+        data.tensor = data.tensor.type(torch.float32)
+        data.set_dims()
+
+        return data
 
 
 class BaseDownloader(object, metaclass=ABCMeta):
@@ -442,7 +470,34 @@ All subclass should overwrite:</p>
 
         Returns:
             ImageData: ImageData object with the image tensor.
-        &#34;&#34;&#34;</code></pre>
+        &#34;&#34;&#34;
+        pass
+
+    def process_tensor(self, tensor: torch.Tensor, fix_img_size: bool) -&gt; ImageData:
+        &#34;&#34;&#34;Read a tensor and return a data object containing a tensor of the image with
+        shape (batch, channels, height, width).
+
+        Args:
+            tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width).
+            fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
+        &#34;&#34;&#34;
+
+        data = ImageData(path_input=None)
+        data.tensor = copy.deepcopy(tensor)
+
+        if tensor.dim() == 3:
+            data.tensor = data.tensor.unsqueeze(0)
+
+        data.tensor = data.tensor.to(self.device)
+
+        if fix_img_size:
+            data.tensor = self.transform(data.tensor)
+
+        data.img = data.tensor.squeeze(0).cpu()
+        data.tensor = data.tensor.type(torch.float32)
+        data.set_dims()
+
+        return data</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -452,6 +507,7 @@ All subclass should overwrite:</p>
 <ul class="hlist">
 <li><a title="facetorch.analyzer.reader.core.ImageReader" href="analyzer/reader/core.html#facetorch.analyzer.reader.core.ImageReader">ImageReader</a></li>
 <li><a title="facetorch.analyzer.reader.core.TensorReader" href="analyzer/reader/core.html#facetorch.analyzer.reader.core.TensorReader">TensorReader</a></li>
+<li><a title="facetorch.analyzer.reader.core.UniversalReader" href="analyzer/reader/core.html#facetorch.analyzer.reader.core.UniversalReader">UniversalReader</a></li>
 </ul>
 <h3>Methods</h3>
 <dl>
@@ -487,7 +543,52 @@ def run(self, path: str) -&gt; ImageData:
 
     Returns:
         ImageData: ImageData object with the image tensor.
-    &#34;&#34;&#34;</code></pre>
+    &#34;&#34;&#34;
+    pass</code></pre>
+</details>
+</dd>
+<dt id="facetorch.base.BaseReader.process_tensor"><code class="name flex">
+<span>def <span class="ident">process_tensor</span></span>(<span>self, tensor: torch.Tensor, fix_img_size: bool) ‑> <a title="facetorch.datastruct.ImageData" href="datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Read a tensor and return a data object containing a tensor of the image with
+shape (batch, channels, height, width).</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>tensor</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Tensor of a single image with RGB values between 0-255 and shape (channels, height, width).</dd>
+<dt><strong><code>fix_img_size</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def process_tensor(self, tensor: torch.Tensor, fix_img_size: bool) -&gt; ImageData:
+    &#34;&#34;&#34;Read a tensor and return a data object containing a tensor of the image with
+    shape (batch, channels, height, width).
+
+    Args:
+        tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width).
+        fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
+    &#34;&#34;&#34;
+
+    data = ImageData(path_input=None)
+    data.tensor = copy.deepcopy(tensor)
+
+    if tensor.dim() == 3:
+        data.tensor = data.tensor.unsqueeze(0)
+
+    data.tensor = data.tensor.to(self.device)
+
+    if fix_img_size:
+        data.tensor = self.transform(data.tensor)
+
+    data.img = data.tensor.squeeze(0).cpu()
+    data.tensor = data.tensor.type(torch.float32)
+    data.set_dims()
+
+    return data</code></pre>
 </details>
 </dd>
 </dl>
@@ -953,6 +1054,7 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="facetorch.base.BaseReader" href="#facetorch.base.BaseReader">BaseReader</a></code></h4>
 <ul class="">
 <li><code><a title="facetorch.base.BaseReader.run" href="#facetorch.base.BaseReader.run">run</a></code></li>
+<li><code><a title="facetorch.base.BaseReader.process_tensor" href="#facetorch.base.BaseReader.process_tensor">process_tensor</a></code></li>
 </ul>
 </li>
 <li>

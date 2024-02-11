@@ -6,6 +6,7 @@ import torch
 import pytest
 from facetorch import FaceAnalyzer
 from facetorch.datastruct import ImageData
+from facetorch.analyzer.reader import UniversalReader, ImageReader, TensorReader
 from hydra import compose, initialize
 
 root_dir = d(d(abspath(__file__)))
@@ -103,16 +104,21 @@ def analyzer(cfg) -> FaceAnalyzer:
 
 @pytest.fixture(scope="session")
 def response(cfg, analyzer) -> ImageData:
-    if hasattr(cfg, "path_tensor"):
-        pytest.skip("Only test.jpg is used for this test.")
-    response = analyzer.run(
-        path_image=cfg.path_image,
-        batch_size=cfg.batch_size,
-        fix_img_size=cfg.fix_img_size,
-        return_img_data=cfg.return_img_data,
-        include_tensors=cfg.include_tensors,
-        path_output=cfg.path_output,
-    )
+    if isinstance(analyzer.reader, UniversalReader) or isinstance(
+        analyzer.reader, ImageReader
+    ):
+        response = analyzer.run(
+            image_source=cfg.path_image,
+            batch_size=cfg.batch_size,
+            fix_img_size=cfg.fix_img_size,
+            return_img_data=cfg.return_img_data,
+            include_tensors=cfg.include_tensors,
+            path_output=cfg.path_output,
+        )
+    elif isinstance(analyzer.reader, TensorReader):
+        pytest.skip("Do not use tensor for this test.")
+    else:
+        pytest.skip("No reader provided in config.")
     return response
 
 

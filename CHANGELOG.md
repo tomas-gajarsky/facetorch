@@ -1,6 +1,18 @@
 # Change Log
 
 
+## 0.5.0
+
+Released on February 11, 2024.
+
+### Added
+* UniversalReader for loading data like PIL images, numpy arrays, torch tensors, bytes, urls, and file paths
+
+### Changed
+* Enable conda virtual environment by default in Docker images
+* FaceAnalyzer run method to accept various input types via image_source parameter
+
+
 ## 0.4.2
 
 Released on January 30, 2024.
