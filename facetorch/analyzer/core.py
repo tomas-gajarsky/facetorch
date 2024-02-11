@@ -1,7 +1,9 @@
 from typing import Optional, Union
 
 import torch
+import numpy as np
 from codetiming import Timer
+from PIL import Image
 from facetorch.analyzer.predictor.core import FacePredictor
 from facetorch.datastruct import ImageData, Response
 from facetorch.logger import LoggerJsonFile
@@ -80,6 +82,9 @@ class FaceAnalyzer(object):
     @Timer("FaceAnalyzer.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def run(
         self,
+        image_source: Optional[
+            Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]
+        ] = None,
         path_image: Optional[str] = None,
         batch_size: int = 8,
         fix_img_size: bool = False,
@@ -92,6 +97,7 @@ class FaceAnalyzer(object):
          and returns analyzed data.
 
         Args:
+            image_source (Optional[Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]]): Input to be analyzed. If None, path_image or tensor must be provided. Default: None.
             path_image (Optional[str]): Path to the image to be analyzed. If None, tensor must be provided. Default: None.
             batch_size (int): Batch size for making predictions on the faces. Default is 8.
             fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False.
@@ -123,20 +129,22 @@ class FaceAnalyzer(object):
 
         self.logger.info("Running FaceAnalyzer")
 
-        if path_image is None and tensor is None:
-            raise ValueError("Either path_image or tensor must be provided.")
+        if path_image is None and tensor is None and image_source is None:
+            raise ValueError("Either input, path_image or tensor must be provided.")
 
-        if path_image is not None and tensor is not None:
-            raise ValueError("Only one of path_image or tensor must be provided.")
-
-        if path_image is not None:
+        if image_source is not None:
+            self.logger.debug("Using image_source as input")
+            reader_input = image_source
+        elif path_image is not None:
+            self.logger.debug(
+                "Using path_image as input", extra={"path_image": path_image}
+            )
             reader_input = path_image
         else:
+            self.logger.debug("Using tensor as input")
             reader_input = tensor
 
-        self.logger.info(
-            "Reading image", extra={"path_image": path_image, "tensor": tensor}
-        )
+        self.logger.info("Reading image", extra={"input": reader_input})
         data = self.reader.run(reader_input, fix_img_size=fix_img_size)
 
         path_output = None if path_output == "None" else path_output
