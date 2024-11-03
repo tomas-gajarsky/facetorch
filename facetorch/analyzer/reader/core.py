@@ -65,7 +65,8 @@ class UniversalReader(BaseReader):
         return self.process_tensor(tensor, fix_img_size)
 
     def read_pil_image(self, pil_image: Image.Image, fix_img_size: bool) -> ImageData:
-        tensor = torchvision.transforms.functional.to_tensor(pil_image)
+        pil_image = pil_image.convert("RGB")
+        tensor = torchvision.transforms.functional.pil_to_tensor(pil_image)
         return self.process_tensor(tensor, fix_img_size)
 
     def read_numpy_array(self, array: np.ndarray, fix_img_size: bool) -> ImageData:
@@ -75,7 +76,7 @@ class UniversalReader(BaseReader):
     def read_image_from_bytes(
         self, image_bytes: bytes, fix_img_size: bool
     ) -> ImageData:
-        pil_image = Image.open(io.BytesIO(image_bytes))
+        pil_image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
         return self.read_pil_image(pil_image, fix_img_size)
 
     def read_image_from_path(self, path_image: str, fix_img_size: bool) -> ImageData:
