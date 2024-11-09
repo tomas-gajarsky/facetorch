@@ -301,10 +301,34 @@ GPU:
 1. Run profiling of the example script: ```python -m cProfile -o profiling/example.prof scripts/example.py```
 2. Open profiling file in the browser: ```snakeviz profiling/example.prof```
 
+## Research Using facetorch
+
+### [Sharma et al. (2024)](https://aclanthology.org/2024.signlang-1.39.pdf)
+
+Sharma, Paritosh, Camille Challant, and Michael Filhol. "Facial Expressions for Sign Language Synthesis using FACSHuman and AZee." *Proceedings of the LREC-COLING 2024 11th Workshop on the Representation and Processing of Sign Languages*, pp. 354–360, 2024.
+
+### [Liang et al. (2023)](https://dl.acm.org/doi/abs/10.1145/3581783.3612854)
+
+Liang, Cong, Jiahe Wang, Haofan Zhang, Bing Tang, Junshan Huang, Shangfei Wang, and Xiaoping Chen. "Unifarn: Unified transformer for facial reaction generation." *Proceedings of the 31st ACM International Conference on Multimedia*, pp. 9506–9510, 2023.
+
+### [Gue et al. (2023)](https://research.monash.edu/en/publications/facial-expression-recognition-as-markers-of-depression)
+
+Gue, Jia Xuan, Chun Yong Chong, and Mei Kuan Lim. "Facial Expression Recognition as markers of Depression." *2023 Asia Pacific Signal and Information Processing Association Annual Summit and Conference (APSIPA ASC)*, pp. 674–680, 2023.
+
+
 ## Acknowledgements
 I want to thank the open source code community and the researchers who have published the models. This project would not be possible without their work.
 
-![](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/data/facetorch-logo-64.png "facetorch logo")
+## Citing
 
-
-Logo was generated using [DeepAI Text To Image API](https://deepai.org/machine-learning-model/text2img)
+If you use facetorch in your work, please cite the original authors of the models and the facetorch library:
+```
+@misc{facetorch,
+    author = {Gajarsky, Tomas},
+    title = {Facetorch: A Python Library for Analyzing Faces Using PyTorch},
+    year = {2024},
+    publisher = {GitHub},
+    journal = {GitHub Repository},
+    howpublished = {\url{https://github.com/tomas-gajarsky/facetorch}}
+}
+```
