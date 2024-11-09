@@ -220,7 +220,7 @@ class Lmk3DMeshPose(BaseUtilizer):
         se = (torch.linalg.norm(r1) + torch.linalg.norm(r2)) / 2.0
         r1 = r1 / torch.linalg.norm(r1)
         r2 = r2 / torch.linalg.norm(r2)
-        r3 = torch.cross(r1, r2)
+        r3 = torch.linalg.cross(r1, r2)
         re = torch.cat((r1, r2, r3), 0)
         return se, re, t3d
 
