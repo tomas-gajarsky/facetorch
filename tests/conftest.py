@@ -125,7 +125,10 @@ def response(cfg, analyzer) -> ImageData:
 @pytest.fixture(scope="session")
 def tensor(cfg) -> torch.Tensor:
     if hasattr(cfg, "path_tensor"):
-        tensor = torch.load(cfg.path_tensor).to(cfg.analyzer.device)
+        tensor = torch.load(
+            cfg.path_tensor,
+            weights_only=False,
+        ).to(cfg.analyzer.device)
     else:
         pytest.skip("No tensor path provided in config.")
     return tensor

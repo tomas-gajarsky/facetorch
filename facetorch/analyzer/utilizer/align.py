@@ -37,7 +37,10 @@ class Lmk3DMeshPose(BaseUtilizer):
         if not os.path.exists(self.downloader_meta.path_local):
             self.downloader_meta.run()
 
-        self.meta = torch.load(self.downloader_meta.path_local)
+        self.meta = torch.load(
+            self.downloader_meta.path_local,
+            weights_only=False,
+        )
 
         for key in self.meta.keys():
             if isinstance(self.meta[key], torch.Tensor):
