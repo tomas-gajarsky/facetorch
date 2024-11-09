@@ -12,5 +12,3 @@ dependencies:
   - python-json-logger>=2.0.0
   - pytorch-cpu>=1.9.0
   - torchvision>=0.10.0
-platforms:
-  - linux-64
