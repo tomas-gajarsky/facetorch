@@ -12,6 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Install libarchive20
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libarchive20
+
       - name: Set up Miniconda
         uses: conda-incubator/setup-miniconda@v2
         with:
@@ -20,12 +25,16 @@ jobs:
           channels: conda-forge, defaults
           auto-activate-base: true
           activate-environment: base
-          cache: true
 
       - name: Configure Conda to Use Classic Solver
         run: |
           conda config --set solver_choice classic
 
+      - name: Install Mamba
+        run: conda install -c conda-forge mamba
+
       - name: Install facetorch from conda-forge
         run: |
           conda install -c conda-forge facetorch
+          # Or, if using Mamba:
+          # mamba install -c conda-forge facetorch
