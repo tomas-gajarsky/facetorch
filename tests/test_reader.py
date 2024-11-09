@@ -201,6 +201,7 @@ def test_read_numpy_array_2d(analyzer):
     with pytest.raises(ValueError):
         analyzer.reader.run(array_input)
 
+
 @pytest.mark.reader
 def test_read_numpy_array_unsupported_channels(analyzer):
     if not isinstance(analyzer.reader, UniversalReader):
