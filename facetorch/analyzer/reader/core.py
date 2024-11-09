@@ -71,7 +71,7 @@ class UniversalReader(BaseReader):
         return self.process_tensor(tensor, fix_img_size)
 
     def read_numpy_array(self, array: np.ndarray, fix_img_size: bool) -> ImageData:
-        image_tensor = torch.from_numpy(array)
+        image_tensor = torch.from_numpy(array).float()
         if image_tensor.ndim == 3 and image_tensor.shape[2] == 3:
             image_tensor = image_tensor.permute(2, 0, 1).contiguous()
         else:
