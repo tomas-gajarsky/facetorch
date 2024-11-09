@@ -2,21 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
-<meta name="generator" content="pdoc3 0.11.1">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.8.0" />
 <title>facetorch.analyzer.utilizer.align API documentation</title>
-<meta name="description" content="">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" crossorigin>
-<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
-<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
-<script>window.addEventListener('DOMContentLoaded', () => {
-hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
-hljs.highlightAll();
-})</script>
 </head>
 <body>
 <main>
@@ -25,6 +20,358 @@ hljs.highlightAll();
 <h1 class="title">Module <code>facetorch.analyzer.utilizer.align</code></h1>
 </header>
 <section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import os
+from typing import List, Tuple, Union
+import torch
+import numpy as np
+from codetiming import Timer
+from facetorch.base import BaseDownloader, BaseUtilizer
+from facetorch.datastruct import ImageData
+from facetorch.logger import LoggerJsonFile
+from torchvision import transforms
+
+logger = LoggerJsonFile().logger
+
+
+class Lmk3DMeshPose(BaseUtilizer):
+    def __init__(
+        self,
+        transform: transforms.Compose,
+        device: torch.device,
+        optimize_transform: bool,
+        downloader_meta: BaseDownloader,
+        image_size: int = 120,
+    ):
+        &#34;&#34;&#34;Initializes the Lmk3DMeshPose class. This class is used to convert the face parameter vector to 3D landmarks, mesh and pose.
+
+        Args:
+            transform (Compose): Composed Torch transform object.
+            device (torch.device): Torch device cpu or cuda object.
+            optimize_transform (bool): Whether to optimize the transform.
+            downloader_meta (BaseDownloader): Downloader for metadata.
+            image_size (int): Standard size of the face image.
+
+        &#34;&#34;&#34;
+        super().__init__(transform, device, optimize_transform)
+
+        self.downloader_meta = downloader_meta
+        self.image_size = image_size
+        if not os.path.exists(self.downloader_meta.path_local):
+            self.downloader_meta.run()
+
+        self.meta = torch.load(
+            self.downloader_meta.path_local,
+            weights_only=False,
+        )
+
+        for key in self.meta.keys():
+            if isinstance(self.meta[key], torch.Tensor):
+                self.meta[key] = self.meta[key].to(self.device)
+
+        self.keypoints = self.meta[&#34;keypoints&#34;]
+        # PCA basis for shape, expression, texture
+        self.w_shp = self.meta[&#34;w_shp&#34;]
+        self.w_exp = self.meta[&#34;w_exp&#34;]
+        # param_mean and param_std are used for re-whitening
+        self.param_mean = self.meta[&#34;param_mean&#34;]
+        self.param_std = self.meta[&#34;param_std&#34;]
+        # mean values
+        self.u_shp = self.meta[&#34;u_shp&#34;]
+        self.u_exp = self.meta[&#34;u_exp&#34;]
+
+        self.u = self.u_shp + self.u_exp
+        self.w = torch.cat((self.w_shp, self.w_exp), dim=1)
+        # base vector for landmarks
+        self.w_base = self.w[self.keypoints]
+        self.w_norm = torch.linalg.norm(self.w, dim=0)
+        self.w_base_norm = torch.linalg.norm(self.w_base, dim=0)
+        self.u_base = self.u[self.keypoints].reshape(-1, 1)
+        self.w_shp_base = self.w_shp[self.keypoints]
+        self.w_exp_base = self.w_exp[self.keypoints]
+        self.dim = self.w_shp.shape[0] // 3
+
+    @Timer(&#34;Lmk3DMeshPose.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    def run(self, data: ImageData) -&gt; ImageData:
+        &#34;&#34;&#34;Runs the Lmk3DMeshPose class functionality - convert the face parameter vector to 3D landmarks, mesh and pose.
+
+        Adds the following attributes to the data object:
+
+        - landmark [[y, x, z], 68 (points)]
+        - mesh [[y, x, z], 53215 (points)]
+        - pose (Euler angles [yaw, pitch, roll] and translation [y, x, z])
+
+        Args:
+            data (ImageData): ImageData object containing most of the data including the predictions.
+
+        Returns:
+            ImageData: ImageData object containing lmk3d, mesh and pose.
+        &#34;&#34;&#34;
+        for count, face in enumerate(data.faces):
+            assert &#34;align&#34; in face.preds.keys(), &#34;align key not found in face.preds&#34;
+            param = face.preds[&#34;align&#34;].logits
+
+            roi_box = [face.loc.x1, face.loc.y1, face.loc.x2, face.loc.y2]
+
+            landmarks = self._compute_sparse_vert(param, roi_box, transform_space=True)
+            vertices = self._compute_dense_vert(param, roi_box, transform_space=True)
+            angles, translation = self._compute_pose(param, roi_box)
+
+            data.faces[count].preds[&#34;align&#34;].other[&#34;lmk3d&#34;] = landmarks
+            data.faces[count].preds[&#34;align&#34;].other[&#34;mesh&#34;] = vertices
+            data.faces[count].preds[&#34;align&#34;].other[&#34;pose&#34;] = dict(
+                angles=angles, translation=translation
+            )
+
+        return data
+
+    def _matrix2angle_corr(self, re: torch.Tensor) -&gt; List[float]:
+        &#34;&#34;&#34;Converts a rotation matrix to angles.
+
+        Args:
+            re (torch.Tensor): Rotation matrix.
+
+        Returns:
+            List[float]: List of angles.
+        &#34;&#34;&#34;
+        pi = torch.tensor(np.pi).to(self.device)
+        if re[2, 0] != 1 and re[2, 0] != -1:
+            x = torch.asin(re[2, 0])
+            y = torch.atan2(
+                re[1, 2] / torch.cos(x),
+                re[2, 2] / torch.cos(x),
+            )
+            z = torch.atan2(
+                re[0, 1] / torch.cos(x),
+                re[0, 0] / torch.cos(x),
+            )
+
+        else:  # Gimbal lock
+            z = 0
+            if re[2, 0] == -1:
+                x = pi / 2
+                y = z + torch.atan2(re[0, 1], re[0, 2])
+            else:
+                x = -pi / 2
+                y = -z + torch.atan2(-re[0, 1], -re[0, 2])
+
+        rx, ry, rz = (
+            float((x * 180 / pi).item()),
+            float((y * 180 / pi).item()),
+            float((z * 180 / pi).item()),
+        )
+
+        return [rx, ry, rz]
+
+    def _parse_param(self, param: torch.Tensor):
+        &#34;&#34;&#34;Parses the parameter vector.
+
+        Args:
+            param (torch.Tensor): Parameter vector.
+
+        Returns:
+            Tuple[torch.Tensor]
+        &#34;&#34;&#34;
+        p_ = param[:12].reshape(3, 4)
+        pe = p_[:, :3]
+        offset = p_[:, -1].reshape(3, 1)
+        alpha_shp = param[12:52].reshape(40, 1)
+        alpha_exp = param[52:62].reshape(10, 1)
+        return pe, offset, alpha_shp, alpha_exp
+
+    def _param2vert(
+        self, param: torch.Tensor, dense: bool = False, transform_space: bool = True
+    ) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Parses the parameter vector into a dense or sparse vertex representation.
+
+        Args:
+            param (torch.Tensor): Parameter vector.
+            dense (bool): Whether to return a dense or sparse vertex representation.
+            transform_space (bool): Whether to transform the vertex representation to the original space.
+
+        Returns:
+            torch.Tensor: Dense or sparse vertex representation.
+        &#34;&#34;&#34;
+
+        def _reshape_fortran(_x, shape):
+            if len(_x.shape) &gt; 0:
+                _x = _x.permute(*reversed(range(len(_x.shape))))
+            return _x.reshape(*reversed(shape)).permute(*reversed(range(len(shape))))
+
+        if param.shape[0] == 62:
+            param_ = param * self.param_std[:62] + self.param_mean[:62]
+        else:
+            raise RuntimeError(&#34;length of params mismatch&#34;)
+
+        pe, offset, alpha_shp, alpha_exp = self._parse_param(param_)
+
+        if dense:
+            he = (
+                self.u + self.w_shp @ alpha_shp.float() + self.w_exp @ alpha_exp.float()
+            )
+            he = _reshape_fortran(he, (3, -1))
+            vertex = pe.float() @ he + offset
+            if transform_space:
+                # transform to image coordinate space
+                vertex[1, :] = self.image_size + 1 - vertex[1, :]
+
+        else:
+            he = (
+                self.u_base
+                + self.w_shp_base @ alpha_shp.float()
+                + self.w_exp_base @ alpha_exp.float()
+            )
+            he = _reshape_fortran(he, (3, -1))
+            vertex = pe.float() @ he + offset
+            if transform_space:
+                # transform to image coordinate space
+                vertex[1, :] = self.image_size + 1 - vertex[1, :]
+
+        return vertex
+
+    def _p2srt(
+        self, param: torch.Tensor
+    ) -&gt; Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        &#34;&#34;&#34;Applies matrix norm to the parameter vector.
+
+        Args:
+            param (torch.Tensor): Parameter vector.
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
+        &#34;&#34;&#34;
+        t3d = param[:, 3]
+        r1 = param[0:1, :3]
+        r2 = param[1:2, :3]
+        se = (torch.linalg.norm(r1) + torch.linalg.norm(r2)) / 2.0
+        r1 = r1 / torch.linalg.norm(r1)
+        r2 = r2 / torch.linalg.norm(r2)
+        r3 = torch.linalg.cross(r1, r2)
+        re = torch.cat((r1, r2, r3), 0)
+        return se, re, t3d
+
+    def _parse_pose(
+        self, param: torch.Tensor
+    ) -&gt; Tuple[torch.Tensor, List[torch.Tensor], torch.Tensor]:
+        &#34;&#34;&#34;Parses the parameter vector to pose data.
+
+        Args:
+            param (torch.Tensor): Parameter vector.
+
+        Returns:
+            Tuple[torch.Tensor, List[torch.Tensor], torch.Tensor]: Pose data.
+        &#34;&#34;&#34;
+        param = param * self.param_std[:62] + self.param_mean[:62]
+        param = param[:12].reshape(3, -1)  # camera matrix
+        _, rem, t3d = self._p2srt(param)
+        pe = torch.cat((rem, t3d.reshape(3, -1)), 1)  # without scale
+        pose = self._matrix2angle_corr(rem)  # yaw, pitch, roll
+        return pe, pose, t3d
+
+    def _compute_vertices(
+        self,
+        param: torch.Tensor,
+        roi_bbox: Tuple[int, int, int, int],
+        dense: bool,
+        transform_space: bool = True,
+    ) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Predict the vertices of the face given the parameter vector.
+
+        Args:
+            param (torch.Tensor): Parameter vector.
+            roi_bbox (Tuple[int, int, int, int]): Bounding box of the face.
+            dense (bool): Whether to return a dense or sparse vertex representation.
+            transform_space (bool): Whether to transform the vertex representation to the original space.
+
+        Returns:
+            torch.Tensor: Dense or sparse vertex representation.
+        &#34;&#34;&#34;
+        vertex = self._param2vert(param, dense=dense, transform_space=transform_space)
+        sx, sy, ex, ey = roi_bbox
+        scale_x = (ex - sx) / self.image_size
+        scale_y = (ey - sy) / self.image_size
+        vertex[0, :] = vertex[0, :] * scale_x + sx
+        vertex[1, :] = vertex[1, :] * scale_y + sy
+
+        s = (scale_x + scale_y) / 2
+        vertex[2, :] *= s
+
+        return vertex
+
+    def _compute_sparse_vert(
+        self,
+        param: torch.Tensor,
+        roi_box: Tuple[int, int, int, int],
+        transform_space: bool = False,
+    ) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Predict the sparse vertex representation of the face given the parameter vector.
+
+        Args:
+            param (torch.Tensor): Parameter vector.
+            roi_box (Tuple[int, int, int, int]): Bounding box of the face.
+            transform_space (bool): Whether to transform the vertex representation to the original space.
+
+        Returns:
+            torch.Tensor: Sparse vertex representation.
+
+        &#34;&#34;&#34;
+        vertex = self._compute_vertices(
+            param, roi_box, dense=False, transform_space=transform_space
+        )
+        return vertex
+
+    def _compute_dense_vert(
+        self,
+        param: torch.Tensor,
+        roi_box: Tuple[int, int, int, int],
+        transform_space: bool = False,
+    ) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Predict the dense vertex representation of the face given the parameter vector.
+
+        Args:
+            param (torch.Tensor): Parameter vector.
+            roi_box (Tuple[int, int, int, int, int]): Bounding box of the face.
+            transform_space (bool): Whether to transform the vertex representation to the original space.
+
+        Returns:
+            torch.Tensor: Dense vertex representation.
+        &#34;&#34;&#34;
+        vertex = self._compute_vertices(
+            param, roi_box, dense=True, transform_space=transform_space
+        )
+        return vertex
+
+    def _compute_pose(
+        self,
+        param: torch.Tensor,
+        roi_bbox: Tuple[int, int, int, int],
+        ret_mat: bool = False,
+    ) -&gt; Union[torch.Tensor, Tuple[List[float], torch.Tensor]]:
+        &#34;&#34;&#34;Predict the pose of the face given the parameter vector.
+
+        Args:
+            param (torch.Tensor): Parameter vector.
+            roi_bbox (Tuple[int, int, int, int, int]): Bounding box of the face.
+            ret_mat (bool): Whether to return the rotation matrix.
+
+        Returns:
+            Union[torch.Tensor]: Pose of the face.
+        &#34;&#34;&#34;
+        pe, angles, t3d = self._parse_pose(param)
+
+        sx, sy, ex, ey = roi_bbox
+        scale_x = (ex - sx) / self.image_size
+        scale_y = (ey - sy) / self.image_size
+        t3d[0] = t3d[0] * scale_x + sx
+        t3d[1] = t3d[1] * scale_y + sy
+
+        if ret_mat:
+            return pe
+        return angles, t3d</code></pre>
+</details>
 </section>
 <section>
 </section>
@@ -401,7 +748,7 @@ hljs.highlightAll();
 <h3>Methods</h3>
 <dl>
 <dt id="facetorch.analyzer.utilizer.align.Lmk3DMeshPose.run"><code class="name flex">
-<span>def <span class="ident">run</span></span>(<span>self, data: <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a>) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+<span>def <span class="ident">run</span></span>(<span>self, data: <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a>) -> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Runs the Lmk3DMeshPose class functionality - convert the face parameter vector to 3D landmarks, mesh and pose.</p>
@@ -421,6 +768,44 @@ hljs.highlightAll();
 <dt><code>ImageData</code></dt>
 <dd>ImageData object containing lmk3d, mesh and pose.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@Timer(&#34;Lmk3DMeshPose.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+def run(self, data: ImageData) -&gt; ImageData:
+    &#34;&#34;&#34;Runs the Lmk3DMeshPose class functionality - convert the face parameter vector to 3D landmarks, mesh and pose.
+
+    Adds the following attributes to the data object:
+
+    - landmark [[y, x, z], 68 (points)]
+    - mesh [[y, x, z], 53215 (points)]
+    - pose (Euler angles [yaw, pitch, roll] and translation [y, x, z])
+
+    Args:
+        data (ImageData): ImageData object containing most of the data including the predictions.
+
+    Returns:
+        ImageData: ImageData object containing lmk3d, mesh and pose.
+    &#34;&#34;&#34;
+    for count, face in enumerate(data.faces):
+        assert &#34;align&#34; in face.preds.keys(), &#34;align key not found in face.preds&#34;
+        param = face.preds[&#34;align&#34;].logits
+
+        roi_box = [face.loc.x1, face.loc.y1, face.loc.x2, face.loc.y2]
+
+        landmarks = self._compute_sparse_vert(param, roi_box, transform_space=True)
+        vertices = self._compute_dense_vert(param, roi_box, transform_space=True)
+        angles, translation = self._compute_pose(param, roi_box)
+
+        data.faces[count].preds[&#34;align&#34;].other[&#34;lmk3d&#34;] = landmarks
+        data.faces[count].preds[&#34;align&#34;].other[&#34;mesh&#34;] = vertices
+        data.faces[count].preds[&#34;align&#34;].other[&#34;pose&#34;] = dict(
+            angles=angles, translation=translation
+        )
+
+    return data</code></pre>
+</details>
 </dd>
 </dl>
 <h3>Inherited members</h3>
@@ -436,52 +821,7 @@ hljs.highlightAll();
 </section>
 </article>
 <nav id="sidebar">
-<form>
-<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
-disabled minlength="2">
-</form>
-<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
-<style>
-.modal-dialog iframe {
-width: 100vw;
-height: calc(100vh - 80px);
-}
-@media screen and (min-width: 700px) {
-.modal-dialog iframe {
-width: 70vw;
-height: 80vh;
-}
-}
-.modal-dialog .tingle-modal-box {width: auto;}
-.modal-dialog .tingle-modal-box__content {padding: 0;}
-</style>
-<script>
-const input = document.getElementById('lunr-search');
-input.disabled = false;
-input.form.addEventListener('submit', (ev) => {
-ev.preventDefault();
-const url = new URL(window.location);
-url.searchParams.set('q', input.value);
-history.replaceState({}, null, url.toString());
-search(input.value);
-});
-const query = new URL(window.location).searchParams.get('q');
-if (query)
-search(query);
-function search(query) {
-const url = '../../../doc-search.html#' + encodeURIComponent(query);
-new tingle.modal({
-cssClass: ['modal-dialog'],
-onClose: () => {
-const url = new URL(window.location);
-url.searchParams.delete('q');
-history.replaceState({}, null, url.toString());
-setTimeout(() => input.focus(), 100);
-}
-}).setContent('<iframe src="' + url + '"></iframe>').open();
-}
-</script>
+<h1>Index</h1>
 <div class="toc">
 <ul></ul>
 </div>
@@ -505,7 +845,9 @@ setTimeout(() => input.focus(), 100);
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.1</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.0</a>.</p>
 </footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
 </body>
 </html>
