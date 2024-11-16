@@ -48,8 +48,7 @@ def test_analyzer_tensor(cfg, analyzer):
         pytest.skip("No tensor path provided in config.")
     tensor = torch.load(
         cfg.path_tensor,
-        map_location=torch.device(cfg.analyzer.device),
-        weights_only=False,
+        map_location=torch.device(cfg.analyzer.device)
     )
     response = analyzer.run(
         tensor=tensor,

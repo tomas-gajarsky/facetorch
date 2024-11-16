@@ -127,7 +127,6 @@ def tensor(cfg) -> torch.Tensor:
     if hasattr(cfg, "path_tensor"):
         tensor = torch.load(
             cfg.path_tensor,
-            weights_only=False,
         ).to(cfg.analyzer.device)
     else:
         pytest.skip("No tensor path provided in config.")

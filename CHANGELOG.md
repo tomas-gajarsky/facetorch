@@ -10,7 +10,6 @@ Released on November 9, 2024.
 * UniversalReader to read numpy arrays to torch directly
 * RetinaFace pre-normalization color space to RGB
 * torch.cross torch.linalg.cross in 3D landmark drawer
-* torch tensor loading to include weights_only=False parameter
 
 
 ## 0.5.0
