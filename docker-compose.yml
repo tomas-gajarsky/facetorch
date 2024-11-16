@@ -1,4 +1,4 @@
-version: "3.3"
+version: "3.8"
 services:
 
   facetorch:
@@ -13,12 +13,19 @@ services:
 
   facetorch-gpu:
     image: tomasgajarsky/facetorch-gpu:latest
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./docker/Dockerfile.gpu
     volumes:
       - ./:/opt/facetorch
-    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     entrypoint: [ "/bin/bash" ]
 
   facetorch-gpu-no-device:
