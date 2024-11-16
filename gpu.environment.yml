@@ -4,6 +4,7 @@ channels:
 dependencies:
   - python>=3.8
   - codetiming>=1.2.0
+  - cudatoolkit=11.2.2
   - googleapis-common-protos>=1.56.3
   - gdown>=3.11.0
   - hydra-core>=1.0.0
