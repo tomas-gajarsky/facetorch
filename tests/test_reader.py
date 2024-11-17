@@ -131,3 +131,81 @@ def test_unsupported_data_type(analyzer):
         pytest.skip("Only UniversalReader is used for this test.")
     with pytest.raises(ValueError):
         analyzer.reader.run(123)  # Passing an integer to trigger the error
+
+
+def test_read_grayscale_pil_image(analyzer):
+    if not isinstance(analyzer.reader, UniversalReader):
+        pytest.skip("Only UniversalReader is used for this test.")
+    pil_image = Image.new("L", (60, 30))
+    result = analyzer.reader.run(pil_image)
+    assert isinstance(result, facetorch.datastruct.ImageData)
+    assert result.tensor is not None
+    assert result.tensor.size(1) == 3
+
+
+def test_read_grayscale_image_from_bytes(analyzer):
+    if not isinstance(analyzer.reader, UniversalReader):
+        pytest.skip("Only UniversalReader is used for this test.")
+    pil_image = Image.new("L", (60, 30))
+    img_byte_arr = io.BytesIO()
+    pil_image.save(img_byte_arr, format="JPEG")
+    bytes_input = img_byte_arr.getvalue()
+    result = analyzer.reader.run(bytes_input)
+    assert isinstance(result, facetorch.datastruct.ImageData)
+    assert result.tensor is not None
+    assert result.tensor.size(1) == 3
+
+
+def test_read_rgba_pil_image(analyzer):
+    if not isinstance(analyzer.reader, UniversalReader):
+        pytest.skip("Only UniversalReader is used for this test.")
+    pil_image = Image.new("RGBA", (60, 30), color=(255, 0, 0, 128))
+    result = analyzer.reader.run(pil_image)
+    assert isinstance(result, facetorch.datastruct.ImageData)
+    assert result.tensor is not None
+    assert result.tensor.size(1) == 3
+
+
+def test_read_rgba_image_from_bytes(analyzer):
+    if not isinstance(analyzer.reader, UniversalReader):
+        pytest.skip("Only UniversalReader is used for this test.")
+    pil_image = Image.new("RGBA", (60, 30), color=(255, 0, 0, 128))
+    img_byte_arr = io.BytesIO()
+    pil_image.save(img_byte_arr, format="PNG")
+    bytes_input = img_byte_arr.getvalue()
+    result = analyzer.reader.run(bytes_input)
+    assert isinstance(result, facetorch.datastruct.ImageData)
+    assert result.tensor is not None
+    assert result.tensor.size(1) == 3
+
+
+def test_read_numpy_array_with_real_image(cfg, analyzer):
+    if not isinstance(analyzer.reader, UniversalReader):
+        pytest.skip("Only UniversalReader is used for this test.")
+    if cfg.path_image is None:
+        pytest.skip("No image path provided in config.")
+    image = Image.open(cfg.path_image).convert("RGB")
+    image_rgb = np.array(image)
+    result = analyzer.reader.run(image_rgb)
+    assert isinstance(result, facetorch.datastruct.ImageData)
+    assert result.tensor is not None
+    assert result.img is not None
+    assert result.tensor.size(1) == 3
+
+
+@pytest.mark.reader
+def test_read_numpy_array_2d(analyzer):
+    if not isinstance(analyzer.reader, UniversalReader):
+        pytest.skip("Only UniversalReader is used for this test.")
+    array_input = np.random.rand(224, 224).astype(np.float32)
+    with pytest.raises(ValueError):
+        analyzer.reader.run(array_input)
+
+
+@pytest.mark.reader
+def test_read_numpy_array_unsupported_channels(analyzer):
+    if not isinstance(analyzer.reader, UniversalReader):
+        pytest.skip("Only UniversalReader is used for this test.")
+    array_input = np.random.rand(224, 224, 4).astype(np.float32)
+    with pytest.raises(ValueError):
+        analyzer.reader.run(array_input)

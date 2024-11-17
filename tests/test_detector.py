@@ -69,6 +69,23 @@ def test_postprocessor_base_2_type(analyzer):
     )
 
 
+@pytest.mark.integration
+@pytest.mark.detector
+def test_preprocessor_normalization_order(analyzer):
+    dummy_image = torch.ones(1, 3, 224, 224) * 255
+
+    preprocessed_image = analyzer.detector.preprocessor.transform(dummy_image)
+
+    if getattr(analyzer.detector.preprocessor, "reverse_colors", False):
+        dummy_image = dummy_image[:, [2, 1, 0], :, :]
+
+    mean = torch.tensor([123.0, 117.0, 104.0]).view(1, 3, 1, 1)
+    std = torch.tensor([1.0, 1.0, 1.0]).view(1, 3, 1, 1)
+    expected_image = (dummy_image - mean) / std
+
+    assert torch.allclose(preprocessed_image, expected_image, atol=1e-5)
+
+
 @pytest.mark.endtoend
 @pytest.mark.detector
 def test_face_locations_larger_or_equal_zero(response):

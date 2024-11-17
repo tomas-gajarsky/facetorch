@@ -1,4 +1,4 @@
-version: "3.3"
+version: "3.8"
 services:
 
   facetorch-dev:
@@ -11,13 +11,20 @@ services:
     entrypoint: [ "/bin/bash" ]
 
   facetorch-dev-gpu:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./docker/Dockerfile.dev.gpu
     volumes:
       - ./:/opt/facetorch
     shm_size: 8gb
-    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     entrypoint: [ "/bin/bash" ]
 
   facetorch-tests:
@@ -70,7 +77,13 @@ services:
       dockerfile: ./docker/Dockerfile.lock
     volumes:
       - ./:/opt/facetorch
-    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     entrypoint:
       [
         "conda-lock",

@@ -46,7 +46,10 @@ def test_analyzer_path_image(cfg, analyzer):
 def test_analyzer_tensor(cfg, analyzer):
     if not hasattr(cfg, "path_tensor"):
         pytest.skip("No tensor path provided in config.")
-    tensor = torch.load(cfg.path_tensor, map_location=torch.device(cfg.analyzer.device))
+    tensor = torch.load(
+        cfg.path_tensor,
+        map_location=torch.device(cfg.analyzer.device)
+    )
     response = analyzer.run(
         tensor=tensor,
         batch_size=cfg.batch_size,
