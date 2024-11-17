@@ -2,7 +2,7 @@
 
 ## 0.5.1
 
-Released on November 9, 2024.
+Released on November 17, 2024.
 
 ### Changed
 
