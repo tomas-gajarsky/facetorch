@@ -32,9 +32,9 @@ analyzer:
         transforms:
         - _target_: torchvision.transforms.Normalize
           mean:
-          - 104.0
-          - 117.0
           - 123.0
+          - 117.0
+          - 104.0
           std:
           - 1.0
           - 1.0
