@@ -301,7 +301,7 @@ GPU:
 1. Run profiling of the example script: ```python -m cProfile -o profiling/example.prof scripts/example.py```
 2. Open profiling file in the browser: ```snakeviz profiling/example.prof```
 
-## Research Using facetorch
+## Research Highlights Leveraging facetorch
 
 ### [Sharma et al. (2024)](https://aclanthology.org/2024.signlang-1.39.pdf)
 
