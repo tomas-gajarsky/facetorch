@@ -6,7 +6,7 @@
 [![PyPI - License](https://img.shields.io/pypi/l/facetorch)](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/LICENSE)
 <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
-[Hugging Face Space demo app 🤗 ](https://huggingface.co/spaces/tomas-gajarsky/facetorch-app)
+[Hugging Face Space demo app 🤗](https://huggingface.co/spaces/tomas-gajarsky/facetorch-app)
 
 [Google Colab notebook demo](https://colab.research.google.com/github/tomas-gajarsky/facetorch/blob/main/notebooks/facetorch_notebook_demo.ipynb)
 <a target="_blank" href="https://colab.research.google.com/github/tomas-gajarsky/facetorch/blob/main/notebooks/facetorch_notebook_demo.ipynb">
@@ -17,16 +17,21 @@
  
 [Docker Hub](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch) [(GPU)](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch-gpu)
 
-Facetorch is a Python library that can detect faces and analyze facial features using deep neural networks. The goal is to gather open sourced face analysis models from the community, optimize them for performance using TorchScript and combine them to create a face analysis tool that one can:
 
-1. configure using [Hydra](https://hydra.cc/docs/intro/) (OmegaConf)
-2. reproduce with [conda-lock](https://github.com/conda-incubator/conda-lock) and [Docker](https://docs.docker.com/get-docker/)
-3. accelerate on CPU and GPU with [TorchScript](https://pytorch.org/docs/stable/jit.html)
-4. extend by uploading a model file to Google Drive and adding a config yaml file to the repository
+**Facetorch** is a Python library designed for facial detection and analysis, leveraging the power of deep neural networks. Its primary aim is to curate open-source face analysis models from the community, optimize them for high performance using TorchScript, and integrate them into a versatile face analysis toolkit. The library offers the following key features:
 
-Please, use the library responsibly with caution and follow the 
-[ethics guidelines for Trustworthy AI from European Commission](https://ec.europa.eu/futurium/en/ai-alliance-consultation.1.html). 
-The models are not perfect and may be biased.
+1. **Customizable Configuration:** Easily configure your setup using [Hydra](https://hydra.cc/docs/intro/) and its powerful [OmegaConf](https://omegaconf.readthedocs.io/) capabilities.
+
+2. **Reproducible Environments:** Ensure reproducibility with tools like [conda-lock](https://github.com/conda-incubator/conda-lock) for dependency management and [Docker](https://docs.docker.com/get-docker/) for containerization.
+
+3. **Accelerated Performance:** Enjoy enhanced performance on both CPU and GPU with [TorchScript](https://pytorch.org/docs/stable/jit.html) optimization.
+
+4. **Simple Extensibility:** Extend the library by uploading your model file to Google Drive and adding a corresponding configuration YAML file to the repository.
+
+Facetorch provides an efficient, scalable, and user-friendly solution for facial analysis tasks, catering to developers and researchers looking for flexibility and performance.
+
+Please use this library responsibly and with caution. Adhere to the [European Commission's Ethics Guidelines for Trustworthy AI](https://ec.europa.eu/futurium/en/ai-alliance-consultation.1.html) to ensure ethical and fair usage. Keep in mind that the models may have limitations and potential biases, so it is crucial to evaluate their outputs critically and consider their impact.
+
 
 ## Install
 [PyPI](https://pypi.org/project/facetorch/)
@@ -317,11 +322,13 @@ Gue, Jia Xuan, Chun Yong Chong, and Mei Kuan Lim. "Facial Expression Recognition
 
 
 ## Acknowledgements
-I want to thank the open source code community and the researchers who have published the models. This project would not be possible without their work.
+I would like to thank the open-source community and the researchers who have shared their work and published models. This project would not have been possible without their contributions.
+
 
 ## Citing
 
-If you use facetorch in your work, please cite the original authors of the models and the facetorch library:
+If you use facetorch in your work, please make sure to appropriately credit the original authors of the models it employs. Additionally, you may consider citing the facetorch library itself. Below is an example citation for facetorch:
+
 ```
 @misc{facetorch,
     author = {Gajarsky, Tomas},
