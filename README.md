@@ -26,7 +26,7 @@
 
 3. **Accelerated Performance:** Enjoy enhanced performance on both CPU and GPU with [TorchScript](https://pytorch.org/docs/stable/jit.html) optimization.
 
-4. **Simple Extensibility:** Extend the library by uploading your model file to Google Drive and adding a corresponding configuration YAML file to the repository.
+4. **Simple Extensibility:** Extend the library by uploading your model file to Hugging Face Hub (previously Google Drive) and adding a corresponding configuration YAML file to the repository.
 
 Facetorch provides an efficient, scalable, and user-friendly solution for facial analysis tasks, catering to developers and researchers looking for flexibility and performance.
 
@@ -208,8 +208,8 @@ for Identity-invariant Facial Expression Recognition](https://arxiv.org/abs/2209
 
 ### Model download
 
-Models are downloaded during runtime automatically to the *models* directory.
-You can also download the models manually from a [public Google Drive folder](https://drive.google.com/drive/folders/19qlklR18wYfFsCChQ78it10XciuTzbDM?usp=sharing).
+Models are downloaded during runtime automatically to the *models* directory using Hugging Face Hub (the default downloader has been switched from Google Drive to Hugging Face Hub).
+Models are available on the [Hugging Face Hub](https://huggingface.co/tomas-gajarsky) and legacy models can also be accessed from the [original Google Drive folder](https://drive.google.com/drive/folders/19qlklR18wYfFsCChQ78it10XciuTzbDM?usp=sharing).
 
 
 ### Execution time
@@ -245,14 +245,13 @@ Run the Docker container:
 
 ### Add predictor
 #### Prerequisites
-1. file of the TorchScript model
-2. ID of the Google Drive model file
+1. File of the TorchScript model
+2. Repository on Hugging Face Hub for hosting the model (or legacy ID of the Google Drive model file)
 3. facetorch [fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
 
 Facetorch works with models that were exported from PyTorch to TorchScript. You can apply [torch.jit.trace](https://pytorch.org/docs/stable/generated/torch.jit.trace.html) function to compile a PyTorch model as a TorchScript module. Please verify that the output of the traced model equals the output of the original model.
 
-The first models are hosted on my [public Google Drive folder](https://drive.google.com/drive/folders/19qlklR18wYfFsCChQ78it10XciuTzbDM?usp=sharing). You can either send the new model for upload to me, host the model on your 
-Google Drive or host it somewhere else and add your own downloader object to the codebase.
+Models are now hosted on [Hugging Face Hub](https://huggingface.co/tomas-gajarsky) which is the default download source. You can host your model on your own Hugging Face account or use the legacy Google Drive hosting option by specifying the appropriate downloader in your configuration.
 
 #### Configuration
 ##### Create yaml file
@@ -264,10 +263,12 @@ Google Drive or host it somewhere else and add your own downloader object to the
 ```/conf/analyzer/predictor/<predictor_name>/<model_name>.yaml```
 
 ##### Edit yaml file
-1. Change the Google Drive file ID to the ID of the model.
-2. Select the preprocessor (or implement a new one based on BasePredPreProcessor) and specify it's parameters e.g. image size and normalization in the yaml file 
+1. Set up the downloader configuration:
+   - For Hugging Face Hub (recommended): specify the `repo_id` and `filename` parameters
+   - For legacy Google Drive: specify the Google Drive file ID
+2. Select the preprocessor (or implement a new one based on BasePredPreProcessor) and specify its parameters e.g. image size and normalization in the yaml file 
 to match the requirements of the new model.
-3. Select the postprocessor (or implement a new one based on BasePredPostProcessor) and specify it's parameters e.g. labels in the yaml file to match 
+3. Select the postprocessor (or implement a new one based on BasePredPostProcessor) and specify its parameters e.g. labels in the yaml file to match 
 the requirements of the new model.
 4. (Optional) Add BaseUtilizer derivative that uses output of your model to perform some additional actions.
 
