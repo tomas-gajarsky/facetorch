@@ -24,7 +24,7 @@ preprocessor:
         std: [0.229, 0.224, 0.225] # List[float]
   device: 
     _target_: torch.device
-    type: ${analyzer.device}
+    type: ${analyzer.predictor.deepfake.device.type}
   optimize_transform: ${analyzer.optimize_transforms} # bool
   reverse_colors: False # bool
 
