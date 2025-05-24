@@ -5,6 +5,14 @@ from typing import Optional
 from pythonjsonlogger import jsonlogger
 
 
+class CustomJsonFormatter(jsonlogger.JsonFormatter):
+    def add_fields(self, log_record, record, message_dict):
+        super().add_fields(log_record, record, message_dict)
+        # Remove taskName field if it exists and is None
+        if 'taskName' in log_record and log_record['taskName'] is None:
+            del log_record['taskName']
+
+
 class LoggerJsonFile:
     def __init__(
         self,
@@ -40,7 +48,7 @@ class LoggerJsonFile:
 
         if len(self.logger.handlers) == 0:
             json_handler = logging.StreamHandler()
-            formatter = jsonlogger.JsonFormatter(fmt=self.json_format)
+            formatter = CustomJsonFormatter(fmt=self.json_format)
             json_handler.setFormatter(formatter)
             self.logger.addHandler(json_handler)
 
