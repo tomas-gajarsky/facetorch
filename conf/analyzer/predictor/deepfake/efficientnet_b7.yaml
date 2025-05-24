@@ -1,4 +1,3 @@
-#fer:
 _target_: facetorch.analyzer.predictor.FacePredictor
 
 downloader:
