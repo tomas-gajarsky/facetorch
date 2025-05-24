@@ -2,11 +2,9 @@
 _target_: facetorch.analyzer.detector.FaceDetector
 
 downloader:
-  _target_: facetorch.downloader.DownloaderHuggingFace
-  file_id: 1eMuOdGkiNCOUTiEbKKoPCHGCuDgiKeNC 
+  _target_: facetorch.downloader.DownloaderGDrive
+  file_id: 1eMuOdGkiNCOUTiEbKKoPCHGCuDgiKeNC  # str
   path_local: /opt/facetorch/models/torchscript/detector/1/model.pt # str
-  repo_id: tomas-gajarsky/facetorch-detector-retinaface  # HuggingFace repo ID
-  filename: model.pt  # Filename in the HuggingFace repo
 
 device:
   _target_: torch.device
