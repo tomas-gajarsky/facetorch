@@ -13,3 +13,4 @@ dependencies:
   - python-json-logger>=2.0.0
   - pytorch-gpu>=1.9.0, <1.12
   - torchvision>=0.10.0, <0.13.0
+  - huggingface_hub>=0.16.0
