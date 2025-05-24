@@ -1,11 +1,9 @@
 _target_: facetorch.analyzer.predictor.FacePredictor
 
 downloader:
-  _target_: facetorch.downloader.DownloaderHuggingFace
-  file_id: 1xoB5VYOd0XLjb-rQqqHWCkQvma4NytEd
-  path_local: /opt/facetorch/models/torchscript/predictor/fer/2/model.pt # str
-  repo_id: tomas-gajarsky/facetorch-fer-efficientnet-b2  # HuggingFace repo ID
-  filename: model.pt  # Filename in the HuggingFace repo
+  _target_: facetorch.downloader.DownloaderGDrive
+  file_id: 1i5f8vy1dZv_u8vsJsj9CHEzHwsokIknr
+  path_local: /opt/facetorch/models/torchscript/predictor/fer/1/model.pt # str
 
 device:
   _target_: torch.device
@@ -17,7 +15,7 @@ preprocessor:
     _target_: torchvision.transforms.Compose
     transforms:
       - _target_: torchvision.transforms.Resize        
-        size: [260, 260] # List[int]
+        size: [244, 244] # List[int]
         antialias: True # bool
       - _target_: torchvision.transforms.Normalize
         mean: [0.485, 0.456, 0.406] # List[float]
@@ -36,4 +34,4 @@ postprocessor:
     type: ${analyzer.predictor.fer.device.type}
   optimize_transform: ${analyzer.optimize_transforms}
   dim: 1
-  labels: ["Anger", "Contempt", "Disgust", "Fear", "Happiness", "Neutral", "Sadness", "Surprise"] # List
+  labels: ["Anger", "Disgust", "Fear", "Happiness", "Neutral", "Sadness", "Surprise"] # List

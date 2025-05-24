@@ -1,5 +1,16 @@
 # Change Log
 
+## 0.6.0
+
+Released on May 24, 2025.
+
+### Added
+* DownloaderHuggingFace for downloading models from Hugging Face Hub
+
+### Changed
+* default model download source from Google Drive to Hugging Face Hub
+
+
 ## 0.5.1
 
 Released on November 17, 2024.

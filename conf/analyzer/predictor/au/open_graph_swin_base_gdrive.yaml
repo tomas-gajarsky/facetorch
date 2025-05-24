@@ -1,11 +1,9 @@
 _target_: facetorch.analyzer.predictor.FacePredictor
 
 downloader:
-  _target_: facetorch.downloader.DownloaderHuggingFace
+  _target_: facetorch.downloader.DownloaderGDrive
   file_id: 1uoVX9suSA5JVWTms3hEtJKzwO-CUR_jV
   path_local: /opt/facetorch/models/torchscript/predictor/au/1/model.pt # str
-  repo_id: tomas-gajarsky/facetorch-au-opengraph  # HuggingFace repo ID
-  filename: model.pt  # Filename in the HuggingFace repo
 
 device:
   _target_: torch.device
@@ -38,3 +36,4 @@ postprocessor:
   dim: 1
   threshold: 0.5
   labels: ["inner_brow_raiser", "outer_brow_raiser", "brow_lowerer", "upper_lid_raiser", "cheek_raiser", "lid_tightener", "nose_wrinkler", "upper_lip_raiser", "nasolabial_deepener", "lip_corner_puller", "sharp_lip_puller", "dimpler", "lip_corner_depressor", "lower_lip_depressor", "chin_raiser", "lip_pucker", "tongue_show", "lip_stretcher", "lip_funneler", "lip_tightener", "lip_pressor", "lips_part", "jaw_drop", "mouth_stretch", "lip_bite", "nostril_dilator", "nostril_compressor", "left_inner_brow_raiser", "right_inner_brow_raiser", "left_outer_brow_raiser", "right_outer_brow_raiser", "left_brow_lowerer", "right_brow_lowerer", "left_cheek_raiser", "right_cheek_raiser", "left_upper_lip_raiser", "right_upper_lip_raiser", "left_nasolabial_deepener", "right_nasolabial_deepener", "left_dimpler", "right_dimpler"] # List
+

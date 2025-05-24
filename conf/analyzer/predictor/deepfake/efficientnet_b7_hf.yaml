@@ -2,9 +2,9 @@ _target_: facetorch.analyzer.predictor.FacePredictor
 
 downloader:
   _target_: facetorch.downloader.DownloaderHuggingFace
-  file_id: 1xoB5VYOd0XLjb-rQqqHWCkQvma4NytEd
-  path_local: /opt/facetorch/models/torchscript/predictor/fer/2/model.pt # str
-  repo_id: tomas-gajarsky/facetorch-fer-efficientnet-b2  # HuggingFace repo ID
+  file_id: 1GjDTwQpvrkCjXOdiBy1oMkzm7nt-bXFg
+  path_local: /opt/facetorch/models/torchscript/predictor/deepfake/1/model.pt # str
+  repo_id: tomas-gajarsky/facetorch-deepfake-efficientnet-b7  # HuggingFace repo ID
   filename: model.pt  # Filename in the HuggingFace repo
 
 device:
@@ -17,23 +17,23 @@ preprocessor:
     _target_: torchvision.transforms.Compose
     transforms:
       - _target_: torchvision.transforms.Resize        
-        size: [260, 260] # List[int]
+        size: [380, 380] # List[int]
         antialias: True # bool
       - _target_: torchvision.transforms.Normalize
         mean: [0.485, 0.456, 0.406] # List[float]
         std: [0.229, 0.224, 0.225] # List[float]
   device: 
     _target_: torch.device
-    type: ${analyzer.predictor.fer.device.type}
-  optimize_transform: ${analyzer.optimize_transforms}
+    type: ${analyzer.predictor.deepfake.device.type}
+  optimize_transform: ${analyzer.optimize_transforms} # bool
   reverse_colors: False # bool
 
 postprocessor:
-  _target_: facetorch.analyzer.predictor.post.PostArgMax
+  _target_: facetorch.analyzer.predictor.post.PostSigmoidBinary
   transform: None
   device: 
     _target_: torch.device
-    type: ${analyzer.predictor.fer.device.type}
+    type: ${analyzer.predictor.deepfake.device.type}
   optimize_transform: ${analyzer.optimize_transforms}
-  dim: 1
-  labels: ["Anger", "Contempt", "Disgust", "Fear", "Happiness", "Neutral", "Sadness", "Surprise"] # List
+  labels: ["Real", "Fake"] # List
+  threshold: 0.7
