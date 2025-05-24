@@ -8,7 +8,7 @@ Released on May 24, 2025.
 * DownloaderHuggingFace for downloading models from Hugging Face Hub
 
 ### Changed
-* defaul model download source from Google Drive to Hugging Face Hub
+* default model download source from Google Drive to Hugging Face Hub
 
 
 ## 0.5.1
