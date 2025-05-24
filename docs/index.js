@@ -450,9 +450,31 @@ INDEX=[
 "func":1
 },
 {
+"ref":"facetorch.downloader.DownloaderHuggingFace",
+"url":5,
+"doc":"Downloader for HuggingFace Hub files. This downloader retrieves model files from the HuggingFace Hub, serving as an alternative to Google Drive for storing and accessing facetorch models. This allows for better discoverability, versioning, and reliability compared to Google Drive links. Args: file_id (str): Not directly used for HuggingFace downloads, but kept for API compatibility. Can be used as a fallback for repo_id if repo_id is not provided. path_local (str): The file is downloaded to this local path. repo_id (str, optional): HuggingFace Hub repository ID in the format 'username/repo_name'. If not provided, attempts to parse from file_id. filename (str, optional): Name of the file to download from the repository. If not provided, uses the basename from path_local."
+},
+{
+"ref":"facetorch.downloader.DownloaderHuggingFace.run",
+"url":5,
+"doc":"Downloads a file from HuggingFace Hub. This method: 1. Creates the necessary directory structure 2. Downloads the specified file from HuggingFace Hub 3. Ensures the file is saved with the correct name at the specified path If the download fails, an informative error message is printed.",
+"func":1
+},
+{
 "ref":"facetorch.logger",
 "url":6,
 "doc":""
+},
+{
+"ref":"facetorch.logger.CustomJsonFormatter",
+"url":6,
+"doc":"A custom formatter to format logging records as json strings. Extra values will be formatted as str() if not supported by json default encoder :param json_default: a function for encoding non-standard objects as outlined in https: docs.python.org/3/library/json.html :param json_encoder: optional custom encoder :param json_serializer: a :meth: json.dumps -compatible callable that will be used to serialize the log record. :param json_indent: an optional :meth: json.dumps -compatible numeric value that will be used to customize the indent of the output json. :param prefix: an optional string prefix added at the beginning of the formatted string :param rename_fields: an optional dict, used to rename field names in the output. Rename message to @message: {'message': '@message'} :param static_fields: an optional dict, used to add fields with static values to all logs :param json_indent: indent parameter for json.dumps :param json_ensure_ascii: ensure_ascii parameter for json.dumps :param reserved_attrs: an optional list of fields that will be skipped when outputting json log record. Defaults to all log record attributes: http: docs.python.org/library/logging.html logrecord-attributes :param timestamp: an optional string/boolean field to add a timestamp when outputting the json log record. If string is passed, timestamp will be added to log record using string as key. If True boolean is passed, timestamp key will be \"timestamp\". Defaults to False/off."
+},
+{
+"ref":"facetorch.logger.CustomJsonFormatter.add_fields",
+"url":6,
+"doc":"Override this method to implement custom logic for adding fields.",
+"func":1
 },
 {
 "ref":"facetorch.logger.LoggerJsonFile",
