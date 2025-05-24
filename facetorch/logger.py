@@ -9,8 +9,8 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
     def add_fields(self, log_record, record, message_dict):
         super().add_fields(log_record, record, message_dict)
         # Remove taskName field if it exists and is None
-        if 'taskName' in log_record and log_record['taskName'] is None:
-            del log_record['taskName']
+        if "taskName" in log_record and log_record["taskName"] is None:
+            del log_record["taskName"]
 
 
 class LoggerJsonFile:
