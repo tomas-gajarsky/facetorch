@@ -31,7 +31,7 @@ postprocessor:
   transform: None
   device: 
     _target_: torch.device
-    type: ${analyzer.device}
+    type: ${analyzer.predictor.deepfake.device.type}
   optimize_transform: ${analyzer.optimize_transforms}
   labels: ["Real", "Fake"] # List
   threshold: 0.7
