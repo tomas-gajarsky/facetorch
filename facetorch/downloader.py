@@ -66,8 +66,7 @@ class DownloaderHuggingFace(base.BaseDownloader):
             downloaded_path = hf_hub_download(
                 repo_id=self.repo_id,
                 filename=self.filename,
-                local_dir=os.path.dirname(self.path_local),
-                local_dir_use_symlinks=False
+                local_dir=os.path.dirname(self.path_local)
             )
             
             # Ensure the file is at the exact path specified in path_local
