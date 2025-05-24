@@ -18,9 +18,11 @@ analyzer:
   detector:
     _target_: facetorch.analyzer.detector.FaceDetector
     downloader:
-      _target_: facetorch.downloader.DownloaderGDrive
+      _target_: facetorch.downloader.DownloaderHuggingFace
       file_id: 1eMuOdGkiNCOUTiEbKKoPCHGCuDgiKeNC
       path_local: /opt/facetorch/models/torchscript/detector/1/model.pt
+      repo_id: tomas-gajarsky/facetorch-detector-retinaface
+      filename: model.pt
     device:
       _target_: torch.device
       type: ${analyzer.device}
@@ -102,9 +104,11 @@ analyzer:
     embed:
       _target_: facetorch.analyzer.predictor.FacePredictor
       downloader:
-        _target_: facetorch.downloader.DownloaderGDrive
+        _target_: facetorch.downloader.DownloaderHuggingFace
         file_id: 19h3kqar1wlELAmM5hDyj9tlrUh8yjrCl
         path_local: /opt/facetorch/models/torchscript/predictor/embed/1/model.pt
+        repo_id: tomas-gajarsky/facetorch-embed-resnet-50
+        filename: model.pt
       device:
         _target_: torch.device
         type: ${analyzer.device}
@@ -144,9 +148,11 @@ analyzer:
     verify:
       _target_: facetorch.analyzer.predictor.FacePredictor
       downloader:
-        _target_: facetorch.downloader.DownloaderGDrive
+        _target_: facetorch.downloader.DownloaderHuggingFace
         file_id: 1WI-mP_0mGW31OHfriPUsuFS_usYh_W8p
         path_local: /opt/facetorch/models/torchscript/predictor/verify/2/model.pt
+        repo_id: tomas-gajarsky/facetorch-verify-adaface
+        filename: model.pt
       device:
         _target_: torch.device
         type: ${analyzer.device}
@@ -186,9 +192,11 @@ analyzer:
     fer:
       _target_: facetorch.analyzer.predictor.FacePredictor
       downloader:
-        _target_: facetorch.downloader.DownloaderGDrive
+        _target_: facetorch.downloader.DownloaderHuggingFace
         file_id: 1xoB5VYOd0XLjb-rQqqHWCkQvma4NytEd
         path_local: /opt/facetorch/models/torchscript/predictor/fer/2/model.pt
+        repo_id: tomas-gajarsky/facetorch-fer-efficientnet-b2
+        filename: model.pt
       device:
         _target_: torch.device
         type: ${analyzer.device}
@@ -236,9 +244,11 @@ analyzer:
     au:
       _target_: facetorch.analyzer.predictor.FacePredictor
       downloader:
-        _target_: facetorch.downloader.DownloaderGDrive
+        _target_: facetorch.downloader.DownloaderHuggingFace
         file_id: 1uoVX9suSA5JVWTms3hEtJKzwO-CUR_jV
         path_local: /opt/facetorch/models/torchscript/predictor/au/1/model.pt # str
+        repo_id: tomas-gajarsky/facetorch-au-opengraph
+        filename: model.pt
       device:
         _target_: torch.device
         type: ${analyzer.device}
@@ -320,9 +330,11 @@ analyzer:
     va:
       _target_: facetorch.analyzer.predictor.FacePredictor
       downloader:
-        _target_: facetorch.downloader.DownloaderGDrive
+        _target_: facetorch.downloader.DownloaderHuggingFace
         file_id: 1Xl4ilNCU_DgKNhITrXb3UyQUUdm3VTKS
         path_local: /opt/facetorch/models/torchscript/predictor/va/1/model.pt
+        repo_id: tomas-gajarsky/facetorch-va-elim
+        filename: model.pt
       device:
         _target_: torch.device
         type: ${analyzer.device}
@@ -366,8 +378,10 @@ analyzer:
     deepfake:
       _target_: facetorch.analyzer.predictor.FacePredictor
       downloader:
-        _target_: facetorch.downloader.DownloaderGDrive
+        _target_: facetorch.downloader.DownloaderHuggingFace
         file_id: 1GjDTwQpvrkCjXOdiBy1oMkzm7nt-bXFg
+        repo_id: tomas-gajarsky/facetorch-deepfake-efficientnet-b7
+        filename: model.pt
         path_local: /opt/facetorch/models/torchscript/predictor/deepfake/1/model.pt
       device:
         _target_: torch.device
@@ -410,9 +424,11 @@ analyzer:
     align:
       _target_: facetorch.analyzer.predictor.FacePredictor
       downloader:
-        _target_: facetorch.downloader.DownloaderGDrive
+        _target_: facetorch.downloader.DownloaderHuggingFace
         file_id: 16gNFQdEH2nWvW3zTbdIAniKIbPAp6qBA
         path_local: /opt/facetorch/models/torchscript/predictor/align/1/model.pt
+        repo_id: tomas-gajarsky/facetorch-align-synergynet
+        filename: model.pt
       device:
         _target_: torch.device
         type: ${analyzer.device}
