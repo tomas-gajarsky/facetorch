@@ -5,7 +5,7 @@
 Released on May 24, 2025.
 
 ### Added
-* DowloaderHuggingFace for downloading models from Hugging Face Hub
+* DownloaderHuggingFace for downloading models from Hugging Face Hub
 
 ### Changed
 * defaul model download source from Google Drive to Hugging Face Hub
