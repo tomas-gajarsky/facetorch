@@ -46,5 +46,5 @@ postprocessor:
     steps: [8, 16, 32]
     clip: False
   variance: [0.1, 0.2]
-  reverse_colors: ${analyzer.detector.reverse_colors} # True # bool
+  reverse_colors: ${analyzer.detector.reverse_colors} # bool
   expand_box_ratio: 0. # float
