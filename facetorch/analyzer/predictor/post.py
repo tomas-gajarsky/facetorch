@@ -114,7 +114,7 @@ class PostArgMax(BasePredPostProcessor):
         """
         if isinstance(preds, tuple):
             preds = preds[0]
-            
+
         indices = torch.argmax(preds, dim=self.dim).cpu().numpy().tolist()
         pred_list = self.create_pred_list(preds, indices)
 
