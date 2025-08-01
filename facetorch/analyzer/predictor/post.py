@@ -103,15 +103,18 @@ class PostArgMax(BasePredPostProcessor):
         self.dim = dim
 
     @Timer("PostArgMax.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
-    def run(self, preds: torch.Tensor) -> List[Prediction]:
+    def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -> List[Prediction]:
         """Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
 
         Args:
-            preds (torch.Tensor): Batch prediction tensor.
+            preds (Union[torch.Tensor, Tuple[torch.Tensor]]): Batch prediction tensor.
 
         Returns:
             List[Prediction]: List of prediction data structures containing the predicted labels and confidence scores for each face in the batch.
         """
+        if isinstance(preds, tuple):
+            preds = preds[0]
+            
         indices = torch.argmax(preds, dim=self.dim).cpu().numpy().tolist()
         pred_list = self.create_pred_list(preds, indices)
 
