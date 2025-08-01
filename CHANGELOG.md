@@ -1,5 +1,17 @@
 # Change Log
 
+## 0.6.1
+
+Released on August 1, 2025.
+
+### Fixed
+* PostArgMax post-processor to handle tuple inputs (resolves TypeError: argmax(): argument 'input' must be Tensor, not tuple)
+* Trailing whitespace linting issues in PostArgMax module
+
+### Changed
+* Removed non-working paperswithcode badges from README for better readability
+
+
 ## 0.6.0
 
 Released on May 24, 2025.
