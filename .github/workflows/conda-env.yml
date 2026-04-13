@@ -10,21 +10,17 @@ jobs:
   conda:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Create condarc file
-        run: |
-          echo "solver: classic" > condarc
+      - uses: actions/checkout@v4
 
       - name: Set up Miniconda
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: 3.9
           environment-file: environment.yml
           channels: conda-forge, defaults
           auto-activate-base: true
           activate-environment: base
-          condarc-file: condarc
+          solver: libmamba
 
       - name: Install facetorch from conda-forge
         run: |
