@@ -18,9 +18,14 @@ jobs:
           python-version: "3.10"
           environment-file: environment.yml
           channels: conda-forge
+          conda-remove-defaults: true
           auto-activate-base: true
           activate-environment: base
-          solver: libmamba
+          conda-solver: libmamba
+
+      - name: Remove conflicting signature-verification plugin
+        run: |
+          conda remove conda-content-trust --yes --force 2>/dev/null || true
 
       - name: Install facetorch from conda-forge
         run: |
