@@ -2,10 +2,11 @@
 
 ## 0.6.1
 
-Released on August 1, 2025.
+Released on April 13, 2026.
 
 ### Fixed
 * PostArgMax post-processor to handle tuple inputs (resolves TypeError: argmax(): argument 'input' must be Tensor, not tuple)
+* PostSigmoidBinary post-processor to handle tuple inputs for consistency with other post-processors
 
 ### Changed
 * Removed non-working paperswithcode badges from README for better readability

@@ -150,15 +150,18 @@ class PostSigmoidBinary(BasePredPostProcessor):
     @Timer(
         "PostSigmoidBinary.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug
     )
-    def run(self, preds: torch.Tensor) -> List[Prediction]:
-        """Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
+    def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -> List[Prediction]:
+        """Post-processes the prediction tensor using sigmoid and returns a list of prediction data structures, one for each face.
 
         Args:
-            preds (torch.Tensor): Batch prediction tensor.
+            preds (Union[torch.Tensor, Tuple[torch.Tensor]]): Batch prediction tensor.
 
         Returns:
-            List[Prediction]: List of prediction data structures containing the predicted labelsand confidence scores for each face in the batch.
+            List[Prediction]: List of prediction data structures containing the predicted labels and confidence scores for each face in the batch.
         """
+        if isinstance(preds, tuple):
+            preds = preds[0]
+
         preds = torch.sigmoid(preds.squeeze(1))
         preds_thresh = preds.where(preds >= self.threshold, torch.zeros_like(preds))
         indices = torch.round(preds_thresh)
