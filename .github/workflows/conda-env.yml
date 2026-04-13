@@ -12,21 +12,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Miniconda
+      - name: Set up Miniforge
         uses: conda-incubator/setup-miniconda@v3
         with:
+          miniforge-version: latest
           python-version: "3.10"
           environment-file: environment.yml
-          channels: conda-forge
-          conda-remove-defaults: true
-          auto-activate-base: true
           activate-environment: base
-          conda-solver: libmamba
-
-      - name: Remove conflicting signature-verification plugin
-        run: |
-          conda remove conda-content-trust --yes --force 2>/dev/null || true
+          auto-activate-base: true
 
       - name: Install facetorch from conda-forge
         run: |
-          conda install -c conda-forge --override-channels facetorch
+          conda install -c conda-forge facetorch
