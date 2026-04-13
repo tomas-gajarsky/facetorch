@@ -15,7 +15,7 @@ jobs:
       - name: Set up Miniconda
         uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: 3.9
+          python-version: "3.10"
           environment-file: environment.yml
           channels: conda-forge, defaults
           auto-activate-base: true
