@@ -11,30 +11,37 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      tag: ${{ steps.version.outputs.TAG }}
+      skipped: ${{ steps.check_tag.outputs.SKIP }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Read version
+        id: version
         run: |
           VERSION=$(cat ./version | tr -d '[:space:]')
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "TAG=v$VERSION" >> $GITHUB_OUTPUT
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "TAG=v$VERSION" >> $GITHUB_ENV
 
       - name: Check if tag already exists
+        id: check_tag
         run: |
           if git rev-parse "${{ env.TAG }}" >/dev/null 2>&1; then
             echo "Tag ${{ env.TAG }} already exists, skipping release."
-            echo "SKIP=true" >> $GITHUB_ENV
+            echo "SKIP=true" >> $GITHUB_OUTPUT
           else
-            echo "SKIP=false" >> $GITHUB_ENV
+            echo "SKIP=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Extract changelog for this version
-        if: env.SKIP == 'false'
+        if: steps.check_tag.outputs.SKIP == 'false'
         run: |
-          # Extract the section between "## $VERSION" and the next "## "
           CHANGELOG=$(awk -v ver="${VERSION}" '
             /^## / {
               if (found) exit
@@ -43,14 +50,12 @@ jobs:
             found { print }
           ' CHANGELOG.md | sed '/^$/N;/^\n$/d')
 
-          # Write to file for the release body (handles multiline safely)
           echo "$CHANGELOG" > /tmp/release_notes.md
-
           echo "Changelog extracted:"
           cat /tmp/release_notes.md
 
       - name: Create GitHub Release
-        if: env.SKIP == 'false'
+        if: steps.check_tag.outputs.SKIP == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -58,3 +63,61 @@ jobs:
             --title "${{ env.TAG }}" \
             --notes-file /tmp/release_notes.md \
             --target main
+
+  pypi-publish:
+    needs: create-release
+    if: needs.create-release.outputs.skipped == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build package
+        run: |
+          python -m build
+
+      - name: Publish package to PyPI
+        env:
+          TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+        run: |
+          twine upload -u $TWINE_USERNAME -p $TWINE_PASSWORD dist/*
+
+  docker-push:
+    needs: create-release
+    if: needs.create-release.outputs.skipped == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set VERSION variable
+        run: echo "VERSION=$(cat ./version | tr -d '[:space:]')" >> $GITHUB_ENV
+
+      - name: Login to Docker Hub
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD docker.io
+
+      - name: Build and push facetorch
+        run: |
+          docker compose build facetorch
+          docker tag tomasgajarsky/facetorch:latest tomasgajarsky/facetorch:${{ env.VERSION }}
+          docker push tomasgajarsky/facetorch:latest
+          docker push tomasgajarsky/facetorch:${{ env.VERSION }}
+
+      - name: Build and push facetorch-gpu
+        run: |
+          docker compose build facetorch-gpu-no-device
+          docker tag tomasgajarsky/facetorch-gpu:latest tomasgajarsky/facetorch-gpu:${{ env.VERSION }}
+          docker push tomasgajarsky/facetorch-gpu:latest
+          docker push tomasgajarsky/facetorch-gpu:${{ env.VERSION }}
