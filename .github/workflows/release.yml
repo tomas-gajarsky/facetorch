@@ -1,28 +1,37 @@
 name: release
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g., v0.6.1). Defaults to version file."
+        required: false
 
 jobs:
-  validate-version:
+  resolve-version:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.VERSION }}
+      tag: ${{ steps.resolve.outputs.TAG }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate release tag matches version file
+      - name: Resolve version
+        id: resolve
         run: |
-          FILE_VERSION=$(cat ./version | tr -d '[:space:]')
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
-          if [ "$FILE_VERSION" != "$TAG_VERSION" ]; then
-            echo "::error::Version mismatch: version file says '$FILE_VERSION' but release tag is '$TAG_VERSION'"
-            echo "Please ensure the version file matches the release tag (with or without 'v' prefix)."
-            exit 1
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          else
+            FILE_VERSION=$(cat ./version | tr -d '[:space:]')
+            TAG="v$FILE_VERSION"
           fi
-          echo "Version validated: $FILE_VERSION"
+          VERSION="${TAG#v}"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "TAG=$TAG" >> $GITHUB_OUTPUT
+          echo "Releasing version: $VERSION (tag: $TAG)"
 
   pypi-publish:
-    needs: validate-version
+    needs: resolve-version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,13 +58,13 @@ jobs:
           twine upload -u $TWINE_USERNAME -p $TWINE_PASSWORD dist/*
 
   docker-push:
-    needs: validate-version
+    needs: resolve-version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Set VERSION variable
-        run: echo "VERSION=$(cat ./version | tr -d '[:space:]')" >> $GITHUB_ENV
+        run: echo "VERSION=${{ needs.resolve-version.outputs.version }}" >> $GITHUB_ENV
 
       - name: Login to Docker Hub
         env:
