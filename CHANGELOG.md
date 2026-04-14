@@ -17,6 +17,7 @@ Released on April 13, 2026.
 ### Added
 * Unit tests for all post-processor tuple input handling
 * Version tag validation in release workflow
+* Auto-release workflow that creates GitHub Releases when version file changes on main
 
 
 ## 0.6.0
