@@ -9,7 +9,14 @@ Released on April 13, 2026.
 * PostSigmoidBinary post-processor to handle tuple inputs for consistency with other post-processors
 
 ### Changed
+* Replaced pypi-publish and docker-push workflows with unified release workflow triggered by GitHub Release
+* Switched conda CI from miniconda (classic solver) to miniforge (libmamba), reducing run time from ~60 min to ~1 min
+* Updated all GitHub Actions to latest versions (checkout@v4, setup-python@v5, setup-miniconda@v3)
 * Removed non-working paperswithcode badges from README for better readability
+
+### Added
+* Unit tests for all post-processor tuple input handling
+* Version tag validation in release workflow
 
 
 ## 0.6.0
