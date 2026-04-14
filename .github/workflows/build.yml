@@ -11,6 +11,6 @@ jobs:
     timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Docker compose build and run tests
         run: docker compose -f docker-compose.dev.yml run facetorch-tests

@@ -1,5 +1,25 @@
 # Change Log
 
+## 0.6.1
+
+Released on April 14, 2026.
+
+### Fixed
+* PostArgMax post-processor to handle tuple inputs (resolves TypeError: argmax(): argument 'input' must be Tensor, not tuple)
+* PostSigmoidBinary post-processor to handle tuple inputs for consistency with other post-processors
+
+### Changed
+* Replaced pypi-publish and docker-push workflows with unified release workflow triggered by GitHub Release
+* Switched conda CI from miniconda (classic solver) to miniforge (libmamba), reducing run time from ~60 min to ~1 min
+* Updated all GitHub Actions to latest versions (checkout@v4, setup-python@v5, setup-miniconda@v3)
+* Removed non-working paperswithcode badges from README for better readability
+
+### Added
+* Unit tests for all post-processor tuple input handling
+* Version tag validation in release workflow
+* Auto-release workflow that creates GitHub Releases when version file changes on main
+
+
 ## 0.6.0
 
 Released on May 24, 2025.

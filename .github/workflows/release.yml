@@ -1,0 +1,78 @@
+name: release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  validate-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate release tag matches version file
+        run: |
+          FILE_VERSION=$(cat ./version | tr -d '[:space:]')
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$FILE_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Version mismatch: version file says '$FILE_VERSION' but release tag is '$TAG_VERSION'"
+            echo "Please ensure the version file matches the release tag (with or without 'v' prefix)."
+            exit 1
+          fi
+          echo "Version validated: $FILE_VERSION"
+
+  pypi-publish:
+    needs: validate-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build package
+        run: |
+          python -m build
+
+      - name: Publish package to PyPI
+        env:
+          TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+        run: |
+          twine upload -u $TWINE_USERNAME -p $TWINE_PASSWORD dist/*
+
+  docker-push:
+    needs: validate-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set VERSION variable
+        run: echo "VERSION=$(cat ./version | tr -d '[:space:]')" >> $GITHUB_ENV
+
+      - name: Login to Docker Hub
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD docker.io
+
+      - name: Build and push facetorch
+        run: |
+          docker compose build facetorch
+          docker tag tomasgajarsky/facetorch:latest tomasgajarsky/facetorch:${{ env.VERSION }}
+          docker push tomasgajarsky/facetorch:latest
+          docker push tomasgajarsky/facetorch:${{ env.VERSION }}
+
+      - name: Build and push facetorch-gpu
+        run: |
+          docker compose build facetorch-gpu-no-device
+          docker tag tomasgajarsky/facetorch-gpu:latest tomasgajarsky/facetorch-gpu:${{ env.VERSION }}
+          docker push tomasgajarsky/facetorch-gpu:latest
+          docker push tomasgajarsky/facetorch-gpu:${{ env.VERSION }}

@@ -104,7 +104,6 @@ analyzer
 1. biubug6
     * code: [Pytorch_Retinaface](https://github.com/biubug6/Pytorch_Retinaface)
     * paper: [Deng et al. - RetinaFace: Single-Shot Multi-Level Face Localisation in the Wild](https://openaccess.thecvf.com/content_CVPR_2020/html/Deng_RetinaFace_Single-Shot_Multi-Level_Face_Localisation_in_the_Wild_CVPR_2020_paper.html)
-    * [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/190500641/face-detection-on-wider-face-hard)](https://paperswithcode.com/sota/face-detection-on-wider-face-hard?p=190500641)
 
 
 
@@ -131,14 +130,10 @@ analyzer
 1. Jung-Jun-Uk
     * code: [UNPG](https://github.com/jung-jun-uk/unpg)
     * paper: [Jung et al. - Unified Negative Pair Generation toward Well-discriminative Feature Space for Face Recognition](https://arxiv.org/abs/2203.11593)
-    * [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/unified-negative-pair-generation-toward-well/face-verification-on-ijb-b)](https://paperswithcode.com/sota/face-verification-on-ijb-b?p=unified-negative-pair-generation-toward-well)(FAR=0.01)
     * Note: ```include_tensors``` needs to be True in order to include the model prediction in Prediction.logits
 2. mk-minchul
     * code: [AdaFace](https://github.com/mk-minchul/adaface)
     * paper: [Kim et al. - AdaFace: Quality Adaptive Margin for Face Recognition](https://arxiv.org/abs/2204.00964)
-    * [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/adaface-quality-adaptive-margin-for-face/face-verification-on-ijb-b)](https://paperswithcode.com/sota/face-verification-on-ijb-b?p=adaface-quality-adaptive-margin-for-face) <
-    * [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/adaface-quality-adaptive-margin-for-face/face-verification-on-ijb-c)](https://paperswithcode.com/sota/face-verification-on-ijb-c?p=adaface-quality-adaptive-margin-for-face) <
-    * < badges represent models trained on smaller WebFace 4M dataset
     * Note: ```include_tensors``` needs to be True in order to include the model prediction in Prediction.logits
 
 
@@ -152,9 +147,6 @@ analyzer
 1. HSE-asavchenko
     * code: [face-emotion-recognition](https://github.com/HSE-asavchenko/face-emotion-recognition)
     * paper: [Savchenko - Facial expression and attributes recognition based on multi-task learning of lightweight neural networks](https://ieeexplore.ieee.org/abstract/document/9582508)
-    * B2 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/classifying-emotions-and-engagement-in-online/facial-expression-recognition-on-affectnet)](https://paperswithcode.com/sota/facial-expression-recognition-on-affectnet?p=classifying-emotions-and-engagement-in-online)
-    * B0 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/facial-expression-and-attributes-recognition/facial-expression-recognition-on-affectnet)](https://paperswithcode.com/sota/facial-expression-recognition-on-affectnet?p=facial-expression-and-attributes-recognition)
-    * B0 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/facial-expression-and-attributes-recognition/facial-expression-recognition-on-acted-facial)](https://paperswithcode.com/sota/facial-expression-recognition-on-acted-facial?p=facial-expression-and-attributes-recognition)
 
 #### Facial Action Unit Detection (au)
 
@@ -165,7 +157,6 @@ analyzer
 1. CVI-SZU
     * code: [ME-GraphAU](https://github.com/CVI-SZU/ME-GraphAU)
     * paper: [Luo et al. - Learning Multi-dimensional Edge Feature-based AU Relation Graph for Facial Action Unit Recognition](https://arxiv.org/abs/2205.01782)
-    * [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/learning-multi-dimensional-edge-feature-based/facial-action-unit-detection-on-bp4d)](https://paperswithcode.com/sota/facial-action-unit-detection-on-bp4d?p=learning-multi-dimensional-edge-feature-based)
     * ! Does not work with CUDA > 12.0
 
 #### Facial Valence Arousal (va)
@@ -198,9 +189,6 @@ for Identity-invariant Facial Expression Recognition](https://arxiv.org/abs/2209
 1. choyingw
     * code: [SynergyNet](https://github.com/choyingw/SynergyNet)
     * challenge: [Wu et al. - Synergy between 3DMM and 3D Landmarks for Accurate 3D Facial Geometry](https://arxiv.org/abs/2110.09772)
-    * [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/synergy-between-3dmm-and-3d-landmarks-for/face-alignment-on-aflw)](https://paperswithcode.com/sota/face-alignment-on-aflw?p=synergy-between-3dmm-and-3d-landmarks-for)
-    * [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/synergy-between-3dmm-and-3d-landmarks-for/head-pose-estimation-on-aflw2000)](https://paperswithcode.com/sota/head-pose-estimation-on-aflw2000?p=synergy-between-3dmm-and-3d-landmarks-for)
-    * [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/synergy-between-3dmm-and-3d-landmarks-for/face-alignment-on-aflw2000-3d)](https://paperswithcode.com/sota/face-alignment-on-aflw2000-3d?p=synergy-between-3dmm-and-3d-landmarks-for)
     * Note: ```include_tensors``` needs to be True in order to include the model prediction in Prediction.logits
 
 
