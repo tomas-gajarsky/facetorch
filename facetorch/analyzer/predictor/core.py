@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import torch
 from codetiming import Timer
@@ -22,6 +22,7 @@ class FacePredictor(BaseModel):
         device: torch.device,
         preprocessor: BasePredPreProcessor,
         postprocessor: BasePredPostProcessor,
+        native_model_class: Optional[str] = None,
         **kwargs
     ):
         """FacePredictor is a wrapper around a neural network model that is trained to predict facial features.
@@ -31,9 +32,11 @@ class FacePredictor(BaseModel):
             device (torch.device): Torch device cpu or cuda for the model.
             preprocessor (BasePredPostProcessor): Preprocessor that runs before the model.
             postprocessor (BasePredPostProcessor): Postprocessor that runs after the model.
+            native_model_class (Optional[str]): Fully qualified class name of a native
+                PyTorch nn.Module to use instead of TorchScript. Default: None.
         """
         self.__dict__.update(kwargs)
-        super().__init__(downloader, device)
+        super().__init__(downloader, device, native_model_class=native_model_class)
 
         self.preprocessor = preprocessor
         self.postprocessor = postprocessor
