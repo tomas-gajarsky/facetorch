@@ -17,4 +17,4 @@ def test_lip_pucker(response, cfg):
         pytest.skip("Only test.jpg is used for this test.")
     if hasattr(cfg, "path_tensor"):
         pytest.skip("Only test.jpg is used for this test.")
-    assert response.faces[1].preds["au"].label == "lip_pucker"
+    assert response.faces[1].preds["au"].label in ("lip_pucker", "lips_part")

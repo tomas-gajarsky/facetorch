@@ -1,7 +1,6 @@
 # AU Predictor CUDA Fix — Progress & Plan
 
 **Branch:** `fix/au-predictor-torchscript-compat`
-**Linear Issue:** EQU-16
 **GitHub Issue:** [#85](https://github.com/tomas-gajarsky/facetorch/issues/85)
 
 ## Problem
@@ -113,4 +112,4 @@ PyTorch is deprecating TorchScript in favor of `torch.compile` /
 `torch.export`. A broader migration of all facetorch models from TorchScript
 to native PyTorch + `torch.compile` would permanently solve this class of
 issues and provide better performance. This requires the original model
-architectures for all predictors/detectors. See Linear issue for details.
+architectures for all predictors/detectors.

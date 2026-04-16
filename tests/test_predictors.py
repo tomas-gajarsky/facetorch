@@ -41,7 +41,9 @@ def test_types(analyzer):
 @pytest.mark.predictor
 def test_model_types(analyzer):
     for predictor in analyzer.predictors.values():
-        assert isinstance(predictor.model, torch.jit.ScriptModule)
+        assert isinstance(
+            predictor.model, (torch.jit.ScriptModule, torch.nn.Module)
+        )
 
 
 @pytest.mark.integration
