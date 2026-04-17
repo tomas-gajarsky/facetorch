@@ -1,5 +1,21 @@
 # Change Log
 
+## 0.6.2
+
+Released on April 17, 2026.
+
+### Fixed
+* AU predictor CUDA deadlock with PyTorch >= 2.0 and CUDA >= 12.0 by loading model as native PyTorch nn.Module instead of TorchScript
+
+### Added
+* Native PyTorch implementation of OpenGraphAU model (Swin Transformer backbone + GNN head)
+* Support for loading native PyTorch models via `native_model_class` parameter in BaseModel
+* `timm` dependency for model utilities (DropPath, to_2tuple, trunc_normal_)
+
+### Changed
+* AU predictor device restored from forced CPU to configurable device (CUDA support re-enabled)
+
+
 ## 0.6.1
 
 Released on April 14, 2026.
