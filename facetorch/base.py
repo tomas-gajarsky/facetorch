@@ -159,7 +159,12 @@ class BaseDownloader(object, metaclass=ABCMeta):
 
 class BaseModel(object, metaclass=ABCMeta):
     @Timer("BaseModel.__init__", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
-    def __init__(self, downloader: BaseDownloader, device: torch.device):
+    def __init__(
+        self,
+        downloader: BaseDownloader,
+        device: torch.device,
+        native_model_class: Optional[str] = None,
+    ):
         """Base class for torch models.
 
         All detectors and predictors should subclass it.
@@ -170,31 +175,64 @@ class BaseModel(object, metaclass=ABCMeta):
         Args:
             downloader (BaseDownloader): Downloader for the model.
             device (torch.device): Torch device cpu or cuda.
+            native_model_class (Optional[str]): Fully qualified class name of a native
+                PyTorch nn.Module to use instead of TorchScript. The TorchScript file is
+                loaded to extract the state_dict, which is then loaded into an instance of
+                this class. This avoids TorchScript CUDA compatibility issues with certain
+                model architectures (e.g. Swin Transformer). Default: None (use TorchScript).
 
         Attributes:
-            model (torch.jit.ScriptModule or torch.jit.TracedModule): Loaded TorchScript model.
+            model (torch.jit.ScriptModule or torch.nn.Module): Loaded model.
 
         """
         super().__init__()
         self.downloader = downloader
         self.path_local = self.downloader.path_local
         self.device = device
+        self.native_model_class = native_model_class
 
         self.model = self.load_model()
 
     @Timer("BaseModel.load_model", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
-    def load_model(self) -> Union[torch.jit.ScriptModule, torch.jit.TracedModule]:
-        """Loads the TorchScript model.
+    def load_model(
+        self,
+    ) -> Union[torch.jit.ScriptModule, torch.jit.TracedModule, torch.nn.Module]:
+        """Loads the model, either as TorchScript or as a native PyTorch module.
+
+        When native_model_class is set, the TorchScript file is loaded on CPU to
+        extract its state_dict, which is then loaded into a fresh instance of the
+        native model class on the target device.
 
         Returns:
-            Union[torch.jit.ScriptModule, torch.jit.TracedModule]: Loaded TorchScript model.
+            Union[torch.jit.ScriptModule, torch.jit.TracedModule, torch.nn.Module]: Loaded model.
         """
         if not os.path.exists(self.path_local):
             dir_local = os.path.dirname(self.path_local)
             os.makedirs(dir_local, exist_ok=True)
             self.downloader.run()
-        model = torch.jit.load(self.path_local, map_location=self.device)
+
+        if self.native_model_class is not None:
+            model = self._load_native_model()
+        else:
+            model = torch.jit.load(self.path_local, map_location=self.device)
+
         model.eval()
+        return model
+
+    def _load_native_model(self) -> torch.nn.Module:
+        """Loads a native PyTorch model using the state_dict from the TorchScript file."""
+        import importlib
+
+        module_path, class_name = self.native_model_class.rsplit(".", 1)
+        module = importlib.import_module(module_path)
+        model_class = getattr(module, class_name)
+
+        ts_model = torch.jit.load(self.path_local, map_location="cpu")
+        state_dict = ts_model.state_dict()
+
+        model = model_class()
+        model.load_state_dict(state_dict, strict=True)
+        model.to(self.device)
 
         return model
 

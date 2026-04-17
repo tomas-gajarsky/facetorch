@@ -249,6 +249,7 @@ analyzer:
         path_local: /opt/facetorch/models/torchscript/predictor/au/1/model.pt # str
         repo_id: tomas-gajarsky/facetorch-au-opengraph
         filename: model.pt
+      native_model_class: facetorch.analyzer.predictor.au_model.OpenGraphAU
       device:
         _target_: torch.device
         type: ${analyzer.device}

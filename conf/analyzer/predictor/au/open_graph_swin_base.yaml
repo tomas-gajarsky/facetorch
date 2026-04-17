@@ -7,6 +7,11 @@ downloader:
   repo_id: tomas-gajarsky/facetorch-au-opengraph  # HuggingFace repo ID
   filename: model.pt  # Filename in the HuggingFace repo
 
+# Load as native PyTorch instead of TorchScript to avoid CUDA deadlock.
+# The TorchScript Swin Transformer hangs on CUDA with PyTorch >=2.0 on
+# repeated forward passes. The native model works on both CPU and CUDA.
+native_model_class: facetorch.analyzer.predictor.au_model.OpenGraphAU
+
 device:
   _target_: torch.device
   type: ${analyzer.device} # str
