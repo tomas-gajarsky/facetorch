@@ -110,6 +110,9 @@ cython_debug/
 
 ## User folders
 models/
+models_local/
+model_defs/
 outputs/
 tests/data/output/
 data/3dmm/
+scripts/upload_models_hf.py
