@@ -11,6 +11,9 @@ resolution-markers = [
     "python_full_version < '3.11' and sys_platform == 'darwin'",
 ]
 
+[manifest]
+constraints = [{ name = "torch", specifier = "<2.5.0" }]
+
 [[package]]
 name = "annotated-doc"
 version = "0.0.4"
@@ -443,7 +446,7 @@ requires-dist = [
     { name = "setuptools", marker = "extra == 'dev'", specifier = ">=63.4.2" },
     { name = "snakeviz", marker = "extra == 'dev'", specifier = ">=2.1.0" },
     { name = "timm", specifier = ">=0.6.0" },
-    { name = "torch", specifier = ">=2.3.0,<2.5.0" },
+    { name = "torch", specifier = ">=2.3.0" },
     { name = "torchvision", specifier = ">=0.15.0" },
     { name = "twine", marker = "extra == 'dev'", specifier = ">=3.2.0" },
 ]
