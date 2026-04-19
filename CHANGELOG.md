@@ -6,7 +6,7 @@ Released on April 18, 2026.
 
 ### Breaking Changes
 * Minimum Python version raised from 3.8 to 3.10
-* Minimum PyTorch version raised from 1.9 to 2.0
+* Minimum PyTorch version raised from 1.9 to 2.3 (bundled .pt2 models require torch ~=2.3.0)
 * All models migrated from TorchScript (.pt) to torch.export (.pt2) format
 * `path_image` and `tensor` parameters in `FaceAnalyzer.run()` are deprecated in favor of `image_source`
 

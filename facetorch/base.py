@@ -272,7 +272,6 @@ class BaseModel(object, metaclass=ABCMeta):
             raise
         model = ep.module()
         model.to(self.device)
-        model.eval()
         return model
 
     def _load_native_model(self) -> torch.nn.Module:
