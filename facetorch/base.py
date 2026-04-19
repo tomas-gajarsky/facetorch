@@ -55,6 +55,9 @@ class BaseProcessor(object, metaclass=ABCMeta):
             self.transform = script_transform(self.transform)
             self.transform = self.transform.to(self.device)
 
+    def __call__(self, *args, **kwargs):
+        return self.run(*args, **kwargs)
+
     @abstractmethod
     def run(self):
         """Abstract method that should implement a tensor processing functionality"""
@@ -105,15 +108,23 @@ class BaseReader(BaseProcessor):
         shape (batch, channels, height, width).
 
         Args:
-            tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width).
+            tensor (torch.Tensor): Image tensor with values between 0-255. Accepted shapes: (H, W), (C, H, W), or (B, C, H, W) where C in {1, 3, 4}. Single-channel inputs are expanded to 3 channels, RGBA inputs have the alpha channel dropped.
             fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
         """
 
         data = ImageData(path_input=None)
         data.tensor = copy.deepcopy(tensor)
 
-        if tensor.dim() == 3:
+        if data.tensor.dim() == 2:
             data.tensor = data.tensor.unsqueeze(0)
+
+        if data.tensor.dim() == 3:
+            data.tensor = data.tensor.unsqueeze(0)
+
+        if data.tensor.shape[1] == 1:
+            data.tensor = data.tensor.repeat(1, 3, 1, 1)
+        elif data.tensor.shape[1] == 4:
+            data.tensor = data.tensor[:, :3, :, :]
 
         data.tensor = data.tensor.to(self.device)
 
@@ -152,6 +163,9 @@ class BaseDownloader(object, metaclass=ABCMeta):
         self.file_id = file_id
         self.path_local = path_local
 
+    def __call__(self, *args, **kwargs):
+        return self.run(*args, **kwargs)
+
     @abstractmethod
     def run(self) -> None:
         """Abstract method that should implement the download functionality"""
@@ -164,6 +178,8 @@ class BaseModel(object, metaclass=ABCMeta):
         downloader: BaseDownloader,
         device: torch.device,
         native_model_class: Optional[str] = None,
+        compile_model: bool = False,
+        compile_options: Optional[dict] = None,
     ):
         """Base class for torch models.
 
@@ -172,17 +188,28 @@ class BaseModel(object, metaclass=ABCMeta):
 
         - Methods:``run``, supporting to make detections and predictions with the model.
 
+        Supports three model formats:
+
+        - **TorchScript** (.pt): Legacy format loaded via ``torch.jit.load()``. Deprecated.
+        - **Exported Program** (.pt2): Modern portable format via ``torch.export``.
+          Loaded with ``torch.export.load()`` — no model source code needed.
+        - **Native + state_dict**: ``native_model_class`` specifies the ``nn.Module``
+          class; weights are extracted from the TorchScript file's state_dict.
+
         Args:
             downloader (BaseDownloader): Downloader for the model.
             device (torch.device): Torch device cpu or cuda.
             native_model_class (Optional[str]): Fully qualified class name of a native
                 PyTorch nn.Module to use instead of TorchScript. The TorchScript file is
                 loaded to extract the state_dict, which is then loaded into an instance of
-                this class. This avoids TorchScript CUDA compatibility issues with certain
-                model architectures (e.g. Swin Transformer). Default: None (use TorchScript).
+                this class. Ignored when loading .pt2 files. Default: None.
+            compile_model (bool): If True, wraps the model with ``torch.compile()``
+                for optimized inference. Default: False.
+            compile_options (Optional[dict]): Keyword arguments passed to
+                ``torch.compile()`` (e.g. mode, backend, fullgraph). Default: None.
 
         Attributes:
-            model (torch.jit.ScriptModule or torch.nn.Module): Loaded model.
+            model (torch.nn.Module): Loaded model.
 
         """
         super().__init__()
@@ -190,50 +217,84 @@ class BaseModel(object, metaclass=ABCMeta):
         self.path_local = self.downloader.path_local
         self.device = device
         self.native_model_class = native_model_class
+        self.compile_model = compile_model
+        self.compile_options = compile_options or {}
 
         self.model = self.load_model()
 
     @Timer("BaseModel.load_model", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
-    def load_model(
-        self,
-    ) -> Union[torch.jit.ScriptModule, torch.jit.TracedModule, torch.nn.Module]:
-        """Loads the model, either as TorchScript or as a native PyTorch module.
+    def load_model(self) -> torch.nn.Module:
+        """Loads the model from the local file.
 
-        When native_model_class is set, the TorchScript file is loaded on CPU to
-        extract its state_dict, which is then loaded into a fresh instance of the
-        native model class on the target device.
+        Loading strategy by file extension:
+
+        - ``.pt2``: ``torch.export.load()`` — portable exported program
+        - ``.pt`` with ``native_model_class``: native nn.Module + state_dict from TorchScript
+        - ``.pt`` without ``native_model_class``: ``torch.jit.load()`` (legacy TorchScript)
+
+        After loading, optionally wraps with ``torch.compile()`` if enabled.
 
         Returns:
-            Union[torch.jit.ScriptModule, torch.jit.TracedModule, torch.nn.Module]: Loaded model.
+            torch.nn.Module: Loaded model in eval mode.
         """
         if not os.path.exists(self.path_local):
             dir_local = os.path.dirname(self.path_local)
             os.makedirs(dir_local, exist_ok=True)
             self.downloader.run()
 
-        if self.native_model_class is not None:
+        if self.path_local.endswith(".pt2"):
+            model = self._load_exported_model()
+        elif self.native_model_class is not None:
             model = self._load_native_model()
+            model.eval()
         else:
             model = torch.jit.load(self.path_local, map_location=self.device)
+            model.eval()
 
+        if self.compile_model:
+            model = torch.compile(model, **self.compile_options)
+
+        return model
+
+    def _load_exported_model(self) -> torch.nn.Module:
+        """Loads a torch.export .pt2 model."""
+        ep = torch.export.load(self.path_local)
+        model = ep.module()
+        model.to(self.device)
         model.eval()
         return model
 
     def _load_native_model(self) -> torch.nn.Module:
-        """Loads a native PyTorch model using the state_dict from the TorchScript file."""
+        """Loads a native PyTorch model using weights from a .pth or TorchScript file."""
         import importlib
 
         module_path, class_name = self.native_model_class.rsplit(".", 1)
         module = importlib.import_module(module_path)
         model_class = getattr(module, class_name)
-
-        ts_model = torch.jit.load(self.path_local, map_location="cpu")
-        state_dict = ts_model.state_dict()
-
         model = model_class()
-        model.load_state_dict(state_dict, strict=True)
-        model.to(self.device)
 
+        if self.path_local.endswith(".pth"):
+            state_dict = torch.load(
+                self.path_local, map_location="cpu", weights_only=True
+            )
+            model.load_state_dict(state_dict, strict=True)
+        else:
+            ts_model = torch.jit.load(self.path_local, map_location="cpu")
+            state_dict = dict(ts_model.state_dict())
+            for name, mod in ts_model.named_modules():
+                for buf in ("running_mean", "running_var"):
+                    key = f"{name}.{buf}" if name else buf
+                    if key not in state_dict:
+                        try:
+                            state_dict[key] = getattr(mod, buf)
+                        except AttributeError:
+                            pass
+            if state_dict:
+                model.load_state_dict(state_dict, strict=True)
+            elif hasattr(model, "load_from_torchscript"):
+                model.load_from_torchscript(ts_model)
+
+        model.to(self.device)
         return model
 
     @Timer("BaseModel.inference", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
@@ -255,6 +316,9 @@ class BaseModel(object, metaclass=ABCMeta):
             logits = self.model(tensor)
 
         return logits
+
+    def __call__(self, *args, **kwargs):
+        return self.run(*args, **kwargs)
 
     @abstractmethod
     def run(self):

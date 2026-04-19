@@ -36,7 +36,7 @@ def test_type(analyzer):
 @pytest.mark.integration
 @pytest.mark.detector
 def test_model_type(analyzer):
-    assert isinstance(analyzer.detector.model, torch.jit.ScriptModule)
+    assert isinstance(analyzer.detector.model, torch.nn.Module)
 
 
 @pytest.mark.integration

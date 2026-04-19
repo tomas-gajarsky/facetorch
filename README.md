@@ -17,17 +17,24 @@
 [Docker Hub](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch) [(GPU)](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch-gpu)
 
 
-**Facetorch** is a Python library designed for facial detection and analysis, leveraging the power of deep neural networks. Its primary aim is to curate open-source face analysis models from the community, optimize them for high performance using TorchScript, and integrate them into a versatile face analysis toolkit. The library offers the following key features:
+**Facetorch** is a Python library designed for facial detection and analysis, leveraging the power of deep neural networks. Its primary aim is to curate open-source face analysis models from the community, package them as portable [torch.export](https://pytorch.org/docs/stable/export.html) models, and integrate them into a versatile face analysis toolkit. The library offers the following key features:
 
 1. **Customizable Configuration:** Easily configure your setup using [Hydra](https://hydra.cc/docs/intro/) and its powerful [OmegaConf](https://omegaconf.readthedocs.io/) capabilities.
 
-2. **Reproducible Environments:** Ensure reproducibility with tools like [conda-lock](https://github.com/conda-incubator/conda-lock) for dependency management and [Docker](https://docs.docker.com/get-docker/) for containerization.
+2. **Reproducible Environments:** Ensure reproducibility with [uv](https://github.com/astral-sh/uv) for fast Python package management, [conda-lock](https://github.com/conda-incubator/conda-lock) for conda-forge dependency management, and [Docker](https://docs.docker.com/get-docker/) for containerization.
 
-3. **Accelerated Performance:** Enjoy enhanced performance on both CPU and GPU with [TorchScript](https://pytorch.org/docs/stable/jit.html) optimization.
+3. **Portable Models:** Models are serialized with `torch.export` (`.pt2` format) — no model source code needed at inference time, with dynamic batch support and `torch.compile` compatibility.
 
-4. **Simple Extensibility:** Extend the library by uploading your model file to Hugging Face Hub (previously Google Drive) and adding a corresponding configuration YAML file to the repository.
+4. **Simple Extensibility:** Extend the library by uploading your model file to Hugging Face Hub and adding a corresponding configuration YAML file to the repository.
+
+5. **Flexible Input:** Accepts file paths, URLs, tensors, numpy arrays, PIL Images, and bytes. Grayscale and RGBA inputs are automatically converted to RGB.
 
 Facetorch provides an efficient, scalable, and user-friendly solution for facial analysis tasks, catering to developers and researchers looking for flexibility and performance.
+
+### Requirements
+
+* Python >= 3.10
+* PyTorch >= 2.0
 
 Please use this library responsibly and with caution. Adhere to the [European Commission's Ethics Guidelines for Trustworthy AI](https://ec.europa.eu/futurium/en/ai-alliance-consultation.1.html) to ensure ethical and fair usage. Keep in mind that the models may have limitations and potential biases, so it is crucial to evaluate their outputs critically and consider their impact.
 
@@ -57,6 +64,28 @@ Docker Compose provides an easy way of building a working facetorch environment 
 Check *data/output* for resulting images with bounding boxes and facial 3D landmarks.
 
 (Apple Mac M1) Use Rosetta 2 emulator in Docker Desktop to run the CPU version.
+
+### Python API
+
+```python
+from facetorch import FaceAnalyzer
+from omegaconf import OmegaConf
+
+cfg = OmegaConf.load("conf/config.yaml")
+analyzer = FaceAnalyzer(cfg.analyzer)
+
+# Analyze from file path, URL, tensor, numpy array, PIL Image, or bytes
+response = analyzer.run(image_source="path/to/image.jpg")
+
+# Run only specific predictors
+response = analyzer.run(image_source="image.jpg", include_predictors=["fer", "embed"])
+
+# Skip detector for pre-cropped face inputs
+response = analyzer.run(image_source=face_tensor, skip_detector=True)
+
+# FaceAnalyzer is also callable
+response = analyzer("image.jpg")
+```
 
 ### Configure
 
@@ -157,7 +186,7 @@ analyzer
 1. CVI-SZU
     * code: [ME-GraphAU](https://github.com/CVI-SZU/ME-GraphAU)
     * paper: [Luo et al. - Learning Multi-dimensional Edge Feature-based AU Relation Graph for Facial Action Unit Recognition](https://arxiv.org/abs/2205.01782)
-    * ! Does not work with CUDA > 12.0
+    * Note: As of v1.0.0, the AU model uses torch.export format and works with all CUDA versions
 
 #### Facial Valence Arousal (va)
 
@@ -232,13 +261,22 @@ Run the Docker container:
 
 ### Add predictor
 #### Prerequisites
-1. File of the TorchScript model
-2. Repository on Hugging Face Hub for hosting the model (or legacy ID of the Google Drive model file)
+1. Exported `.pt2` model file (see below)
+2. Repository on Hugging Face Hub for hosting the model
 3. facetorch [fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
 
-Facetorch works with models that were exported from PyTorch to TorchScript. You can apply [torch.jit.trace](https://pytorch.org/docs/stable/generated/torch.jit.trace.html) function to compile a PyTorch model as a TorchScript module. Please verify that the output of the traced model equals the output of the original model.
+Facetorch uses models exported with [torch.export](https://pytorch.org/docs/stable/export.html) (`.pt2` format). Export your model with dynamic batch support:
 
-Models are now hosted on [Hugging Face Hub](https://huggingface.co/tomas-gajarsky) which is the default download source. You can host your model on your own Hugging Face account or use the legacy Google Drive hosting option by specifying the appropriate downloader in your configuration.
+```python
+import torch
+
+model.eval()
+batch = torch.export.Dim("batch", min=1, max=64)
+ep = torch.export.export(model, (dummy_input,), dynamic_shapes={"x": {0: batch}})
+torch.export.save(ep, "model.pt2")
+```
+
+Verify that the exported model produces the same outputs as the original. Models are hosted on [Hugging Face Hub](https://huggingface.co/tomas-gajarsky).
 
 #### Configuration
 ##### Create yaml file
@@ -272,6 +310,13 @@ the requirements of the new model.
 
 
 ### Update environment
+
+#### uv (used by Docker dev/test images)
+* Add packages with corresponding versions to ```pyproject.toml``` dependencies
+* Lock the environment: ```uv lock```
+* Sync the environment: ```uv sync --extra dev```
+
+#### conda (for conda-forge users)
 CPU:
 * Add packages with corresponding versions to ```environment.yml``` file
 * Lock the environment: ```conda lock -p linux-64 -f environment.yml --lockfile conda-lock.yml```

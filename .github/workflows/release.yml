@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag (e.g., v0.6.1). Defaults to version file."
+        description: "Release tag (e.g., v1.0.0). Defaults to pyproject.toml version."
         required: false
 
 jobs:
@@ -22,7 +22,12 @@ jobs:
           if [ -n "${{ github.event.inputs.tag }}" ]; then
             TAG="${{ github.event.inputs.tag }}"
           else
-            FILE_VERSION=$(cat ./version | tr -d '[:space:]')
+            FILE_VERSION=$(python3 -c "
+          import re
+          with open('pyproject.toml') as f:
+              match = re.search(r'^version\s*=\s*\"(.+?)\"', f.read(), re.MULTILINE)
+          print(match.group(1))
+          ")
             TAG="v$FILE_VERSION"
           fi
           VERSION="${TAG#v}"
@@ -39,7 +44,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.12"
 
       - name: Install build dependencies
         run: |

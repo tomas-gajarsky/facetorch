@@ -3,9 +3,9 @@ _target_: facetorch.analyzer.predictor.FacePredictor
 downloader:
   _target_: facetorch.downloader.DownloaderHuggingFace
   file_id: 16gNFQdEH2nWvW3zTbdIAniKIbPAp6qBA  # Keep original ID for backward compatibility
-  path_local: /opt/facetorch/models/torchscript/predictor/align/1/model.pt # str
+  path_local: /opt/facetorch/models/exported/predictor/align/1/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-align-synergynet  # HuggingFace repo ID
-  filename: model.pt  # Filename in the HuggingFace repo
+  filename: model.pt2  # Filename in the HuggingFace repo
 
 device:
   _target_: torch.device

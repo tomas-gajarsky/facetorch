@@ -24,6 +24,9 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "analyzer: mark tests related to the FaceAnalyzer"
     )
+    config.addinivalue_line(
+        "markers", "callable: mark tests related to __call__ methods"
+    )
     config.addinivalue_line("markers", "reader: mark tests related to the BaseReader")
     config.addinivalue_line(
         "markers", "detector: mark tests related to the FaceDetector"

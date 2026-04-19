@@ -3,9 +3,9 @@ _target_: facetorch.analyzer.predictor.FacePredictor
 downloader:
   _target_: facetorch.downloader.DownloaderHuggingFace
   file_id: 1GjDTwQpvrkCjXOdiBy1oMkzm7nt-bXFg
-  path_local: /opt/facetorch/models/torchscript/predictor/deepfake/1/model.pt # str
+  path_local: /opt/facetorch/models/exported/predictor/deepfake/1/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-deepfake-efficientnet-b7  # HuggingFace repo ID
-  filename: model.pt  # Filename in the HuggingFace repo
+  filename: model.pt2  # Filename in the HuggingFace repo
 
 device:
   _target_: torch.device

@@ -1,5 +1,45 @@
 # Change Log
 
+## 1.0.0
+
+Released on April 18, 2026.
+
+### Breaking Changes
+* Minimum Python version raised from 3.8 to 3.10
+* Minimum PyTorch version raised from 1.9 to 2.0
+* All models migrated from TorchScript (.pt) to torch.export (.pt2) format
+* `path_image` and `tensor` parameters in `FaceAnalyzer.run()` are deprecated in favor of `image_source`
+
+### Added
+* Selective predictor execution via `include_predictors` and `exclude_predictors` parameters in `FaceAnalyzer.run()`
+* Pre-cropped face input support via `skip_detector=True` parameter in `FaceAnalyzer.run()`
+* Grayscale image handling: automatic conversion of single-channel and RGBA inputs to RGB across all input paths
+* `__call__` methods on `FaceAnalyzer`, `BaseProcessor`, `BaseDownloader`, and `BaseModel` (delegates to `run()`)
+* Optional logger configuration: `FaceAnalyzer` falls back to `logging.getLogger("facetorch")` when no logger is configured
+* Robust input routing in `FaceAnalyzer.run()` — tensor, numpy array, PIL Image, bytes, and file path inputs work with any reader type
+* All .pt2 models uploaded to Hugging Face Hub with model cards
+* `uv.lock` for reproducible PyPI-based dependency resolution
+* `[tool.uv]` configuration in `pyproject.toml`
+
+### Changed
+* Migrated from `setup.py` + `version` file to `pyproject.toml` (PEP 621)
+* All model files migrated from TorchScript (.pt) to torch.export (.pt2) portable format with dynamic batch support
+* AU predictor model rewritten with timm Swin Transformer backbone for torch.export compatibility
+* Docker dev/test images migrated from conda/conda-lock to [uv](https://github.com/astral-sh/uv) for faster builds
+* Docker production images now use uv as a pip drop-in
+* Development dependencies consolidated from `requirements.dev.txt` into `pyproject.toml`
+* Docker base images updated to Python 3.12 and CUDA 12.4
+* CI test matrix updated to Python 3.10, 3.11, 3.12, 3.13
+* GPU environment updated from CUDA 11.2 to CUDA 12.1+
+* Development status classifier updated from Alpha to Production/Stable
+* Google Colab notebook updated to v1.0.0 (uses `image_source`, removes pinned torch versions)
+
+### Fixed
+* "File name too long" error when passing tensor/array to `FaceAnalyzer.run()` with `ImageReader`
+* AU predictor YAML indentation error in merged config files
+* Numpy array reader now handles (H, W) and (H, W, 1) grayscale arrays
+
+
 ## 0.6.2
 
 Released on April 17, 2026.
@@ -33,7 +73,7 @@ Released on April 14, 2026.
 ### Added
 * Unit tests for all post-processor tuple input handling
 * Version tag validation in release workflow
-* Auto-release workflow that creates GitHub Releases when version file changes on main
+* Auto-release workflow that creates GitHub Releases when version changes on main
 
 
 ## 0.6.0

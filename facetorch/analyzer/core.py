@@ -1,11 +1,16 @@
-from typing import Optional, Union
+import io
+import warnings
+from typing import List, Optional, Union
 
 import torch
+import torchvision
 import numpy as np
 from codetiming import Timer
 from PIL import Image
+import logging
+
 from facetorch.analyzer.predictor.core import FacePredictor
-from facetorch.datastruct import ImageData, Response
+from facetorch.datastruct import Dimensions, Face, ImageData, Location, Response
 from facetorch.logger import LoggerJsonFile
 from importlib.metadata import version
 from hydra.utils import instantiate
@@ -44,7 +49,14 @@ class FaceAnalyzer(object):
 
         """
         self.cfg = cfg
-        self.logger = instantiate(self.cfg.logger).logger
+
+        if hasattr(self.cfg, "logger") and self.cfg.logger is not None:
+            self.logger = instantiate(self.cfg.logger).logger
+        else:
+            self.logger = logging.getLogger("facetorch")
+            if not self.logger.handlers:
+                self.logger.setLevel(logging.INFO)
+                self.logger.addHandler(logging.StreamHandler())
 
         self.logger.info("Initializing FaceAnalyzer")
         self.logger.debug("Config", extra=self.cfg.__dict__["_content"])
@@ -79,6 +91,9 @@ class FaceAnalyzer(object):
                     self.cfg.utilizer[utilizer_name]
                 )
 
+    def __call__(self, *args, **kwargs):
+        return self.run(*args, **kwargs)
+
     @Timer("FaceAnalyzer.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def run(
         self,
@@ -92,19 +107,25 @@ class FaceAnalyzer(object):
         include_tensors: bool = False,
         path_output: Optional[str] = None,
         tensor: Optional[torch.Tensor] = None,
+        include_predictors: Optional[List[str]] = None,
+        exclude_predictors: Optional[List[str]] = None,
+        skip_detector: bool = False,
     ) -> Union[Response, ImageData]:
         """Reads image, detects faces, unifies the detected faces, predicts facial features
          and returns analyzed data.
 
         Args:
-            image_source (Optional[Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]]): Input to be analyzed. If None, path_image or tensor must be provided. Default: None.
-            path_image (Optional[str]): Path to the image to be analyzed. If None, tensor must be provided. Default: None.
+            image_source (Optional[Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]]): Input to be analyzed. Accepts file paths, URLs, tensors, numpy arrays, bytes, or PIL Images. Default: None.
+            path_image (Optional[str]): Deprecated. Use image_source instead.
             batch_size (int): Batch size for making predictions on the faces. Default is 8.
             fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False.
             return_img_data (bool): If True, returns all image data including tensors, otherwise only returns the faces. Default is False.
-            include_tensors (bool): If True, removes tensors from the returned data object. Default is False.
+            include_tensors (bool): If True, includes tensors in the returned data object. If False, tensors are removed. Default is False.
             path_output (Optional[str]): Path where to save the image with detected faces. If None, the image is not saved. Default: None.
-            tensor (Optional[torch.Tensor]): Image tensor to be analyzed. If None, path_image must be provided. Default: None.
+            tensor (Optional[torch.Tensor]): Deprecated. Use image_source instead.
+            include_predictors (Optional[List[str]]): If provided, only run these predictors. Default: None (run all).
+            exclude_predictors (Optional[List[str]]): If provided, skip these predictors. Default: None (skip none).
+            skip_detector (bool): If True, skip face detection and treat the input as a pre-cropped face. Default: False.
 
         Returns:
             Union[Response, ImageData]: If return_img_data is False, returns a Response object containing the faces and their facial features. If return_img_data is True, returns the entire ImageData object.
@@ -129,23 +150,36 @@ class FaceAnalyzer(object):
 
         self.logger.info("Running FaceAnalyzer")
 
-        if path_image is None and tensor is None and image_source is None:
-            raise ValueError("Either input, path_image or tensor must be provided.")
-
-        if image_source is not None:
-            self.logger.debug("Using image_source as input")
-            reader_input = image_source
-        elif path_image is not None:
-            self.logger.debug(
-                "Using path_image as input", extra={"path_image": path_image}
+        if include_predictors and exclude_predictors:
+            raise ValueError(
+                "Cannot specify both include_predictors and exclude_predictors. "
+                "Use one or the other."
             )
-            reader_input = path_image
-        else:
-            self.logger.debug("Using tensor as input")
-            reader_input = tensor
 
-        self.logger.info("Reading image", extra={"input": reader_input})
-        data = self.reader.run(reader_input, fix_img_size=fix_img_size)
+        if path_image is not None and image_source is None:
+            warnings.warn(
+                "path_image is deprecated, use image_source instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            image_source = path_image
+
+        if tensor is not None and image_source is None:
+            warnings.warn(
+                "tensor is deprecated, use image_source instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            image_source = tensor
+
+        if image_source is None:
+            raise ValueError(
+                "image_source is required. Pass a file path, URL, tensor, numpy array, "
+                "bytes, or PIL Image."
+            )
+
+        self.logger.info("Reading image")
+        data = self._read_input(image_source, fix_img_size)
 
         path_output = None if path_output == "None" else path_output
         data.path_output = path_output
@@ -155,9 +189,27 @@ class FaceAnalyzer(object):
         except Exception as e:
             self.logger.warning("Could not get version number", extra={"error": e})
 
-        self.logger.info("Detecting faces")
-        data = self.detector.run(data)
-        n_faces = len(data.faces)
+        if skip_detector:
+            self.logger.info("Skipping detector (skip_detector=True)")
+            face_tensor = data.tensor[0]
+            face = Face(
+                indx=0,
+                loc=Location(
+                    x1=0, y1=0, x2=data.dims.width, y2=data.dims.height
+                ),
+                dims=Dimensions(
+                    height=data.dims.height, width=data.dims.width
+                ),
+                tensor=face_tensor,
+                ratio=1.0,
+            )
+            data.faces = [face]
+            n_faces = 1
+        else:
+            self.logger.info("Detecting faces")
+            data = self.detector.run(data)
+            n_faces = len(data.faces)
+
         self.logger.info(f"Number of faces: {n_faces}")
 
         if n_faces > 0 and self.unifier is not None:
@@ -166,6 +218,10 @@ class FaceAnalyzer(object):
 
             self.logger.info("Predicting facial features")
             for predictor_name, predictor in self.predictors.items():
+                if include_predictors and predictor_name not in include_predictors:
+                    continue
+                if exclude_predictors and predictor_name in exclude_predictors:
+                    continue
                 self.logger.info(f"Running FacePredictor: {predictor_name}")
                 data = _predict_batch(data, predictor, predictor_name)
 
@@ -191,3 +247,51 @@ class FaceAnalyzer(object):
         else:
             self.logger.debug("Returning response with faces", extra=response.__dict__)
             return response
+
+    def _read_input(
+        self,
+        image_source: Union[str, torch.Tensor, np.ndarray, bytes, Image.Image],
+        fix_img_size: bool,
+    ) -> ImageData:
+        """Routes image_source to the appropriate reader method.
+
+        For string inputs (file paths, URLs), delegates to self.reader.run().
+        For all other types (tensor, array, bytes, PIL Image), converts to tensor
+        and uses self.reader.process_tensor() — works with any reader type.
+        """
+        if isinstance(image_source, str):
+            return self.reader.run(image_source, fix_img_size=fix_img_size)
+
+        if isinstance(image_source, torch.Tensor):
+            return self.reader.process_tensor(image_source, fix_img_size=fix_img_size)
+
+        if isinstance(image_source, np.ndarray):
+            image_tensor = torch.from_numpy(image_source).float()
+            if image_tensor.ndim == 2:
+                image_tensor = image_tensor.unsqueeze(0)
+            elif image_tensor.ndim == 3:
+                if image_tensor.shape[2] in (1, 3, 4):
+                    image_tensor = image_tensor.permute(2, 0, 1).contiguous()
+                elif image_tensor.shape[0] not in (1, 3, 4):
+                    raise ValueError(
+                        f"Ambiguous numpy array shape: {image_source.shape}. "
+                        "Expected (H, W), (H, W, C), or (C, H, W) where C is 1, 3, or 4."
+                    )
+            return self.reader.process_tensor(image_tensor, fix_img_size=fix_img_size)
+
+        if isinstance(image_source, bytes):
+            pil_image = Image.open(io.BytesIO(image_source))
+            image_source = pil_image
+
+        if isinstance(image_source, Image.Image):
+            if image_source.mode != "RGB":
+                image_source = image_source.convert("RGB")
+            image_tensor = torchvision.transforms.functional.pil_to_tensor(
+                image_source
+            )
+            return self.reader.process_tensor(image_tensor, fix_img_size=fix_img_size)
+
+        raise TypeError(
+            f"Unsupported image_source type: {type(image_source).__name__}. "
+            "Expected str, torch.Tensor, np.ndarray, bytes, or PIL.Image.Image."
+        )

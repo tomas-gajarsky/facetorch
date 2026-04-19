@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=63.4.2", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "facetorch"
+version = "1.0.0"
+description = "Face analysis PyTorch framework."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+authors = [
+    { name = "Tomas Gajarsky", email = "gajarsky.tomas@gmail.com" },
+]
+maintainers = [
+    { name = "Tomas Gajarsky", email = "gajarsky.tomas@gmail.com" },
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: End Users/Desktop",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "codetiming>=1.2.0",
+    "googleapis-common-protos>=1.56.3",
+    "gdown>=3.11.0",
+    "hydra-core>=1.0.0",
+    "numpy>=1.18.2",
+    "python-json-logger>=2.0.0",
+    "torch>=2.0.0",
+    "requests>=2.20.0",
+    "timm>=0.6.0",
+    "torchvision>=0.15.0",
+    "huggingface_hub>=0.16.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=22.1.0",
+    "flake8>=5.0.4",
+    "pdoc3>=0.8",
+    "pytest>=6.0.0",
+    "pytest-cov>=2.10.0",
+    "setuptools>=63.4.2",
+    "snakeviz>=2.1.0",
+    "twine>=3.2.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/tomas-gajarsky/facetorch"
+Download = "https://pypi.org/project/facetorch/"
+Documentation = "https://tomas-gajarsky.github.io/facetorch/facetorch/index.html"
+
+[tool.uv]
+extra-index-url = ["https://download.pytorch.org/whl/cpu"]
+
+[tool.setuptools.packages.find]
+exclude = ["tests*", "model_defs*", "scripts*"]
