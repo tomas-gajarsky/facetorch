@@ -7,7 +7,7 @@ name = "facetorch"
 version = "1.0.0"
 description = "Face analysis PyTorch framework."
 readme = "README.md"
-license = "Apache-2.0"
+license = {text = "Apache-2.0"}
 requires-python = ">=3.10"
 authors = [
     { name = "Tomas Gajarsky", email = "gajarsky.tomas@gmail.com" },
