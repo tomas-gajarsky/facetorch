@@ -258,7 +258,17 @@ class BaseModel(object, metaclass=ABCMeta):
 
     def _load_exported_model(self) -> torch.nn.Module:
         """Loads a torch.export .pt2 model."""
-        ep = torch.export.load(self.path_local)
+        try:
+            ep = torch.export.load(self.path_local)
+        except RuntimeError as e:
+            if "schema version" in str(e).lower() or "serialized version" in str(e).lower():
+                raise RuntimeError(
+                    f"Cannot load {self.path_local}: the .pt2 model was exported with a "
+                    f"different PyTorch version. Install a compatible PyTorch version "
+                    f"(see facetorch's pyproject.toml for the supported range) or "
+                    f"re-export the model with your current PyTorch {torch.__version__}."
+                ) from e
+            raise
         model = ep.module()
         model.to(self.device)
         model.eval()
