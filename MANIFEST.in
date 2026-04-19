@@ -1,5 +1,5 @@
 include LICENSE
-include version
+include pyproject.toml
 include environment.yml
 recursive-include conf *
 recursive-include docs *

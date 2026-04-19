@@ -3,14 +3,9 @@ _target_: facetorch.analyzer.predictor.FacePredictor
 downloader:
   _target_: facetorch.downloader.DownloaderHuggingFace
   file_id: 1uoVX9suSA5JVWTms3hEtJKzwO-CUR_jV
-  path_local: /opt/facetorch/models/torchscript/predictor/au/1/model.pt # str
+  path_local: /opt/facetorch/models/exported/predictor/au/1/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-au-opengraph  # HuggingFace repo ID
-  filename: model.pt  # Filename in the HuggingFace repo
-
-# Load as native PyTorch instead of TorchScript to avoid CUDA deadlock.
-# The TorchScript Swin Transformer hangs on CUDA with PyTorch >=2.0 on
-# repeated forward passes. The native model works on both CPU and CUDA.
-native_model_class: facetorch.analyzer.predictor.au_model.OpenGraphAU
+  filename: model.pt2  # Filename in the HuggingFace repo
 
 device:
   _target_: torch.device

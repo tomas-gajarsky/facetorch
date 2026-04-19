@@ -1,13 +1,13 @@
-FROM python:3.9.12-slim
+FROM python:3.12-slim
 
 # Set working directory
 ENV WORKDIR=/opt/facetorch
 WORKDIR $WORKDIR
 
-# Upgrade pip to latest version
-RUN pip install --upgrade pip
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Install facetorch from PyPI
-RUN pip install facetorch
+RUN uv pip install --system facetorch
 
 COPY . .

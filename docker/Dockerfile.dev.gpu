@@ -1,49 +1,38 @@
-FROM nvidia/cuda:11.2.2-runtime-ubuntu20.04
+FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
 
 # Set working directory
 ENV WORKDIR=/opt/facetorch
 WORKDIR $WORKDIR
 
-# Install base utilities
+# Install base utilities and Python 3.12
 RUN apt-get update && apt-get install -y \
-    apt-utils \
-    wget \
     git \
-    build-essential && \
+    build-essential \
+    software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && apt-get install -y \
+    python3.12 \
+    python3.12-dev \
+    python3.12-venv && \
+    ln -sf /usr/bin/python3.12 /usr/bin/python3 && \
+    ln -sf /usr/bin/python3 /usr/bin/python && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install miniconda
-ENV CONDA_DIR /opt/conda
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py39_24.9.2-0-Linux-x86_64.sh -O ~/miniconda.sh && \
-    /bin/bash ~/miniconda.sh -b -p /opt/conda
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Add conda to path
-ENV PATH=$CONDA_DIR/bin:$PATH
-ENV PATH=$CONDA_DIR/envs/env/bin:$PATH
+# GPU PyTorch index
+ENV UV_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cu124
+ENV UV_PYTHON=python3.12
+# Place venv outside WORKDIR so volume mounts don't hide it
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv
 
-# Install conda-build and conda-lock for environment reproducibility
-RUN conda install -y -c conda-forge conda-lock conda-build
+# Copy project files for dependency resolution
+COPY pyproject.toml uv.lock README.md ./
+COPY facetorch/ facetorch/
 
-# Create conda environment from the uploaded lock file
-COPY gpu.conda-lock.yml .
-RUN conda-lock install --name env gpu.conda-lock.yml
+# Install all dependencies (re-resolves with GPU index)
+RUN uv sync --extra dev
 
-# Make RUN commands use the new environment:
-RUN conda init bash
-RUN echo "conda activate env" >> ~/.bashrc
-SHELL ["/bin/bash", "--login", "-c"]
-
-# Add facetorch to sys python path
-ENV PYTHONPATH "$PYTHONPATH:$WORKDIR/"
-# Switch default pip to conda-installed version
-RUN ln -s /opt/conda/envs/env/bin/pip /usr/bin/pip
-RUN pip install --upgrade pip
-
-# Install facetorch package
-COPY facetorch .
-COPY environment.yml setup.py version README.md ./
-RUN pip install --no-dependencies -e .
-
-# Install development dependencies
-COPY requirements.dev.txt .
-RUN pip install -r requirements.dev.txt
+ENV PATH="/opt/venv/bin:$PATH"
+ENV PYTHONPATH="$WORKDIR/"

@@ -194,18 +194,54 @@ def test_read_numpy_array_with_real_image(cfg, analyzer):
 
 
 @pytest.mark.reader
-def test_read_numpy_array_2d(analyzer):
+def test_read_numpy_array_2d_grayscale(analyzer):
     if not isinstance(analyzer.reader, UniversalReader):
         pytest.skip("Only UniversalReader is used for this test.")
     array_input = np.random.rand(224, 224).astype(np.float32)
-    with pytest.raises(ValueError):
-        analyzer.reader.run(array_input)
+    result = analyzer.reader.run(array_input)
+    assert isinstance(result, facetorch.datastruct.ImageData)
+    assert result.tensor.size() == torch.Size([1, 3, 224, 224])
 
 
 @pytest.mark.reader
-def test_read_numpy_array_unsupported_channels(analyzer):
+def test_read_numpy_array_hwc1_grayscale(analyzer):
+    if not isinstance(analyzer.reader, UniversalReader):
+        pytest.skip("Only UniversalReader is used for this test.")
+    array_input = np.random.rand(224, 224, 1).astype(np.float32)
+    result = analyzer.reader.run(array_input)
+    assert isinstance(result, facetorch.datastruct.ImageData)
+    assert result.tensor.size() == torch.Size([1, 3, 224, 224])
+
+
+@pytest.mark.reader
+def test_read_numpy_array_rgba(analyzer):
     if not isinstance(analyzer.reader, UniversalReader):
         pytest.skip("Only UniversalReader is used for this test.")
     array_input = np.random.rand(224, 224, 4).astype(np.float32)
-    with pytest.raises(ValueError):
-        analyzer.reader.run(array_input)
+    result = analyzer.reader.run(array_input)
+    assert isinstance(result, facetorch.datastruct.ImageData)
+    assert result.tensor.size() == torch.Size([1, 3, 224, 224])
+
+
+@pytest.mark.unit
+@pytest.mark.reader
+def test_process_tensor_grayscale_2d(analyzer):
+    tensor_input = torch.randn(224, 224)
+    result = analyzer.reader.process_tensor(tensor_input, fix_img_size=False)
+    assert result.tensor.size() == torch.Size([1, 3, 224, 224])
+
+
+@pytest.mark.unit
+@pytest.mark.reader
+def test_process_tensor_grayscale_1chw(analyzer):
+    tensor_input = torch.randn(1, 224, 224)
+    result = analyzer.reader.process_tensor(tensor_input, fix_img_size=False)
+    assert result.tensor.size() == torch.Size([1, 3, 224, 224])
+
+
+@pytest.mark.unit
+@pytest.mark.reader
+def test_process_tensor_rgba(analyzer):
+    tensor_input = torch.randn(4, 224, 224)
+    result = analyzer.reader.process_tensor(tensor_input, fix_img_size=False)
+    assert result.tensor.size() == torch.Size([1, 3, 224, 224])

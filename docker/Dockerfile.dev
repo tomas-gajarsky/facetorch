@@ -1,4 +1,4 @@
-FROM python:3.9.12-slim
+FROM python:3.12-slim
 
 # Set working directory
 ENV WORKDIR=/opt/facetorch
@@ -6,44 +6,24 @@ WORKDIR $WORKDIR
 
 # Install base utilities
 RUN apt-get update && apt-get install -y \
-    apt-utils \
-    wget \
     git \
     build-essential && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install miniconda
-ENV CONDA_DIR /opt/conda
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py39_24.9.2-0-Linux-x86_64.sh -O ~/miniconda.sh && \
-    /bin/bash ~/miniconda.sh -b -p /opt/conda
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Add conda to path
-ENV PATH=$CONDA_DIR/bin:$PATH
-ENV PATH=$CONDA_DIR/envs/env/bin:$PATH
+# CPU PyTorch index
+ENV UV_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cpu
+# Place venv outside WORKDIR so volume mounts don't hide it
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv
 
-# Install conda-build and conda-lock for environment reproducibility
-RUN conda install -y -c conda-forge conda-lock conda-build
+# Copy project files for dependency resolution
+COPY pyproject.toml uv.lock README.md ./
+COPY facetorch/ facetorch/
 
-# Create conda environment from the uploaded lock file
-COPY conda-lock.yml .
-RUN conda-lock install --name env conda-lock.yml
+# Install all dependencies from lock file
+RUN uv sync --frozen --extra dev
 
-# Make RUN commands use the new environment:
-RUN conda init bash
-RUN echo "conda activate env" >> ~/.bashrc
-SHELL ["/bin/bash", "--login", "-c"]
-
-# Add facetorch to sys python path
-ENV PYTHONPATH "$PYTHONPATH:$WORKDIR/"
-# Switch default pip to conda-installed version
-RUN ln -s /opt/conda/envs/env/bin/pip /usr/bin/pip
-RUN pip install --upgrade pip
-
-# Install facetorch package
-ADD facetorch/ facetorch/
-COPY environment.yml setup.py version README.md ./
-RUN pip install --no-dependencies -e .
-
-# Install development dependencies
-COPY requirements.dev.txt .
-RUN pip install -r requirements.dev.txt
+ENV PATH="/opt/venv/bin:$PATH"
+ENV PYTHONPATH="$WORKDIR/"
