@@ -1,3 +1,4 @@
+import io
 import numpy as np
 import pytest
 import torch
@@ -217,6 +218,45 @@ def test_analyzer_include_exclude_mutual_exclusion(cfg, analyzer):
             include_predictors=["fer"],
             exclude_predictors=["au"],
         )
+
+
+@pytest.mark.integration
+@pytest.mark.analyzer
+def test_analyzer_bytes_via_image_source(cfg, analyzer):
+    if hasattr(cfg, "path_tensor"):
+        pytest.skip("This test is only for path_image.")
+    if "test.jpg" not in cfg.path_image:
+        pytest.skip("Only test.jpg is used for this test.")
+    pil_image = Image.open(cfg.path_image).convert("RGB")
+    buf = io.BytesIO()
+    pil_image.save(buf, format="JPEG")
+    response = analyzer.run(
+        image_source=buf.getvalue(),
+        batch_size=cfg.batch_size,
+        fix_img_size=cfg.fix_img_size,
+        return_img_data=cfg.return_img_data,
+        include_tensors=cfg.include_tensors,
+    )
+    assert response.tensor.dtype == torch.float32
+    assert len(response.faces) > 0
+
+
+@pytest.mark.integration
+@pytest.mark.analyzer
+def test_analyzer_grayscale_pil_via_image_source(cfg, analyzer):
+    if hasattr(cfg, "path_tensor"):
+        pytest.skip("This test is only for path_image.")
+    if "test.jpg" not in cfg.path_image:
+        pytest.skip("Only test.jpg is used for this test.")
+    pil_image = Image.open(cfg.path_image).convert("L")
+    response = analyzer.run(
+        image_source=pil_image,
+        batch_size=cfg.batch_size,
+        fix_img_size=cfg.fix_img_size,
+        return_img_data=cfg.return_img_data,
+        include_tensors=cfg.include_tensors,
+    )
+    assert response.tensor.shape[1] == 3
 
 
 @pytest.mark.endtoend

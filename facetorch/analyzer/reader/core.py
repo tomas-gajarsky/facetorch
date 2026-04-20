@@ -71,7 +71,7 @@ class UniversalReader(BaseReader):
         return self.process_tensor(tensor, fix_img_size)
 
     def read_numpy_array(self, array: np.ndarray, fix_img_size: bool) -> ImageData:
-        image_tensor = torch.from_numpy(array).float()
+        image_tensor = torch.from_numpy(array.copy())
         if image_tensor.ndim == 2:
             image_tensor = image_tensor.unsqueeze(0)
         elif image_tensor.ndim == 3:
