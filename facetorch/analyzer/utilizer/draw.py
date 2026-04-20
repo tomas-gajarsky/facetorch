@@ -100,7 +100,12 @@ class LandmarkDrawerTorch(BaseUtilizer):
             (ImageData): ImageData object containing the image tensor with 3D face landmarks.
         """
 
-        if len(data.faces) > 0:
+        has_lmk3d = (
+            len(data.faces) > 0
+            and "align" in data.faces[0].preds
+            and "lmk3d" in data.faces[0].preds["align"].other
+        )
+        if has_lmk3d:
             pts = [face.preds["align"].other["lmk3d"].cpu() for face in data.faces]
 
             img_in = data.img.clone()

@@ -226,7 +226,17 @@ class FaceAnalyzer(object):
                 data = _predict_batch(data, predictor, predictor_name)
 
             self.logger.info("Utilizing facial features")
+            ran_predictors = (
+                set(data.faces[0].preds.keys()) if data.faces else set()
+            )
             for utilizer_name, utilizer in self.utilizers.items():
+                if utilizer_name in ("draw_boxes", "draw_landmarks", "save"):
+                    pass
+                elif utilizer_name not in ran_predictors:
+                    self.logger.info(
+                        f"Skipping BaseUtilizer: {utilizer_name} (predictor not run)"
+                    )
+                    continue
                 self.logger.info(f"Running BaseUtilizer: {utilizer_name}")
                 data = utilizer.run(data)
         else:
@@ -266,7 +276,7 @@ class FaceAnalyzer(object):
             return self.reader.process_tensor(image_source, fix_img_size=fix_img_size)
 
         if isinstance(image_source, np.ndarray):
-            image_tensor = torch.from_numpy(image_source).float()
+            image_tensor = torch.from_numpy(image_source.copy())
             if image_tensor.ndim == 2:
                 image_tensor = image_tensor.unsqueeze(0)
             elif image_tensor.ndim == 3:

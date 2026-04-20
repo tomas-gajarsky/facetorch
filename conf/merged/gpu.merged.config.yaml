@@ -20,9 +20,9 @@ analyzer:
     downloader:
       _target_: facetorch.downloader.DownloaderHuggingFace
       file_id: 1eMuOdGkiNCOUTiEbKKoPCHGCuDgiKeNC
-      path_local: /opt/facetorch/models/exported/detector/1/model.pt2
+      path_local: /opt/facetorch/models/torchscript/detector/1/model.pt
       repo_id: tomas-gajarsky/facetorch-detector-retinaface
-      filename: model.pt2
+      filename: model.pt
     device:
       _target_: torch.device
       type: ${analyzer.device}
