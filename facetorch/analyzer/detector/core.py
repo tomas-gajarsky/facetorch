@@ -46,8 +46,13 @@ class FaceDetector(BaseModel):
         Returns:
             ImageData: Image data object with Detection tensors and detected Face objects.
         """
+        img_h, img_w = data.tensor.shape[-2], data.tensor.shape[-1]
         data = self.preprocessor.run(data)
         logits = self.inference(data.tensor)
         data = self.postprocessor.run(data, logits)
+
+        if data.tensor.shape[-2] != img_h or data.tensor.shape[-1] != img_w:
+            data.tensor = data.tensor[:, :, :img_h, :img_w]
+            data.set_dims()
 
         return data
