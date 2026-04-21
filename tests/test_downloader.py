@@ -1,6 +1,6 @@
 import os
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from facetorch.downloader import DownloaderGDrive, DownloaderHuggingFace
 
