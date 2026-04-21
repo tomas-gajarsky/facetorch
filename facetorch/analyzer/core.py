@@ -12,6 +12,7 @@ import logging
 from facetorch.analyzer.predictor.core import FacePredictor
 from facetorch.datastruct import Dimensions, Face, ImageData, Location, Response
 from facetorch.logger import LoggerJsonFile
+from facetorch.utils import numpy_to_chw_tensor
 from importlib.metadata import version
 from hydra.utils import instantiate
 from omegaconf import OmegaConf
@@ -230,9 +231,7 @@ class FaceAnalyzer(object):
                 set(data.faces[0].preds.keys()) if data.faces else set()
             )
             for utilizer_name, utilizer in self.utilizers.items():
-                if utilizer_name in ("draw_boxes", "draw_landmarks", "save"):
-                    pass
-                elif utilizer_name not in ran_predictors:
+                if utilizer_name in self.predictors and utilizer_name not in ran_predictors:
                     self.logger.info(
                         f"Skipping BaseUtilizer: {utilizer_name} (predictor not run)"
                     )
@@ -276,22 +275,13 @@ class FaceAnalyzer(object):
             return self.reader.process_tensor(image_source, fix_img_size=fix_img_size)
 
         if isinstance(image_source, np.ndarray):
-            image_tensor = torch.from_numpy(image_source.copy())
-            if image_tensor.ndim == 2:
-                image_tensor = image_tensor.unsqueeze(0)
-            elif image_tensor.ndim == 3:
-                if image_tensor.shape[2] in (1, 3, 4):
-                    image_tensor = image_tensor.permute(2, 0, 1).contiguous()
-                elif image_tensor.shape[0] not in (1, 3, 4):
-                    raise ValueError(
-                        f"Ambiguous numpy array shape: {image_source.shape}. "
-                        "Expected (H, W), (H, W, C), or (C, H, W) where C is 1, 3, or 4."
-                    )
+            image_tensor = numpy_to_chw_tensor(image_source)
             return self.reader.process_tensor(image_tensor, fix_img_size=fix_img_size)
 
+        opened_here = False
         if isinstance(image_source, bytes):
-            pil_image = Image.open(io.BytesIO(image_source))
-            image_source = pil_image
+            image_source = Image.open(io.BytesIO(image_source))
+            opened_here = True
 
         if isinstance(image_source, Image.Image):
             if image_source.mode != "RGB":
@@ -299,6 +289,8 @@ class FaceAnalyzer(object):
             image_tensor = torchvision.transforms.functional.pil_to_tensor(
                 image_source
             )
+            if opened_here:
+                image_source.close()
             return self.reader.process_tensor(image_tensor, fix_img_size=fix_img_size)
 
         raise TypeError(
