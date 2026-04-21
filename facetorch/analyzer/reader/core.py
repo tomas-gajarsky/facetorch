@@ -9,6 +9,7 @@ from typing import Union
 from facetorch.base import BaseReader
 from facetorch.datastruct import ImageData
 from facetorch.logger import LoggerJsonFile
+from facetorch.utils import numpy_to_chw_tensor
 
 logger = LoggerJsonFile().logger
 
@@ -71,21 +72,7 @@ class UniversalReader(BaseReader):
         return self.process_tensor(tensor, fix_img_size)
 
     def read_numpy_array(self, array: np.ndarray, fix_img_size: bool) -> ImageData:
-        image_tensor = torch.from_numpy(array.copy())
-        if image_tensor.ndim == 2:
-            image_tensor = image_tensor.unsqueeze(0)
-        elif image_tensor.ndim == 3:
-            if image_tensor.shape[2] in (1, 3, 4):
-                image_tensor = image_tensor.permute(2, 0, 1).contiguous()
-            elif image_tensor.shape[0] not in (1, 3, 4):
-                raise ValueError(
-                    f"Unsupported numpy array shape: {array.shape}. "
-                    "Expected (H, W), (H, W, C), or (C, H, W) where C is 1, 3, or 4."
-                )
-        else:
-            raise ValueError(
-                f"Unsupported numpy array with {array.ndim} dimensions. Expected 2 or 3."
-            )
+        image_tensor = numpy_to_chw_tensor(array)
         return self.process_tensor(image_tensor, fix_img_size)
 
     def read_image_from_bytes(
