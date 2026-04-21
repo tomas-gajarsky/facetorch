@@ -265,7 +265,7 @@ class BaseModel(object, metaclass=ABCMeta):
             if any(k in err_msg for k in ("schema version", "serialized version", "example_inputs")):
                 raise RuntimeError(
                     f"Cannot load {self.path_local}: the .pt2 model was exported with a "
-                    f"different PyTorch version. The bundled models require torch ~=2.3.0. "
+                    f"different PyTorch version. The bundled models require torch >=2.3.0,<2.4.0. "
                     f"Current version: {torch.__version__}. Install a compatible version or "
                     f"re-export the model with your current PyTorch."
                 ) from e
