@@ -1,6 +1,7 @@
 from abc import abstractmethod
 
 import torch
+import torch.nn.functional as F
 from codetiming import Timer
 from facetorch.base import BaseProcessor
 from facetorch.datastruct import ImageData
@@ -96,5 +97,12 @@ class DetectorPreProcessor(BaseDetPreProcessor):
 
         if self.reverse_colors:
             data.tensor = rgb2bgr(data.tensor)
+
+        _, _, h, w = data.tensor.shape
+        pad_h = (32 - h % 32) % 32
+        pad_w = (32 - w % 32) % 32
+        if pad_h > 0 or pad_w > 0:
+            data.tensor = F.pad(data.tensor, (0, pad_w, 0, pad_h), value=0)
+            data.set_dims()
 
         return data
