@@ -11,7 +11,7 @@ dependencies:
   - numpy>=1.18.2
   - pip>=20.0.2
   - python-json-logger>=2.0.0
-  - pytorch-gpu>=2.0.0
+  - pytorch-gpu>=2.3.0
   - requests>=2.20.0
   - timm>=0.6.0
   - torchvision>=0.15.0

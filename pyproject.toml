@@ -63,7 +63,7 @@ Documentation = "https://tomas-gajarsky.github.io/facetorch/facetorch/index.html
 
 [tool.uv]
 extra-index-url = ["https://download.pytorch.org/whl/cpu"]
-constraint-dependencies = ["torch<2.4.0"]
+constraint-dependencies = ["torch<2.5.0"]
 
 [tool.setuptools.packages.find]
 exclude = ["tests*", "model_defs*", "scripts*"]
