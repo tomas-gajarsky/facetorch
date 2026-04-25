@@ -245,3 +245,27 @@ def test_process_tensor_rgba(analyzer):
     tensor_input = torch.randn(4, 224, 224)
     result = analyzer.reader.process_tensor(tensor_input, fix_img_size=False)
     assert result.tensor.size() == torch.Size([1, 3, 224, 224])
+
+
+@pytest.mark.unit
+@pytest.mark.reader
+def test_process_tensor_hwc_rgb(analyzer):
+    tensor_input = torch.randn(224, 224, 3)
+    result = analyzer.reader.process_tensor(tensor_input, fix_img_size=False)
+    assert result.tensor.size() == torch.Size([1, 3, 224, 224])
+
+
+@pytest.mark.unit
+@pytest.mark.reader
+def test_process_tensor_batched_not_supported(analyzer):
+    tensor_input = torch.randn(2, 3, 224, 224)
+    with pytest.raises(ValueError, match="B=1"):
+        analyzer.reader.process_tensor(tensor_input, fix_img_size=False)
+
+
+@pytest.mark.unit
+@pytest.mark.reader
+def test_process_tensor_ambiguous_3d_raises(analyzer):
+    tensor_input = torch.randn(3, 224, 3)
+    with pytest.raises(ValueError, match="Ambiguous 3D tensor layout"):
+        analyzer.reader.process_tensor(tensor_input, fix_img_size=False)

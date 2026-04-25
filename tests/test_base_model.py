@@ -210,3 +210,27 @@ class TestBaseModelMisc:
 
         m = ConcreteModel(downloader=dl, device=torch.device("cpu"))
         assert m.model is not None
+
+
+    def test_exported_model_is_on_device_and_eval(self, tmp_path):
+        bad_pt2 = str(tmp_path / "model.pt2")
+        with open(bad_pt2, "wb") as f:
+            f.write(b"placeholder")
+        dl = _make_dummy_downloader(bad_pt2)
+
+        class _FakeExported(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.linear = torch.nn.Linear(2, 2)
+
+        fake_model = _FakeExported()
+
+        class _EP:
+            def module(self):
+                return fake_model
+
+        with patch("torch.export.load", return_value=_EP()):
+            m = ConcreteModel(downloader=dl, device=torch.device("cpu"))
+
+        assert m.model.training is False
+        assert next(m.model.parameters()).device.type == "cpu"

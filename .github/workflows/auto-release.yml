@@ -23,12 +23,7 @@ jobs:
       - name: Read version
         id: version
         run: |
-          VERSION=$(python3 -c "
-          import re
-          with open('pyproject.toml') as f:
-              match = re.search(r'^version\s*=\s*\"(.+?)\"', f.read(), re.MULTILINE)
-          print(match.group(1))
-          ")
+          VERSION=$(python3 -c "import re; print(re.search(r'^version\s*=\s*\"(.+?)\"', open('pyproject.toml').read(), re.MULTILINE).group(1))")
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "TAG=v$VERSION" >> $GITHUB_OUTPUT
           echo "VERSION=$VERSION" >> $GITHUB_ENV
@@ -106,10 +101,7 @@ jobs:
 
       - name: Set VERSION variable
         run: |
-          VERSION=$(python3 -c 'import re
-          with open("pyproject.toml") as f:
-              match = re.search(r"^version\s*=\s*\"(.+?)\"", f.read(), re.MULTILINE)
-          print(match.group(1))')
+          VERSION=$(python3 -c "import re; print(re.search(r'^version\s*=\s*\"(.+?)\"', open('pyproject.toml').read(), re.MULTILINE).group(1))")
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Login to Docker Hub

@@ -46,13 +46,24 @@ class FaceDetector(BaseModel):
         Returns:
             ImageData: Image data object with Detection tensors and detected Face objects.
         """
-        img_h, img_w = data.tensor.shape[-2], data.tensor.shape[-1]
+        orig_tensor = data.tensor
+        img_h, img_w = orig_tensor.shape[-2], orig_tensor.shape[-1]
         data = self.preprocessor.run(data)
         logits = self.inference(data.tensor)
         data = self.postprocessor.run(data, logits)
 
         if data.tensor.shape[-2] != img_h or data.tensor.shape[-1] != img_w:
-            data.tensor = data.tensor[:, :, :img_h, :img_w]
+            data.tensor = orig_tensor
             data.set_dims()
+
+            if hasattr(data.det, "dets") and data.det.dets.numel() > 0:
+                data.det.dets[:, 0].clamp_(0, img_w)
+                data.det.dets[:, 2].clamp_(0, img_w)
+                data.det.dets[:, 1].clamp_(0, img_h)
+                data.det.dets[:, 3].clamp_(0, img_h)
+
+            data.faces = []
+            if hasattr(self.postprocessor, "_extract_faces"):
+                data = self.postprocessor._extract_faces(data)
 
         return data

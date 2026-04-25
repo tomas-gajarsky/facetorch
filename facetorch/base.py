@@ -104,12 +104,15 @@ class BaseReader(BaseProcessor):
         pass
 
     def process_tensor(self, tensor: torch.Tensor, fix_img_size: bool) -> ImageData:
-        """Read a tensor and return a data object containing a tensor of the image with
-        shape (batch, channels, height, width).
+        """Read an input tensor and normalize it to shape (B, C, H, W).
 
         Args:
-            tensor (torch.Tensor): Image tensor with values between 0-255. Accepted shapes: (H, W), (C, H, W), or (B, C, H, W) where C in {1, 3, 4}. Single-channel inputs are expanded to 3 channels, RGBA inputs have the alpha channel dropped.
-            fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
+            tensor (torch.Tensor): Image tensor with values between 0-255. Accepted
+                shapes are (H, W), (C, H, W), (H, W, C), or (B, C, H, W), where
+                C is in {1, 3, 4}. Unambiguous HWC tensors are converted to CHW.
+                Batched tensors currently support only B=1.
+            fix_img_size (bool): Whether to resize the image to a fixed size. If
+                False, size_portrait and size_landscape are ignored.
         """
 
         data = ImageData(path_input=None)
@@ -119,11 +122,43 @@ class BaseReader(BaseProcessor):
             data.tensor = data.tensor.unsqueeze(0)
 
         if data.tensor.dim() == 3:
+            c0 = data.tensor.shape[0]
+            c2 = data.tensor.shape[2]
+            chw_like = c0 in (1, 3, 4)
+            hwc_like = c2 in (1, 3, 4)
+            if hwc_like and not chw_like:
+                data.tensor = data.tensor.permute(2, 0, 1)
+            elif not chw_like and not hwc_like:
+                raise ValueError(
+                    "Invalid 3D tensor shape. Expected CHW with C in {1,3,4} or "
+                    "HWC with channels in the last dimension."
+                )
+            elif chw_like and hwc_like:
+                raise ValueError(
+                    "Ambiguous 3D tensor layout: both first and last dimensions "
+                    "look like channel dimensions. Please pass CHW explicitly."
+                )
             data.tensor = data.tensor.unsqueeze(0)
 
-        if data.tensor.shape[1] == 1:
+        if data.tensor.dim() != 4:
+            raise ValueError(
+                f"Unsupported tensor rank {data.tensor.dim()}. Expected 2D, 3D, or 4D input."
+            )
+
+        if data.tensor.shape[0] != 1:
+            raise ValueError(
+                f"Batched tensor input is not supported yet. Expected B=1, got B={data.tensor.shape[0]}."
+            )
+
+        channels = data.tensor.shape[1]
+        if channels not in (1, 3, 4):
+            raise ValueError(
+                f"Unsupported channel count: {channels}. Expected channels in {{1,3,4}}."
+            )
+
+        if channels == 1:
             data.tensor = data.tensor.repeat(1, 3, 1, 1)
-        elif data.tensor.shape[1] == 4:
+        elif channels == 4:
             data.tensor = data.tensor[:, :3, :, :]
 
         data.tensor = data.tensor.to(self.device)
@@ -265,13 +300,14 @@ class BaseModel(object, metaclass=ABCMeta):
             if any(k in err_msg for k in ("schema version", "serialized version", "example_inputs")):
                 raise RuntimeError(
                     f"Cannot load {self.path_local}: the .pt2 model was exported with a "
-                    f"different PyTorch version. The bundled models require torch >=2.3.0,<2.4.0. "
+                    f"different PyTorch version. The bundled models require torch >=2.3.0,<2.5.0. "
                     f"Current version: {torch.__version__}. Install a compatible version or "
                     f"re-export the model with your current PyTorch."
                 ) from e
             raise
         model = ep.module()
         model.to(self.device)
+        model.eval()
         return model
 
     def _load_native_model(self) -> torch.nn.Module:

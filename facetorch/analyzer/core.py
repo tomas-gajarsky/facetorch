@@ -278,19 +278,19 @@ class FaceAnalyzer(object):
             image_tensor = numpy_to_chw_tensor(image_source)
             return self.reader.process_tensor(image_tensor, fix_img_size=fix_img_size)
 
-        opened_here = False
         if isinstance(image_source, bytes):
-            image_source = Image.open(io.BytesIO(image_source))
-            opened_here = True
+            with Image.open(io.BytesIO(image_source)) as img:
+                pil_image = img.convert("RGB") if img.mode != "RGB" else img.copy()
+            image_tensor = torchvision.transforms.functional.pil_to_tensor(pil_image)
+            return self.reader.process_tensor(image_tensor, fix_img_size=fix_img_size)
 
         if isinstance(image_source, Image.Image):
-            if image_source.mode != "RGB":
-                image_source = image_source.convert("RGB")
-            image_tensor = torchvision.transforms.functional.pil_to_tensor(
-                image_source
+            pil_image = (
+                image_source.convert("RGB")
+                if image_source.mode != "RGB"
+                else image_source
             )
-            if opened_here:
-                image_source.close()
+            image_tensor = torchvision.transforms.functional.pil_to_tensor(pil_image)
             return self.reader.process_tensor(image_tensor, fix_img_size=fix_img_size)
 
         raise TypeError(
