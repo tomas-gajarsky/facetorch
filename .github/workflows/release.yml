@@ -22,12 +22,7 @@ jobs:
           if [ -n "${{ github.event.inputs.tag }}" ]; then
             TAG="${{ github.event.inputs.tag }}"
           else
-            FILE_VERSION=$(python3 -c "
-          import re
-          with open('pyproject.toml') as f:
-              match = re.search(r'^version\s*=\s*\"(.+?)\"', f.read(), re.MULTILINE)
-          print(match.group(1))
-          ")
+            FILE_VERSION=$(python3 -c "import re; print(re.search(r'^version\s*=\s*\"(.+?)\"', open('pyproject.toml').read(), re.MULTILINE).group(1))")
             TAG="v$FILE_VERSION"
           fi
           VERSION="${TAG#v}"
