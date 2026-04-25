@@ -34,7 +34,7 @@ Facetorch provides an efficient, scalable, and user-friendly solution for facial
 ### Requirements
 
 * Python >= 3.10
-* PyTorch >= 2.0
+* PyTorch >= 2.3
 
 Please use this library responsibly and with caution. Adhere to the [European Commission's Ethics Guidelines for Trustworthy AI](https://ec.europa.eu/futurium/en/ai-alliance-consultation.1.html) to ensure ethical and fair usage. Keep in mind that the models may have limitations and potential biases, so it is crucial to evaluate their outputs critically and consider their impact.
 
