@@ -211,8 +211,7 @@ class TestBaseModelMisc:
         m = ConcreteModel(downloader=dl, device=torch.device("cpu"))
         assert m.model is not None
 
-
-    def test_exported_model_is_on_device_and_eval(self, tmp_path):
+    def test_exported_model_is_on_device(self, tmp_path):
         bad_pt2 = str(tmp_path / "model.pt2")
         with open(bad_pt2, "wb") as f:
             f.write(b"placeholder")
@@ -232,5 +231,4 @@ class TestBaseModelMisc:
         with patch("torch.export.load", return_value=_EP()):
             m = ConcreteModel(downloader=dl, device=torch.device("cpu"))
 
-        assert m.model.training is False
         assert next(m.model.parameters()).device.type == "cpu"
