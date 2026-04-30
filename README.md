@@ -34,7 +34,7 @@ Facetorch provides an efficient, scalable, and user-friendly solution for facial
 ### Requirements
 
 * Python >= 3.10
-* PyTorch >= 2.3
+* PyTorch >= 2.3 (facetorch routes exported model artifacts by torch minor version)
 
 Please use this library responsibly and with caution. Adhere to the [European Commission's Ethics Guidelines for Trustworthy AI](https://ec.europa.eu/futurium/en/ai-alliance-consultation.1.html) to ensure ethical and fair usage. Keep in mind that the models may have limitations and potential biases, so it is crucial to evaluate their outputs critically and consider their impact.
 
@@ -224,8 +224,10 @@ for Identity-invariant Facial Expression Recognition](https://arxiv.org/abs/2209
 
 ### Model download
 
-Models are downloaded during runtime automatically to the *models* directory using Hugging Face Hub (the default downloader has been switched from Google Drive to Hugging Face Hub).
-Models are available on the [Hugging Face Hub](https://huggingface.co/tomas-gajarsky) and legacy models can also be accessed from the [original Google Drive folder](https://drive.google.com/drive/folders/19qlklR18wYfFsCChQ78it10XciuTzbDM?usp=sharing).
+Models are downloaded during runtime automatically to the *models* directory using Hugging Face Hub.
+Models are available on the [Hugging Face Hub](https://huggingface.co/tomas-gajarsky). The legacy [Google Drive folder](https://drive.google.com/drive/folders/19qlklR18wYfFsCChQ78it10XciuTzbDM?usp=sharing) is retained for backward compatibility only and is effectively deprecated for v1+ workflows.
+For exported `.pt2` models, facetorch can fall back across versioned artifacts when present (e.g. `model-torch2.3.pt2`, `model-torch2.6.pt2`, `model-torch2.11.pt2`).
+By default, the downloader tries `model.pt2` first, then versioned cohort artifacts, and finally `model.pt` as a legacy fallback where available.
 
 
 ### Execution time
@@ -278,6 +280,37 @@ torch.export.save(ep, "model.pt2")
 
 Verify that the exported model produces the same outputs as the original. Models are hosted on [Hugging Face Hub](https://huggingface.co/tomas-gajarsky).
 
+For broader PyTorch compatibility, publish recommended version cohorts in the same repo:
+
+- `model-torch2.3.pt2`
+- `model-torch2.6.pt2`
+- `model-torch2.11.pt2`
+- (optional compatibility fallback) `model.pt2`
+
+To export, validate, and upload all facetorch model cohorts for the current torch runtime, use:
+
+```bash
+PYTHONPATH=. python scripts/export_model_cohorts_hf.py export \
+  --repo-root . \
+  --out-root /tmp/model-cohort-exports \
+  --upload \
+  --hf-token-env HF_TOKEN
+```
+
+To re-validate existing artifacts against reference models on multiple inputs and batch sizes:
+
+```bash
+PYTHONPATH=. python scripts/export_model_cohorts_hf.py validate \
+  --repo-root . \
+  --artifacts-root /tmp/model-cohort-exports/upload26 \
+  --cohort 2.6 \
+  --batch-sizes 1,2,4,8 \
+  --seeds 0,17 \
+  --scales 1.0,0.25
+```
+
+Use `--model-ids` (for example `--model-ids verify-magface`) to process only a subset.
+
 #### Configuration
 ##### Create yaml file
 1. Create new folder with a short name of the task in predictor configuration directory 
@@ -290,7 +323,7 @@ Verify that the exported model produces the same outputs as the original. Models
 ##### Edit yaml file
 1. Set up the downloader configuration:
    - For Hugging Face Hub (recommended): specify the `repo_id` and `filename` parameters
-   - For legacy Google Drive: specify the Google Drive file ID
+   - For legacy Google Drive (deprecated): specify the Google Drive file ID
 2. Select the preprocessor (or implement a new one based on BasePredPreProcessor) and specify its parameters e.g. image size and normalization in the yaml file 
 to match the requirements of the new model.
 3. Select the postprocessor (or implement a new one based on BasePredPostProcessor) and specify its parameters e.g. labels in the yaml file to match 
@@ -310,6 +343,13 @@ the requirements of the new model.
 
 
 ### Update environment
+
+#### Dependency ownership and release channels
+* `pyproject.toml` is the packaging source of truth for PyPI releases and pip/uv installs (including Docker build paths using uv).
+* Conda package publishing (`conda-forge/facetorch`) is maintained outside this repository in conda-forge feedstock workflows.
+* `environment.yml` and `gpu.environment.yml` are conda environment baselines for conda users.
+* Overlapping dependencies between pyproject and conda env files are intentionally kept aligned.
+* CI enforces this with: `python scripts/check_dependency_sync.py`.
 
 #### uv (used by Docker dev/test images)
 * Add packages with corresponding versions to ```pyproject.toml``` dependencies
