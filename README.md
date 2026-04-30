@@ -232,28 +232,35 @@ By default, the downloader tries `model.pt2` first, then versioned cohort artifa
 
 ### Execution time
 
-Image test.jpg (4 faces) is analyzed (including drawing boxes and landmarks, but not saving) in about 486ms and test3.jpg (25 faces) in about 1845ms (batch_size=8) on NVIDIA Tesla T4 GPU once the default configuration (*conf/config.yaml*) of models is initialized and pre heated to the initial image size 1080x1080 by the first run. One can monitor the execution times in logs using the DEBUG level.
+Reference CPU benchmark (v1.0.0 configuration, warm run, batch_size=8, no save utilizer output):
+- `test.jpg` (4 faces): about `3073 ms`
+- `test3.jpg` (25 faces): about `14734 ms`
 
-Detailed test.jpg execution times:
+Environment used for this benchmark:
+- CPU: `12th Gen Intel(R) Core(TM) i9-12900KF`
+- Python: `3.12.12`
+- Torch: `2.11.0+cpu`
+
+Detailed `test.jpg` stage timings from the same run:
 ```
 analyzer
-    ├── reader: 27 ms
-    ├── detector: 193 ms
+    ├── reader: 9 ms
+    ├── detector: 668 ms
     ├── unifier: 1 ms
     └── predictor
-            ├── embed: 8 ms
-            ├── verify: 58 ms
-            ├── fer: 28 ms
-            ├── au: 57 ms
-            ├── va: 1 ms
-            ├── deepfake: 117 ms
-            └── align: 5 ms
+            ├── embed: 87 ms
+            ├── verify: 1113 ms
+            ├── fer: 72 ms
+            ├── au: 396 ms
+            ├── va: 12 ms
+            ├── deepfake: 742 ms
+            └── align: 19 ms
     └── utilizer
-            ├── align: 8 ms
-            ├── draw_boxes: 22 ms
-            ├── draw_landmarks: 7 ms
-            └── save: 298 ms
+            ├── align: 6 ms
+            ├── draw_boxes: 6 ms
+            └── draw_landmarks: 2 ms
 ```
+One can monitor execution times in logs using DEBUG level. Results vary by hardware, torch version, and selected model cohort artifact.
 
 
 ## Development
