@@ -6,7 +6,7 @@ Released on April 18, 2026.
 
 ### Breaking Changes
 * Minimum Python version raised from 3.8 to 3.10
-* Minimum PyTorch version raised from 1.9 to 2.3 (bundled .pt2 models require torch ~=2.3.0)
+* Minimum PyTorch version raised from 1.9 to 2.3
 * All models migrated from TorchScript (.pt) to torch.export (.pt2) format
 * `path_image` and `tensor` parameters in `FaceAnalyzer.run()` are deprecated in favor of `image_source`
 
@@ -18,6 +18,9 @@ Released on April 18, 2026.
 * Optional logger configuration: `FaceAnalyzer` falls back to `logging.getLogger("facetorch")` when no logger is configured
 * Robust input routing in `FaceAnalyzer.run()` — tensor, numpy array, PIL Image, bytes, and file path inputs work with any reader type
 * All .pt2 models uploaded to Hugging Face Hub with model cards
+* Torch-versioned exported model cohorts and runtime fallback routing for `.pt2` artifacts (for example `model-torch2.3.pt2`, `model-torch2.6.pt2`, `model-torch2.11.pt2`)
+* Cohort export/validation/upload script: `scripts/export_model_cohorts_hf.py`
+* Dependency alignment check script: `scripts/check_dependency_sync.py`
 * `uv.lock` for reproducible PyPI-based dependency resolution
 * `[tool.uv]` configuration in `pyproject.toml`
 
@@ -28,6 +31,7 @@ Released on April 18, 2026.
 * Docker dev/test images migrated from conda/conda-lock to [uv](https://github.com/astral-sh/uv) for faster builds
 * Docker production images now use uv as a pip drop-in
 * Development dependencies consolidated from `requirements.dev.txt` into `pyproject.toml`
+* Removed hard torch `<2.5.0` constraint from uv configuration
 * Docker base images updated to Python 3.12 and CUDA 12.4
 * CI test matrix updated to Python 3.10, 3.11, 3.12, 3.13
 * GPU environment updated from CUDA 11.2 to CUDA 12.1+

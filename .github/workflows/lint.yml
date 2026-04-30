@@ -24,6 +24,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install .[dev]
+    - name: Check dependency alignment
+      run: |
+        python scripts/check_dependency_sync.py
     - name: Lint with flake8
       run: |
         flake8 --config=.flake8
