@@ -12,7 +12,7 @@ resolution-markers = [
 ]
 
 [manifest]
-constraints = [{ name = "torch", specifier = "<2.5.0" }]
+constraints = []
 
 [[package]]
 name = "annotated-doc"
