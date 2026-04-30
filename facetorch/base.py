@@ -278,7 +278,7 @@ class BaseModel(object, metaclass=ABCMeta):
             self.downloader.run()
 
         if self.path_local.endswith(".pt2"):
-            model = self._load_exported_model()
+            model = self._load_exported_model_with_fallback()
         elif self.native_model_class is not None:
             model = self._load_native_model()
             model.eval()
@@ -291,20 +291,63 @@ class BaseModel(object, metaclass=ABCMeta):
 
         return model
 
+    @staticmethod
+    def _is_export_schema_mismatch_error(exc: Exception) -> bool:
+        err_msg = str(exc).lower()
+        return any(
+            key in err_msg
+            for key in ("schema version", "serialized version", "example_inputs")
+        )
+
+    def _build_export_schema_mismatch_message(self) -> str:
+        active_filename = getattr(self.downloader, "_active_filename", None)
+        tried = getattr(self.downloader, "_last_candidates", None)
+        tried_msg = ""
+        if isinstance(tried, list) and tried:
+            tried_msg = f" Tried candidates: {', '.join(tried)}."
+
+        active_msg = ""
+        if active_filename:
+            active_msg = f" Last downloaded candidate: {active_filename}."
+
+        return (
+            f"Cannot load {self.path_local}: the exported .pt2 model appears to be "
+            f"incompatible with current PyTorch ({torch.__version__})."
+            f"{active_msg}{tried_msg} "
+            "Upload/export a compatible model artifact for your current torch "
+            "major.minor version, or use a torch version compatible with one of the "
+            "published artifacts."
+        )
+
+    def _load_exported_model_with_fallback(self) -> torch.nn.Module:
+        """Loads .pt2 and retries with downloader fallback artifacts on schema mismatch."""
+        while True:
+            try:
+                return self._load_exported_model()
+            except (RuntimeError, AssertionError) as e:
+                if not self._is_export_schema_mismatch_error(e):
+                    raise
+
+                try_next = getattr(self.downloader, "try_next", None)
+                if callable(try_next):
+                    logger.warning(
+                        f"Exported model load mismatch for {self.path_local} with "
+                        f"torch={torch.__version__}. Trying next downloader candidate."
+                    )
+                    try:
+                        has_next = try_next(force_download=True)
+                    except TypeError:
+                        has_next = try_next()
+                    if has_next:
+                        continue
+
+                raise RuntimeError(
+                    self._build_export_schema_mismatch_message()
+                ) from e
+
     def _load_exported_model(self) -> torch.nn.Module:
         """Loads a torch.export .pt2 model."""
-        try:
-            ep = torch.export.load(self.path_local)
-        except (RuntimeError, AssertionError) as e:
-            err_msg = str(e).lower()
-            if any(k in err_msg for k in ("schema version", "serialized version", "example_inputs")):
-                raise RuntimeError(
-                    f"Cannot load {self.path_local}: the .pt2 model was exported with a "
-                    f"different PyTorch version. The bundled models require torch >=2.3.0,<2.5.0. "
-                    f"Current version: {torch.__version__}. Install a compatible version or "
-                    f"re-export the model with your current PyTorch."
-                ) from e
-            raise
+        ep = torch.export.load(self.path_local)
         model = ep.module()
         model.to(self.device)
         return model

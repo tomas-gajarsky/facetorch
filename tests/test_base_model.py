@@ -24,9 +24,17 @@ class _FakeModule(torch.nn.Module):
         return self.linear(x)
 
 
+def _make_torchscript_fake_module() -> torch.jit.ScriptModule:
+    """Create a TorchScript module without relying on source inspection."""
+    fake = _FakeModule()
+    example = torch.randn(1, 4)
+    return torch.jit.trace(fake, example, strict=True)
+
+
 def _make_dummy_downloader(path_local):
     dl = MagicMock()
     dl.path_local = path_local
+    dl.try_next = MagicMock(return_value=False)
     return dl
 
 
@@ -99,8 +107,7 @@ class TestLoadNativeModelMocked:
 
     def test_native_from_torchscript_mocked(self, tmp_path):
         """Cover _load_native_model .pt branch with mocked TorchScript."""
-        fake = _FakeModule()
-        scripted = torch.jit.script(fake)
+        scripted = _make_torchscript_fake_module()
         pt_file = str(tmp_path / "model.pt")
         torch.jit.save(scripted, pt_file)
 
@@ -121,8 +128,7 @@ class TestLoadNativeModelMocked:
 
     def test_torchscript_fallback(self, tmp_path):
         """Cover .pt without native_model_class (legacy TorchScript path)."""
-        fake = _FakeModule()
-        scripted = torch.jit.script(fake)
+        scripted = _make_torchscript_fake_module()
         pt_file = str(tmp_path / "model.pt")
         torch.jit.save(scripted, pt_file)
 
@@ -147,15 +153,52 @@ class TestLoadExportedModel:
             ConcreteModel(downloader=dl, device=torch.device("cpu"))
 
     def test_exported_model_schema_version_error(self, tmp_path):
-        """Cover the schema version error wrapping in _load_exported_model."""
+        """Schema mismatch should raise clear compatibility error after fallback exhaustion."""
         bad_pt2 = str(tmp_path / "model.pt2")
         with open(bad_pt2, "wb") as f:
             f.write(b"not a real model")
         dl = _make_dummy_downloader(bad_pt2)
+        dl._active_filename = "model-torch2.6.pt2"
+        dl._last_candidates = [
+            "model-torch2.11.pt2",
+            "model-torch2.6.pt2",
+            "model-torch2.3.pt2",
+        ]
 
-        with patch("torch.export.load", side_effect=RuntimeError("schema version mismatch")):
-            with pytest.raises(RuntimeError, match="different PyTorch version"):
+        with patch(
+            "torch.export.load", side_effect=RuntimeError("schema version mismatch")
+        ):
+            with pytest.raises(RuntimeError, match="incompatible with current PyTorch"):
                 ConcreteModel(downloader=dl, device=torch.device("cpu"))
+        dl.try_next.assert_called_once_with(force_download=True)
+
+    def test_exported_model_schema_mismatch_retries_next_candidate(self, tmp_path):
+        """BaseModel should request next candidate export and retry load once."""
+        bad_pt2 = str(tmp_path / "model.pt2")
+        with open(bad_pt2, "wb") as f:
+            f.write(b"placeholder")
+
+        dl = _make_dummy_downloader(bad_pt2)
+        dl.try_next = MagicMock(return_value=True)
+
+        class _FakeExported(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.linear = torch.nn.Linear(2, 2)
+
+        fake_model = _FakeExported()
+
+        class _EP:
+            def module(self):
+                return fake_model
+
+        load_side_effects = [RuntimeError("serialized version mismatch"), _EP()]
+        with patch("torch.export.load", side_effect=load_side_effects) as mock_load:
+            model = ConcreteModel(downloader=dl, device=torch.device("cpu"))
+
+        assert model.model is not None
+        assert mock_load.call_count == 2
+        dl.try_next.assert_called_once_with(force_download=True)
 
 
 @pytest.mark.unit
@@ -184,8 +227,7 @@ class TestBaseModelMisc:
 
     def test_callable_mocked(self, tmp_path):
         """Cover __call__ path without real model files."""
-        fake = _FakeModule()
-        scripted = torch.jit.script(fake)
+        scripted = _make_torchscript_fake_module()
         pt_file = str(tmp_path / "model.pt")
         torch.jit.save(scripted, pt_file)
 
@@ -198,8 +240,7 @@ class TestBaseModelMisc:
     def test_downloader_called_when_file_missing(self, tmp_path):
         """Cover the download-on-missing path in load_model."""
         missing_file = str(tmp_path / "subdir" / "model.pt")
-        fake = _FakeModule()
-        scripted = torch.jit.script(fake)
+        scripted = _make_torchscript_fake_module()
 
         def fake_download():
             os.makedirs(os.path.dirname(missing_file), exist_ok=True)
