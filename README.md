@@ -186,7 +186,7 @@ analyzer
 1. CVI-SZU
     * code: [ME-GraphAU](https://github.com/CVI-SZU/ME-GraphAU)
     * paper: [Luo et al. - Learning Multi-dimensional Edge Feature-based AU Relation Graph for Facial Action Unit Recognition](https://arxiv.org/abs/2205.01782)
-    * Note: As of v1.0.0, the AU model uses torch.export format and works with all CUDA versions
+    * Note: As of v1.0.0, the AU model uses torch.export format; CUDA compatibility should be validated against published torch-versioned cohort artifacts
 
 #### Facial Valence Arousal (va)
 
@@ -232,35 +232,19 @@ By default, the downloader tries `model.pt2` first, then versioned cohort artifa
 
 ### Execution time
 
-Reference CPU benchmark (v1.0.0 configuration, warm run, batch_size=8, no save utilizer output):
-- `test.jpg` (4 faces): about `3073 ms`
-- `test3.jpg` (25 faces): about `14734 ms`
+Reference GPU benchmark (warm second pass, batch_size=8, no save utilizer output):
+- `test.jpg` (4 faces): pass1 `571 ms`, pass2 `296 ms`
+- `test3.jpg` (25 faces): pass1 `667 ms`, pass2 `501 ms`
 
 Environment used for this benchmark:
-- CPU: `12th Gen Intel(R) Core(TM) i9-12900KF`
-- Python: `3.12.12`
-- Torch: `2.11.0+cpu`
+- GPU: `NVIDIA GeForce RTX 3090`
+- Python: `3.10.12`
+- Torch: `2.11.0+cu130`
 
-Detailed `test.jpg` stage timings from the same run:
-```
-analyzer
-    ├── reader: 9 ms
-    ├── detector: 668 ms
-    ├── unifier: 1 ms
-    └── predictor
-            ├── embed: 87 ms
-            ├── verify: 1113 ms
-            ├── fer: 72 ms
-            ├── au: 396 ms
-            ├── va: 12 ms
-            ├── deepfake: 742 ms
-            └── align: 19 ms
-    └── utilizer
-            ├── align: 6 ms
-            ├── draw_boxes: 6 ms
-            └── draw_landmarks: 2 ms
-```
-One can monitor execution times in logs using DEBUG level. Results vary by hardware, torch version, and selected model cohort artifact.
+Method notes:
+- Timings are reported from the second inference pass to avoid first-pass warm-up effects.
+- This GPU benchmark was measured with `exclude_predictors=['au']` due a current CUDA device mismatch in the AU `.pt2` artifact path.
+- One can monitor component timings in logs using DEBUG level.
 
 
 ## Development
