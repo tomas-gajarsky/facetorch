@@ -297,6 +297,9 @@ class BaseModel(object, metaclass=ABCMeta):
         return any(
             key in err_msg
             for key in ("schema version", "serialized version", "example_inputs")
+        ) or (
+            "no item named 'version' in the archive" in err_msg
+            or "serialized_exported_program.json" in err_msg
         )
 
     def _build_export_schema_mismatch_message(self) -> str:
@@ -324,7 +327,7 @@ class BaseModel(object, metaclass=ABCMeta):
         while True:
             try:
                 return self._load_exported_model()
-            except (RuntimeError, AssertionError) as e:
+            except (RuntimeError, AssertionError, KeyError) as e:
                 if not self._is_export_schema_mismatch_error(e):
                     raise
 

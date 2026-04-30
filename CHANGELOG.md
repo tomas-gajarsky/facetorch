@@ -20,6 +20,7 @@ Released on April 18, 2026.
 * All .pt2 models uploaded to Hugging Face Hub with model cards
 * Torch-versioned exported model cohorts and runtime fallback routing for `.pt2` artifacts (for example `model-torch2.3.pt2`, `model-torch2.6.pt2`, `model-torch2.11.pt2`)
 * Cohort export/validation/upload script: `scripts/export_model_cohorts_hf.py`
+* Device-aware cohort validation in export script via `--validate-devices` (for example `cpu,cuda`)
 * Dependency alignment check script: `scripts/check_dependency_sync.py`
 * `uv.lock` for reproducible PyPI-based dependency resolution
 * `[tool.uv]` configuration in `pyproject.toml`
@@ -42,6 +43,8 @@ Released on April 18, 2026.
 * "File name too long" error when passing tensor/array to `FaceAnalyzer.run()` with `ImageReader`
 * AU predictor YAML indentation error in merged config files
 * Numpy array reader now handles (H, W) and (H, W, 1) grayscale arrays
+* AU `.pt2` CUDA device mismatch by re-exporting validated AU cohorts (`2.3`, `2.6`, `2.11`) and publishing refreshed Hugging Face artifacts with metadata
+* Exported-model schema mismatch fallback now also handles additional cross-version `.pt2` archive load errors (for example missing `version` entry)
 
 
 ## 0.6.2

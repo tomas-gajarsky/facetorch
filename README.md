@@ -186,7 +186,7 @@ analyzer
 1. CVI-SZU
     * code: [ME-GraphAU](https://github.com/CVI-SZU/ME-GraphAU)
     * paper: [Luo et al. - Learning Multi-dimensional Edge Feature-based AU Relation Graph for Facial Action Unit Recognition](https://arxiv.org/abs/2205.01782)
-    * Note: As of v1.0.0, the AU model uses torch.export format; CUDA compatibility should be validated against published torch-versioned cohort artifacts
+    * Note: As of v1.0.0, the AU model uses torch.export format with torch-versioned cohort artifacts validated on CPU and CUDA (torch 2.3 / 2.6 / 2.11)
 
 #### Facial Valence Arousal (va)
 
@@ -232,9 +232,9 @@ By default, the downloader tries `model.pt2` first, then versioned cohort artifa
 
 ### Execution time
 
-Reference GPU benchmark (warm second pass, batch_size=8, no save utilizer output):
-- `test.jpg` (4 faces): pass1 `571 ms`, pass2 `296 ms`
-- `test3.jpg` (25 faces): pass1 `667 ms`, pass2 `501 ms`
+Reference GPU benchmark (warm second pass, batch_size=8, utilizers disabled):
+- `test.jpg` (4 faces): pass1 `672 ms`, pass2 `209 ms`
+- `test3.jpg` (25 faces): pass1 `856 ms`, pass2 `687 ms`
 
 Environment used for this benchmark:
 - GPU: `NVIDIA GeForce RTX 3090`
@@ -243,7 +243,8 @@ Environment used for this benchmark:
 
 Method notes:
 - Timings are reported from the second inference pass to avoid first-pass warm-up effects.
-- This GPU benchmark was measured with `exclude_predictors=['au']` due a current CUDA device mismatch in the AU `.pt2` artifact path.
+- Timings above include all predictors, including AU.
+- Utilizers were disabled for this benchmark run.
 - One can monitor component timings in logs using DEBUG level.
 
 
@@ -284,6 +285,7 @@ To export, validate, and upload all facetorch model cohorts for the current torc
 PYTHONPATH=. python scripts/export_model_cohorts_hf.py export \
   --repo-root . \
   --out-root /tmp/model-cohort-exports \
+  --validate-devices cpu,cuda \
   --upload \
   --hf-token-env HF_TOKEN
 ```
@@ -294,6 +296,7 @@ To re-validate existing artifacts against reference models on multiple inputs an
 PYTHONPATH=. python scripts/export_model_cohorts_hf.py validate \
   --repo-root . \
   --artifacts-root /tmp/model-cohort-exports/upload26 \
+  --validate-devices cpu,cuda \
   --cohort 2.6 \
   --batch-sizes 1,2,4,8 \
   --seeds 0,17 \
