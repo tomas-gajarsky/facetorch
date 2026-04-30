@@ -165,6 +165,49 @@ def _parse_csv_floats(text: str) -> List[float]:
     return out
 
 
+def _parse_csv_strings(text: str) -> List[str]:
+    out = []
+    for raw in text.split(","):
+        raw = raw.strip()
+        if raw:
+            out.append(raw)
+    return out
+
+
+def _strip_runtime_assertions(
+    ep: "torch.export.ExportedProgram",
+) -> Dict[str, Any]:
+    """Best-effort removal of export-inserted runtime assertions.
+
+    Some torch versions inject runtime metadata assertions that can pin device
+    expectations to the export-time device. For selected models we strip these
+    assertion nodes and run DCE to keep the graph executable across devices.
+    """
+    meta: Dict[str, Any] = {
+        "requested": True,
+        "applied": False,
+        "modified": False,
+        "error_type": None,
+        "error": None,
+    }
+    try:
+        from torch._export.passes.remove_runtime_assertions import (
+            _RemoveRuntimeAssertionsPass,
+        )
+
+        result = _RemoveRuntimeAssertionsPass()(ep.graph_module)
+        modified = bool(getattr(result, "modified", False))
+        meta["modified"] = modified
+        if modified:
+            ep.graph_module.graph.eliminate_dead_code()
+            ep.graph_module.recompile()
+        meta["applied"] = True
+    except Exception as exc:
+        meta["error_type"] = type(exc).__name__
+        meta["error"] = str(exc)
+    return meta
+
+
 def _dynamic_shapes(spec: Dict[str, Any]):
     dynamic_shape_spec: Dict[int, Any] = {}
     if spec.get("dynamic_batch", True):
@@ -347,6 +390,7 @@ def _build_reference_and_exported_program(spec: Dict[str, Any], torch_minor: str
 
         def ref_fn(x):
             with torch.no_grad():
+                model.to(x.device)
                 return model(x)
 
         ep = torch.export.export(
@@ -354,6 +398,8 @@ def _build_reference_and_exported_program(spec: Dict[str, Any], torch_minor: str
             (dummy,),
             dynamic_shapes=_dynamic_shapes(spec),
         )
+        if spec.get("strip_runtime_assertions", False):
+            load_meta["runtime_assertion_stripping"] = _strip_runtime_assertions(ep)
         return ref_fn, ep, load_meta
 
     if strategy == "ts2ep_reexport_dynamic":
@@ -364,6 +410,7 @@ def _build_reference_and_exported_program(spec: Dict[str, Any], torch_minor: str
 
         def ref_fn(x):
             with torch.no_grad():
+                ts.to(x.device)
                 return ts(x)
 
         ep_ts = TS2EPConverter(ts, (dummy,), {}).convert()
@@ -379,6 +426,8 @@ def _build_reference_and_exported_program(spec: Dict[str, Any], torch_minor: str
             "missing_keys": [],
             "unexpected_keys": [],
         }
+        if spec.get("strip_runtime_assertions", False):
+            load_meta["runtime_assertion_stripping"] = _strip_runtime_assertions(ep)
         return ref_fn, ep, load_meta
 
     if strategy == "reuse_existing_exported_program":
@@ -387,6 +436,7 @@ def _build_reference_and_exported_program(spec: Dict[str, Any], torch_minor: str
 
         def ref_fn(x):
             with torch.no_grad():
+                mod.to(x.device)
                 return mod(x)
 
         load_meta = {
@@ -395,6 +445,8 @@ def _build_reference_and_exported_program(spec: Dict[str, Any], torch_minor: str
             "missing_keys": [],
             "unexpected_keys": [],
         }
+        if spec.get("strip_runtime_assertions", False):
+            load_meta["runtime_assertion_stripping"] = _strip_runtime_assertions(ep)
         return ref_fn, ep, load_meta
 
     raise RuntimeError(f"Unknown strategy: {strategy}")
@@ -450,6 +502,7 @@ def _model_specs(torch_minor: str) -> List[Dict[str, Any]]:
             "source_path": "models_local/state_dicts/au.pth",
             "strict": False,
             "input_shape": [2, 3, 224, 224],
+            "strip_runtime_assertions": True,
         },
         {
             "id": "va-elim",
@@ -565,44 +618,90 @@ def _validate_exported_module(
     batch_sizes: Sequence[int],
     seeds: Sequence[int],
     scales: Sequence[float],
+    devices: Sequence[str],
 ) -> Dict[str, Any]:
     cases = _build_validation_cases(spec, batch_sizes, seeds, scales)
 
-    case_results = []
+    validated_devices = []
     worst_max_abs = 0.0
     worst_case_id = None
+    worst_device = None
+    total_cases = 0
 
-    for case in cases:
-        x = case["x"]
-        with torch.no_grad():
-            ref_out = _clone_output_cpu(ref_fn(x))
-            exp_out = _clone_output_cpu(exported_module(x))
+    for device in devices:
+        device_name = str(device).strip().lower()
+        if not device_name:
+            continue
 
-        stats = _compute_diff_stats(ref_out, exp_out)
-        if worst_case_id is None or stats["max_abs"] > worst_max_abs:
-            worst_max_abs = stats["max_abs"]
-            worst_case_id = case["id"]
+        if device_name.startswith("cuda") and not torch.cuda.is_available():
+            validated_devices.append(
+                {
+                    "device": device_name,
+                    "status": "skipped",
+                    "reason": "cuda_unavailable",
+                }
+            )
+            continue
 
-        case_results.append(
+        torch_device = torch.device(device_name)
+        exported_module.to(torch_device)
+
+        case_results = []
+        device_worst_max_abs = 0.0
+        device_worst_case_id = None
+
+        for case in cases:
+            x = case["x"].to(torch_device)
+            with torch.no_grad():
+                ref_out = _clone_output_cpu(ref_fn(x))
+                exp_out = _clone_output_cpu(exported_module(x))
+
+            stats = _compute_diff_stats(ref_out, exp_out)
+            if (
+                device_worst_case_id is None
+                or stats["max_abs"] > device_worst_max_abs
+            ):
+                device_worst_max_abs = stats["max_abs"]
+                device_worst_case_id = case["id"]
+
+            if worst_case_id is None or stats["max_abs"] > worst_max_abs:
+                worst_max_abs = stats["max_abs"]
+                worst_case_id = case["id"]
+                worst_device = device_name
+
+            case_results.append(
+                {
+                    "case_id": case["id"],
+                    "batch": case["batch"],
+                    "seed": case["seed"],
+                    "scale": case["scale"],
+                    "variant": case["variant"],
+                    "input_shape": list(x.shape),
+                    "output_summary": _summarize_output(exp_out),
+                    "max_abs_diff_vs_reference": stats["max_abs"],
+                    "mean_abs_diff_vs_reference": stats["mean_abs"],
+                    "numel_compared": stats["numel"],
+                }
+            )
+
+        total_cases += len(case_results)
+        validated_devices.append(
             {
-                "case_id": case["id"],
-                "batch": case["batch"],
-                "seed": case["seed"],
-                "scale": case["scale"],
-                "variant": case["variant"],
-                "input_shape": list(x.shape),
-                "output_summary": _summarize_output(exp_out),
-                "max_abs_diff_vs_reference": stats["max_abs"],
-                "mean_abs_diff_vs_reference": stats["mean_abs"],
-                "numel_compared": stats["numel"],
+                "device": device_name,
+                "status": "ok",
+                "num_cases": len(case_results),
+                "worst_case_id": device_worst_case_id,
+                "worst_max_abs_diff_vs_reference": device_worst_max_abs,
+                "cases": case_results,
             }
         )
 
     return {
-        "num_cases": len(case_results),
+        "num_cases": total_cases,
         "worst_case_id": worst_case_id,
+        "worst_device": worst_device,
         "worst_max_abs_diff_vs_reference": worst_max_abs,
-        "cases": case_results,
+        "devices": validated_devices,
     }
 
 
@@ -622,6 +721,7 @@ def _run_for_specs(
     batch_sizes: Sequence[int],
     seeds: Sequence[int],
     scales: Sequence[float],
+    validate_devices: Sequence[str],
 ) -> Dict[str, Any]:
     if mode not in {"export", "validate"}:
         raise RuntimeError(f"Unsupported mode: {mode}")
@@ -647,6 +747,7 @@ def _run_for_specs(
         "batch_sizes": list(batch_sizes),
         "seeds": list(seeds),
         "scales": list(scales),
+        "validate_devices": list(validate_devices),
         "results": [],
     }
 
@@ -679,6 +780,7 @@ def _run_for_specs(
                 batch_sizes=batch_sizes,
                 seeds=seeds,
                 scales=scales,
+                devices=validate_devices,
             )
 
             meta = {
@@ -754,6 +856,11 @@ def main():
         p.add_argument("--seeds", default="0,17")
         p.add_argument("--scales", default="1.0,0.25")
         p.add_argument(
+            "--validate-devices",
+            default="cpu",
+            help="Comma-separated devices to validate on (e.g. cpu,cuda).",
+        )
+        p.add_argument(
             "--model-ids",
             default="",
             help="Optional comma-separated subset of model IDs to process.",
@@ -792,6 +899,9 @@ def main():
     batch_sizes = _parse_csv_ints(args.batch_sizes)
     seeds = _parse_csv_ints(args.seeds)
     scales = _parse_csv_floats(args.scales)
+    validate_devices = _parse_csv_strings(args.validate_devices)
+    if not validate_devices:
+        validate_devices = ["cpu"]
 
     if args.command == "export":
         out_root = Path(args.out_root).resolve()
@@ -808,6 +918,7 @@ def main():
             batch_sizes=batch_sizes,
             seeds=seeds,
             scales=scales,
+            validate_devices=validate_devices,
         )
         summary_path = out_root / f"summary-torch{cohort}.json"
     else:
@@ -824,6 +935,7 @@ def main():
             batch_sizes=batch_sizes,
             seeds=seeds,
             scales=scales,
+            validate_devices=validate_devices,
         )
         summary_path = artifacts_root / f"validation-summary-torch{cohort}.json"
 
