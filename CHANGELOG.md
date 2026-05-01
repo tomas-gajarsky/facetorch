@@ -33,6 +33,8 @@ Released on May 1, 2026.
 * All model files migrated from TorchScript (.pt) to torch.export (.pt2) portable format with dynamic batch support
 * Model artifact strategy changed to prioritize portability and install-time simplicity over TorchScript-specific runtime behavior: `.pt2` artifacts do not require bundled model source code, while versioned cohorts handle PyTorch exported-program schema differences across supported torch runtimes (`2.3`, `2.6`, `2.11`)
 * AU predictor model rewritten with timm Swin Transformer backbone for torch.export compatibility
+* Build metadata now uses PEP 639 SPDX license fields with `setuptools>=77.0.3`, removing the setuptools license-table deprecation warning
+* uv PyTorch index configuration now uses explicit `torch`/`torchvision` sources instead of a global extra index, so non-PyTorch packages resolve from PyPI by default
 * Docker dev/test images migrated from conda/conda-lock to [uv](https://github.com/astral-sh/uv) for faster builds
 * Docker production images now use uv as a pip drop-in
 * Development dependencies consolidated from `requirements.dev.txt` into `pyproject.toml`

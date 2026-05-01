@@ -370,6 +370,7 @@ the requirements of the new model.
 * Conda package publishing (`conda-forge/facetorch`) is maintained outside this repository in conda-forge feedstock workflows.
 * `environment.yml` and `gpu.environment.yml` are conda environment baselines for conda users.
 * The GPU conda baseline uses conda-forge `cuda-version=12.4` instead of `cudatoolkit`; pass `--with-cuda` when regenerating the GPU lock so conda-lock can resolve CUDA virtual packages without requiring a local GPU.
+* uv uses PyPI for normal packages and an explicit named PyTorch CPU index only for `torch` and `torchvision`, avoiding global extra-index resolution drift.
 * Overlapping dependencies between pyproject and conda env files are intentionally kept aligned.
 * CI enforces this with: `python scripts/check_dependency_sync.py`.
 
