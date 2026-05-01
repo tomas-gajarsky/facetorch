@@ -2,12 +2,14 @@
 
 ## 1.0.0
 
-Released on April 18, 2026.
+Released on May 1, 2026.
 
 ### Breaking Changes
 * Minimum Python version raised from 3.8 to 3.10
+* Supported Python range is now explicitly capped at `<3.14`, matching the tested v1 CI matrix
 * Minimum PyTorch version raised from 1.9 to 2.3
 * All models migrated from TorchScript (.pt) to torch.export (.pt2) format
+* Default model loading now relies on Hugging Face `.pt2` artifacts; Google Drive/TorchScript artifacts are retained only as legacy fallbacks where available
 * `path_image` and `tensor` parameters in `FaceAnalyzer.run()` are deprecated in favor of `image_source`
 
 ### Added
@@ -21,6 +23,7 @@ Released on April 18, 2026.
 * Torch-versioned exported model cohorts and runtime fallback routing for `.pt2` artifacts (for example `model-torch2.3.pt2`, `model-torch2.6.pt2`, `model-torch2.11.pt2`)
 * Cohort export/validation/upload script: `scripts/export_model_cohorts_hf.py`
 * Device-aware cohort validation in export script via `--validate-devices` (for example `cpu,cuda`)
+* Export-only `model_defs/` architecture definitions for reproducible `.pt2` cohort generation without making them runtime model dependencies
 * Dependency alignment check script: `scripts/check_dependency_sync.py`
 * `uv.lock` for reproducible PyPI-based dependency resolution
 * `[tool.uv]` configuration in `pyproject.toml`
@@ -28,6 +31,7 @@ Released on April 18, 2026.
 ### Changed
 * Migrated from `setup.py` + `version` file to `pyproject.toml` (PEP 621)
 * All model files migrated from TorchScript (.pt) to torch.export (.pt2) portable format with dynamic batch support
+* Model artifact strategy changed to prioritize portability and install-time simplicity over TorchScript-specific runtime behavior: `.pt2` artifacts do not require bundled model source code, while versioned cohorts handle PyTorch exported-program schema differences across supported torch runtimes (`2.3`, `2.6`, `2.11`)
 * AU predictor model rewritten with timm Swin Transformer backbone for torch.export compatibility
 * Docker dev/test images migrated from conda/conda-lock to [uv](https://github.com/astral-sh/uv) for faster builds
 * Docker production images now use uv as a pip drop-in
@@ -45,6 +49,8 @@ Released on April 18, 2026.
 * Numpy array reader now handles (H, W) and (H, W, 1) grayscale arrays
 * AU `.pt2` CUDA device mismatch by re-exporting validated AU cohorts (`2.3`, `2.6`, `2.11`) and publishing refreshed Hugging Face artifacts with metadata
 * Exported-model schema mismatch fallback now also handles additional cross-version `.pt2` archive load errors (for example missing `version` entry)
+* Export cohort validation now fails on numerical drift beyond configured max/mean absolute-difference tolerances instead of only recording comparison metrics
+* Test configs now resolve `/opt/facetorch` paths to the checked-out repository during local pytest runs, while preserving Docker CI behavior
 
 
 ## 0.6.2

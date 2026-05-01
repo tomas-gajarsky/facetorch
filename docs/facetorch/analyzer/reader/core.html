@@ -113,11 +113,7 @@ el.replaceWith(d);
         return self.process_tensor(tensor, fix_img_size)
 
     def read_numpy_array(self, array: np.ndarray, fix_img_size: bool) -&gt; ImageData:
-        image_tensor = torch.from_numpy(array).float()
-        if image_tensor.ndim == 3 and image_tensor.shape[2] == 3:
-            image_tensor = image_tensor.permute(2, 0, 1).contiguous()
-        else:
-            raise ValueError(f&#34;Unsupported numpy array shape: {image_tensor.shape}&#34;)
+        image_tensor = numpy_to_chw_tensor(array)
         return self.process_tensor(image_tensor, fix_img_size)
 
     def read_image_from_bytes(
@@ -254,11 +250,7 @@ def run(
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def read_numpy_array(self, array: np.ndarray, fix_img_size: bool) -&gt; ImageData:
-    image_tensor = torch.from_numpy(array).float()
-    if image_tensor.ndim == 3 and image_tensor.shape[2] == 3:
-        image_tensor = image_tensor.permute(2, 0, 1).contiguous()
-    else:
-        raise ValueError(f&#34;Unsupported numpy array shape: {image_tensor.shape}&#34;)
+    image_tensor = numpy_to_chw_tensor(array)
     return self.process_tensor(image_tensor, fix_img_size)</code></pre>
 </details>
 <div class="desc"></div>

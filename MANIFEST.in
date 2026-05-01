@@ -3,6 +3,12 @@ include pyproject.toml
 include environment.yml
 recursive-include conf *
 recursive-include docs *
+recursive-include model_defs *.py *.md
+include scripts/check_dependency_sync.py
+include scripts/example.py
+include scripts/example_tensor.py
+include scripts/export_model_cohorts_hf.py
+include scripts/repeated_inference.py
 include data/input*/*.jpg
 include data*/*.png
 include tests*/*.py

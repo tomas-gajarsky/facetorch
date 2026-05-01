@@ -2,7 +2,7 @@ analyzer:
   device: cuda
   optimize_transforms: true
   reader:
-    _target_: facetorch.analyzer.reader.ImageReader
+    _target_: facetorch.analyzer.reader.UniversalReader
     device:
       _target_: torch.device
       type: ${analyzer.device}
@@ -11,10 +11,10 @@ analyzer:
       _target_: torchvision.transforms.Compose
       transforms:
       - _target_: facetorch.transforms.SquarePad
-      - _target_: torchvision.transforms.Resize        
+      - _target_: torchvision.transforms.Resize
         size:
         - 1080
-        antialias: True
+        antialias: true
   detector:
     _target_: facetorch.analyzer.detector.FaceDetector
     downloader:
@@ -91,11 +91,11 @@ analyzer:
         - 255.0
         - 255.0
         - 255.0
-      - _target_: torchvision.transforms.Resize        
+      - _target_: torchvision.transforms.Resize
         size:
         - 380
         - 380
-        antialias: True
+        antialias: true
     device:
       _target_: torch.device
       type: ${analyzer.device}
@@ -117,11 +117,11 @@ analyzer:
         transform:
           _target_: torchvision.transforms.Compose
           transforms:
-          - _target_: torchvision.transforms.Resize            
+          - _target_: torchvision.transforms.Resize
             size:
             - 244
             - 244
-            antialias: True
+            antialias: true
           - _target_: torchvision.transforms.Normalize
             mean:
             - 0.485
@@ -161,11 +161,11 @@ analyzer:
         transform:
           _target_: torchvision.transforms.Compose
           transforms:
-          - _target_: torchvision.transforms.Resize        
+          - _target_: torchvision.transforms.Resize
             size:
             - 112
             - 112
-            antialias: True
+            antialias: true
           - _target_: torchvision.transforms.Normalize
             mean:
             - 0.5
@@ -205,11 +205,11 @@ analyzer:
         transform:
           _target_: torchvision.transforms.Compose
           transforms:
-          - _target_: torchvision.transforms.Resize            
+          - _target_: torchvision.transforms.Resize
             size:
             - 260
             - 260
-            antialias: True
+            antialias: true
           - _target_: torchvision.transforms.Normalize
             mean:
             - 0.485
@@ -246,9 +246,13 @@ analyzer:
       downloader:
         _target_: facetorch.downloader.DownloaderHuggingFace
         file_id: 1uoVX9suSA5JVWTms3hEtJKzwO-CUR_jV
-        path_local: /opt/facetorch/models/exported/predictor/au/1/model.pt2 # str
+        path_local: /opt/facetorch/models/exported/predictor/au/1/model.pt2
         repo_id: tomas-gajarsky/facetorch-au-opengraph
         filename: model.pt2
+        export_filenames_by_torch_minor:
+          '2.3': model-torch2.3.pt2
+          '2.6': model-torch2.6.pt2
+          '2.11': model-torch2.11.pt2
       device:
         _target_: torch.device
         type: ${analyzer.device}
@@ -257,11 +261,11 @@ analyzer:
         transform:
           _target_: torchvision.transforms.Compose
           transforms:
-          - _target_: torchvision.transforms.Resize        
+          - _target_: torchvision.transforms.Resize
             size:
             - 224
             - 224
-            antialias: True
+            antialias: true
           - _target_: torchvision.transforms.Normalize
             mean:
             - 0.485
@@ -343,11 +347,11 @@ analyzer:
         transform:
           _target_: torchvision.transforms.Compose
           transforms:
-          - _target_: torchvision.transforms.Resize            
+          - _target_: torchvision.transforms.Resize
             size:
             - 224
             - 224
-            antialias: True
+            antialias: true
           - _target_: torchvision.transforms.Normalize
             mean:
             - 0.485
@@ -391,11 +395,11 @@ analyzer:
         transform:
           _target_: torchvision.transforms.Compose
           transforms:
-          - _target_: torchvision.transforms.Resize        
+          - _target_: torchvision.transforms.Resize
             size:
             - 380
             - 380
-            antialias: True
+            antialias: true
           - _target_: torchvision.transforms.Normalize
             mean:
             - 0.485
@@ -437,11 +441,11 @@ analyzer:
         transform:
           _target_: torchvision.transforms.Compose
           transforms:
-          - _target_: torchvision.transforms.Resize            
+          - _target_: torchvision.transforms.Resize
             size:
             - 120
             - 120
-            antialias: True
+            antialias: true
         device:
           _target_: torch.device
           type: ${analyzer.predictor.align.device.type}
@@ -487,16 +491,26 @@ analyzer:
       optimize_transform: false
       width: 2
       color: green
+    save:
+      _target_: facetorch.analyzer.utilizer.save.ImageSaver
+      transform: None
+      device:
+        _target_: torch.device
+        type: ${analyzer.device}
+      optimize_transform: false
   logger:
     _target_: facetorch.logger.LoggerJsonFile
     name: facetorch
     level: 20
-    path_file: /opt/facetorch/logs/facetorch/main.log
+    path_file: /opt/logs/facetorch/main.log
     json_format: '%(asctime)s %(levelname)s %(message)s'
 main:
   sleep: 3
 debug: true
+path_image: /opt/facetorch/data/input/test.jpg
 batch_size: 8
 fix_img_size: true
-return_img_data: true
+return_img_data: false
 include_tensors: true
+path_output: /opt/facetorch/data/output/test.png
+path_image_2: /opt/facetorch/data/input/test3.jpg

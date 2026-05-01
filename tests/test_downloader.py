@@ -17,6 +17,14 @@ class TestDownloaderGDrive:
         mock_makedirs.assert_called_once()
         mock_download.assert_called_once()
 
+    @patch("facetorch.downloader.gdown.download")
+    @patch("facetorch.downloader.os.makedirs")
+    def test_run_basename_path(self, mock_makedirs, mock_download):
+        dl = DownloaderGDrive(file_id="abc123", path_local="model.pt")
+        dl.run()
+        mock_makedirs.assert_not_called()
+        mock_download.assert_called_once()
+
 
 @pytest.mark.unit
 @pytest.mark.downloader
@@ -31,6 +39,23 @@ class TestDownloaderHuggingFace:
         )
         dl.run()
         mock_hf_download.assert_called_once()
+
+    @patch("facetorch.downloader.hf_hub_download")
+    @patch("facetorch.downloader.os.makedirs")
+    def test_run_basename_path(
+        self, mock_makedirs, mock_hf_download, tmp_path, monkeypatch
+    ):
+        monkeypatch.chdir(tmp_path)
+        downloaded = tmp_path / "downloaded.pt"
+        downloaded.write_bytes(b"data")
+        mock_hf_download.return_value = str(downloaded)
+        dl = DownloaderHuggingFace(
+            file_id="x", path_local="model.pt", repo_id="user/repo", filename="model.pt"
+        )
+        dl.run()
+        mock_makedirs.assert_not_called()
+        assert mock_hf_download.call_args.kwargs["local_dir"] == "."
+        assert (tmp_path / "model.pt").exists()
 
     @patch("facetorch.downloader.hf_hub_download")
     def test_run_different_path_renames(self, mock_hf_download, tmp_path):

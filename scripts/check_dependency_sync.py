@@ -38,7 +38,15 @@ def _extract_min_version(spec: str) -> str | None:
     return match.group(1)
 
 
-def _load_pyproject_deps(pyproject_path: Path) -> Tuple[str, Dict[str, str | None]]:
+def _normalize_spec(spec: str | None) -> str | None:
+    if spec is None:
+        return None
+    return re.sub(r"\s+", "", spec)
+
+
+def _load_pyproject_deps(
+    pyproject_path: Path,
+) -> Tuple[str, str, Dict[str, str | None]]:
     data = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
     project = data["project"]
     requires_python = project["requires-python"]
@@ -54,11 +62,14 @@ def _load_pyproject_deps(pyproject_path: Path) -> Tuple[str, Dict[str, str | Non
     if py_min is None:
         raise ValueError(f"requires-python must include a >= lower bound, got {py_spec!r}")
 
-    return py_min, dep_map
+    return py_spec, py_min, dep_map
 
 
-def _load_conda_deps(env_path: Path) -> Dict[str, str | None]:
+def _load_conda_deps(
+    env_path: Path,
+) -> Tuple[Dict[str, str | None], Dict[str, str]]:
     deps: Dict[str, str | None] = {}
+    specs: Dict[str, str] = {}
     in_dependencies = False
     for line in env_path.read_text(encoding="utf-8").splitlines():
         if line.strip() == "dependencies:":
@@ -78,15 +89,18 @@ def _load_conda_deps(env_path: Path) -> Dict[str, str | None]:
             continue
         name, spec = _parse_requirement(raw_dep)
         deps[name] = _extract_min_version(spec)
+        specs[name] = spec
 
     if not deps:
         raise ValueError(f"No dependencies parsed from {env_path}")
-    return deps
+    return deps, specs
 
 
 def _verify_env(
     env_name: str,
     env_deps: Dict[str, str | None],
+    env_specs: Dict[str, str],
+    py_spec: str,
     py_min: str,
     py_deps: Dict[str, str | None],
     torch_name: str,
@@ -97,6 +111,14 @@ def _verify_env(
     if env_python_min != py_min:
         errors.append(
             f"{env_name}: python minimum mismatch (pyproject>={py_min}, {env_name}>={env_python_min})"
+        )
+
+    env_python_spec = _normalize_spec(env_specs.get("python"))
+    py_python_spec = _normalize_spec(py_spec)
+    if env_python_spec != py_python_spec:
+        errors.append(
+            f"{env_name}: python spec mismatch "
+            f"(pyproject {py_python_spec}, {env_name} {env_python_spec})"
         )
 
     for dep_name, py_dep_min in py_deps.items():
@@ -120,15 +142,17 @@ def main() -> int:
     cpu_env_path = repo_root / "environment.yml"
     gpu_env_path = repo_root / "gpu.environment.yml"
 
-    py_min, py_deps = _load_pyproject_deps(pyproject_path)
-    cpu_deps = _load_conda_deps(cpu_env_path)
-    gpu_deps = _load_conda_deps(gpu_env_path)
+    py_spec, py_min, py_deps = _load_pyproject_deps(pyproject_path)
+    cpu_deps, cpu_specs = _load_conda_deps(cpu_env_path)
+    gpu_deps, gpu_specs = _load_conda_deps(gpu_env_path)
 
     errors = []
     errors.extend(
         _verify_env(
             env_name="environment.yml",
             env_deps=cpu_deps,
+            env_specs=cpu_specs,
+            py_spec=py_spec,
             py_min=py_min,
             py_deps=py_deps,
             torch_name="pytorch-cpu",
@@ -138,6 +162,8 @@ def main() -> int:
         _verify_env(
             env_name="gpu.environment.yml",
             env_deps=gpu_deps,
+            env_specs=gpu_specs,
+            py_spec=py_spec,
             py_min=py_min,
             py_deps=py_deps,
             torch_name="pytorch-gpu",

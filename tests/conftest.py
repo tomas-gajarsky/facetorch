@@ -1,6 +1,8 @@
 import sys
+import os
 from os.path import abspath
 from os.path import dirname as d
+from pathlib import Path
 
 import torch
 import pytest
@@ -8,9 +10,48 @@ from facetorch import FaceAnalyzer
 from facetorch.datastruct import ImageData
 from facetorch.analyzer.reader import UniversalReader, ImageReader, TensorReader
 from hydra import compose, initialize
+from omegaconf import DictConfig, ListConfig
 
 root_dir = d(d(abspath(__file__)))
 sys.path.append(root_dir)
+
+DEFAULT_TEST_ROOT = "/opt/facetorch"
+REPO_ROOT = Path(root_dir).resolve()
+TEST_MODEL_ROOT = Path(
+    os.environ.get(
+        "FACETORCH_TEST_MODEL_ROOT",
+        str(REPO_ROOT / ".pytest_cache" / "facetorch-models"),
+    )
+).resolve()
+
+
+def _rewrite_default_root_paths(node) -> None:
+    """Make test configs portable outside the Docker /opt/facetorch layout."""
+    if str(REPO_ROOT) == DEFAULT_TEST_ROOT:
+        return
+
+    if isinstance(node, DictConfig):
+        for key in list(node.keys()):
+            value = node[key]
+            if isinstance(value, (DictConfig, ListConfig)):
+                _rewrite_default_root_paths(value)
+            elif isinstance(value, str) and value.startswith(DEFAULT_TEST_ROOT + "/"):
+                node[key] = _rewrite_default_root_path(value)
+        return
+
+    if isinstance(node, ListConfig):
+        for idx, value in enumerate(node):
+            if isinstance(value, (DictConfig, ListConfig)):
+                _rewrite_default_root_paths(value)
+            elif isinstance(value, str) and value.startswith(DEFAULT_TEST_ROOT + "/"):
+                node[idx] = _rewrite_default_root_path(value)
+
+
+def _rewrite_default_root_path(value: str) -> str:
+    models_prefix = DEFAULT_TEST_ROOT + "/models"
+    if value.startswith(models_prefix + "/"):
+        return str(TEST_MODEL_ROOT) + value[len(models_prefix):]
+    return str(REPO_ROOT) + value[len(DEFAULT_TEST_ROOT):]
 
 
 def pytest_configure(config):
@@ -96,6 +137,7 @@ def pytest_configure(config):
 def cfg(request) -> None:
     with initialize(version_base=None, config_path="../conf"):
         cfg = compose(config_name=request.param)
+    _rewrite_default_root_paths(cfg)
     return cfg
 
 

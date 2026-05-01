@@ -157,6 +157,9 @@ class FaceAnalyzer(object):
                 "Use one or the other."
             )
 
+        if batch_size < 1:
+            raise ValueError(f"batch_size must be >= 1, got {batch_size}.")
+
         if path_image is not None and image_source is None:
             warnings.warn(
                 "path_image is deprecated, use image_source instead.",

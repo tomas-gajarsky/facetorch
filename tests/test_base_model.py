@@ -200,6 +200,22 @@ class TestLoadExportedModel:
         assert mock_load.call_count == 2
         dl.try_next.assert_called_once_with(force_download=True)
 
+    def test_exported_model_legacy_torchscript_fallback_loads(self, tmp_path):
+        """A final HF model.pt fallback must be loaded with torch.jit, not torch.export."""
+        path_local = str(tmp_path / "model.pt2")
+        scripted = _make_torchscript_fake_module()
+        torch.jit.save(scripted, path_local)
+
+        dl = _make_dummy_downloader(path_local)
+        dl._active_filename = "model.pt"
+
+        with patch("torch.export.load") as mock_export_load:
+            model = ConcreteModel(downloader=dl, device=torch.device("cpu"))
+
+        mock_export_load.assert_not_called()
+        out = model.run(torch.randn(1, 4))
+        assert out.shape == (1, 2)
+
 
 @pytest.mark.unit
 @pytest.mark.model
@@ -250,6 +266,23 @@ class TestBaseModelMisc:
         dl.run = fake_download
 
         m = ConcreteModel(downloader=dl, device=torch.device("cpu"))
+        assert m.model is not None
+
+    def test_downloader_called_when_basename_file_missing(self, tmp_path, monkeypatch):
+        """Cover missing basename paths without trying to create an empty directory."""
+        monkeypatch.chdir(tmp_path)
+        missing_file = "model.pt"
+        scripted = _make_torchscript_fake_module()
+
+        def fake_download():
+            torch.jit.save(scripted, missing_file)
+
+        dl = _make_dummy_downloader(missing_file)
+        dl.run = fake_download
+
+        with patch("facetorch.base.os.makedirs") as mock_makedirs:
+            m = ConcreteModel(downloader=dl, device=torch.device("cpu"))
+        mock_makedirs.assert_not_called()
         assert m.model is not None
 
     def test_exported_model_is_on_device(self, tmp_path):

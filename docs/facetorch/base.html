@@ -95,6 +95,9 @@ el.replaceWith(d);
             self.transform = script_transform(self.transform)
             self.transform = self.transform.to(self.device)
 
+    def __call__(self, *args, **kwargs):
+        return self.run(*args, **kwargs)
+
     @abstractmethod
     def run(self):
         &#34;&#34;&#34;Abstract method that should implement a tensor processing functionality&#34;&#34;&#34;</code></pre>
@@ -208,19 +211,62 @@ def run(self):
         pass
 
     def process_tensor(self, tensor: torch.Tensor, fix_img_size: bool) -&gt; ImageData:
-        &#34;&#34;&#34;Read a tensor and return a data object containing a tensor of the image with
-        shape (batch, channels, height, width).
+        &#34;&#34;&#34;Read an input tensor and normalize it to shape (B, C, H, W).
 
         Args:
-            tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width).
-            fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
+            tensor (torch.Tensor): Image tensor with values between 0-255. Accepted
+                shapes are (H, W), (C, H, W), (H, W, C), or (B, C, H, W), where
+                C is in {1, 3, 4}. Unambiguous HWC tensors are converted to CHW.
+                Batched tensors currently support only B=1.
+            fix_img_size (bool): Whether to resize the image to a fixed size. If
+                False, size_portrait and size_landscape are ignored.
         &#34;&#34;&#34;
 
         data = ImageData(path_input=None)
         data.tensor = copy.deepcopy(tensor)
 
-        if tensor.dim() == 3:
+        if data.tensor.dim() == 2:
             data.tensor = data.tensor.unsqueeze(0)
+
+        if data.tensor.dim() == 3:
+            c0 = data.tensor.shape[0]
+            c2 = data.tensor.shape[2]
+            chw_like = c0 in (1, 3, 4)
+            hwc_like = c2 in (1, 3, 4)
+            if hwc_like and not chw_like:
+                data.tensor = data.tensor.permute(2, 0, 1)
+            elif not chw_like and not hwc_like:
+                raise ValueError(
+                    &#34;Invalid 3D tensor shape. Expected CHW with C in {1,3,4} or &#34;
+                    &#34;HWC with channels in the last dimension.&#34;
+                )
+            elif chw_like and hwc_like:
+                raise ValueError(
+                    &#34;Ambiguous 3D tensor layout: both first and last dimensions &#34;
+                    &#34;look like channel dimensions. Please pass CHW explicitly.&#34;
+                )
+            data.tensor = data.tensor.unsqueeze(0)
+
+        if data.tensor.dim() != 4:
+            raise ValueError(
+                f&#34;Unsupported tensor rank {data.tensor.dim()}. Expected 2D, 3D, or 4D input.&#34;
+            )
+
+        if data.tensor.shape[0] != 1:
+            raise ValueError(
+                f&#34;Batched tensor input is not supported yet. Expected B=1, got B={data.tensor.shape[0]}.&#34;
+            )
+
+        channels = data.tensor.shape[1]
+        if channels not in (1, 3, 4):
+            raise ValueError(
+                f&#34;Unsupported channel count: {channels}. Expected channels in {{1,3,4}}.&#34;
+            )
+
+        if channels == 1:
+            data.tensor = data.tensor.repeat(1, 3, 1, 1)
+        elif channels == 4:
+            data.tensor = data.tensor[:, :3, :, :]
 
         data.tensor = data.tensor.to(self.device)
 
@@ -306,19 +352,62 @@ shape (batch, channels, height, width).</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def process_tensor(self, tensor: torch.Tensor, fix_img_size: bool) -&gt; ImageData:
-    &#34;&#34;&#34;Read a tensor and return a data object containing a tensor of the image with
-    shape (batch, channels, height, width).
+    &#34;&#34;&#34;Read an input tensor and normalize it to shape (B, C, H, W).
 
     Args:
-        tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width).
-        fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
+        tensor (torch.Tensor): Image tensor with values between 0-255. Accepted
+            shapes are (H, W), (C, H, W), (H, W, C), or (B, C, H, W), where
+            C is in {1, 3, 4}. Unambiguous HWC tensors are converted to CHW.
+            Batched tensors currently support only B=1.
+        fix_img_size (bool): Whether to resize the image to a fixed size. If
+            False, size_portrait and size_landscape are ignored.
     &#34;&#34;&#34;
 
     data = ImageData(path_input=None)
     data.tensor = copy.deepcopy(tensor)
 
-    if tensor.dim() == 3:
+    if data.tensor.dim() == 2:
         data.tensor = data.tensor.unsqueeze(0)
+
+    if data.tensor.dim() == 3:
+        c0 = data.tensor.shape[0]
+        c2 = data.tensor.shape[2]
+        chw_like = c0 in (1, 3, 4)
+        hwc_like = c2 in (1, 3, 4)
+        if hwc_like and not chw_like:
+            data.tensor = data.tensor.permute(2, 0, 1)
+        elif not chw_like and not hwc_like:
+            raise ValueError(
+                &#34;Invalid 3D tensor shape. Expected CHW with C in {1,3,4} or &#34;
+                &#34;HWC with channels in the last dimension.&#34;
+            )
+        elif chw_like and hwc_like:
+            raise ValueError(
+                &#34;Ambiguous 3D tensor layout: both first and last dimensions &#34;
+                &#34;look like channel dimensions. Please pass CHW explicitly.&#34;
+            )
+        data.tensor = data.tensor.unsqueeze(0)
+
+    if data.tensor.dim() != 4:
+        raise ValueError(
+            f&#34;Unsupported tensor rank {data.tensor.dim()}. Expected 2D, 3D, or 4D input.&#34;
+        )
+
+    if data.tensor.shape[0] != 1:
+        raise ValueError(
+            f&#34;Batched tensor input is not supported yet. Expected B=1, got B={data.tensor.shape[0]}.&#34;
+        )
+
+    channels = data.tensor.shape[1]
+    if channels not in (1, 3, 4):
+        raise ValueError(
+            f&#34;Unsupported channel count: {channels}. Expected channels in {{1,3,4}}.&#34;
+        )
+
+    if channels == 1:
+        data.tensor = data.tensor.repeat(1, 3, 1, 1)
+    elif channels == 4:
+        data.tensor = data.tensor[:, :3, :, :]
 
     data.tensor = data.tensor.to(self.device)
 
@@ -331,14 +420,17 @@ shape (batch, channels, height, width).</p>
 
     return data</code></pre>
 </details>
-<div class="desc"><p>Read a tensor and return a data object containing a tensor of the image with
-shape (batch, channels, height, width).</p>
+<div class="desc"><p>Read an input tensor and normalize it to shape (B, C, H, W).</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>tensor</code></strong> :&ensp;<code>torch.Tensor</code></dt>
-<dd>Tensor of a single image with RGB values between 0-255 and shape (channels, height, width).</dd>
+<dd>Image tensor with values between 0-255. Accepted
+shapes are (H, W), (C, H, W), (H, W, C), or (B, C, H, W), where
+C is in {1, 3, 4}. Unambiguous HWC tensors are converted to CHW.
+Batched tensors currently support only B=1.</dd>
 <dt><strong><code>fix_img_size</code></strong> :&ensp;<code>bool</code></dt>
-<dd>Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.</dd>
+<dd>Whether to resize the image to a fixed size. If
+False, size_portrait and size_landscape are ignored.</dd>
 </dl></div>
 </dd>
 </dl>
@@ -385,6 +477,9 @@ shape (batch, channels, height, width).</p>
         self.file_id = file_id
         self.path_local = path_local
 
+    def __call__(self, *args, **kwargs):
+        return self.run(*args, **kwargs)
+
     @abstractmethod
     def run(self) -&gt; None:
         &#34;&#34;&#34;Abstract method that should implement the download functionality&#34;&#34;&#34;</code></pre>
@@ -427,7 +522,7 @@ def run(self) -&gt; None:
 </dd>
 <dt id="facetorch.base.BaseModel"><code class="flex name class">
 <span>class <span class="ident">BaseModel</span></span>
-<span>(</span><span>downloader: <a title="facetorch.base.BaseDownloader" href="#facetorch.base.BaseDownloader">BaseDownloader</a>,<br>device: torch.device)</span>
+<span>(</span><span>downloader: <a title="facetorch.base.BaseDownloader" href="#facetorch.base.BaseDownloader">BaseDownloader</a>,<br>device: torch.device,<br>native_model_class: str | None = None,<br>compile_model: bool = False,<br>compile_options: dict | None = None)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -436,7 +531,14 @@ def run(self) -&gt; None:
 </summary>
 <pre><code class="python">class BaseModel(object, metaclass=ABCMeta):
     @Timer(&#34;BaseModel.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
-    def __init__(self, downloader: BaseDownloader, device: torch.device):
+    def __init__(
+        self,
+        downloader: BaseDownloader,
+        device: torch.device,
+        native_model_class: Optional[str] = None,
+        compile_model: bool = False,
+        compile_options: Optional[dict] = None,
+    ):
         &#34;&#34;&#34;Base class for torch models.
 
         All detectors and predictors should subclass it.
@@ -444,35 +546,176 @@ def run(self) -&gt; None:
 
         - Methods:``run``, supporting to make detections and predictions with the model.
 
+        Supports three model formats:
+
+        - **TorchScript** (.pt): Legacy format loaded via ``torch.jit.load()``. Deprecated.
+        - **Exported Program** (.pt2): Modern portable format via ``torch.export``.
+          Loaded with ``torch.export.load()`` — no model source code needed.
+        - **Native + state_dict**: ``native_model_class`` specifies the ``nn.Module``
+          class; weights are extracted from the TorchScript file&#39;s state_dict.
+
         Args:
             downloader (BaseDownloader): Downloader for the model.
             device (torch.device): Torch device cpu or cuda.
+            native_model_class (Optional[str]): Fully qualified class name of a native
+                PyTorch nn.Module to use instead of TorchScript. The TorchScript file is
+                loaded to extract the state_dict, which is then loaded into an instance of
+                this class. Ignored when loading .pt2 files. Default: None.
+            compile_model (bool): If True, wraps the model with ``torch.compile()``
+                for optimized inference. Default: False.
+            compile_options (Optional[dict]): Keyword arguments passed to
+                ``torch.compile()`` (e.g. mode, backend, fullgraph). Default: None.
 
         Attributes:
-            model (torch.jit.ScriptModule or torch.jit.TracedModule): Loaded TorchScript model.
+            model (torch.nn.Module): Loaded model.
 
         &#34;&#34;&#34;
         super().__init__()
         self.downloader = downloader
         self.path_local = self.downloader.path_local
         self.device = device
+        self.native_model_class = native_model_class
+        self.compile_model = compile_model
+        self.compile_options = compile_options or {}
 
         self.model = self.load_model()
 
     @Timer(&#34;BaseModel.load_model&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
-    def load_model(self) -&gt; Union[torch.jit.ScriptModule, torch.jit.TracedModule]:
-        &#34;&#34;&#34;Loads the TorchScript model.
+    def load_model(self) -&gt; torch.nn.Module:
+        &#34;&#34;&#34;Loads the model from the local file.
+
+        Loading strategy by file extension:
+
+        - ``.pt2``: ``torch.export.load()`` — portable exported program
+        - ``.pt`` with ``native_model_class``: native nn.Module + state_dict from TorchScript
+        - ``.pt`` without ``native_model_class``: ``torch.jit.load()`` (legacy TorchScript)
+
+        After loading, optionally wraps with ``torch.compile()`` if enabled.
 
         Returns:
-            Union[torch.jit.ScriptModule, torch.jit.TracedModule]: Loaded TorchScript model.
+            torch.nn.Module: Loaded model in eval mode.
         &#34;&#34;&#34;
         if not os.path.exists(self.path_local):
             dir_local = os.path.dirname(self.path_local)
-            os.makedirs(dir_local, exist_ok=True)
+            if dir_local:
+                os.makedirs(dir_local, exist_ok=True)
             self.downloader.run()
-        model = torch.jit.load(self.path_local, map_location=self.device)
-        model.eval()
 
+        if self.path_local.endswith(&#34;.pt2&#34;):
+            model = self._load_exported_model_with_fallback()
+        elif self.native_model_class is not None:
+            model = self._load_native_model()
+            model.eval()
+        else:
+            model = torch.jit.load(self.path_local, map_location=self.device)
+            model.eval()
+
+        if self.compile_model:
+            model = torch.compile(model, **self.compile_options)
+
+        return model
+
+    @staticmethod
+    def _is_export_schema_mismatch_error(exc: Exception) -&gt; bool:
+        err_msg = str(exc).lower()
+        return any(
+            key in err_msg
+            for key in (&#34;schema version&#34;, &#34;serialized version&#34;, &#34;example_inputs&#34;)
+        ) or (
+            &#34;no item named &#39;version&#39; in the archive&#34; in err_msg
+            or &#34;serialized_exported_program.json&#34; in err_msg
+        )
+
+    def _build_export_schema_mismatch_message(self) -&gt; str:
+        active_filename = getattr(self.downloader, &#34;_active_filename&#34;, None)
+        tried = getattr(self.downloader, &#34;_last_candidates&#34;, None)
+        tried_msg = &#34;&#34;
+        if isinstance(tried, list) and tried:
+            tried_msg = f&#34; Tried candidates: {&#39;, &#39;.join(tried)}.&#34;
+
+        active_msg = &#34;&#34;
+        if active_filename:
+            active_msg = f&#34; Last downloaded candidate: {active_filename}.&#34;
+
+        return (
+            f&#34;Cannot load {self.path_local}: the exported .pt2 model appears to be &#34;
+            f&#34;incompatible with current PyTorch ({torch.__version__}).&#34;
+            f&#34;{active_msg}{tried_msg} &#34;
+            &#34;Upload/export a compatible model artifact for your current torch &#34;
+            &#34;major.minor version, or use a torch version compatible with one of the &#34;
+            &#34;published artifacts.&#34;
+        )
+
+    def _load_exported_model_with_fallback(self) -&gt; torch.nn.Module:
+        &#34;&#34;&#34;Loads .pt2 and retries with downloader fallback artifacts on schema mismatch.&#34;&#34;&#34;
+        while True:
+            try:
+                return self._load_exported_model()
+            except (RuntimeError, AssertionError, KeyError) as e:
+                if not self._is_export_schema_mismatch_error(e):
+                    raise
+
+                try_next = getattr(self.downloader, &#34;try_next&#34;, None)
+                if callable(try_next):
+                    logger.warning(
+                        f&#34;Exported model load mismatch for {self.path_local} with &#34;
+                        f&#34;torch={torch.__version__}. Trying next downloader candidate.&#34;
+                    )
+                    try:
+                        has_next = try_next(force_download=True)
+                    except TypeError:
+                        has_next = try_next()
+                    if has_next:
+                        continue
+
+                raise RuntimeError(
+                    self._build_export_schema_mismatch_message()
+                ) from e
+
+    def _load_exported_model(self) -&gt; torch.nn.Module:
+        &#34;&#34;&#34;Loads a torch.export .pt2 model or an active legacy .pt fallback.&#34;&#34;&#34;
+        active_filename = getattr(self.downloader, &#34;_active_filename&#34;, None)
+        if str(active_filename).endswith(&#34;.pt&#34;) and not str(active_filename).endswith(&#34;.pt2&#34;):
+            model = torch.jit.load(self.path_local, map_location=self.device)
+            model.eval()
+            return model
+
+        ep = torch.export.load(self.path_local)
+        model = ep.module()
+        model.to(self.device)
+        return model
+
+    def _load_native_model(self) -&gt; torch.nn.Module:
+        &#34;&#34;&#34;Loads a native PyTorch model using weights from a .pth or TorchScript file.&#34;&#34;&#34;
+        import importlib
+
+        module_path, class_name = self.native_model_class.rsplit(&#34;.&#34;, 1)
+        module = importlib.import_module(module_path)
+        model_class = getattr(module, class_name)
+        model = model_class()
+
+        if self.path_local.endswith(&#34;.pth&#34;):
+            state_dict = torch.load(
+                self.path_local, map_location=&#34;cpu&#34;, weights_only=True
+            )
+            model.load_state_dict(state_dict, strict=True)
+        else:
+            ts_model = torch.jit.load(self.path_local, map_location=&#34;cpu&#34;)
+            state_dict = dict(ts_model.state_dict())
+            for name, mod in ts_model.named_modules():
+                for buf in (&#34;running_mean&#34;, &#34;running_var&#34;):
+                    key = f&#34;{name}.{buf}&#34; if name else buf
+                    if key not in state_dict:
+                        try:
+                            state_dict[key] = getattr(mod, buf)
+                        except AttributeError:
+                            pass
+            if state_dict:
+                model.load_state_dict(state_dict, strict=True)
+            elif hasattr(model, &#34;load_from_torchscript&#34;):
+                model.load_from_torchscript(ts_model)
+
+        model.to(self.device)
         return model
 
     @Timer(&#34;BaseModel.inference&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
@@ -495,6 +738,9 @@ def run(self) -&gt; None:
 
         return logits
 
+    def __call__(self, *args, **kwargs):
+        return self.run(*args, **kwargs)
+
     @abstractmethod
     def run(self):
         &#34;&#34;&#34;Abstract method for making the predictions. Example pipeline:
@@ -511,17 +757,36 @@ All subclass should overwrite:</p>
 <ul>
 <li>Methods:<code>run</code>, supporting to make detections and predictions with the model.</li>
 </ul>
+<p>Supports three model formats:</p>
+<ul>
+<li><strong>TorchScript</strong> (.pt): Legacy format loaded via <code>torch.jit.load()</code>. Deprecated.</li>
+<li><strong>Exported Program</strong> (.pt2): Modern portable format via <code>torch.export</code>.
+Loaded with <code>torch.export.load()</code> — no model source code needed.</li>
+<li><strong>Native + state_dict</strong>: <code>native_model_class</code> specifies the <code>nn.Module</code>
+class; weights are extracted from the TorchScript file's state_dict.</li>
+</ul>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>downloader</code></strong> :&ensp;<code><a title="facetorch.base.BaseDownloader" href="#facetorch.base.BaseDownloader">BaseDownloader</a></code></dt>
 <dd>Downloader for the model.</dd>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
 <dd>Torch device cpu or cuda.</dd>
+<dt><strong><code>native_model_class</code></strong> :&ensp;<code>Optional[str]</code></dt>
+<dd>Fully qualified class name of a native
+PyTorch nn.Module to use instead of TorchScript. The TorchScript file is
+loaded to extract the state_dict, which is then loaded into an instance of
+this class. Ignored when loading .pt2 files. Default: None.</dd>
+<dt><strong><code>compile_model</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If True, wraps the model with <code>torch.compile()</code>
+for optimized inference. Default: False.</dd>
+<dt><strong><code>compile_options</code></strong> :&ensp;<code>Optional[dict]</code></dt>
+<dd>Keyword arguments passed to
+<code>torch.compile()</code> (e.g. mode, backend, fullgraph). Default: None.</dd>
 </dl>
 <h2 id="attributes">Attributes</h2>
 <dl>
-<dt><strong><code>model</code></strong> :&ensp;<code>torch.jit.ScriptModule</code> or <code>torch.jit.TracedModule</code></dt>
-<dd>Loaded TorchScript model.</dd>
+<dt><strong><code>model</code></strong> :&ensp;<code>torch.nn.Module</code></dt>
+<dd>Loaded model.</dd>
 </dl></div>
 <h3>Subclasses</h3>
 <ul class="hlist">
@@ -531,7 +796,7 @@ All subclass should overwrite:</p>
 <h3>Methods</h3>
 <dl>
 <dt id="facetorch.base.BaseModel.load_model"><code class="name flex">
-<span>def <span class="ident">load_model</span></span>(<span>self) ‑> torch.jit._script.ScriptModule | torch.jit._trace.TracedModule</span>
+<span>def <span class="ident">load_model</span></span>(<span>self) ‑> torch.nn.modules.module.Module</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -539,26 +804,52 @@ All subclass should overwrite:</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@Timer(&#34;BaseModel.load_model&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
-def load_model(self) -&gt; Union[torch.jit.ScriptModule, torch.jit.TracedModule]:
-    &#34;&#34;&#34;Loads the TorchScript model.
+def load_model(self) -&gt; torch.nn.Module:
+    &#34;&#34;&#34;Loads the model from the local file.
+
+    Loading strategy by file extension:
+
+    - ``.pt2``: ``torch.export.load()`` — portable exported program
+    - ``.pt`` with ``native_model_class``: native nn.Module + state_dict from TorchScript
+    - ``.pt`` without ``native_model_class``: ``torch.jit.load()`` (legacy TorchScript)
+
+    After loading, optionally wraps with ``torch.compile()`` if enabled.
 
     Returns:
-        Union[torch.jit.ScriptModule, torch.jit.TracedModule]: Loaded TorchScript model.
+        torch.nn.Module: Loaded model in eval mode.
     &#34;&#34;&#34;
     if not os.path.exists(self.path_local):
         dir_local = os.path.dirname(self.path_local)
-        os.makedirs(dir_local, exist_ok=True)
+        if dir_local:
+            os.makedirs(dir_local, exist_ok=True)
         self.downloader.run()
-    model = torch.jit.load(self.path_local, map_location=self.device)
-    model.eval()
+
+    if self.path_local.endswith(&#34;.pt2&#34;):
+        model = self._load_exported_model_with_fallback()
+    elif self.native_model_class is not None:
+        model = self._load_native_model()
+        model.eval()
+    else:
+        model = torch.jit.load(self.path_local, map_location=self.device)
+        model.eval()
+
+    if self.compile_model:
+        model = torch.compile(model, **self.compile_options)
 
     return model</code></pre>
 </details>
-<div class="desc"><p>Loads the TorchScript model.</p>
+<div class="desc"><p>Loads the model from the local file.</p>
+<p>Loading strategy by file extension:</p>
+<ul>
+<li><code>.pt2</code>: <code>torch.export.load()</code> — portable exported program</li>
+<li><code>.pt</code> with <code>native_model_class</code>: native nn.Module + state_dict from TorchScript</li>
+<li><code>.pt</code> without <code>native_model_class</code>: <code>torch.jit.load()</code> (legacy TorchScript)</li>
+</ul>
+<p>After loading, optionally wraps with <code>torch.compile()</code> if enabled.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>Union[torch.jit.ScriptModule, torch.jit.TracedModule]</code></dt>
-<dd>Loaded TorchScript model.</dd>
+<dt><code>torch.nn.Module</code></dt>
+<dd>Loaded model in eval mode.</dd>
 </dl></div>
 </dd>
 <dt id="facetorch.base.BaseModel.inference"><code class="name flex">

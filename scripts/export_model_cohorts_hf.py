@@ -32,7 +32,7 @@ import platform
 import warnings
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Sequence
+from typing import Any, Dict, Iterable, List, Sequence, Tuple
 
 import torch
 
@@ -621,9 +621,13 @@ def _validate_exported_module(
     devices: Sequence[str],
 ) -> Dict[str, Any]:
     cases = _build_validation_cases(spec, batch_sizes, seeds, scales)
+    max_abs_tolerance = float(spec.get("max_abs_tolerance", 1e-4))
+    mean_abs_tolerance = float(spec.get("mean_abs_tolerance", 1e-5))
 
     validated_devices = []
+    validation_failures = []
     worst_max_abs = 0.0
+    worst_mean_abs = 0.0
     worst_case_id = None
     worst_device = None
     total_cases = 0
@@ -647,7 +651,9 @@ def _validate_exported_module(
         exported_module.to(torch_device)
 
         case_results = []
+        device_failures = []
         device_worst_max_abs = 0.0
+        device_worst_mean_abs = 0.0
         device_worst_case_id = None
 
         for case in cases:
@@ -662,12 +668,28 @@ def _validate_exported_module(
                 or stats["max_abs"] > device_worst_max_abs
             ):
                 device_worst_max_abs = stats["max_abs"]
+                device_worst_mean_abs = stats["mean_abs"]
                 device_worst_case_id = case["id"]
 
             if worst_case_id is None or stats["max_abs"] > worst_max_abs:
                 worst_max_abs = stats["max_abs"]
+                worst_mean_abs = stats["mean_abs"]
                 worst_case_id = case["id"]
                 worst_device = device_name
+
+            failed = (
+                stats["max_abs"] > max_abs_tolerance
+                or stats["mean_abs"] > mean_abs_tolerance
+            )
+            if failed:
+                failure = {
+                    "device": device_name,
+                    "case_id": case["id"],
+                    "max_abs_diff_vs_reference": stats["max_abs"],
+                    "mean_abs_diff_vs_reference": stats["mean_abs"],
+                }
+                validation_failures.append(failure)
+                device_failures.append(failure)
 
             case_results.append(
                 {
@@ -688,19 +710,33 @@ def _validate_exported_module(
         validated_devices.append(
             {
                 "device": device_name,
-                "status": "ok",
+                "status": "failed" if device_failures else "ok",
                 "num_cases": len(case_results),
                 "worst_case_id": device_worst_case_id,
                 "worst_max_abs_diff_vs_reference": device_worst_max_abs,
+                "worst_mean_abs_diff_vs_reference": device_worst_mean_abs,
+                "failures": device_failures,
                 "cases": case_results,
             }
         )
 
+    if validation_failures:
+        status = "failed"
+    elif total_cases == 0:
+        status = "skipped"
+    else:
+        status = "ok"
+
     return {
+        "status": status,
         "num_cases": total_cases,
+        "max_abs_tolerance": max_abs_tolerance,
+        "mean_abs_tolerance": mean_abs_tolerance,
         "worst_case_id": worst_case_id,
         "worst_device": worst_device,
         "worst_max_abs_diff_vs_reference": worst_max_abs,
+        "worst_mean_abs_diff_vs_reference": worst_mean_abs,
+        "failures": validation_failures,
         "devices": validated_devices,
     }
 
@@ -722,7 +758,7 @@ def _run_for_specs(
     seeds: Sequence[int],
     scales: Sequence[float],
     validate_devices: Sequence[str],
-) -> Dict[str, Any]:
+) -> Tuple[Dict[str, Any], List[Tuple[str, str, str]]]:
     if mode not in {"export", "validate"}:
         raise RuntimeError(f"Unsupported mode: {mode}")
 
@@ -800,6 +836,14 @@ def _run_for_specs(
             with meta_path.open("w", encoding="utf-8") as f:
                 json.dump(meta, f, indent=2)
 
+            if validation["status"] == "failed":
+                raise RuntimeError(
+                    "Validation exceeded tolerances "
+                    f"(max_abs={validation['worst_max_abs_diff_vs_reference']}, "
+                    f"mean_abs={validation['worst_mean_abs_diff_vs_reference']}); "
+                    f"see {meta_path}"
+                )
+
             if api is not None:
                 print(f"  Uploading {artifact_path.name} ...")
                 api.upload_file(
@@ -824,7 +868,11 @@ def _run_for_specs(
                     "artifact": str(artifact_path),
                     "meta": str(meta_path),
                     "sha256": meta["artifact_sha256"],
+                    "validation_status": validation["status"],
+                    "max_abs_tolerance": validation["max_abs_tolerance"],
+                    "mean_abs_tolerance": validation["mean_abs_tolerance"],
                     "worst_max_abs_diff": validation["worst_max_abs_diff_vs_reference"],
+                    "worst_mean_abs_diff": validation["worst_mean_abs_diff_vs_reference"],
                     "worst_case_id": validation["worst_case_id"],
                     "num_cases": validation["num_cases"],
                 }
