@@ -1,5 +1,7 @@
 # Cache
 .cache
+__pycache__/
+*.py[cod]
 
 # Git
 .git

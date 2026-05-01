@@ -13,8 +13,6 @@ RUN apt-get update && apt-get install -y \
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# CPU PyTorch index
-ENV UV_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cpu
 # Place venv outside WORKDIR so volume mounts don't hide it
 ENV UV_PROJECT_ENVIRONMENT=/opt/venv
 

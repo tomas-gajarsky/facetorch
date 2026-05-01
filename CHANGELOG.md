@@ -35,6 +35,7 @@ Released on May 1, 2026.
 * AU predictor model rewritten with timm Swin Transformer backbone for torch.export compatibility
 * Build metadata now uses PEP 639 SPDX license fields with `setuptools>=77.0.3`, removing the setuptools license-table deprecation warning
 * uv PyTorch index configuration now uses explicit `torch`/`torchvision` sources instead of a global extra index, so non-PyTorch packages resolve from PyPI by default
+* Docker images no longer set a global uv PyTorch extra index; GPU images install CUDA torch wheels explicitly with uv's `--torch-backend cu124` after the base install/sync step
 * Docker dev/test images migrated from conda/conda-lock to [uv](https://github.com/astral-sh/uv) for faster builds
 * Docker production images now use uv as a pip drop-in
 * Development dependencies consolidated from `requirements.dev.txt` into `pyproject.toml`
