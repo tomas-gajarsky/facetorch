@@ -17,6 +17,7 @@ sys.path.append(root_dir)
 
 DEFAULT_TEST_ROOT = "/opt/facetorch"
 REPO_ROOT = Path(root_dir).resolve()
+TEST_MODEL_ROOT_CONFIGURED = "FACETORCH_TEST_MODEL_ROOT" in os.environ
 TEST_MODEL_ROOT = Path(
     os.environ.get(
         "FACETORCH_TEST_MODEL_ROOT",
@@ -27,7 +28,7 @@ TEST_MODEL_ROOT = Path(
 
 def _rewrite_default_root_paths(node) -> None:
     """Make test configs portable outside the Docker /opt/facetorch layout."""
-    if str(REPO_ROOT) == DEFAULT_TEST_ROOT:
+    if str(REPO_ROOT) == DEFAULT_TEST_ROOT and not TEST_MODEL_ROOT_CONFIGURED:
         return
 
     if isinstance(node, DictConfig):

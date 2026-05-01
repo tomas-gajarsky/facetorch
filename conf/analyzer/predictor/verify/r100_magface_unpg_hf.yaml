@@ -6,6 +6,10 @@ downloader:
   path_local: /opt/facetorch/models/exported/predictor/verify/1/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-verify-magface  # HuggingFace repo ID
   filename: model.pt2  # Filename in the HuggingFace repo
+  export_filenames_by_torch_minor:
+    "2.3": model-torch2.3.pt2
+    "2.6": model-torch2.6.pt2
+    "2.11": model-torch2.11.pt2
 
 device:
   _target_: torch.device

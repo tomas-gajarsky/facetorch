@@ -24,6 +24,10 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 ENV UV_PYTHON=python3.12
 # Place venv outside WORKDIR so volume mounts don't hide it
 ENV UV_PROJECT_ENVIRONMENT=/opt/venv
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONPYCACHEPREFIX=/tmp/facetorch_pycache
+ENV FACETORCH_TEST_MODEL_ROOT=/tmp/facetorch_models
+ENV COVERAGE_FILE=/tmp/facetorch_coverage
 
 # Copy project files for dependency resolution
 COPY pyproject.toml uv.lock README.md ./

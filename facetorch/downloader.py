@@ -60,13 +60,15 @@ class DownloaderHuggingFace(base.BaseDownloader):
             export_filenames_by_torch_minor (Optional[Dict[str, str]]): Mapping from torch
                 major.minor version (e.g. "2.11") to export filename (e.g.
                 "model-torch2.11.pt2"). The downloader selects the best compatible
-                filename for the current torch version and falls back to older entries.
+                filename for the current torch version before trying the generic
+                filename, then falls back to older entries.
             fallback_filenames (Optional[List[str]]): Additional fallback filenames to try
                 if the preferred filename cannot be downloaded.
             enable_default_torch_export_routing (bool): If True and filename ends with
                 ".pt2", automatically enables fallback cohort names following
                 ("*-torch2.3.pt2", "*-torch2.6.pt2", "*-torch2.11.pt2").
-                By default, the configured filename is still tried first.
+                If no explicit export_filenames_by_torch_minor map is supplied, the
+                configured filename is still tried first.
         """
         super().__init__(file_id, path_local)
         self.repo_id = repo_id if repo_id else file_id
@@ -151,9 +153,13 @@ class DownloaderHuggingFace(base.BaseDownloader):
 
         ordered_exports = self._ordered_export_filenames(export_map, current_version)
         candidates: List[str] = []
-        # Conservative default: try configured filename first, then versioned cohorts.
-        candidates.append(self.filename)
-        candidates.extend(ordered_exports)
+        if explicit_export_map:
+            candidates.extend(ordered_exports)
+            candidates.append(self.filename)
+        else:
+            # Custom repos with only model.pt2 should not pay versioned 404s by default.
+            candidates.append(self.filename)
+            candidates.extend(ordered_exports)
         candidates.extend(self.fallback_filenames)
 
         # Final fallback for legacy TorchScript model in the same repo.
@@ -174,10 +180,10 @@ class DownloaderHuggingFace(base.BaseDownloader):
             force_download=force_download,
         )
 
-        if downloaded_path != self.path_local:
+        if os.path.abspath(downloaded_path) != os.path.abspath(self.path_local):
             if os.path.exists(self.path_local):
                 os.remove(self.path_local)
-            os.rename(downloaded_path, self.path_local)
+            os.replace(downloaded_path, self.path_local)
 
     def _download_from_candidates(
         self,

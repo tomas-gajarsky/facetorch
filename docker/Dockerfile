@@ -7,7 +7,7 @@ WORKDIR $WORKDIR
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Install facetorch from PyPI
-RUN uv pip install --system facetorch
-
 COPY . .
+
+# Install facetorch from this checkout so release images match the built commit.
+RUN uv pip install --system .
