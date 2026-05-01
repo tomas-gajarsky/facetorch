@@ -137,9 +137,34 @@ class TestDownloaderHuggingFace:
             candidates = dl._build_candidate_filenames()
 
         assert candidates == [
-            "model.pt2",
             "model-torch2.3.pt2",
             "model-torch2.11.pt2",
+            "model.pt2",
+            "model.pt",
+        ]
+
+    def test_explicit_export_map_prefers_best_cohort(self, tmp_path):
+        dl = DownloaderHuggingFace(
+            file_id="x",
+            path_local=str(tmp_path / "model.pt2"),
+            repo_id="user/repo",
+            filename="model.pt2",
+            export_filenames_by_torch_minor={
+                "2.3": "model-torch2.3.pt2",
+                "2.6": "model-torch2.6.pt2",
+                "2.11": "model-torch2.11.pt2",
+            },
+        )
+        with patch.object(
+            DownloaderHuggingFace, "_current_torch_major_minor", return_value=(2, 11)
+        ):
+            candidates = dl._build_candidate_filenames()
+
+        assert candidates == [
+            "model-torch2.11.pt2",
+            "model-torch2.6.pt2",
+            "model-torch2.3.pt2",
+            "model.pt2",
             "model.pt",
         ]
 
@@ -148,7 +173,7 @@ class TestDownloaderHuggingFace:
         local = str(tmp_path / "model.pt2")
 
         def _side_effect(repo_id, filename, local_dir, force_download=False):
-            if filename in {"model.pt2", "model-torch2.11.pt2"}:
+            if filename == "model-torch2.11.pt2":
                 raise Exception("missing")
             downloaded = str(tmp_path / filename)
             with open(downloaded, "wb") as f:
@@ -173,7 +198,7 @@ class TestDownloaderHuggingFace:
 
         assert os.path.exists(local)
         assert dl._active_filename == "model-torch2.6.pt2"
-        assert mock_hf_download.call_count == 3
+        assert mock_hf_download.call_count == 2
 
     @patch("facetorch.downloader.hf_hub_download")
     def test_try_next_downloads_next_candidate(self, mock_hf_download, tmp_path):

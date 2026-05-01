@@ -2,6 +2,7 @@
 .cache
 __pycache__/
 *.py[cod]
+=*
 
 # Git
 .git
@@ -57,6 +58,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+coverage/
 cover/
 
 # Translations
@@ -77,6 +79,10 @@ docs/
 
 # Hydra
 outputs/
+tests/data/output/
 
 # facetorch specific
 models/
+models_local/
+data/3dmm/
+data/input/*.pt

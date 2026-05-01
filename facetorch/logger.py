@@ -2,10 +2,15 @@ import logging
 import os
 from typing import Optional
 
-from pythonjsonlogger import jsonlogger
+try:
+    from pythonjsonlogger.json import JsonFormatter
+except ImportError:  # pragma: no cover - compatibility with python-json-logger<4
+    from pythonjsonlogger import jsonlogger
+
+    JsonFormatter = jsonlogger.JsonFormatter
 
 
-class CustomJsonFormatter(jsonlogger.JsonFormatter):
+class CustomJsonFormatter(JsonFormatter):
     def add_fields(self, log_record, record, message_dict):
         super().add_fields(log_record, record, message_dict)
         # Remove taskName field if it exists and is None

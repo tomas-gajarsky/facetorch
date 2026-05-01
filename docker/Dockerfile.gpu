@@ -18,10 +18,10 @@ RUN apt-get update && apt-get install -y \
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Install facetorch from PyPI, then replace default torch wheels with CUDA 12.4 wheels.
-RUN uv pip install --system facetorch && \
+COPY . .
+
+# Install facetorch from this checkout, then replace default torch wheels with CUDA 12.4 wheels.
+RUN uv pip install --system . && \
     uv pip install --system \
         --torch-backend cu124 \
         --upgrade torch torchvision
-
-COPY . .

@@ -32,13 +32,18 @@ Released on May 1, 2026.
 * Migrated from `setup.py` + `version` file to `pyproject.toml` (PEP 621)
 * All model files migrated from TorchScript (.pt) to torch.export (.pt2) portable format with dynamic batch support
 * Model artifact strategy changed to prioritize portability and install-time simplicity over TorchScript-specific runtime behavior: `.pt2` artifacts do not require bundled model source code, while versioned cohorts handle PyTorch exported-program schema differences across supported torch runtimes (`2.3`, `2.6`, `2.11`)
+* Built-in Hugging Face model configs now prefer explicit torch-versioned export cohorts before generic `model.pt2` fallbacks
 * AU predictor model rewritten with timm Swin Transformer backbone for torch.export compatibility
 * Build metadata now uses PEP 639 SPDX license fields with `setuptools>=77.0.3`, removing the setuptools license-table deprecation warning
 * uv PyTorch index configuration now uses explicit `torch`/`torchvision` sources instead of a global extra index, so non-PyTorch packages resolve from PyPI by default
 * Docker images no longer set a global uv PyTorch extra index; GPU images install CUDA torch wheels explicitly with uv's `--torch-backend cu124` after the base install/sync step
+* Docker dev/test images no longer read or write Python bytecode from bind-mounted source trees
+* Docker dev/test images use container-local model and coverage caches for tests, avoiding root-owned artifacts in bind-mounted checkouts
+* Docker build contexts now exclude local model/export artifacts that are not part of release images
 * Docker dev/test images migrated from conda/conda-lock to [uv](https://github.com/astral-sh/uv) for faster builds
-* Docker production images now use uv as a pip drop-in
+* Docker production images now install facetorch from the checked-out release source with uv instead of racing against the PyPI publication job
 * Development dependencies consolidated from `requirements.dev.txt` into `pyproject.toml`
+* Development release-validation dependencies now include `build` and `packaging>=25.0` for Metadata 2.4 / PEP 639 checks
 * Removed hard torch `<2.5.0` constraint from uv configuration
 * Docker base images updated to Python 3.12 and CUDA 12.4
 * CI test matrix updated to Python 3.10, 3.11, 3.12, 3.13
@@ -53,7 +58,8 @@ Released on May 1, 2026.
 * AU `.pt2` CUDA device mismatch by re-exporting validated AU cohorts (`2.3`, `2.6`, `2.11`) and publishing refreshed Hugging Face artifacts with metadata
 * Exported-model schema mismatch fallback now also handles additional cross-version `.pt2` archive load errors (for example missing `version` entry)
 * Export cohort validation now fails on numerical drift beyond configured max/mean absolute-difference tolerances instead of only recording comparison metrics
-* Test configs now resolve `/opt/facetorch` paths to the checked-out repository during local pytest runs, while preserving Docker CI behavior
+* Test configs now resolve `/opt/facetorch` paths to the checked-out repository during local pytest runs, and honor `FACETORCH_TEST_MODEL_ROOT` for isolated model caches
+* `python-json-logger` v4 import deprecation warning by using the new module path with fallback for older versions
 
 
 ## 0.6.2

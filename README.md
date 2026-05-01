@@ -227,13 +227,13 @@ for Identity-invariant Facial Expression Recognition](https://arxiv.org/abs/2209
 Models are downloaded during runtime automatically to the *models* directory using Hugging Face Hub.
 Models are available on the [Hugging Face Hub](https://huggingface.co/tomas-gajarsky). The legacy [Google Drive folder](https://drive.google.com/drive/folders/19qlklR18wYfFsCChQ78it10XciuTzbDM?usp=sharing) is retained for backward compatibility only and is effectively deprecated for v1+ workflows.
 For exported `.pt2` models, facetorch can fall back across versioned artifacts when present (e.g. `model-torch2.3.pt2`, `model-torch2.6.pt2`, `model-torch2.11.pt2`).
-By default, the downloader tries `model.pt2` first, then versioned cohort artifacts, and finally `model.pt` as a legacy fallback where available.
+Built-in v1 model configs explicitly prefer the best compatible versioned cohort first, then fall back to generic `model.pt2`, and finally `model.pt` as a legacy fallback where available.
 
 #### Why exported models?
 
 Facetorch v1 moved default model artifacts from TorchScript (`.pt`) to `torch.export` (`.pt2`) so inference no longer depends on bundled model source code, custom class definitions, or TorchScript-specific runtime behavior. This makes the hosted models easier to validate, redistribute, and load across normal Python package installations. TorchScript artifacts are still useful as legacy fallbacks, but v1 workflows should prefer Hugging Face `.pt2` artifacts.
 
-`torch.export` serialization is tied to PyTorch's exported-program schema, so one `.pt2` file is not guaranteed to load across every future or older PyTorch minor version. To avoid pinning users to one narrow torch version, facetorch publishes and validates cohort artifacts for representative supported runtimes: `torch 2.3`, `torch 2.6`, and `torch 2.11`. Runtime support starts at `PyTorch >= 2.3`; when versioned cohorts are available, the downloader selects from those artifacts and falls back to the next candidate if the current runtime cannot load the first choice.
+`torch.export` serialization is tied to PyTorch's exported-program schema, so one `.pt2` file is not guaranteed to load across every future or older PyTorch minor version. To avoid pinning users to one narrow torch version, facetorch publishes and validates cohort artifacts for representative supported runtimes: `torch 2.3`, `torch 2.6`, and `torch 2.11`. Runtime support starts at `PyTorch >= 2.3`; when an explicit cohort map is configured, the downloader selects the best compatible artifact first and falls back to the next candidate if the current runtime cannot load it.
 
 
 ### Execution time
@@ -344,6 +344,7 @@ Export-only architecture definitions live in `model_defs/`; they are included fo
 ##### Edit yaml file
 1. Set up the downloader configuration:
    - For Hugging Face Hub (recommended): specify the `repo_id` and `filename` parameters
+   - For exported `.pt2` models, specify `export_filenames_by_torch_minor` when publishing versioned cohorts so the best compatible artifact is tried before generic `model.pt2`
    - For legacy Google Drive (deprecated): specify the Google Drive file ID
 2. Select the preprocessor (or implement a new one based on BasePredPreProcessor) and specify its parameters e.g. image size and normalization in the yaml file 
 to match the requirements of the new model.

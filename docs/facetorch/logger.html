@@ -48,47 +48,43 @@ el.replaceWith(d);
 <dl>
 <dt id="facetorch.logger.CustomJsonFormatter"><code class="flex name class">
 <span>class <span class="ident">CustomJsonFormatter</span></span>
-<span>(</span><span>*args, **kwargs)</span>
+<span>(</span><span>*args,<br>json_default: Callable | None = None,<br>json_encoder: Callable | None = None,<br>json_serializer: Callable = &lt;function dumps&gt;,<br>json_indent: int | str | None = None,<br>json_ensure_ascii: bool = True,<br>**kwargs)</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class CustomJsonFormatter(jsonlogger.JsonFormatter):
+<pre><code class="python">class CustomJsonFormatter(JsonFormatter):
     def add_fields(self, log_record, record, message_dict):
         super().add_fields(log_record, record, message_dict)
         # Remove taskName field if it exists and is None
         if &#34;taskName&#34; in log_record and log_record[&#34;taskName&#34;] is None:
             del log_record[&#34;taskName&#34;]</code></pre>
 </details>
-<div class="desc"><p>A custom formatter to format logging records as json strings.
-Extra values will be formatted as str() if not supported by
-json default encoder</p>
-<p>:param json_default: a function for encoding non-standard objects
-as outlined in <a href="https://docs.python.org/3/library/json.html">https://docs.python.org/3/library/json.html</a>
-:param json_encoder: optional custom encoder
-:param json_serializer: a :meth:<code>json.dumps</code>-compatible callable
-that will be used to serialize the log record.
-:param json_indent: an optional :meth:<code>json.dumps</code>-compatible numeric value
-that will be used to customize the indent of the output json.
-:param prefix: an optional string prefix added at the beginning of
-the formatted string
-:param rename_fields: an optional dict, used to rename field names in the output.
-Rename message to @message: {'message': '@message'}
-:param static_fields: an optional dict, used to add fields with static values to all logs
-:param json_indent: indent parameter for json.dumps
-:param json_ensure_ascii: ensure_ascii parameter for json.dumps
-:param reserved_attrs: an optional list of fields that will be skipped when
-outputting json log record. Defaults to all log record attributes:
-<a href="http://docs.python.org/library/logging.html#logrecord-attributes">http://docs.python.org/library/logging.html#logrecord-attributes</a>
-:param timestamp: an optional string/boolean field to add a timestamp when
-outputting the json log record. If string is passed, timestamp will be added
-to log record using string as key. If True boolean is passed, timestamp key
-will be "timestamp". Defaults to False/off.</p></div>
+<div class="desc"><p>JSON formatter using the standard library's <a href="https://docs.python.org/3/library/json.html"><code>json</code></a> for encoding</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>args</code></strong></dt>
+<dd>see [BaseJsonFormatter][pythonjsonlogger.core.BaseJsonFormatter]</dd>
+<dt><strong><code>json_default</code></strong></dt>
+<dd>a function for encoding non-standard objects</dd>
+<dt><strong><code>json_encoder</code></strong></dt>
+<dd>custom JSON encoder</dd>
+<dt><strong><code>json_serializer</code></strong></dt>
+<dd>a <a href="https://docs.python.org/3/library/json.html#json.dumps"><code>json.dumps</code></a>-compatible callable
+that will be used to serialize the log record.</dd>
+<dt><strong><code>json_indent</code></strong></dt>
+<dd>indent parameter for the <code>json_serializer</code></dd>
+<dt><strong><code>json_ensure_ascii</code></strong></dt>
+<dd><code>ensure_ascii</code> parameter for the <code>json_serializer</code></dd>
+<dt><strong><code>kwargs</code></strong></dt>
+<dd>see [BaseJsonFormatter][pythonjsonlogger.core.BaseJsonFormatter]</dd>
+</dl></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li>pythonjsonlogger.jsonlogger.JsonFormatter</li>
+<li>pythonjsonlogger.json.JsonFormatter</li>
+<li>pythonjsonlogger.core.BaseJsonFormatter</li>
 <li>logging.Formatter</li>
 </ul>
 <h3>Methods</h3>
@@ -107,7 +103,19 @@ will be "timestamp". Defaults to False/off.</p></div>
     if &#34;taskName&#34; in log_record and log_record[&#34;taskName&#34;] is None:
         del log_record[&#34;taskName&#34;]</code></pre>
 </details>
-<div class="desc"><p>Override this method to implement custom logic for adding fields.</p></div>
+<div class="desc"><p>Extract fields from a LogRecord for logging</p>
+<p>This method can be overridden to implement custom logic for adding fields.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>log_data</code></strong></dt>
+<dd>data that will be logged</dd>
+<dt><strong><code>record</code></strong></dt>
+<dd>the record to extract data from</dd>
+<dt><strong><code>message_dict</code></strong></dt>
+<dd>dictionary that was logged instead of a message. e.g
+<code>logger.info({"is_this_message_dict": True})</code></dd>
+</dl>
+<p><em>Changed in 4.0</em>: <code>log_record</code> renamed to <code>log_data</code></p></div>
 </dd>
 </dl>
 </dd>

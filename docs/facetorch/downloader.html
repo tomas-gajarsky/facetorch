@@ -146,13 +146,15 @@ def run(self):
             export_filenames_by_torch_minor (Optional[Dict[str, str]]): Mapping from torch
                 major.minor version (e.g. &#34;2.11&#34;) to export filename (e.g.
                 &#34;model-torch2.11.pt2&#34;). The downloader selects the best compatible
-                filename for the current torch version and falls back to older entries.
+                filename for the current torch version before trying the generic
+                filename, then falls back to older entries.
             fallback_filenames (Optional[List[str]]): Additional fallback filenames to try
                 if the preferred filename cannot be downloaded.
             enable_default_torch_export_routing (bool): If True and filename ends with
                 &#34;.pt2&#34;, automatically enables fallback cohort names following
                 (&#34;*-torch2.3.pt2&#34;, &#34;*-torch2.6.pt2&#34;, &#34;*-torch2.11.pt2&#34;).
-                By default, the configured filename is still tried first.
+                If no explicit export_filenames_by_torch_minor map is supplied, the
+                configured filename is still tried first.
         &#34;&#34;&#34;
         super().__init__(file_id, path_local)
         self.repo_id = repo_id if repo_id else file_id
@@ -237,9 +239,13 @@ def run(self):
 
         ordered_exports = self._ordered_export_filenames(export_map, current_version)
         candidates: List[str] = []
-        # Conservative default: try configured filename first, then versioned cohorts.
-        candidates.append(self.filename)
-        candidates.extend(ordered_exports)
+        if explicit_export_map:
+            candidates.extend(ordered_exports)
+            candidates.append(self.filename)
+        else:
+            # Custom repos with only model.pt2 should not pay versioned 404s by default.
+            candidates.append(self.filename)
+            candidates.extend(ordered_exports)
         candidates.extend(self.fallback_filenames)
 
         # Final fallback for legacy TorchScript model in the same repo.
@@ -260,10 +266,10 @@ def run(self):
             force_download=force_download,
         )
 
-        if downloaded_path != self.path_local:
+        if os.path.abspath(downloaded_path) != os.path.abspath(self.path_local):
             if os.path.exists(self.path_local):
                 os.remove(self.path_local)
-            os.rename(downloaded_path, self.path_local)
+            os.replace(downloaded_path, self.path_local)
 
     def _download_from_candidates(
         self,
@@ -359,7 +365,8 @@ If not provided, uses the basename from path_local.</dd>
 <dd>Mapping from torch
 major.minor version (e.g. "2.11") to export filename (e.g.
 "model-torch2.11.pt2"). The downloader selects the best compatible
-filename for the current torch version and falls back to older entries.</dd>
+filename for the current torch version before trying the generic
+filename, then falls back to older entries.</dd>
 <dt><strong><code>fallback_filenames</code></strong> :&ensp;<code>Optional[List[str]]</code></dt>
 <dd>Additional fallback filenames to try
 if the preferred filename cannot be downloaded.</dd>
@@ -367,7 +374,8 @@ if the preferred filename cannot be downloaded.</dd>
 <dd>If True and filename ends with
 ".pt2", automatically enables fallback cohort names following
 ("<em>-torch2.3.pt2", "</em>-torch2.6.pt2", "*-torch2.11.pt2").
-By default, the configured filename is still tried first.</dd>
+If no explicit export_filenames_by_torch_minor map is supplied, the
+configured filename is still tried first.</dd>
 </dl></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
