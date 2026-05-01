@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=63.4.2", "wheel"]
+requires = ["setuptools>=77.0.3", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,8 @@ name = "facetorch"
 version = "1.0.0"
 description = "Face analysis PyTorch framework."
 readme = "README.md"
-license = {text = "Apache-2.0"}
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.10,<3.14"
 authors = [
     { name = "Tomas Gajarsky", email = "gajarsky.tomas@gmail.com" },
@@ -51,7 +52,7 @@ dev = [
     "pdoc3>=0.8",
     "pytest>=6.0.0",
     "pytest-cov>=2.10.0",
-    "setuptools>=63.4.2",
+    "setuptools>=77.0.3",
     "snakeviz>=2.1.0",
     "twine>=3.2.0",
 ]
@@ -61,8 +62,14 @@ Homepage = "https://github.com/tomas-gajarsky/facetorch"
 Download = "https://pypi.org/project/facetorch/"
 Documentation = "https://tomas-gajarsky.github.io/facetorch/facetorch/index.html"
 
-[tool.uv]
-extra-index-url = ["https://download.pytorch.org/whl/cpu"]
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [tool.setuptools.packages.find]
 exclude = ["tests*", "model_defs*", "scripts*"]
