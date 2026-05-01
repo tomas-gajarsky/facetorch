@@ -21,8 +21,6 @@ RUN apt-get update && apt-get install -y \
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# GPU PyTorch index
-ENV UV_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cu124
 ENV UV_PYTHON=python3.12
 # Place venv outside WORKDIR so volume mounts don't hide it
 ENV UV_PROJECT_ENVIRONMENT=/opt/venv
@@ -31,8 +29,11 @@ ENV UV_PROJECT_ENVIRONMENT=/opt/venv
 COPY pyproject.toml uv.lock README.md ./
 COPY facetorch/ facetorch/
 
-# Install all dependencies (re-resolves with GPU index)
-RUN uv sync --extra dev
+# Install locked dependencies, then replace CPU torch wheels with CUDA 12.4 wheels.
+RUN uv sync --frozen --extra dev && \
+    uv pip install --python /opt/venv/bin/python \
+        --torch-backend cu124 \
+        --upgrade torch torchvision
 
 ENV PATH="/opt/venv/bin:$PATH"
 ENV PYTHONPATH="$WORKDIR/"
