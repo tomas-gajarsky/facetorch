@@ -33,7 +33,7 @@ Facetorch provides an efficient, scalable, and user-friendly solution for facial
 
 ### Requirements
 
-* Python >= 3.10
+* Python >= 3.10 and < 3.14
 * PyTorch >= 2.3 (facetorch routes exported model artifacts by torch minor version)
 
 Please use this library responsibly and with caution. Adhere to the [European Commission's Ethics Guidelines for Trustworthy AI](https://ec.europa.eu/futurium/en/ai-alliance-consultation.1.html) to ensure ethical and fair usage. Keep in mind that the models may have limitations and potential biases, so it is crucial to evaluate their outputs critically and consider their impact.
@@ -229,12 +229,33 @@ Models are available on the [Hugging Face Hub](https://huggingface.co/tomas-gaja
 For exported `.pt2` models, facetorch can fall back across versioned artifacts when present (e.g. `model-torch2.3.pt2`, `model-torch2.6.pt2`, `model-torch2.11.pt2`).
 By default, the downloader tries `model.pt2` first, then versioned cohort artifacts, and finally `model.pt` as a legacy fallback where available.
 
+#### Why exported models?
+
+Facetorch v1 moved default model artifacts from TorchScript (`.pt`) to `torch.export` (`.pt2`) so inference no longer depends on bundled model source code, custom class definitions, or TorchScript-specific runtime behavior. This makes the hosted models easier to validate, redistribute, and load across normal Python package installations. TorchScript artifacts are still useful as legacy fallbacks, but v1 workflows should prefer Hugging Face `.pt2` artifacts.
+
+`torch.export` serialization is tied to PyTorch's exported-program schema, so one `.pt2` file is not guaranteed to load across every future or older PyTorch minor version. To avoid pinning users to one narrow torch version, facetorch publishes and validates cohort artifacts for representative supported runtimes: `torch 2.3`, `torch 2.6`, and `torch 2.11`. Runtime support starts at `PyTorch >= 2.3`; when versioned cohorts are available, the downloader selects from those artifacts and falls back to the next candidate if the current runtime cannot load the first choice.
+
 
 ### Execution time
 
-Reference GPU benchmark (warm second pass, batch_size=8, utilizers disabled):
-- `test.jpg` (4 faces): pass1 `672 ms`, pass2 `209 ms`
-- `test3.jpg` (25 faces): pass1 `856 ms`, pass2 `687 ms`
+Reference GPU benchmark (AU included, batch_size=8, utilizers disabled, default runtime):
+- `test.jpg` (4 faces): pass1 `688 ms`, pass2 `216 ms`, pass3 `311 ms`, warm avg (pass2+pass3) `263 ms`
+- `test3.jpg` (25 faces): pass1 `904 ms`, pass2 `745 ms`, pass3 `728 ms`, warm avg (pass2+pass3) `737 ms`
+
+Full FaceAnalyzer artifact comparison (detector + predictors `embed`, `verify`, `fer`, `au`, `va`, `deepfake`, `align`):
+- benchmark method: 12 passes/image, report warm median over passes 3-12
+
+| image | faces | all `.pt2` median (default JIT) | all `.pt2` median (TS stability flags) | all TorchScript `.pt` median (TS stability flags) | delta TorchScript - `.pt2` (same flags) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `test.jpg` | 4 | `152.8 ms` | `151.2 ms` | `147.1 ms` | `-4.0 ms` |
+| `test3.jpg` | 25 | `525.9 ms` | `520.4 ms` | `518.8 ms` | `-1.6 ms` |
+
+CPU full-stack comparison (8 passes/image, warm median over passes 3-8, `torch_num_threads=16`):
+
+| image | faces | all `.pt2` median | all TorchScript `.pt` median | delta TorchScript - `.pt2` |
+| --- | ---: | ---: | ---: | ---: |
+| `test.jpg` | 4 | `3080.0 ms` | `2796.5 ms` | `-283.5 ms` |
+| `test3.jpg` | 25 | `15945.5 ms` | `14727.6 ms` | `-1217.9 ms` |
 
 Environment used for this benchmark:
 - GPU: `NVIDIA GeForce RTX 3090`
@@ -242,9 +263,13 @@ Environment used for this benchmark:
 - Torch: `2.11.0+cu130`
 
 Method notes:
-- Timings are reported from the second inference pass to avoid first-pass warm-up effects.
+- Reference GPU timings include pass-level values; artifact comparisons use warm medians to avoid first-pass warm-up effects.
 - Timings above include all predictors, including AU.
 - Utilizers were disabled for this benchmark run.
+- Full TorchScript CUDA comparison required disabling TorchScript profiling/fuser paths for runtime stability (`_jit_set_profiling_executor(False)`, `_jit_set_profiling_mode(False)`, `_jit_override_can_fuse_on_gpu(False)`).
+- In this setup, TorchScript is only slightly faster in warm median (about 2-4 ms, <2%); treat this as near-parity rather than a large format-level difference.
+- On CPU, TorchScript was faster by about 8-9% for this full-stack run.
+- TorchScript shows much slower first pass on some runs (runtime graph specialization), so use warm metrics for fair comparison.
 - One can monitor component timings in logs using DEBUG level.
 
 
@@ -279,7 +304,7 @@ For broader PyTorch compatibility, publish recommended version cohorts in the sa
 - `model-torch2.11.pt2`
 - (optional compatibility fallback) `model.pt2`
 
-To export, validate, and upload all facetorch model cohorts for the current torch runtime, use:
+From a source checkout, export, validate, and upload all facetorch model cohorts for the current torch runtime with:
 
 ```bash
 PYTHONPATH=. python scripts/export_model_cohorts_hf.py export \
@@ -304,6 +329,8 @@ PYTHONPATH=. python scripts/export_model_cohorts_hf.py validate \
 ```
 
 Use `--model-ids` (for example `--model-ids verify-magface`) to process only a subset.
+The script writes a `.meta.json` file next to each artifact and fails the run if validated outputs exceed the configured numerical tolerances.
+Export-only architecture definitions live in `model_defs/`; they are included for reproducible re-exporting, but they are not required for normal `.pt2` inference.
 
 #### Configuration
 ##### Create yaml file
@@ -342,6 +369,7 @@ the requirements of the new model.
 * `pyproject.toml` is the packaging source of truth for PyPI releases and pip/uv installs (including Docker build paths using uv).
 * Conda package publishing (`conda-forge/facetorch`) is maintained outside this repository in conda-forge feedstock workflows.
 * `environment.yml` and `gpu.environment.yml` are conda environment baselines for conda users.
+* The GPU conda baseline uses conda-forge `cuda-version=12.4` instead of `cudatoolkit`; pass `--with-cuda` when regenerating the GPU lock so conda-lock can resolve CUDA virtual packages without requiring a local GPU.
 * Overlapping dependencies between pyproject and conda env files are intentionally kept aligned.
 * CI enforces this with: `python scripts/check_dependency_sync.py`.
 
@@ -353,13 +381,13 @@ the requirements of the new model.
 #### conda (for conda-forge users)
 CPU:
 * Add packages with corresponding versions to ```environment.yml``` file
-* Lock the environment: ```conda lock -p linux-64 -f environment.yml --lockfile conda-lock.yml```
+* Lock the environment: ```conda-lock -p linux-64 -f environment.yml --lockfile conda-lock.yml```
 * (Alternative Docker) Lock the environment: ```docker compose -f docker-compose.dev.yml run facetorch-lock```
 * Install the locked environment: ```conda-lock install --name env conda-lock.yml```
 
 GPU:
 * Add packages with corresponding versions to ```gpu.environment.yml``` file
-* Lock the environment: ```conda lock -p linux-64 -f gpu.environment.yml --lockfile gpu.conda-lock.yml```
+* Lock the environment: ```conda-lock --with-cuda 12.4 -p linux-64 -f gpu.environment.yml --lockfile gpu.conda-lock.yml```
 * (Alternative Docker) Lock the environment: ```docker compose -f docker-compose.dev.yml run facetorch-lock-gpu```
 * Install the locked environment: ```conda-lock install --name env gpu.conda-lock.yml```
 

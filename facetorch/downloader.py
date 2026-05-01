@@ -25,7 +25,9 @@ class DownloaderGDrive(base.BaseDownloader):
     @Timer("DownloaderGDrive.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def run(self):
         """Downloads a file from Google Drive."""
-        os.makedirs(os.path.dirname(self.path_local), exist_ok=True)
+        dir_local = os.path.dirname(self.path_local)
+        if dir_local:
+            os.makedirs(dir_local, exist_ok=True)
         url = f"https://drive.google.com/uc?&id={self.file_id}&confirm=t"
         gdown.download(url, output=self.path_local, quiet=False)
 
@@ -164,10 +166,11 @@ class DownloaderHuggingFace(base.BaseDownloader):
 
     def _download_one_candidate(self, filename: str, force_download: bool = False):
         """Download a single candidate filename from HF and place it at path_local."""
+        local_dir = os.path.dirname(self.path_local) or "."
         downloaded_path = hf_hub_download(
             repo_id=self.repo_id,
             filename=filename,
-            local_dir=os.path.dirname(self.path_local),
+            local_dir=local_dir,
             force_download=force_download,
         )
 
@@ -229,7 +232,9 @@ class DownloaderHuggingFace(base.BaseDownloader):
         If the download fails, an informative error message is printed.
         """
         try:
-            os.makedirs(os.path.dirname(self.path_local), exist_ok=True)
+            dir_local = os.path.dirname(self.path_local)
+            if dir_local:
+                os.makedirs(dir_local, exist_ok=True)
             self._download_from_candidates(
                 start_index=0,
                 force_download=force_download,

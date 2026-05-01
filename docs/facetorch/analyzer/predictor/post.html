@@ -274,15 +274,18 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
         self.dim = dim
 
     @Timer(&#34;PostArgMax.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
-    def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
+    def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Prediction]:
         &#34;&#34;&#34;Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
 
         Args:
-            preds (torch.Tensor): Batch prediction tensor.
+            preds (Union[torch.Tensor, Tuple[torch.Tensor]]): Batch prediction tensor.
 
         Returns:
             List[Prediction]: List of prediction data structures containing the predicted labels and confidence scores for each face in the batch.
         &#34;&#34;&#34;
+        if isinstance(preds, tuple):
+            preds = preds[0]
+
         indices = torch.argmax(preds, dim=self.dim).cpu().numpy().tolist()
         pred_list = self.create_pred_list(preds, indices)
 
@@ -310,7 +313,7 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
 <h3>Methods</h3>
 <dl>
 <dt id="facetorch.analyzer.predictor.post.PostArgMax.run"><code class="name flex">
-<span>def <span class="ident">run</span></span>(<span>self, preds: torch.Tensor) ‑> List[<a title="facetorch.datastruct.Prediction" href="../../datastruct.html#facetorch.datastruct.Prediction">Prediction</a>]</span>
+<span>def <span class="ident">run</span></span>(<span>self, preds: torch.Tensor | Tuple[torch.Tensor]) ‑> List[<a title="facetorch.datastruct.Prediction" href="../../datastruct.html#facetorch.datastruct.Prediction">Prediction</a>]</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -318,15 +321,18 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@Timer(&#34;PostArgMax.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
-def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
+def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Prediction]:
     &#34;&#34;&#34;Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
 
     Args:
-        preds (torch.Tensor): Batch prediction tensor.
+        preds (Union[torch.Tensor, Tuple[torch.Tensor]]): Batch prediction tensor.
 
     Returns:
         List[Prediction]: List of prediction data structures containing the predicted labels and confidence scores for each face in the batch.
     &#34;&#34;&#34;
+    if isinstance(preds, tuple):
+        preds = preds[0]
+
     indices = torch.argmax(preds, dim=self.dim).cpu().numpy().tolist()
     pred_list = self.create_pred_list(preds, indices)
 
@@ -335,7 +341,7 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
 <div class="desc"><p>Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>preds</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dt><strong><code>preds</code></strong> :&ensp;<code>Union[torch.Tensor, Tuple[torch.Tensor]]</code></dt>
 <dd>Batch prediction tensor.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
@@ -393,15 +399,18 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
     @Timer(
         &#34;PostSigmoidBinary.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
     )
-    def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
-        &#34;&#34;&#34;Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
+    def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Prediction]:
+        &#34;&#34;&#34;Post-processes the prediction tensor using sigmoid and returns a list of prediction data structures, one for each face.
 
         Args:
-            preds (torch.Tensor): Batch prediction tensor.
+            preds (Union[torch.Tensor, Tuple[torch.Tensor]]): Batch prediction tensor.
 
         Returns:
-            List[Prediction]: List of prediction data structures containing the predicted labelsand confidence scores for each face in the batch.
+            List[Prediction]: List of prediction data structures containing the predicted labels and confidence scores for each face in the batch.
         &#34;&#34;&#34;
+        if isinstance(preds, tuple):
+            preds = preds[0]
+
         preds = torch.sigmoid(preds.squeeze(1))
         preds_thresh = preds.where(preds &gt;= self.threshold, torch.zeros_like(preds))
         indices = torch.round(preds_thresh)
@@ -432,7 +441,7 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
 <h3>Methods</h3>
 <dl>
 <dt id="facetorch.analyzer.predictor.post.PostSigmoidBinary.run"><code class="name flex">
-<span>def <span class="ident">run</span></span>(<span>self, preds: torch.Tensor) ‑> List[<a title="facetorch.datastruct.Prediction" href="../../datastruct.html#facetorch.datastruct.Prediction">Prediction</a>]</span>
+<span>def <span class="ident">run</span></span>(<span>self, preds: torch.Tensor | Tuple[torch.Tensor]) ‑> List[<a title="facetorch.datastruct.Prediction" href="../../datastruct.html#facetorch.datastruct.Prediction">Prediction</a>]</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -442,15 +451,18 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
 <pre><code class="python">@Timer(
     &#34;PostSigmoidBinary.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
 )
-def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
-    &#34;&#34;&#34;Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
+def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Prediction]:
+    &#34;&#34;&#34;Post-processes the prediction tensor using sigmoid and returns a list of prediction data structures, one for each face.
 
     Args:
-        preds (torch.Tensor): Batch prediction tensor.
+        preds (Union[torch.Tensor, Tuple[torch.Tensor]]): Batch prediction tensor.
 
     Returns:
-        List[Prediction]: List of prediction data structures containing the predicted labelsand confidence scores for each face in the batch.
+        List[Prediction]: List of prediction data structures containing the predicted labels and confidence scores for each face in the batch.
     &#34;&#34;&#34;
+    if isinstance(preds, tuple):
+        preds = preds[0]
+
     preds = torch.sigmoid(preds.squeeze(1))
     preds_thresh = preds.where(preds &gt;= self.threshold, torch.zeros_like(preds))
     indices = torch.round(preds_thresh)
@@ -459,16 +471,16 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
 
     return pred_list</code></pre>
 </details>
-<div class="desc"><p>Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.</p>
+<div class="desc"><p>Post-processes the prediction tensor using sigmoid and returns a list of prediction data structures, one for each face.</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>preds</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dt><strong><code>preds</code></strong> :&ensp;<code>Union[torch.Tensor, Tuple[torch.Tensor]]</code></dt>
 <dd>Batch prediction tensor.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>List[Prediction]</code></dt>
-<dd>List of prediction data structures containing the predicted labelsand confidence scores for each face in the batch.</dd>
+<dd>List of prediction data structures containing the predicted labels and confidence scores for each face in the batch.</dd>
 </dl></div>
 </dd>
 </dl>

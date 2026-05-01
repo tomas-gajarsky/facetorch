@@ -140,6 +140,17 @@ def test_analyzer_no_input_raises(analyzer):
 
 @pytest.mark.unit
 @pytest.mark.analyzer
+def test_analyzer_invalid_batch_size_raises(cfg, analyzer):
+    if hasattr(cfg, "path_tensor"):
+        pytest.skip("This test is only for path_image.")
+    if "test.jpg" not in cfg.path_image:
+        pytest.skip("Only test.jpg is used for this test.")
+    with pytest.raises(ValueError, match="batch_size must be >= 1"):
+        analyzer.run(image_source=cfg.path_image, batch_size=0)
+
+
+@pytest.mark.unit
+@pytest.mark.analyzer
 def test_analyzer_unsupported_type_raises(analyzer):
     with pytest.raises(TypeError, match="Unsupported image_source type"):
         analyzer.run(image_source=12345)

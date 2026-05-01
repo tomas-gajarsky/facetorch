@@ -274,7 +274,8 @@ class BaseModel(object, metaclass=ABCMeta):
         """
         if not os.path.exists(self.path_local):
             dir_local = os.path.dirname(self.path_local)
-            os.makedirs(dir_local, exist_ok=True)
+            if dir_local:
+                os.makedirs(dir_local, exist_ok=True)
             self.downloader.run()
 
         if self.path_local.endswith(".pt2"):
@@ -349,7 +350,13 @@ class BaseModel(object, metaclass=ABCMeta):
                 ) from e
 
     def _load_exported_model(self) -> torch.nn.Module:
-        """Loads a torch.export .pt2 model."""
+        """Loads a torch.export .pt2 model or an active legacy .pt fallback."""
+        active_filename = getattr(self.downloader, "_active_filename", None)
+        if str(active_filename).endswith(".pt") and not str(active_filename).endswith(".pt2"):
+            model = torch.jit.load(self.path_local, map_location=self.device)
+            model.eval()
+            return model
+
         ep = torch.export.load(self.path_local)
         model = ep.module()
         model.to(self.device)

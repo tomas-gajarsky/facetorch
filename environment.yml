@@ -2,7 +2,7 @@ name: env
 channels:
   - conda-forge
 dependencies:
-  - python>=3.10
+  - python>=3.10,<3.14
   - codetiming>=1.2.0
   - googleapis-common-protos>=1.56.3
   - gdown>=3.11.0
