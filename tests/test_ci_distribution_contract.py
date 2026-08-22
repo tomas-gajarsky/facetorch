@@ -17,8 +17,6 @@ except ModuleNotFoundError:  # pragma: no cover - Python 3.10
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_ROOT = REPO_ROOT / ".github" / "workflows"
 DEPENDENCY_PROFILES = {
-    "torch-2.3-cpu": ("2.3.1", "0.18.1", "/whl/cpu"),
-    "torch-2.3-cu121": ("2.3.1", "0.18.1", "/whl/cu121"),
     "torch-2.6-cpu": ("2.6.0", "0.21.0", "/whl/cpu"),
     "torch-2.6-cu124": ("2.6.0", "0.21.0", "/whl/cu124"),
     "torch-2.11-cpu": ("2.11.0", "0.26.0", "/whl/cpu"),
@@ -157,9 +155,10 @@ def test_production_images_use_a_frozen_dependency_definition(dockerfile):
 @pytest.mark.release_blocker
 def test_cpu_ci_has_an_explicit_supported_torch_cohort_matrix():
     workflow = (WORKFLOW_ROOT / "cpu-cohorts.yml").read_text(encoding="utf-8")
-    for cohort in ("2.3", "2.6", "2.11"):
+    for cohort in ("2.6", "2.11"):
         assert f'torch-cohort: "{cohort}"' in workflow
         assert f"profile: environments/torch-{cohort}-cpu" in workflow
+    assert 'torch-cohort: "2.3"' not in workflow
     assert "python -m pytest -q" in workflow
     assert "Path(facetorch.__file__).resolve().is_relative_to(Path.cwd())" in workflow
 
@@ -244,6 +243,40 @@ def test_advisory_gate_emits_sboms_and_requires_bounded_approved_exceptions():
         assert exception["rationale"] and exception["mitigations"]
         if exception["status"] == "approved":
             assert exception["approved_on"]
+
+
+@pytest.mark.release_blocker
+def test_torch_26_advisory_exceptions_are_exact_scoped_and_unused():
+    policy = json.loads(
+        (REPO_ROOT / "security" / "advisory-exceptions.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    torch_exceptions = {
+        exception["vulnerability_id"]: exception
+        for exception in policy["exceptions"]
+        if exception["package"] == "torch"
+    }
+    affected_apis = {
+        "CVE-2025-3730": ("GHSA-887c-mr87-cxwp", "ctc_loss"),
+        "CVE-2025-2999": ("GHSA-vgrw-7cvw-pwgx", "unpack_sequence"),
+        "CVE-2025-2998": ("GHSA-f4hp-rmr7-r7v8", "pad_packed_sequence"),
+    }
+    assert set(torch_exceptions) == set(affected_apis)
+
+    production_source = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in sorted((REPO_ROOT / "facetorch").rglob("*.py"))
+    )
+    for vulnerability_id, (ghsa, affected_api) in affected_apis.items():
+        exception = torch_exceptions[vulnerability_id]
+        assert exception["aliases"] == [ghsa]
+        assert exception["versions"] == ["2.6.0", "2.6.0+cpu", "2.6.0+cu124"]
+        assert exception["profiles"] == ["torch-2.6-cpu", "torch-2.6-cu124"]
+        assert exception["status"] == "approved"
+        assert exception["approved_on"] == "2026-08-22"
+        assert exception["expires_on"] == "2026-11-20"
+        assert affected_api not in production_source
 
 
 @pytest.mark.release_blocker

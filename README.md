@@ -36,7 +36,7 @@ Facetorch provides an efficient, scalable, and user-friendly solution for facial
 ### Requirements
 
 * Python >= 3.10 and < 3.13
-* PyTorch 2.3.x, 2.6.x, or 2.11.x; other minors are rejected before model download
+* PyTorch 2.6.x or 2.11.x; other minors are rejected before model download
 
 The exact candidate matrix, named CUDA pairs, experimental platforms, and current
 model-rights gates are documented in
@@ -342,7 +342,7 @@ source/rights review recorded in
 1. CVI-SZU
     * code: [ME-GraphAU](https://github.com/CVI-SZU/ME-GraphAU)
     * paper: [Luo et al. - Learning Multi-dimensional Edge Feature-based AU Relation Graph for Facial Action Unit Recognition](https://arxiv.org/abs/2205.01782)
-    * Note: The v1 candidate uses torch.export artifacts for the explicit Torch 2.3 / 2.6 / 2.11 cohorts; release CPU/CUDA evidence is tracked separately.
+    * Note: The v1 candidate uses torch.export artifacts for the explicit Torch 2.6 / 2.11 cohorts; release CPU/CUDA evidence is tracked separately.
 
 #### Facial Valence Arousal (va)
 
@@ -472,11 +472,11 @@ versioned facetorch model/metadata roots.
 Models are available on the [Hugging Face Hub](https://huggingface.co/tomas-gajarsky).
 The legacy [Google Drive folder](https://drive.google.com/drive/folders/19qlklR18wYfFsCChQ78it10XciuTzbDM?usp=sharing)
 is retained for manual backward compatibility only. The packaged manifest remains
-provisional. A full uncommitted-tree candidate matrix has passed all ten models on
-CPU and a local RTX 3090 for Torch 2.3/CUDA 12.1, 2.6/CUDA 12.4, and 2.11/CUDA
-13.0, but it must be repeated from the exact clean candidate and does not resolve
-provenance or weight-redistribution rights. Per-model gaps are recorded in the
-governance manifest rather than inferred from a model card's code-license label.
+provisional. The retained uncommitted-tree candidate lanes passed all ten models on
+CPU and a local RTX 3090 for Torch 2.6/CUDA 12.4 and 2.11/CUDA 13.0, but they must
+be repeated from the exact clean candidate and do not resolve provenance or
+weight-redistribution rights. Per-model gaps are recorded in the governance
+manifest rather than inferred from a model card's code-license label.
 
 Maintainers export and validate every requested model locally before any remote
 write. Inline `--upload` is disabled. Publication requires a deterministic plan,
@@ -491,9 +491,13 @@ Facetorch v1 moved default model artifacts from TorchScript (`.pt`) to `torch.ex
 
 `torch.export` serialization is tied to PyTorch's exported-program schema, so one
 `.pt2` file is not guaranteed to load across future or older PyTorch minors. The
-candidate manifest has exact cohorts for Torch 2.3, 2.6, and 2.11. Package metadata
-uses the same bounded, disjoint set. Torch 2.4, 2.5, and 2.7-2.10 are unsupported
-and fail before download; no schema-major or numeric fallback is attempted.
+candidate manifest has exact cohorts for Torch 2.6 and 2.11. Package metadata uses
+the same bounded, disjoint set. Torch 2.3-2.5 and 2.7-2.10 are unsupported and fail
+before download; no schema-major or numeric fallback is attempted. Torch 2.3 was
+dropped because its affected `torch.load(weights_only=True)` path has a critical
+remote-code-execution advisory. Torch 2.6 is temporarily retained under three
+moderate, affected-API-specific exceptions documented in
+`security/advisory-exceptions.json`, all expiring on 2026-11-20.
 Validation uses immutable CPU golden references for both CPU and CUDA artifacts,
 with TensorFloat-32 disabled and the numeric policy recorded. Predictor batch
 sizes refer only to faces from one input image; multi-image batching is not
@@ -564,7 +568,6 @@ Verify that the exported model produces the same outputs as the original. Models
 
 For broader PyTorch compatibility, publish recommended version cohorts in the same repo:
 
-- `model-torch2.3.pt2`
 - `model-torch2.6.pt2`
 - `model-torch2.11.pt2`
 
@@ -636,7 +639,7 @@ the requirements of the new model.
 * `pyproject.toml` is the packaging source of truth for PyPI releases and pip/uv installs (including Docker build paths using uv).
 * Conda package publishing (`conda-forge/facetorch`) is maintained outside this repository in conda-forge feedstock workflows.
 * `environment.yml` and `gpu.environment.yml` are conda environment baselines for conda users.
-* `environments/` contains six exact release profiles: Torch 2.3/2.6/2.11 on CPU and Torch 2.3/CUDA 12.1, 2.6/CUDA 12.4, and 2.11/CUDA 13.0. Each profile has its own `pyproject.toml`, `uv.lock`, and explicit official PyTorch index.
+* `environments/` contains four exact release profiles: Torch 2.6 and 2.11 on CPU, plus Torch 2.6/CUDA 12.4 and 2.11/CUDA 13.0. Each profile has its own `pyproject.toml`, `uv.lock`, and explicit official PyTorch index.
 * The production CPU image uses the exact Torch 2.6 CPU profile. The production GPU image uses the exact Torch 2.6/CUDA 12.4 profile; neither image upgrades Torch after resolution.
 * The GPU conda baseline is deliberately only a Python 3.12/CUDA 12.4 system layer. Its Python packages come from `environments/torch-2.6-cu124/uv.lock`, because conda-forge's current Torch 2.6 GPU solve requires a newer CUDA line than the validated v1 pair.
 * uv uses PyPI for normal packages and explicit named PyTorch indexes only for `torch` and `torchvision`, avoiding global extra-index resolution drift.

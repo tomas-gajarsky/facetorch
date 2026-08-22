@@ -58,7 +58,7 @@ Recommendations below are defaults, not hidden assumptions. Decisions D03-D10 an
 | --- | --- | --- | --- | --- | --- |
 | D01 | How should the remaining work be reviewed? | Keep PR #91 as the umbrella release PR; use small branches/PRs targeting `release/v1.0.0`, or equivalently isolated commits if only one maintainer is available. | Add everything directly to PR #91; faster mechanically, but materially harder to review and bisect. | Work starts | **Approved 2026-08-20:** retain PR #91 as the umbrella; deliver isolated, reviewable remediation batches. |
 | D02 | Should v1 publish directly as stable? | Publish `1.0.0rc1`, run a documented 7-14 day soak, then promote validated code to `1.0.0`; do not use the `Production/Stable` classifier for the RC. | Direct stable publication; less work, but public users become the first broad compatibility test. | Release design | **Approved 2026-08-20:** release `1.0.0rc1`, soak for 7-14 days, and promote only after all gates and feedback pass. |
-| D03 | What is the official Python/PyTorch support promise? | Publish a bounded, tested compatibility table. Support only combinations exercised in CI/release validation; add an upper Torch bound until newer minors pass. | Keep `torch>=2.3` without an upper bound; permits resolver-selected versions the project has never validated. | W3.1, W4.1 | **Approved 2026-08-20:** bounded, evidence-based matrix only. Guarantee Python 3.10-3.12 initially; include 3.13 only if its frozen compatible lane passes before RC. Bound Torch above and explicitly exclude any unvalidated/incompatible minor. |
+| D03 | What is the official Python/PyTorch support promise? | Publish a bounded, tested compatibility table. Support only combinations exercised in CI/release validation; add an upper Torch bound until newer minors pass. | Keep an open-ended Torch lower bound; permits resolver-selected versions the project has never validated. | W3.1, W4.1 | **Approved 2026-08-20; amended 2026-08-22:** bounded, evidence-based matrix only. Guarantee Python 3.10-3.12 initially. Support Torch 2.6 and 2.11; reject 2.3-2.5 and 2.7-2.10. |
 | D04 | What is the public image input contract? | Provide one canonical preprocessing pipeline with `coerce` and `strict` policies. `coerce` accepts broad documented forms and performs safe deterministic conversions; `strict` requires exact or explicitly declared representation. Both reject genuine ambiguity. One source image is accepted per call; only faces within that image are batched for predictors. | Strict-only behavior increases migration cost; reproducing permissive guesses can silently corrupt inference. Multi-image batching adds a separate result/error/shape contract and is out of v1 scope. | W1.1 | **Approved 2026-08-21:** default `input_policy="coerce"`; opt-in `strict` with `InputSpec`. Both modes are deterministic and share one canonical pipeline. One source image per call; reject image batches with `B>1`. Rename predictor batching to `face_batch_size`, retaining `batch_size` as a v1.x warning alias. |
 | D05 | What is the supported configuration API? | Add a resource-backed `facetorch` configuration loader that composes Hydra defaults and returns portable paths. Keep filesystem config loading as an explicit advanced API, not the default README path. | Continue caller-relative `conf/config.yaml`; incompatible with normal installed-wheel usage. | W2.1 | **Approved 2026-08-21:** add the packaged, fully composed loader; retain external YAML as an advanced supported override. |
 | D06 | What should happen when no compatible `.pt2` artifact exists? | Fail clearly by default. Allow a verified legacy TorchScript fallback only through explicit opt-in; prohibit the unsafe AU TorchScript fallback on CUDA. | Continue silent automatic fallback; maximizes apparent compatibility but hides multi-gigabyte downloads and known safety/correctness risks. | W3.3 | **Approved 2026-08-21:** fail closed by default; require explicit `allow_legacy_models=True` for verified eligible TorchScript artifacts. Never allow the known AU TorchScript CUDA path. |
@@ -997,6 +997,26 @@ CI, or immutable image/wheel promotion was executed. Governance and model rights
 remain fail-closed, the setuptools exception requires expiry/removal monitoring,
 and no independent human reviewer is available. B10-B12 have since been
 implemented locally; remote release gates remain open.
+
+### Approved Torch support/security amendment — 2026-08-22
+
+This amendment supersedes the three-cohort support promise described in the
+historical B08 and B09 implementation evidence above. The founder approved:
+
+- dropping Torch 2.3 from package metadata, runtime routing, model manifests,
+  exact environments, CI, release tooling, and current public documentation
+  because GHSA-53q9-r3pm-6pq6 is a critical advisory affecting
+  `torch.load(weights_only=True)`;
+- retaining Torch 2.6 as the validated CUDA 12.4 production cohort, alongside
+  Torch 2.11, rather than forcing all users onto CUDA 13.0 immediately;
+- accepting only GHSA-887c-mr87-cxwp, GHSA-vgrw-7cvw-pwgx, and
+  GHSA-f4hp-rmr7-r7v8 for the exact Torch 2.6 CPU/CUDA profiles through
+  2026-11-20. Their affected APIs are not used by Facetorch, and executable
+  release contracts enforce that premise.
+
+Existing Torch 2.3 objects in the separately owned Hugging Face repositories are
+not part of the v1 manifest and need not be destructively removed from their
+immutable remote history.
 
 ### B10 local implementation evidence — 2026-08-22
 

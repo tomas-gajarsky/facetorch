@@ -8,8 +8,8 @@ when the immutable v1.0.0 tag and all publication receipts have been verified.
 ### Breaking Changes
 * Minimum Python version raised from 3.8 to 3.10
 * Supported Python range is explicitly capped at `<3.13` for Python 3.10-3.12
-* PyTorch support is bounded to the explicit 2.3.x, 2.6.x, and 2.11.x cohort lines;
-  2.4, 2.5, and 2.7-2.10 are rejected before model download
+* PyTorch support is bounded to the explicit 2.6.x and 2.11.x cohort lines;
+  2.3-2.5 and 2.7-2.10 are rejected before model download
 * Default models migrated from TorchScript (`.pt`) to `torch.export` (`.pt2`);
   verified TorchScript artifacts now require explicit `allow_legacy_models=True`
 * Google Drive model configs are deprecated and fail closed without immutable size
@@ -48,7 +48,7 @@ when the immutable v1.0.0 tag and all publication receipts have been verified.
 * `[tool.uv]` configuration in `pyproject.toml`
 * Exact CPU and CUDA uv lock profiles for every supported Torch cohort, refreshed
   CPU/GPU conda locks, dependency advisory gating, and CycloneDX SBOM generation
-* Tiered CI for source tests, Python 3.10-3.12 wheel installs, Torch 2.3/2.6/2.11
+* Tiered CI for source tests, Python 3.10-3.12 wheel installs, Torch 2.6/2.11
   CPU cohorts, branch-wheel conda validation, and frozen production images
 * Owner-only protected-commit local GPU workflow covering all cohort devices, the
   installed default analyzer, public notebook, and both production images
@@ -56,7 +56,7 @@ when the immutable v1.0.0 tag and all publication receipts have been verified.
 ### Changed
 * Migrated from `setup.py` + `version` file to `pyproject.toml` (PEP 621)
 * All model files migrated from TorchScript (.pt) to torch.export (.pt2) portable format with dynamic batch support
-* Model artifact strategy changed to prioritize portability and install-time simplicity over TorchScript-specific runtime behavior: `.pt2` artifacts do not require bundled model source code, while versioned cohorts handle PyTorch exported-program schema differences across supported torch runtimes (`2.3`, `2.6`, `2.11`)
+* Model artifact strategy changed to prioritize portability and install-time simplicity over TorchScript-specific runtime behavior: `.pt2` artifacts do not require bundled model source code, while versioned cohorts handle PyTorch exported-program schema differences across supported torch runtimes (`2.6`, `2.11`)
 * Built-in Hugging Face model configs now select exactly one declared compatible
   manifest artifact; they no longer synthesize filenames or cascade downloads
 * AU predictor model rewritten with timm Swin Transformer backbone for torch.export compatibility
@@ -71,14 +71,18 @@ when the immutable v1.0.0 tag and all publication receipts have been verified.
 * Development dependencies consolidated from `requirements.dev.txt` into `pyproject.toml`
 * Development release-validation dependencies now include `build` and `packaging>=25.0` for Metadata 2.4 / PEP 639 checks
 * Replaced the misleading open-ended Torch dependency with a bounded disjoint
-  specifier matching the three declared artifact cohorts
+  specifier matching the two declared artifact cohorts
+* Removed the Torch 2.3 cohort because GHSA-53q9-r3pm-6pq6 is a critical
+  `torch.load(weights_only=True)` remote-code-execution advisory
+* Retained the validated Torch 2.6/CUDA 12.4 cohort under three exact moderate
+  advisory exceptions, limited to unused APIs and expiring on 2026-11-20
 * Docker base images updated to Python 3.12 and CUDA 12.4
 * Production images now build and install the exact branch wheel as a non-root
   user from the same locked Torch 2.6 CPU/CUDA 12.4 profiles used in CI
 * Candidate Python support narrowed to 3.10, 3.11, and 3.12 pending final CI lanes
 * Predictor cohort validation defines batches as independent faces from one image;
   multi-image batching remains outside the v1 API
-* GPU environment updated from CUDA 11.2 to CUDA 12.1+
+* GPU environment updated from CUDA 11.2 to CUDA 12.4+
 * Development status remains Beta through the approved release-candidate soak
 * Google Colab notebook updated to v1.0.0 (uses `image_source`, removes pinned torch versions)
 
@@ -86,14 +90,14 @@ when the immutable v1.0.0 tag and all publication receipts have been verified.
 * "File name too long" error when passing tensor/array to `FaceAnalyzer.run()` with `ImageReader`
 * AU predictor YAML indentation error in merged config files
 * Numpy array reader now handles (H, W) and (H, W, 1) grayscale arrays
-* AU `.pt2` CUDA device mismatch by re-exporting validated AU cohorts (`2.3`, `2.6`, `2.11`) and publishing refreshed Hugging Face artifacts with metadata
+* AU `.pt2` CUDA device mismatch by re-exporting validated AU cohorts (`2.6`, `2.11`) and publishing refreshed Hugging Face artifacts with metadata
 * Exported-model schema mismatches are recorded per manifest/runtime/device so the
   same incompatible artifact is not downloaded or executed repeatedly
 * Export cohort validation now fails on numerical drift beyond configured max/mean absolute-difference tolerances instead of only recording comparison metrics
 * Model export no longer uploads inline; a late validation failure cannot publish
   an early model, and requested CUDA cannot be hidden by a successful CPU result
 * Detector cohorts recover exact legacy TorchScript BatchNorm attributes before a
-  strict native load and support dynamic multiple-of-32 spatial inputs on Torch 2.3
+  strict native load and support dynamic multiple-of-32 spatial inputs
 * AU validation compares batched artifacts with concatenated one-face golden calls,
   avoiding the legacy trace's batch-coupled behavior
 * Test configs now resolve `/opt/facetorch` paths to the checked-out repository during local pytest runs, and honor `FACETORCH_TEST_MODEL_ROOT` for isolated model caches

@@ -168,7 +168,6 @@ class TestLoadExportedModel:
         dl._last_candidates = [
             "model-torch2.11.pt2",
             "model-torch2.6.pt2",
-            "model-torch2.3.pt2",
         ]
 
         with patch(

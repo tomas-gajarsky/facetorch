@@ -45,7 +45,7 @@ smoke summaries even if all executed cases happened to pass.
 Do not use `--upload`: it is intentionally disabled. Collect all required cohort
 summaries under one protected staging root before continuing.
 
-Before publication planning, verify that all three declared cohorts contain all
+Before publication planning, verify that both declared cohorts contain all
 ten models and successful CPU/CUDA cases. Candidate diagnostics may use
 `--candidate-evidence`; a release run must not, and must be produced from a clean
 immutable commit:
@@ -53,7 +53,6 @@ immutable commit:
 ```bash
 PYTHONPATH=. python scripts/verify_model_release_matrix.py \
   --staging-root /secure/staging \
-  --summary /secure/staging/torch-2.3/summary-torch2.3.json \
   --summary /secure/staging/torch-2.6/summary-torch2.6.json \
   --summary /secure/staging/torch-2.11/summary-torch2.11.json
 ```
