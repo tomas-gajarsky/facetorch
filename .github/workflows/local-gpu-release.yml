@@ -1,0 +1,169 @@
+name: exact-candidate-local-gpu
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Full SHA of the protected candidate selected for this dispatch
+        required: true
+        type: string
+      confirm_trusted_source:
+        description: Confirm that this is founder-reviewed trusted source
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: exact-candidate-local-gpu
+  cancel-in-progress: false
+
+jobs:
+  authorize-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      source_sha: ${{ steps.authorize.outputs.source_sha }}
+    steps:
+      - name: Authorize one exact protected commit
+        id: authorize
+        env:
+          ACTOR: ${{ github.actor }}
+          CONFIRMED: ${{ inputs.confirm_trusted_source }}
+          INPUT_SOURCE_SHA: ${{ inputs.source_sha }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          SOURCE_REF_PROTECTED: ${{ github.ref_protected }}
+          WORKFLOW_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          python - <<'PY'
+          import os
+          import re
+
+          source = os.environ["INPUT_SOURCE_SHA"]
+          if not re.fullmatch(r"[0-9a-f]{40}", source):
+              raise SystemExit("source_sha must be a full lowercase commit SHA")
+          if source != os.environ["WORKFLOW_SOURCE_SHA"]:
+              raise SystemExit("source_sha must equal the workflow's exact source SHA")
+          if os.environ["SOURCE_REF_PROTECTED"] != "true":
+              raise SystemExit("The workflow must be dispatched from a protected ref")
+          if os.environ["CONFIRMED"] != "true":
+              raise SystemExit("Trusted-source confirmation is required")
+          if os.environ["ACTOR"] != os.environ["REPOSITORY_OWNER"]:
+              raise SystemExit("Only the repository owner may authorize the local GPU")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"source_sha={source}\n")
+          PY
+
+  exact-candidate-cuda:
+    needs: authorize-candidate
+    environment: local-gpu-release
+    runs-on: [self-hosted, linux, x64, facetorch-ephemeral-gpu]
+    timeout-minutes: 720
+    env:
+      SOURCE_SHA: ${{ needs.authorize-candidate.outputs.source_sha }}
+    steps:
+      - name: Verify ephemeral runner boundary
+        run: |
+          test "$FACETORCH_RUNNER_EPHEMERAL" = "1"
+          test "$(uv --version)" = "uv 0.9.14"
+          test -n "$RUNNER_TEMP"
+          for credential in HF_TOKEN HUGGING_FACE_HUB_TOKEN TWINE_PASSWORD PYPI_API_TOKEN DOCKER_PASSWORD; do
+            test -z "${!credential:-}" || {
+              echo "Persistent publication credential is forbidden: $credential" >&2
+              exit 1
+            }
+          done
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          clean: true
+          fetch-depth: 1
+          persist-credentials: false
+          ref: ${{ needs.authorize-candidate.outputs.source_sha }}
+      - name: Verify exact clean candidate
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          test "$(uname -s)" = "Linux"
+          test "$(uname -m)" = "x86_64"
+          nvidia-smi
+      - name: Allocate isolated evidence root
+        run: |
+          facetorch_staging="$(mktemp -d "$RUNNER_TEMP/facetorch-release-${SOURCE_SHA}.XXXXXX")"
+          echo "FACETORCH_STAGING=$facetorch_staging" >> "$GITHUB_ENV"
+      - name: Verify locks and dependency advisories
+        run: |
+          uv sync --project environments/torch-2.6-cu124 --frozen \
+            --extra test --extra release --python 3.10
+          environments/torch-2.6-cu124/.venv/bin/python scripts/check_dependency_sync.py
+          environments/torch-2.6-cu124/.venv/bin/python scripts/audit_dependencies.py \
+            --output-dir "$FACETORCH_STAGING/dependency-audit"
+      - name: Export and validate all exact CUDA cohorts
+        run: |
+          python scripts/run_local_cuda_release_matrix.py \
+            --repo-root . \
+            --source-sha "$SOURCE_SHA" \
+            --staging-root "$FACETORCH_STAGING"
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      - name: Build exact CPU and GPU production images
+        run: |
+          source_date_epoch="$(git show -s --format=%ct "$SOURCE_SHA")"
+          docker buildx build --load --file docker/Dockerfile \
+            --build-arg "SOURCE_DATE_EPOCH=$source_date_epoch" \
+            --tag "facetorch:cpu-${SOURCE_SHA}" .
+          docker buildx build --load --file docker/Dockerfile.gpu \
+            --build-arg "SOURCE_DATE_EPOCH=$source_date_epoch" \
+            --tag "facetorch:gpu-${SOURCE_SHA}" .
+      - name: Run full default analyzer in both production images
+        run: |
+          install -d -m 0777 "$FACETORCH_STAGING/container-reports"
+          docker run --rm --network none --read-only \
+            --tmpfs /tmp:rw,noexec,nosuid,size=4g \
+            --volume "$GITHUB_WORKSPACE:/release-source:ro" \
+            --volume "$FACETORCH_STAGING:/evidence:ro" \
+            --volume "$FACETORCH_STAGING/container-reports:/reports:rw" \
+            --entrypoint python "facetorch:cpu-${SOURCE_SHA}" \
+            /release-source/scripts/smoke_staged_default_analyzer.py \
+            --repo-root /release-source --staging-root /evidence \
+            --summary /evidence/torch-2.6/summary-torch2.6.json \
+            --device cpu --cache-root /tmp/facetorch-cache \
+            --report /reports/cpu-image-smoke.json
+          docker run --rm --gpus all --network none --read-only \
+            --tmpfs /tmp:rw,noexec,nosuid,size=4g \
+            --volume "$GITHUB_WORKSPACE:/release-source:ro" \
+            --volume "$FACETORCH_STAGING:/evidence:ro" \
+            --volume "$FACETORCH_STAGING/container-reports:/reports:rw" \
+            --entrypoint python "facetorch:gpu-${SOURCE_SHA}" \
+            /release-source/scripts/smoke_staged_default_analyzer.py \
+            --repo-root /release-source --staging-root /evidence \
+            --summary /evidence/torch-2.6/summary-torch2.6.json \
+            --device cuda --cache-root /tmp/facetorch-cache \
+            --report /reports/gpu-image-smoke.json
+      - name: Bind container evidence to image IDs
+        run: |
+          python scripts/record_container_evidence.py \
+            --repo-root . --staging-root "$FACETORCH_STAGING" \
+            --source-sha "$SOURCE_SHA" \
+            --runner-report "$FACETORCH_STAGING/local-cuda-runner-report.json" \
+            --cpu-smoke "$FACETORCH_STAGING/container-reports/cpu-image-smoke.json" \
+            --gpu-smoke "$FACETORCH_STAGING/container-reports/gpu-image-smoke.json" \
+            --cpu-image "facetorch:cpu-${SOURCE_SHA}" \
+            --gpu-image "facetorch:gpu-${SOURCE_SHA}" \
+            --output "$FACETORCH_STAGING/container-evidence.json"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ always() && env.FACETORCH_STAGING != '' }}
+        with:
+          name: exact-candidate-local-gpu-evidence
+          path: |
+            ${{ env.FACETORCH_STAGING }}/candidate-matrix-report.json
+            ${{ env.FACETORCH_STAGING }}/local-cuda-runner-report.json
+            ${{ env.FACETORCH_STAGING }}/default-analyzer-cuda-smoke.json
+            ${{ env.FACETORCH_STAGING }}/facetorch-notebook-report.json
+            ${{ env.FACETORCH_STAGING }}/facetorch-notebook-executed.ipynb
+            ${{ env.FACETORCH_STAGING }}/container-reports/*.json
+            ${{ env.FACETORCH_STAGING }}/container-evidence.json
+            ${{ env.FACETORCH_STAGING }}/dependency-audit/**
+          if-no-files-found: warn
+          retention-days: 30

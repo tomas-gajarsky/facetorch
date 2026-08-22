@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=77.0.3", "wheel"]
+requires = ["setuptools==84.0.0", "wheel==0.46.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,8 +8,8 @@ version = "1.0.0"
 description = "Face analysis PyTorch framework."
 readme = "README.md"
 license = "Apache-2.0"
-license-files = ["LICENSE"]
-requires-python = ">=3.10,<3.14"
+license-files = ["LICENSE", "MODEL_NOTICE.md"]
+requires-python = ">=3.10,<3.13"
 authors = [
     { name = "Tomas Gajarsky", email = "gajarsky.tomas@gmail.com" },
 ]
@@ -17,17 +17,16 @@ maintainers = [
     { name = "Tomas Gajarsky", email = "gajarsky.tomas@gmail.com" },
 ]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Intended Audience :: Science/Research",
     "Intended Audience :: End Users/Desktop",
     "Natural Language :: English",
-    "Operating System :: OS Independent",
+    "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
@@ -38,10 +37,10 @@ dependencies = [
     "hydra-core>=1.0.0",
     "numpy>=1.18.2",
     "python-json-logger>=2.0.0",
-    "torch>=2.3.0",
+    "torch>=2.3,<2.12,!=2.4.*,!=2.5.*,!=2.7.*,!=2.8.*,!=2.9.*,!=2.10.*",
     "requests>=2.20.0",
     "timm>=0.6.0",
-    "torchvision>=0.15.0",
+    "torchvision>=0.18,<0.27",
     "huggingface_hub>=0.16.0",
 ]
 
@@ -51,12 +50,20 @@ dev = [
     "build>=1.2.2",
     "flake8>=5.0.4",
     "packaging>=25.0",
-    "pdoc3>=0.8",
+    "pdoc3==0.11.6",
+    "pip>=25.0",
     "pytest>=6.0.0",
     "pytest-cov>=2.10.0",
-    "setuptools>=77.0.3",
+    "setuptools==81.0.0",
     "snakeviz>=2.1.0",
     "twine>=3.2.0",
+]
+release = [
+    "check-wheel-contents>=0.6.2",
+    "ipykernel>=6.29.0",
+    "nbclient>=0.10.0",
+    "nbformat>=5.10.0",
+    "pip-audit==2.10.1",
 ]
 
 [project.urls]
@@ -74,4 +81,15 @@ url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
 [tool.setuptools.packages.find]
-exclude = ["tests*", "model_defs*", "scripts*"]
+where = ["."]
+include = ["facetorch", "facetorch.*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+"facetorch.models" = ["*.json"]
+"facetorch.configs" = [
+    "*.yaml",
+    "analyzer/*.yaml",
+    "analyzer/*/*.yaml",
+    "analyzer/*/*/*.yaml",
+]

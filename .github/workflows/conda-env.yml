@@ -1,26 +1,106 @@
-name: conda-env
+name: conda-candidate
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main", "release/v1.0.0"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main", "release/v1.0.0"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: conda-candidate-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  conda:
+  cpu-conda-candidate:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Miniforge
-        uses: conda-incubator/setup-miniconda@v3
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3
         with:
-          miniforge-version: latest
-          python-version: "3.10"
-          environment-file: environment.yml
-          activate-environment: base
+          miniforge-version: Miniforge3-26.3.2-3
           auto-activate-base: true
-
-      - name: Install facetorch from conda-forge
+      - name: Build the branch wheel
         run: |
-          conda install -c conda-forge facetorch
+          python -m pip install "build>=1.2.2"
+          python -m build --wheel
+      - name: Install the exact CPU conda lock and branch wheel
+        run: |
+          conda install --name base --channel conda-forge "conda-lock=4.0.2"
+          conda-lock install --name facetorch-ci --force conda-lock.yml
+          conda run --name facetorch-ci python -m pip install --no-deps dist/*.whl
+          conda run --name facetorch-ci python -m pip check
+      - name: Smoke candidate rather than the public package
+        run: |
+          cd "$RUNNER_TEMP"
+          FACETORCH_OFFLINE=1 conda run --name facetorch-ci python - <<'PY'
+          import facetorch
+          import torch
+          from importlib.metadata import version
+
+          config = facetorch.load_config(offline=True)
+          assert version("facetorch") == "1.0.0"
+          assert config.analyzer.device == "cpu"
+          assert torch.__version__.split("+", 1)[0] == "2.6.0"
+          PY
+
+  gpu-conda-hybrid-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3
+        with:
+          miniforge-version: Miniforge3-26.3.2-3
+          auto-activate-base: true
+      - name: Install exact GPU system lock and CUDA Python profile
+        run: |
+          python -m pip install "uv==0.9.14"
+          conda install --name base --channel conda-forge "conda-lock=4.0.2"
+          conda-lock install --name facetorch-gpu-ci --force gpu.conda-lock.yml
+          uv sync --project environments/torch-2.6-cu124 --frozen --python 3.12
+          uv build --wheel --out-dir "$RUNNER_TEMP/gpu-dist"
+          uv pip install \
+            --python environments/torch-2.6-cu124/.venv/bin/python \
+            --no-deps "$RUNNER_TEMP"/gpu-dist/*.whl
+          uv pip check \
+            --python environments/torch-2.6-cu124/.venv/bin/python
+      - name: Verify both hybrid layers and the branch wheel
+        env:
+          PROFILE_PYTHON: ${{ github.workspace }}/environments/torch-2.6-cu124/.venv/bin/python
+        run: |
+          conda run --name facetorch-gpu-ci python - <<'PY'
+          import sys
+
+          assert sys.version_info[:2] == (3, 12)
+          PY
+          conda list --name facetorch-gpu-ci --json > "$RUNNER_TEMP/gpu-conda.json"
+          python - <<'PY'
+          import json
+          import os
+
+          packages = {
+              item["name"]: item["version"]
+              for item in json.load(open(os.environ["RUNNER_TEMP"] + "/gpu-conda.json"))
+          }
+          assert packages["cuda-version"] == "12.4"
+          PY
+          cd "$RUNNER_TEMP"
+          FACETORCH_OFFLINE=1 "$PROFILE_PYTHON" - <<'PY'
+          from importlib.metadata import version
+
+          import facetorch
+          import torch
+
+          config = facetorch.load_config("gpu", offline=True)
+          assert version("facetorch") == "1.0.0"
+          assert config.analyzer.device == "cuda"
+          assert torch.__version__.split("+", 1)[0] == "2.6.0"
+          assert torch.version.cuda == "12.4"
+          PY

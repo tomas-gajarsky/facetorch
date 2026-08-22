@@ -7,7 +7,9 @@ services:
       context: .
       dockerfile: ./docker/Dockerfile
     volumes:
-      - ./:/opt/facetorch
+      - facetorch-cache-cpu:/var/cache/facetorch
+    environment:
+      FACETORCH_CACHE_DIR: /var/cache/facetorch
     entrypoint: [ "/bin/bash" ]
 
   facetorch-gpu:
@@ -17,7 +19,9 @@ services:
       context: .
       dockerfile: ./docker/Dockerfile.gpu
     volumes:
-      - ./:/opt/facetorch
+      - facetorch-cache-gpu:/var/cache/facetorch
+    environment:
+      FACETORCH_CACHE_DIR: /var/cache/facetorch
     deploy:
       resources:
         reservations:
@@ -34,5 +38,11 @@ services:
       context: .
       dockerfile: ./docker/Dockerfile.gpu
     volumes:
-      - ./:/opt/facetorch
+      - facetorch-cache-gpu:/var/cache/facetorch
+    environment:
+      FACETORCH_CACHE_DIR: /var/cache/facetorch
     entrypoint: [ "/bin/bash" ]
+
+volumes:
+  facetorch-cache-cpu:
+  facetorch-cache-gpu:
