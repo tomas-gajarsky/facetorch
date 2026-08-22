@@ -20,17 +20,19 @@ analyzer:
     downloader:
       _target_: facetorch.downloader.DownloaderHuggingFace
       file_id: 1eMuOdGkiNCOUTiEbKKoPCHGCuDgiKeNC
-      path_local: /opt/facetorch/models/exported/detector/1/model.pt2
+      path_local: ${facetorch.model_dir:}/exported/detector/1/model.pt2
       repo_id: tomas-gajarsky/facetorch-detector-retinaface
       filename: model.pt2
-      export_filenames_by_torch_minor:
-        '2.3': model-torch2.3.pt2
-        '2.6': model-torch2.6.pt2
-        '2.11': model-torch2.11.pt2
+      manifest_id: detector-retinaface
+      revision: 2e1015f21f8c743ca6a356a1cba3223232096502
+      sha256: 6588c6eaf7b0e342b72f89b5a221e7ecb8c0158e5de1b95d0111ba406decad7c
+      size_bytes: 110323020
+      offline: ${offline}
+      allow_legacy_models: ${allow_legacy_models}
+      device: ${analyzer.device}
     device:
       _target_: torch.device
       type: ${analyzer.device}
-    reverse_colors: true
     preprocessor:
       _target_: facetorch.analyzer.detector.pre.DetectorPreProcessor
       transform:
@@ -49,7 +51,7 @@ analyzer:
         _target_: torch.device
         type: ${analyzer.device}
       optimize_transform: ${analyzer.optimize_transforms}
-      reverse_colors: ${analyzer.detector.reverse_colors}
+      reverse_colors: true
     postprocessor:
       _target_: facetorch.analyzer.detector.post.PostRetFace
       transform: None
@@ -79,7 +81,6 @@ analyzer:
       variance:
       - 0.1
       - 0.2
-      reverse_colors: ${analyzer.detector.reverse_colors}
       expand_box_ratio: 0.0
   unifier:
     _target_: facetorch.analyzer.unifier.FaceUnifier
@@ -88,9 +89,9 @@ analyzer:
       transforms:
       - _target_: torchvision.transforms.Normalize
         mean:
-        - -123.0
-        - -117.0
-        - -104.0
+        - 0.0
+        - 0.0
+        - 0.0
         std:
         - 255.0
         - 255.0
@@ -110,13 +111,16 @@ analyzer:
       downloader:
         _target_: facetorch.downloader.DownloaderHuggingFace
         file_id: 19h3kqar1wlELAmM5hDyj9tlrUh8yjrCl
-        path_local: /opt/facetorch/models/exported/predictor/embed/1/model.pt2
+        path_local: ${facetorch.model_dir:}/exported/predictor/embed/1/model.pt2
         repo_id: tomas-gajarsky/facetorch-embed-resnet-50
         filename: model.pt2
-        export_filenames_by_torch_minor:
-          '2.3': model-torch2.3.pt2
-          '2.6': model-torch2.6.pt2
-          '2.11': model-torch2.11.pt2
+        manifest_id: embed-resnet50
+        revision: e98f06a0c724e7dfd893b12d94165444978a449e
+        sha256: e09098cc36d7d03189319185f62708fa144c02cdd6e6bb5c5ab3698d1a034bc5
+        size_bytes: 114114903
+        offline: ${offline}
+        allow_legacy_models: ${allow_legacy_models}
+        device: ${analyzer.device}
       device:
         _target_: torch.device
         type: ${analyzer.device}
@@ -158,13 +162,16 @@ analyzer:
       downloader:
         _target_: facetorch.downloader.DownloaderHuggingFace
         file_id: 1WI-mP_0mGW31OHfriPUsuFS_usYh_W8p
-        path_local: /opt/facetorch/models/exported/predictor/verify/2/model.pt2
+        path_local: ${facetorch.model_dir:}/exported/predictor/verify/2/model.pt2
         repo_id: tomas-gajarsky/facetorch-verify-adaface
         filename: model.pt2
-        export_filenames_by_torch_minor:
-          '2.3': model-torch2.3.pt2
-          '2.6': model-torch2.6.pt2
-          '2.11': model-torch2.11.pt2
+        manifest_id: verify-adaface
+        revision: 348ecc75d4624edc60a809ef3867f6a6537c7f2d
+        sha256: d8e127e3f111ca73d178c1b7f0393ba4829216518f212ae2dc70c84561d80130
+        size_bytes: 261426464
+        offline: ${offline}
+        allow_legacy_models: ${allow_legacy_models}
+        device: ${analyzer.device}
       device:
         _target_: torch.device
         type: ${analyzer.device}
@@ -206,13 +213,16 @@ analyzer:
       downloader:
         _target_: facetorch.downloader.DownloaderHuggingFace
         file_id: 1xoB5VYOd0XLjb-rQqqHWCkQvma4NytEd
-        path_local: /opt/facetorch/models/exported/predictor/fer/2/model.pt2
+        path_local: ${facetorch.model_dir:}/exported/predictor/fer/2/model.pt2
         repo_id: tomas-gajarsky/facetorch-fer-efficientnet-b2
         filename: model.pt2
-        export_filenames_by_torch_minor:
-          '2.3': model-torch2.3.pt2
-          '2.6': model-torch2.6.pt2
-          '2.11': model-torch2.11.pt2
+        manifest_id: fer-efficientnet-b2
+        revision: 2c9829a28c014e2f9b7a8ed683d1c7fd1631b18c
+        sha256: f9fee79f7a679427612d7818c5f0ef3edc974b6de09f58bd600ef4d9ba0df5b0
+        size_bytes: 31950057
+        offline: ${offline}
+        allow_legacy_models: ${allow_legacy_models}
+        device: ${analyzer.device}
       device:
         _target_: torch.device
         type: ${analyzer.device}
@@ -262,13 +272,16 @@ analyzer:
       downloader:
         _target_: facetorch.downloader.DownloaderHuggingFace
         file_id: 1uoVX9suSA5JVWTms3hEtJKzwO-CUR_jV
-        path_local: /opt/facetorch/models/exported/predictor/au/1/model.pt2
+        path_local: ${facetorch.model_dir:}/exported/predictor/au/1/model.pt2
         repo_id: tomas-gajarsky/facetorch-au-opengraph
         filename: model.pt2
-        export_filenames_by_torch_minor:
-          '2.3': model-torch2.3.pt2
-          '2.6': model-torch2.6.pt2
-          '2.11': model-torch2.11.pt2
+        manifest_id: au-opengraph
+        revision: 3284478cd26b09de911783df1d8fdbb01e037eb3
+        sha256: 8ededd74d36a0b552d4a5e48f2dd32395ec483a974944bcbae7b09d65ae6d728
+        size_bytes: 386589989
+        offline: ${offline}
+        allow_legacy_models: ${allow_legacy_models}
+        device: ${analyzer.device}
       device:
         _target_: torch.device
         type: ${analyzer.device}
@@ -352,13 +365,16 @@ analyzer:
       downloader:
         _target_: facetorch.downloader.DownloaderHuggingFace
         file_id: 1Xl4ilNCU_DgKNhITrXb3UyQUUdm3VTKS
-        path_local: /opt/facetorch/models/exported/predictor/va/1/model.pt2
+        path_local: ${facetorch.model_dir:}/exported/predictor/va/1/model.pt2
         repo_id: tomas-gajarsky/facetorch-va-elim
         filename: model.pt2
-        export_filenames_by_torch_minor:
-          '2.3': model-torch2.3.pt2
-          '2.6': model-torch2.6.pt2
-          '2.11': model-torch2.11.pt2
+        manifest_id: va-elim
+        revision: 62590460b05d96fb0aafbf71b0462b8b42901f6e
+        sha256: a6386185a10a5ba9e69f7fe69111edbf95bce85bad06b3f6858caf797ded4f87
+        size_bytes: 20142372
+        offline: ${offline}
+        allow_legacy_models: ${allow_legacy_models}
+        device: ${analyzer.device}
       device:
         _target_: torch.device
         type: ${analyzer.device}
@@ -404,13 +420,16 @@ analyzer:
       downloader:
         _target_: facetorch.downloader.DownloaderHuggingFace
         file_id: 1GjDTwQpvrkCjXOdiBy1oMkzm7nt-bXFg
-        path_local: /opt/facetorch/models/exported/predictor/deepfake/1/model.pt2
+        path_local: ${facetorch.model_dir:}/exported/predictor/deepfake/1/model.pt2
         repo_id: tomas-gajarsky/facetorch-deepfake-efficientnet-b7
         filename: model.pt2
-        export_filenames_by_torch_minor:
-          '2.3': model-torch2.3.pt2
-          '2.6': model-torch2.6.pt2
-          '2.11': model-torch2.11.pt2
+        manifest_id: deepfake-efficientnet-b7
+        revision: 3ecdd5193f7e981b7f3dad2407658c5456ae671c
+        sha256: 620005edfc682011b52806f56d8fcd8200691215461b00e04de09a344e21a467
+        size_bytes: 268598190
+        offline: ${offline}
+        allow_legacy_models: ${allow_legacy_models}
+        device: ${analyzer.device}
       device:
         _target_: torch.device
         type: ${analyzer.device}
@@ -454,13 +473,16 @@ analyzer:
       downloader:
         _target_: facetorch.downloader.DownloaderHuggingFace
         file_id: 16gNFQdEH2nWvW3zTbdIAniKIbPAp6qBA
-        path_local: /opt/facetorch/models/exported/predictor/align/1/model.pt2
+        path_local: ${facetorch.model_dir:}/exported/predictor/align/1/model.pt2
         repo_id: tomas-gajarsky/facetorch-align-synergynet
         filename: model.pt2
-        export_filenames_by_torch_minor:
-          '2.3': model-torch2.3.pt2
-          '2.6': model-torch2.6.pt2
-          '2.11': model-torch2.11.pt2
+        manifest_id: align-synergynet
+        revision: f90c6d92f0ac022660b80079210d3cdeb46bb1e6
+        sha256: e88114af7c196d5f449b9f7f01573aaedcc476f4e9eeff0861fbd939c5a38c42
+        size_bytes: 9791668
+        offline: ${offline}
+        allow_legacy_models: ${allow_legacy_models}
+        device: ${analyzer.device}
       device:
         _target_: torch.device
         type: ${analyzer.device}
@@ -499,7 +521,12 @@ analyzer:
       downloader_meta:
         _target_: facetorch.downloader.DownloaderGDrive
         file_id: 11tdAcFuSXqCCf58g52WT1Rpa8KuQwe2o
-        path_local: /opt/facetorch/data/3dmm/meta.pt
+        path_local: ${facetorch.metadata_dir:}/3dmm/meta.pt
+        revision: gdrive-file-11tdAcFuSXqCCf58g52WT1Rpa8KuQwe2o
+        sha256: db957f82e4c85884c3d9bb4e49469e3caf1e5b488c4cb3b72888e75a71c77890
+        size_bytes: 33211475
+        expected_format: torch_data
+        offline: ${offline}
       image_size: 120
     draw_boxes:
       _target_: facetorch.analyzer.utilizer.draw.BoxDrawer
@@ -530,15 +557,16 @@ analyzer:
     _target_: facetorch.logger.LoggerJsonFile
     name: facetorch
     level: 20
-    path_file: /opt/logs/facetorch/main.log
+    path_file: null
     json_format: '%(asctime)s %(levelname)s %(message)s'
 main:
   sleep: 3
 debug: true
-path_image: /opt/facetorch/data/input/test.jpg
+offline: ${facetorch.offline:}
+allow_legacy_models: false
+path_image: null
 batch_size: 8
 fix_img_size: true
-return_img_data: false
 include_tensors: true
-path_output: /opt/facetorch/data/output/test.png
-path_image_2: /opt/facetorch/data/input/test3.jpg
+path_output: null
+path_image_2: null

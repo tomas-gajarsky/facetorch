@@ -1,7 +1,8 @@
 import os
 
 import pytest
-from facetorch.datastruct import Response
+
+from facetorch.datastruct import ImageData
 
 
 @pytest.mark.endtoend
@@ -12,11 +13,12 @@ def test_draw_boxes(analyzer, cfg, response):
         pytest.skip("No output path")
     if "save" not in cfg.analyzer.utilizer.keys():
         pytest.skip("Save utilizer not configured")
-    if isinstance(response, Response):
-        pytest.skip("No output path in the data response")
+    if response.image is None:
+        pytest.skip("Image data was not retained in the analysis result")
 
     if os.path.exists(cfg.path_output):
         os.remove(cfg.path_output)
-    analyzer.utilizers["save"].run(response)
+    data = ImageData(path_output=cfg.path_output, img=response.image)
+    analyzer.utilizers["save"].run(data)
     assert os.path.exists(cfg.path_output)
     os.remove(cfg.path_output)

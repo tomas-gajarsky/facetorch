@@ -3,13 +3,16 @@ _target_: facetorch.analyzer.predictor.FacePredictor
 downloader:
   _target_: facetorch.downloader.DownloaderHuggingFace
   file_id: 1Xl4ilNCU_DgKNhITrXb3UyQUUdm3VTKS
-  path_local: /opt/facetorch/models/exported/predictor/va/1/model.pt2 # str
+  path_local: ${facetorch.model_dir:}/exported/predictor/va/1/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-va-elim  # HuggingFace repo ID
   filename: model.pt2  # Filename in the HuggingFace repo
-  export_filenames_by_torch_minor:
-    "2.3": model-torch2.3.pt2
-    "2.6": model-torch2.6.pt2
-    "2.11": model-torch2.11.pt2
+  manifest_id: va-elim
+  revision: 62590460b05d96fb0aafbf71b0462b8b42901f6e
+  sha256: a6386185a10a5ba9e69f7fe69111edbf95bce85bad06b3f6858caf797ded4f87
+  size_bytes: 20142372
+  offline: ${offline}
+  allow_legacy_models: ${allow_legacy_models}
+  device: ${analyzer.device}
 
 device:
   _target_: torch.device

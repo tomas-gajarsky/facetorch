@@ -1,0 +1,39 @@
+_target_: facetorch.analyzer.predictor.FacePredictor
+
+downloader:
+  _target_: facetorch.downloader.DownloaderGDrive
+  file_id: 1WI-mP_0mGW31OHfriPUsuFS_usYh_W8p
+  path_local: ${facetorch.model_dir:}/torchscript/predictor/verify/2/model.pt # str
+  offline: ${offline}
+  allow_legacy_models: ${allow_legacy_models}
+  device: ${analyzer.device}
+
+device:
+  _target_: torch.device
+  type: ${analyzer.device} # str
+
+preprocessor:
+  _target_: facetorch.analyzer.predictor.pre.PredictorPreProcessor
+  transform:
+    _target_: torchvision.transforms.Compose
+    transforms:
+      - _target_: torchvision.transforms.Resize
+        size: [112, 112] # List[int]
+        antialias: True # bool
+      - _target_: torchvision.transforms.Normalize
+        mean: [0.5, 0.5, 0.5] # List[float]
+        std: [0.5, 0.5, 0.5] # List[float]
+  device:
+    _target_: torch.device
+    type: ${analyzer.predictor.verify.device.type}
+  optimize_transform: ${analyzer.optimize_transforms}
+  reverse_colors: True # bool
+
+postprocessor:
+  _target_: facetorch.analyzer.predictor.post.PostEmbedder
+  transform: None
+  device:
+    _target_: torch.device
+    type: ${analyzer.predictor.verify.device.type}
+  optimize_transform: ${analyzer.optimize_transforms}
+  labels: ["abstract"] # List

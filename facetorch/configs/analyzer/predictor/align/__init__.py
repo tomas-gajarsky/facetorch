@@ -1,0 +1,1 @@
+"""Packaged alignment predictor configurations."""

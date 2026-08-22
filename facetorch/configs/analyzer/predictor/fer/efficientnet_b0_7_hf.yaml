@@ -1,0 +1,47 @@
+# Compatibility alias for the canonical Hugging Face configuration; retained in v1.x.
+_target_: facetorch.analyzer.predictor.FacePredictor
+
+downloader:
+  _target_: facetorch.downloader.DownloaderHuggingFace
+  file_id: 1i5f8vy1dZv_u8vsJsj9CHEzHwsokIknr
+  path_local: ${facetorch.model_dir:}/exported/predictor/fer/1/model.pt2 # str
+  repo_id: tomas-gajarsky/facetorch-fer-efficientnet-b0  # HuggingFace repo ID
+  filename: model.pt2  # Filename in the HuggingFace repo
+  manifest_id: fer-efficientnet-b0
+  revision: 3ddf81c0c80964e830ff0b0031b4eddd8d454cf7
+  sha256: de08f748aec83e4ba33e1b0cad01f89e71d313b6fd04a783870663e32f42caf7
+  size_bytes: 17100729
+  offline: ${offline}
+  allow_legacy_models: ${allow_legacy_models}
+  device: ${analyzer.device}
+
+device:
+  _target_: torch.device
+  type: ${analyzer.device} # str
+
+preprocessor:
+  _target_: facetorch.analyzer.predictor.pre.PredictorPreProcessor
+  transform:
+    _target_: torchvision.transforms.Compose
+    transforms:
+      - _target_: torchvision.transforms.Resize
+        size: [244, 244] # List[int]
+        antialias: True # bool
+      - _target_: torchvision.transforms.Normalize
+        mean: [0.485, 0.456, 0.406] # List[float]
+        std: [0.229, 0.224, 0.225] # List[float]
+  device:
+    _target_: torch.device
+    type: ${analyzer.predictor.fer.device.type}
+  optimize_transform: ${analyzer.optimize_transforms}
+  reverse_colors: False # bool
+
+postprocessor:
+  _target_: facetorch.analyzer.predictor.post.PostArgMax
+  transform: None
+  device:
+    _target_: torch.device
+    type: ${analyzer.predictor.fer.device.type}
+  optimize_transform: ${analyzer.optimize_transforms}
+  dim: 1
+  labels: ["Anger", "Disgust", "Fear", "Happiness", "Neutral", "Sadness", "Surprise"] # List

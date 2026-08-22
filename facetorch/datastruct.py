@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
+import warnings as _warnings
 
 import torch
 from codetiming import Timer
@@ -68,17 +69,38 @@ class Location:
         Returns:
             None
         """
-        assert amount >= 0, "Amount must be greater than or equal to 0."
-        # if amount != 0:
-        #     self.x1 = self.x1 - amount
-        #     self.y1 = self.y1 - amount
-        #     self.x2 = self.x2 + amount
-        #     self.y2 = self.y2 + amount
+        if amount < 0:
+            raise ValueError("amount must be greater than or equal to 0.")
         if amount != 0.0:
-            self.x1 = self.x1 - int((self.x2 - self.x1) / 2 * amount)
-            self.y1 = self.y1 - int((self.y2 - self.y1) / 2 * amount)
-            self.x2 = self.x2 + int((self.x2 - self.x1) / 2 * amount)
-            self.y2 = self.y2 + int((self.y2 - self.y1) / 2 * amount)
+            width = self.x2 - self.x1
+            height = self.y2 - self.y1
+            expand_x = int(round(width * amount / 2))
+            expand_y = int(round(height * amount / 2))
+            self.x1 -= expand_x
+            self.y1 -= expand_y
+            self.x2 += expand_x
+            self.y2 += expand_y
+
+    def clamp(self, width: int, height: int) -> None:
+        """Clamp coordinates to an image boundary."""
+        self.x1 = max(0, min(int(self.x1), int(width)))
+        self.x2 = max(self.x1, min(int(self.x2), int(width)))
+        self.y1 = max(0, min(int(self.y1), int(height)))
+        self.y2 = max(self.y1, min(int(self.y2), int(height)))
+
+    def fit_square(self, width: int, height: int) -> None:
+        """Fit the largest possible square around this location inside an image."""
+        center_x = (self.x1 + self.x2) / 2.0
+        center_y = (self.y1 + self.y2) / 2.0
+        side = min(max(self.x2 - self.x1, self.y2 - self.y1), width, height)
+        side = max(0, int(round(side)))
+
+        x1 = int(round(center_x - side / 2.0))
+        y1 = int(round(center_y - side / 2.0))
+        x1 = min(max(0, x1), max(0, width - side))
+        y1 = min(max(0, y1), max(0, height - side))
+        self.x1, self.y1 = x1, y1
+        self.x2, self.y2 = x1 + side, y1 + side
 
 
 @dataclass
@@ -103,9 +125,9 @@ class Detection:
     Attributes:
         loc (torch.Tensor): Locations of faces
         conf (torch.Tensor): Confidences of faces
-        landmarks (torch.Tensor): Landmarks of faces
-        boxes (torch.Tensor): Bounding boxes of faces
-        dets (torch.Tensor): Detections of faces
+        landmarks (torch.Tensor): Selected landmark coordinates in source-image space.
+        boxes (torch.Tensor): Selected bounding boxes in source-image space.
+        dets (torch.Tensor): Selected boxes and confidence scores.
 
     """
 
@@ -161,6 +183,7 @@ class ImageData:
     det: Detection = field(default_factory=Detection)
     faces: List[Face] = field(default_factory=list)
     version: str = field(default_factory=str)
+    warnings: List[str] = field(default_factory=list)
 
     def add_preds(
         self,
@@ -241,6 +264,74 @@ class ImageData:
                 ]
             )
         return loc_tensor
+
+
+@dataclass
+class AnalysisResult:
+    """Stable result for one analyzed source image.
+
+    ``faces``, ``version``, dimensions, paths, and warnings are always available.
+    Tensor-heavy fields are ``None`` unless ``include_tensors=True`` was used.
+    Runtime timing remains diagnostic logging rather than a stable result field.
+    ``img``, ``det``, and ``dims`` remain warning aliases throughout v1.x.
+    """
+
+    faces: List[Face] = field(default_factory=list)
+    version: str = field(default_factory=str)
+    image: Optional[torch.Tensor] = None
+    tensor: Optional[torch.Tensor] = None
+    detection: Optional[Detection] = None
+    dimensions: Dimensions = field(default_factory=Dimensions)
+    path_input: Optional[str] = None
+    path_output: Optional[str] = None
+    warnings: List[str] = field(default_factory=list)
+
+    @classmethod
+    def from_image_data(
+        cls, data: ImageData, *, include_tensors: bool
+    ) -> "AnalysisResult":
+        """Create the public result without introducing a second pipeline."""
+        return cls(
+            faces=data.faces,
+            version=data.version,
+            image=data.img if include_tensors else None,
+            tensor=data.tensor if include_tensors else None,
+            detection=data.det if include_tensors else None,
+            dimensions=data.dims,
+            path_input=data.path_input,
+            path_output=data.path_output,
+            warnings=list(data.warnings),
+        )
+
+    @property
+    def img(self) -> Optional[torch.Tensor]:
+        """Deprecated v0.x alias for :attr:`image`."""
+        _warnings.warn(
+            "AnalysisResult.img is deprecated; use AnalysisResult.image.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.image
+
+    @property
+    def det(self) -> Optional[Detection]:
+        """Deprecated v0.x alias for :attr:`detection`."""
+        _warnings.warn(
+            "AnalysisResult.det is deprecated; use AnalysisResult.detection.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.detection
+
+    @property
+    def dims(self) -> Dimensions:
+        """Deprecated v0.x alias for :attr:`dimensions`."""
+        _warnings.warn(
+            "AnalysisResult.dims is deprecated; use AnalysisResult.dimensions.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.dimensions
 
 
 @dataclass

@@ -1,0 +1,1 @@
+"""Packaged deepfake predictor configurations."""

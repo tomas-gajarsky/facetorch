@@ -26,9 +26,7 @@ def test_location_form_square_noop():
 @pytest.mark.integration
 @pytest.mark.response
 def test_type(response):
-    assert isinstance(response, facetorch.datastruct.ImageData) or isinstance(
-        response, facetorch.datastruct.Response
-    )
+    assert isinstance(response, facetorch.datastruct.AnalysisResult)
 
 
 @pytest.mark.integration

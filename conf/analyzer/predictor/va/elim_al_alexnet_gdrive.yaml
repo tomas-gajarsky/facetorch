@@ -3,7 +3,10 @@ _target_: facetorch.analyzer.predictor.FacePredictor
 downloader:
   _target_: facetorch.downloader.DownloaderGDrive
   file_id: 1Xl4ilNCU_DgKNhITrXb3UyQUUdm3VTKS
-  path_local: /opt/facetorch/models/torchscript/predictor/va/1/model.pt # str
+  path_local: ${facetorch.model_dir:}/torchscript/predictor/va/1/model.pt # str
+  offline: ${offline}
+  allow_legacy_models: ${allow_legacy_models}
+  device: ${analyzer.device}
 
 device:
   _target_: torch.device

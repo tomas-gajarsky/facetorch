@@ -4,6 +4,7 @@ import torchvision
 from codetiming import Timer
 from facetorch.base import BaseUtilizer
 from facetorch.datastruct import ImageData
+from facetorch.exceptions import ConfigurationError
 from facetorch.logger import LoggerJsonFile
 from torchvision import transforms
 
@@ -38,8 +39,19 @@ class ImageSaver(BaseUtilizer):
             ImageData: ImageData object containing the same data as the input.
         """
         if data.path_output is not None:
-            os.makedirs(os.path.dirname(data.path_output), exist_ok=True)
+            parent = os.path.dirname(data.path_output)
+            if parent:
+                try:
+                    os.makedirs(parent, exist_ok=True)
+                except OSError as exc:
+                    raise ConfigurationError(
+                        f"Cannot create image output directory {parent!r}. Choose a "
+                        "writable path_output or leave image output disabled."
+                    ) from exc
             pil_image = torchvision.transforms.functional.to_pil_image(data.img)
-            pil_image.save(data.path_output)
+            try:
+                pil_image.save(data.path_output)
+            finally:
+                pil_image.close()
 
         return data

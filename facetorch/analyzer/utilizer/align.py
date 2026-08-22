@@ -5,6 +5,7 @@ import numpy as np
 from codetiming import Timer
 from facetorch.base import BaseDownloader, BaseUtilizer
 from facetorch.datastruct import ImageData
+from facetorch.exceptions import ArtifactIntegrityError
 from facetorch.logger import LoggerJsonFile
 from torchvision import transforms
 
@@ -34,10 +35,33 @@ class Lmk3DMeshPose(BaseUtilizer):
 
         self.downloader_meta = downloader_meta
         self.image_size = image_size
-        if not os.path.exists(self.downloader_meta.path_local):
-            self.downloader_meta.run()
+        path_meta = self.downloader_meta.path_local
+        should_verify = (
+            getattr(self.downloader_meta, "verify_on_use", False) is True
+        )
+        if should_verify or not os.path.exists(path_meta):
+            resolved_path = self.downloader_meta.run()
+            if isinstance(resolved_path, (str, os.PathLike)):
+                path_meta = os.fspath(resolved_path)
 
-        self.meta = torch.load(self.downloader_meta.path_local)
+        self.meta = torch.load(
+            path_meta,
+            map_location="cpu",
+            weights_only=True,
+        )
+        required_keys = {
+            "keypoints",
+            "param_mean",
+            "param_std",
+            "u_exp",
+            "u_shp",
+            "w_exp",
+            "w_shp",
+        }
+        if not isinstance(self.meta, dict) or not required_keys.issubset(self.meta):
+            raise ArtifactIntegrityError(
+                "Verified 3DMM metadata has an invalid structure."
+            )
 
         for key in self.meta.keys():
             if isinstance(self.meta[key], torch.Tensor):

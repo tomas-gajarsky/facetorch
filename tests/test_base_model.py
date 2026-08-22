@@ -1,9 +1,11 @@
 import os
+from pathlib import Path
 import torch
 import pytest
 from unittest.mock import MagicMock, patch
 
 from facetorch.base import BaseModel
+from facetorch.exceptions import ModelCompatibilityError
 
 
 class ConcreteModel(BaseModel):
@@ -170,7 +172,22 @@ class TestLoadExportedModel:
         ):
             with pytest.raises(RuntimeError, match="incompatible with current PyTorch"):
                 ConcreteModel(downloader=dl, device=torch.device("cpu"))
-        dl.try_next.assert_called_once_with(force_download=True)
+        dl.try_next.assert_called_once_with(force_download=False)
+
+    def test_schema_error_survives_persisted_last_candidate_rejection(self, tmp_path):
+        bad_pt2 = str(tmp_path / "model.pt2")
+        Path(bad_pt2).write_bytes(b"not a real model")
+        dl = _make_dummy_downloader(bad_pt2)
+        dl.try_next.side_effect = ModelCompatibilityError("all rejected")
+
+        with patch(
+            "torch.export.load", side_effect=RuntimeError("schema version mismatch")
+        ):
+            with pytest.raises(
+                ModelCompatibilityError,
+                match="Upload/export a compatible model artifact",
+            ):
+                ConcreteModel(downloader=dl, device=torch.device("cpu"))
 
     def test_exported_model_schema_mismatch_retries_next_candidate(self, tmp_path):
         """BaseModel should request next candidate export and retry load once."""
@@ -198,16 +215,18 @@ class TestLoadExportedModel:
 
         assert model.model is not None
         assert mock_load.call_count == 2
-        dl.try_next.assert_called_once_with(force_download=True)
+        dl.try_next.assert_called_once_with(force_download=False)
 
-    def test_exported_model_legacy_torchscript_fallback_loads(self, tmp_path):
-        """A final HF model.pt fallback must be loaded with torch.jit, not torch.export."""
-        path_local = str(tmp_path / "model.pt2")
+    def test_verified_legacy_real_path_loads_with_torchscript(self, tmp_path):
+        """An authenticated legacy fallback retains .pt and explicit format state."""
+        path_local = str(tmp_path / "model.pt")
         scripted = _make_torchscript_fake_module()
         torch.jit.save(scripted, path_local)
 
         dl = _make_dummy_downloader(path_local)
-        dl._active_filename = "model.pt"
+        dl.verify_on_use = True
+        dl.active_format = "torchscript"
+        dl.run.return_value = path_local
 
         with patch("torch.export.load") as mock_export_load:
             model = ConcreteModel(downloader=dl, device=torch.device("cpu"))

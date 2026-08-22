@@ -1,15 +1,19 @@
+# Compatibility alias for the canonical Hugging Face configuration; retained in v1.x.
 _target_: facetorch.analyzer.predictor.FacePredictor
 
 downloader:
   _target_: facetorch.downloader.DownloaderHuggingFace
   file_id: 1xoB5VYOd0XLjb-rQqqHWCkQvma4NytEd
-  path_local: /opt/facetorch/models/exported/predictor/fer/2/model.pt2 # str
+  path_local: ${facetorch.model_dir:}/exported/predictor/fer/2/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-fer-efficientnet-b2  # HuggingFace repo ID
   filename: model.pt2  # Filename in the HuggingFace repo
-  export_filenames_by_torch_minor:
-    "2.3": model-torch2.3.pt2
-    "2.6": model-torch2.6.pt2
-    "2.11": model-torch2.11.pt2
+  manifest_id: fer-efficientnet-b2
+  revision: 2c9829a28c014e2f9b7a8ed683d1c7fd1631b18c
+  sha256: f9fee79f7a679427612d7818c5f0ef3edc974b6de09f58bd600ef4d9ba0df5b0
+  size_bytes: 31950057
+  offline: ${offline}
+  allow_legacy_models: ${allow_legacy_models}
+  device: ${analyzer.device}
 
 device:
   _target_: torch.device

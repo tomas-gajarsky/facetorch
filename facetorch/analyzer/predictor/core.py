@@ -23,7 +23,8 @@ class FacePredictor(BaseModel):
         preprocessor: BasePredPreProcessor,
         postprocessor: BasePredPostProcessor,
         native_model_class: Optional[str] = None,
-        **kwargs
+        compile_model: bool = False,
+        compile_options: Optional[dict] = None,
     ):
         """FacePredictor is a wrapper around a neural network model that is trained to predict facial features.
 
@@ -34,9 +35,17 @@ class FacePredictor(BaseModel):
             postprocessor (BasePredPostProcessor): Postprocessor that runs after the model.
             native_model_class (Optional[str]): Fully qualified class name of a native
                 PyTorch nn.Module to use instead of TorchScript. Default: None.
+            compile_model (bool): If True, compile the loaded model. Default: False.
+            compile_options (Optional[dict]): Keyword arguments forwarded to
+                ``torch.compile``. Default: None.
         """
-        self.__dict__.update(kwargs)
-        super().__init__(downloader, device, native_model_class=native_model_class)
+        super().__init__(
+            downloader,
+            device,
+            native_model_class=native_model_class,
+            compile_model=compile_model,
+            compile_options=compile_options,
+        )
 
         self.preprocessor = preprocessor
         self.postprocessor = postprocessor
