@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>facetorch.input API documentation</title>
+<meta name="description" content="Canonical public image-input contract.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>facetorch.input</code></h1>
+</header>
+<section id="section-intro">
+<p>Canonical public image-input contract.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="facetorch.input.canonicalize_image_tensor"><code class="name flex">
+<span>def <span class="ident">canonicalize_image_tensor</span></span>(<span>tensor: torch.Tensor,<br>*,<br>source_kind: str,<br>input_policy: str = 'coerce',<br>input_spec: <a title="facetorch.input.InputSpec" href="#facetorch.input.InputSpec">InputSpec</a> | None = None) ‑> <a title="facetorch.input.CanonicalImage" href="#facetorch.input.CanonicalImage">CanonicalImage</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def canonicalize_image_tensor(
+    tensor: torch.Tensor,
+    *,
+    source_kind: str,
+    input_policy: str = &#34;coerce&#34;,
+    input_spec: Optional[InputSpec] = None,
+) -&gt; CanonicalImage:
+    &#34;&#34;&#34;Convert one image to RGB float32 BCHW ``0..255`` deterministically.&#34;&#34;&#34;
+
+    policy = _normalize_policy(input_policy)
+    if input_spec is not None and not isinstance(input_spec, InputSpec):
+        raise InputError(
+            f&#34;input_spec must be an InputSpec or None, got &#34;
+            f&#34;{type(input_spec).__name__}.&#34;
+        )
+    spec = input_spec or InputSpec()
+    messages: List[str] = []
+
+    if not isinstance(tensor, torch.Tensor):
+        raise InputError(f&#34;Expected a Torch tensor, got {type(tensor).__name__}.&#34;)
+    if tensor.dtype == torch.bool or tensor.is_complex():
+        raise InputError(f&#34;Unsupported image dtype {tensor.dtype}.&#34;)
+
+    layout = spec.layout or _default_layout(tensor, source_kind)
+    if (
+        spec.layout is None
+        and source_kind == &#34;torch&#34;
+        and tensor.ndim in {3, 4}
+        and int(tensor.shape[-1]) in {1, 3, 4}
+        and int(tensor.shape[1] if tensor.ndim == 4 else tensor.shape[0])
+        not in {1, 3, 4}
+    ):
+        suggested_layout = &#34;BHWC&#34; if tensor.ndim == 4 else &#34;HWC&#34;
+        raise InputError(
+            f&#34;Torch input shape {tuple(tensor.shape)} looks like {suggested_layout}; &#34;
+            f&#39;pass InputSpec(layout=&#34;{suggested_layout}&#34;) explicitly.&#39;
+        )
+    tensor = _to_bchw(tensor, layout)
+
+    channels = int(tensor.shape[1])
+    inferred_color = {1: &#34;GRAY&#34;, 3: &#34;RGB&#34;, 4: &#34;RGBA&#34;}.get(channels)
+    if inferred_color is None:
+        raise InputError(
+            f&#34;Unsupported channel count {channels}; expected 1, 3, or 4 channels.&#34;
+        )
+
+    color_space = spec.color_space
+    if color_space is None:
+        if policy == &#34;strict&#34; and inferred_color != &#34;RGB&#34;:
+            raise InputError(
+                f&#34;Strict mode requires InputSpec.color_space for {inferred_color} input.&#34;
+            )
+        color_space = inferred_color
+
+    expected_channels = {&#34;GRAY&#34;: 1, &#34;RGB&#34;: 3, &#34;BGR&#34;: 3, &#34;RGBA&#34;: 4}
+    if channels != expected_channels[color_space]:
+        raise InputError(
+            f&#34;InputSpec color_space {color_space} requires &#34;
+            f&#34;{expected_channels[color_space]} channels, got {channels}.&#34;
+        )
+    if spec.alpha_mode is not None and color_space != &#34;RGBA&#34;:
+        raise InputError(&#34;InputSpec.alpha_mode is valid only for RGBA input.&#34;)
+
+    numeric = tensor.detach().clone()
+    if not torch.isfinite(numeric.float()).all():
+        raise InputError(&#34;Image values must be finite; NaN and Inf are not supported.&#34;)
+    minimum = float(numeric.min().item())
+    maximum = float(numeric.max().item())
+
+    value_range = spec.value_range
+    if value_range is None:
+        if policy == &#34;strict&#34;:
+            if numeric.dtype != torch.uint8:
+                raise InputError(
+                    &#34;Strict tensor/array input defaults to uint8 0..255. &#34;
+                    &#34;Declare InputSpec.value_range for any other dtype or range.&#34;
+                )
+            value_range = &#34;0_255&#34;
+        elif numeric.is_floating_point():
+            if 0.0 &lt;= minimum and maximum &lt;= 1.0:
+                value_range = &#34;0_1&#34;
+                _coercion(
+                    messages,
+                    policy,
+                    &#34;Interpreted floating-point image values as 0..1 and scaled to 0..255.&#34;,
+                )
+            elif 0.0 &lt;= minimum and maximum &lt;= 255.0:
+                value_range = &#34;0_255&#34;
+                _coercion(
+                    messages,
+                    policy,
+                    &#34;Interpreted floating-point image values as 0..255.&#34;,
+                )
+            else:
+                raise InputError(
+                    f&#34;Floating-point image range [{minimum}, {maximum}] is unsupported; &#34;
+                    &#34;expected 0..1 or 0..255.&#34;
+                )
+        else:
+            value_range = &#34;0_255&#34;
+            if numeric.dtype != torch.uint8:
+                _coercion(
+                    messages,
+                    policy,
+                    f&#34;Converted integer image dtype {numeric.dtype} to float32.&#34;,
+                )
+
+    if value_range == &#34;0_1&#34;:
+        if minimum &lt; 0.0 or maximum &gt; 1.0:
+            raise InputError(
+                f&#34;InputSpec declares 0..1 but observed range [{minimum}, {maximum}].&#34;
+            )
+        numeric = numeric.to(torch.float32) * 255.0
+    else:
+        if minimum &lt; 0.0 or maximum &gt; 255.0:
+            raise InputError(
+                f&#34;InputSpec declares 0..255 but observed range [{minimum}, {maximum}].&#34;
+            )
+        numeric = numeric.to(torch.float32)
+
+    if color_space == &#34;GRAY&#34;:
+        _coercion(messages, policy, &#34;Expanded grayscale input to three RGB channels.&#34;)
+        numeric = numeric.repeat(1, 3, 1, 1)
+    elif color_space == &#34;BGR&#34;:
+        _coercion(messages, policy, &#34;Converted explicitly declared BGR input to RGB.&#34;)
+        numeric = numeric[:, [2, 1, 0], :, :]
+    elif color_space == &#34;RGBA&#34;:
+        if policy == &#34;strict&#34; and spec.alpha_mode is None:
+            raise InputError(
+                &#34;Strict RGBA input requires an explicit InputSpec.alpha_mode.&#34;
+            )
+        alpha_mode = spec.alpha_mode or &#34;drop&#34;
+        if alpha_mode != &#34;drop&#34;:  # guarded by InputSpec; defensive for type checkers
+            raise InputError(f&#34;Unsupported alpha mode {alpha_mode!r}.&#34;)
+        _coercion(messages, policy, &#34;Dropped the alpha channel from RGBA input.&#34;)
+        numeric = numeric[:, :3, :, :]
+
+    return CanonicalImage(tensor=numeric.contiguous(), warnings=messages)</code></pre>
+</details>
+<div class="desc"><p>Convert one image to RGB float32 BCHW <code>0..255</code> deterministically.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="facetorch.input.InputSpec"><code class="flex name class">
+<span>class <span class="ident">InputSpec</span></span>
+<span>(</span><span>layout: Literal['HW', 'CHW', 'HWC', 'BCHW', 'BHWC'] | None = None,<br>value_range: Literal['0_1', '0_255'] | None = None,<br>color_space: Literal['GRAY', 'RGB', 'BGR', 'RGBA'] | None = None,<br>alpha_mode: Literal['drop'] | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass(frozen=True)
+class InputSpec:
+    &#34;&#34;&#34;Explicitly describes an array or tensor image representation.
+
+    Fields may be omitted in ``coerce`` mode. In ``strict`` mode, callers must
+    declare any representation that differs from the source-specific exact
+    defaults: uint8 RGB, CHW for Torch, and HWC for NumPy.
+    &#34;&#34;&#34;
+
+    layout: Optional[InputLayout] = None
+    value_range: Optional[InputValueRange] = None
+    color_space: Optional[InputColorSpace] = None
+    alpha_mode: Optional[AlphaMode] = None
+
+    def __post_init__(self):
+        normalized = {}
+        for field_name, value, operation in (
+            (&#34;layout&#34;, self.layout, str.upper),
+            (&#34;value_range&#34;, self.value_range, str.lower),
+            (&#34;color_space&#34;, self.color_space, str.upper),
+            (&#34;alpha_mode&#34;, self.alpha_mode, str.lower),
+        ):
+            if value is not None and not isinstance(value, str):
+                raise InputError(
+                    f&#34;InputSpec.{field_name} must be a string or None, &#34;
+                    f&#34;got {type(value).__name__}.&#34;
+                )
+            normalized[field_name] = operation(value) if value is not None else None
+        for field_name, value in normalized.items():
+            object.__setattr__(self, field_name, value)
+
+        valid_values = {
+            &#34;layout&#34;: {&#34;HW&#34;, &#34;CHW&#34;, &#34;HWC&#34;, &#34;BCHW&#34;, &#34;BHWC&#34;},
+            &#34;value_range&#34;: {&#34;0_1&#34;, &#34;0_255&#34;},
+            &#34;color_space&#34;: {&#34;GRAY&#34;, &#34;RGB&#34;, &#34;BGR&#34;, &#34;RGBA&#34;},
+            &#34;alpha_mode&#34;: {&#34;drop&#34;},
+        }
+        for field_name, allowed in valid_values.items():
+            value = getattr(self, field_name)
+            if value is not None and value not in allowed:
+                choices = &#34;, &#34;.join(sorted(allowed))
+                raise InputError(
+                    f&#34;Invalid InputSpec.{field_name}={value!r}; expected one of {choices}.&#34;
+                )</code></pre>
+</details>
+<div class="desc"><p>Explicitly describes an array or tensor image representation.</p>
+<p>Fields may be omitted in <code>coerce</code> mode. In <code>strict</code> mode, callers must
+declare any representation that differs from the source-specific exact
+defaults: uint8 RGB, CHW for Torch, and HWC for NumPy.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="facetorch.input.InputSpec.layout"><code class="name">var <span class="ident">layout</span> : Literal['HW', 'CHW', 'HWC', 'BCHW', 'BHWC'] | None</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.input.InputSpec.value_range"><code class="name">var <span class="ident">value_range</span> : Literal['0_1', '0_255'] | None</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.input.InputSpec.color_space"><code class="name">var <span class="ident">color_space</span> : Literal['GRAY', 'RGB', 'BGR', 'RGBA'] | None</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.input.InputSpec.alpha_mode"><code class="name">var <span class="ident">alpha_mode</span> : Literal['drop'] | None</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="facetorch.input.CanonicalImage"><code class="flex name class">
+<span>class <span class="ident">CanonicalImage</span></span>
+<span>(</span><span>tensor: torch.Tensor, warnings: List[str])</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class CanonicalImage:
+    &#34;&#34;&#34;Internal RGB image representation produced at the public boundary.&#34;&#34;&#34;
+
+    tensor: torch.Tensor
+    warnings: List[str]</code></pre>
+</details>
+<div class="desc"><p>Internal RGB image representation produced at the public boundary.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="facetorch.input.CanonicalImage.tensor"><code class="name">var <span class="ident">tensor</span> : torch.Tensor</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.input.CanonicalImage.warnings"><code class="name">var <span class="ident">warnings</span> : List[str]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="facetorch" href="index.html">facetorch</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="facetorch.input.canonicalize_image_tensor" href="#facetorch.input.canonicalize_image_tensor">canonicalize_image_tensor</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="facetorch.input.InputSpec" href="#facetorch.input.InputSpec">InputSpec</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.input.InputSpec.layout" href="#facetorch.input.InputSpec.layout">layout</a></code></li>
+<li><code><a title="facetorch.input.InputSpec.value_range" href="#facetorch.input.InputSpec.value_range">value_range</a></code></li>
+<li><code><a title="facetorch.input.InputSpec.color_space" href="#facetorch.input.InputSpec.color_space">color_space</a></code></li>
+<li><code><a title="facetorch.input.InputSpec.alpha_mode" href="#facetorch.input.InputSpec.alpha_mode">alpha_mode</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.input.CanonicalImage" href="#facetorch.input.CanonicalImage">CanonicalImage</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.input.CanonicalImage.tensor" href="#facetorch.input.CanonicalImage.tensor">tensor</a></code></li>
+<li><code><a title="facetorch.input.CanonicalImage.warnings" href="#facetorch.input.CanonicalImage.warnings">warnings</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

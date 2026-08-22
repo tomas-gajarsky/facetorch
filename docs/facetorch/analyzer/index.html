@@ -104,14 +104,19 @@ el.replaceWith(d);
         Attributes:
             cfg (OmegaConf): Config object with image reader, face detector, unifier and predictor configurations.
             reader (BaseReader): Reader object that reads the image and returns an ImageData object containing the image tensor.
-            detector (FaceDetector): FaceDetector object that wraps a neural network that detects faces.
+            detector (FaceDetector): Lazily loaded and cached FaceDetector object.
             unifier (FaceUnifier): FaceUnifier object that unifies sizes of all faces and normalizes them between 0 and 1.
-            predictors (Dict[str, FacePredictor]): Dict of FacePredictor objects that predict facial features. Key is the name of the predictor.
-            utilizers (Dict[str, FaceUtilizer]): Dict of FaceUtilizer objects that can extract 3D face landmarks, draw boxes over the image, etc. Key is the name of the utilizer.
+            predictors (MutableMapping[str, FacePredictor]): Mapping of lazily loaded
+                and cached predictors. Iterating names does not load models; accessing
+                a value does.
+            utilizers (MutableMapping[str, FaceUtilizer]): Mapping of lazily loaded
+                utilizer objects. Selection-linked utilizers load only when their
+                predictor ran.
             logger (logging.Logger): Logger object that logs messages to the console or to a file.
 
         &#34;&#34;&#34;
         self.cfg = cfg
+        self._component_lock = threading.RLock()
 
         if hasattr(self.cfg, &#34;logger&#34;) and self.cfg.logger is not None:
             self.logger = instantiate(self.cfg.logger).logger
@@ -126,9 +131,12 @@ el.replaceWith(d);
 
         self.logger.info(&#34;Initializing BaseReader&#34;)
         self.reader = instantiate(self.cfg.reader)
+        self._reader_signature_owner = None
+        self._reader_signature_parameters = None
 
-        self.logger.info(&#34;Initializing FaceDetector&#34;)
-        self.detector = instantiate(self.cfg.detector)
+        self.logger.info(&#34;Registering lazy FaceDetector&#34;)
+        self._detector_config = self.cfg.detector if &#34;detector&#34; in self.cfg else None
+        self._detector = _UNLOADED
 
         self.logger.info(&#34;Initializing FaceUnifier&#34;)
         if &#34;unifier&#34; in self.cfg:
@@ -136,72 +144,329 @@ el.replaceWith(d);
         else:
             self.unifier = None
 
-        self.logger.info(&#34;Initializing FacePredictor objects&#34;)
-        self.predictors = {}
+        self.logger.info(&#34;Registering lazy FacePredictor objects&#34;)
+        predictor_configs = {}
         if &#34;predictor&#34; in self.cfg:
             for predictor_name in self.cfg.predictor:
-                self.logger.info(f&#34;Initializing FacePredictor {predictor_name}&#34;)
-                self.predictors[predictor_name] = instantiate(
-                    self.cfg.predictor[predictor_name]
-                )
+                self.logger.info(f&#34;Registering FacePredictor {predictor_name}&#34;)
+                predictor_configs[predictor_name] = self.cfg.predictor[predictor_name]
+        self._predictors = _LazyComponentRegistry(
+            predictor_configs,
+            loader=self._load_predictor,
+            lock=self._component_lock,
+        )
 
-        self.utilizers = {}
+        utilizer_configs = {}
         if &#34;utilizer&#34; in self.cfg:
-            self.logger.info(&#34;Initializing BaseUtilizer objects&#34;)
+            self.logger.info(&#34;Registering lazy BaseUtilizer objects&#34;)
             for utilizer_name in self.cfg.utilizer:
-                self.logger.info(f&#34;Initializing BaseUtilizer {utilizer_name}&#34;)
-                self.utilizers[utilizer_name] = instantiate(
-                    self.cfg.utilizer[utilizer_name]
-                )
+                self.logger.info(f&#34;Registering BaseUtilizer {utilizer_name}&#34;)
+                utilizer_configs[utilizer_name] = self.cfg.utilizer[utilizer_name]
+        self._utilizers = _LazyComponentRegistry(
+            utilizer_configs,
+            loader=self._load_utilizer,
+            lock=self._component_lock,
+        )
 
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
+
+    @property
+    def detector(self):
+        &#34;&#34;&#34;Return the configured detector, constructing and caching it on demand.&#34;&#34;&#34;
+        detector = self.__dict__.get(&#34;_detector&#34;, _UNLOADED)
+        if detector is not _UNLOADED:
+            return detector
+
+        detector_config = self.__dict__.get(&#34;_detector_config&#34;)
+        if detector_config is None:
+            raise ConfigurationError(&#34;No face detector is configured.&#34;)
+
+        lock = self._get_component_lock()
+        with lock:
+            if self._detector is _UNLOADED:
+                self.logger.info(&#34;Initializing FaceDetector&#34;)
+                self._detector = instantiate(detector_config)
+        return self._detector
+
+    @detector.setter
+    def detector(self, detector) -&gt; None:
+        &#34;&#34;&#34;Install an already-constructed detector, primarily for extensions/tests.&#34;&#34;&#34;
+        self._detector_config = None
+        self._detector = detector
+
+    @property
+    def predictors(self) -&gt; MutableMapping[str, FacePredictor]:
+        &#34;&#34;&#34;Return the lazy predictor mapping without constructing its values.&#34;&#34;&#34;
+        registry = self.__dict__.get(&#34;_predictors&#34;)
+        if registry is None:
+            registry = _LazyComponentRegistry(lock=self._get_component_lock())
+            self._predictors = registry
+        return registry
+
+    @predictors.setter
+    def predictors(self, predictors: Mapping[str, FacePredictor]) -&gt; None:
+        &#34;&#34;&#34;Replace configured predictors with already-constructed components.&#34;&#34;&#34;
+        if not isinstance(predictors, Mapping):
+            raise TypeError(&#34;predictors must be a mapping from names to predictors.&#34;)
+        self._predictors = _LazyComponentRegistry(
+            loaded=predictors,
+            lock=self._get_component_lock(),
+        )
+
+    @property
+    def configured_predictors(self) -&gt; tuple[str, ...]:
+        &#34;&#34;&#34;Predictor names in deterministic configuration order, without loading.&#34;&#34;&#34;
+        return tuple(self.predictors)
+
+    @property
+    def loaded_predictors(self) -&gt; tuple[str, ...]:
+        &#34;&#34;&#34;Predictor names whose wrappers and models are already cached.&#34;&#34;&#34;
+        registry = self.predictors
+        if isinstance(registry, _LazyComponentRegistry):
+            return registry.loaded_names
+        return tuple(registry)
+
+    @property
+    def utilizers(self) -&gt; MutableMapping[str, Any]:
+        &#34;&#34;&#34;Return the lazy utilizer mapping without constructing its values.&#34;&#34;&#34;
+        registry = self.__dict__.get(&#34;_utilizers&#34;)
+        if registry is None:
+            registry = _LazyComponentRegistry(lock=self._get_component_lock())
+            self._utilizers = registry
+        return registry
+
+    @utilizers.setter
+    def utilizers(self, utilizers: Mapping[str, Any]) -&gt; None:
+        &#34;&#34;&#34;Replace configured utilizers with already-constructed components.&#34;&#34;&#34;
+        if not isinstance(utilizers, Mapping):
+            raise TypeError(&#34;utilizers must be a mapping from names to utilizers.&#34;)
+        self._utilizers = _LazyComponentRegistry(
+            loaded=utilizers,
+            lock=self._get_component_lock(),
+        )
+
+    @property
+    def configured_utilizers(self) -&gt; tuple[str, ...]:
+        &#34;&#34;&#34;Utilizer names in deterministic configuration order, without loading.&#34;&#34;&#34;
+        return tuple(self.utilizers)
+
+    @property
+    def loaded_utilizers(self) -&gt; tuple[str, ...]:
+        &#34;&#34;&#34;Utilizer names whose objects are already cached.&#34;&#34;&#34;
+        registry = self.utilizers
+        if isinstance(registry, _LazyComponentRegistry):
+            return registry.loaded_names
+        return tuple(registry)
+
+    @property
+    def detector_loaded(self) -&gt; bool:
+        &#34;&#34;&#34;Whether the detector wrapper and model are already cached.&#34;&#34;&#34;
+        return self.__dict__.get(&#34;_detector&#34;, _UNLOADED) is not _UNLOADED
+
+    def _get_component_lock(self):
+        lock = self.__dict__.get(&#34;_component_lock&#34;)
+        if lock is None:
+            lock = threading.RLock()
+            self._component_lock = lock
+        return lock
+
+    def _load_predictor(self, name: str, predictor_config) -&gt; FacePredictor:
+        self.logger.info(f&#34;Initializing FacePredictor {name}&#34;)
+        return instantiate(predictor_config)
+
+    def _load_utilizer(self, name: str, utilizer_config):
+        self.logger.info(f&#34;Initializing BaseUtilizer {name}&#34;)
+        return instantiate(utilizer_config)
+
+    @staticmethod
+    def _normalize_predictor_selection(
+        selection: Optional[Iterable[str]], option_name: str
+    ) -&gt; Optional[tuple[str, ...]]:
+        if selection is None:
+            return None
+        if isinstance(selection, (str, bytes)):
+            raise ConfigurationError(
+                f&#34;{option_name} must be a collection of predictor names, not a string.&#34;
+            )
+        try:
+            names = tuple(selection)
+        except TypeError as exc:
+            raise ConfigurationError(
+                f&#34;{option_name} must be a collection of predictor names.&#34;
+            ) from exc
+
+        invalid = [name for name in names if not isinstance(name, str) or not name]
+        if invalid:
+            raise ConfigurationError(
+                f&#34;{option_name} must contain only non-empty predictor names.&#34;
+            )
+
+        seen = set()
+        duplicates = []
+        for name in names:
+            if name in seen and name not in duplicates:
+                duplicates.append(name)
+            seen.add(name)
+        if duplicates:
+            raise ConfigurationError(
+                f&#34;{option_name} contains duplicate predictor names: &#34;
+                + &#34;, &#34;.join(duplicates)
+                + &#34;.&#34;
+            )
+        return names
+
+    def _select_predictor_names(
+        self,
+        include_predictors: Optional[Iterable[str]],
+        exclude_predictors: Optional[Iterable[str]],
+    ) -&gt; tuple[str, ...]:
+        &#34;&#34;&#34;Validate selection and return names in configuration order.&#34;&#34;&#34;
+        include = self._normalize_predictor_selection(
+            include_predictors, &#34;include_predictors&#34;
+        )
+        exclude = self._normalize_predictor_selection(
+            exclude_predictors, &#34;exclude_predictors&#34;
+        )
+        if include is not None and exclude is not None:
+            raise ConfigurationError(
+                &#34;Cannot specify both include_predictors and exclude_predictors. &#34;
+                &#34;Use one or the other.&#34;
+            )
+
+        configured = self.configured_predictors
+        configured_set = set(configured)
+        requested = include if include is not None else exclude
+        unknown = (
+            [name for name in requested if name not in configured_set]
+            if requested is not None
+            else []
+        )
+        if unknown:
+            raise ConfigurationError(
+                &#34;Unknown predictor name(s): &#34;
+                + &#34;, &#34;.join(unknown)
+                + &#34;. Configured predictors: &#34;
+                + (&#34;, &#34;.join(configured) if configured else &#34;none&#34;)
+                + &#34;.&#34;
+            )
+
+        if include is not None:
+            included = set(include)
+            return tuple(name for name in configured if name in included)
+        if exclude is not None:
+            excluded = set(exclude)
+            return tuple(name for name in configured if name not in excluded)
+        return configured
 
     @Timer(&#34;FaceAnalyzer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(
         self,
         image_source: Optional[
-            Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]
+            Union[str, os.PathLike, torch.Tensor, np.ndarray, bytes, Image.Image]
         ] = None,
         path_image: Optional[str] = None,
-        batch_size: int = 8,
+        face_batch_size: Optional[int] = None,
         fix_img_size: bool = False,
-        return_img_data: bool = False,
+        return_img_data: Optional[bool] = None,
         include_tensors: bool = False,
         path_output: Optional[str] = None,
         tensor: Optional[torch.Tensor] = None,
         include_predictors: Optional[List[str]] = None,
         exclude_predictors: Optional[List[str]] = None,
         skip_detector: bool = False,
-    ) -&gt; Union[Response, ImageData]:
-        &#34;&#34;&#34;Reads image, detects faces, unifies the detected faces, predicts facial features
-         and returns analyzed data.
+        *,
+        batch_size: Optional[int] = None,
+        input_policy: str = &#34;coerce&#34;,
+        input_spec: Optional[InputSpec] = None,
+    ) -&gt; AnalysisResult:
+        &#34;&#34;&#34;Analyze exactly one source image and return one stable result type.
 
         Args:
-            image_source (Optional[Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]]): Input to be analyzed. Accepts file paths, URLs, tensors, numpy arrays, bytes, or PIL Images. Default: None.
+            image_source: Input accepted by the configured reader. The default
+                reader accepts local paths, tensors, NumPy arrays, bytes, and PIL
+                images. URLs require an explicit URLReader configuration.
             path_image (Optional[str]): Deprecated. Use image_source instead.
-            batch_size (int): Batch size for making predictions on the faces. Default is 8.
+            face_batch_size (Optional[int]): Number of faces from this image sent to
+                each predictor at once. Default: 8.
             fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False.
-            return_img_data (bool): If True, returns all image data including tensors, otherwise only returns the faces. Default is False.
+            return_img_data (Optional[bool]): Deprecated no-op. Use
+                ``include_tensors`` and the fields on ``AnalysisResult`` or call
+                ``run_legacy`` for the former flag-dependent return type.
             include_tensors (bool): If True, includes tensors in the returned data object. If False, tensors are removed. Default is False.
             path_output (Optional[str]): Path where to save the image with detected faces. If None, the image is not saved. Default: None.
             tensor (Optional[torch.Tensor]): Deprecated. Use image_source instead.
-            include_predictors (Optional[List[str]]): If provided, only run these predictors. Default: None (run all).
-            exclude_predictors (Optional[List[str]]): If provided, skip these predictors. Default: None (skip none).
-            skip_detector (bool): If True, skip face detection and treat the input as a pre-cropped face. Default: False.
+            include_predictors (Optional[List[str]]): Names to run. None runs all
+                configured predictors and an empty collection runs none.
+            exclude_predictors (Optional[List[str]]): Names to omit. None and an
+                empty collection omit none. Cannot be combined with an include.
+            skip_detector (bool): If True, skip face detection, avoid constructing
+                its model, and treat the input as a pre-cropped face. Default: False.
+            batch_size (Optional[int]): Deprecated warning alias for
+                ``face_batch_size`` throughout v1.x.
+            input_policy (str): ``coerce`` (default) or ``strict``.
+            input_spec (Optional[InputSpec]): Explicit source layout/range/color
+                description, especially for strict-mode conversions.
 
         Returns:
-            Union[Response, ImageData]: If return_img_data is False, returns a Response object containing the faces and their facial features. If return_img_data is True, returns the entire ImageData object.
+            AnalysisResult: Stable result for the one source image.
 
         &#34;&#34;&#34;
+
+        compatibility_warnings = []
+
+        if face_batch_size is not None and batch_size is not None:
+            raise ConfigurationError(
+                &#34;Specify only face_batch_size; batch_size is its deprecated alias.&#34;
+            )
+        if batch_size is not None:
+            message = (
+                &#34;batch_size is deprecated and will be removed after v1.x; &#34;
+                &#34;use face_batch_size.&#34;
+            )
+            warnings.warn(message, DeprecationWarning, stacklevel=2)
+            compatibility_warnings.append(message)
+            effective_face_batch_size = batch_size
+        elif face_batch_size is None:
+            effective_face_batch_size = 8
+        else:
+            effective_face_batch_size = face_batch_size
+
+        if (
+            isinstance(effective_face_batch_size, bool)
+            or not isinstance(effective_face_batch_size, int)
+            or effective_face_batch_size &lt; 1
+        ):
+            raise ConfigurationError(
+                &#34;face_batch_size must be an integer greater than or equal to 1, &#34;
+                f&#34;got {effective_face_batch_size!r}.&#34;
+            )
+
+        if return_img_data is not None:
+            message = (
+                &#34;return_img_data no longer changes FaceAnalyzer.run&#39;s return type; &#34;
+                &#34;use include_tensors or the explicit run_legacy adapter.&#34;
+            )
+            warnings.warn(message, DeprecationWarning, stacklevel=2)
+            compatibility_warnings.append(message)
+
+        def _run_component(label, operation):
+            try:
+                return operation()
+            except FacetorchError:
+                raise
+            except Exception as exc:
+                raise InferenceError(f&#34;{label} failed during analysis.&#34;) from exc
 
         def _predict_batch(
             data: ImageData, predictor: FacePredictor, predictor_name: str
         ) -&gt; ImageData:
             n_faces = len(data.faces)
 
-            for face_indx_start in range(0, n_faces, batch_size):
-                face_indx_end = min(face_indx_start + batch_size, n_faces)
+            for face_indx_start in range(0, n_faces, effective_face_batch_size):
+                face_indx_end = min(
+                    face_indx_start + effective_face_batch_size, n_faces
+                )
 
                 face_batch_tensor = torch.stack(
                     [face.tensor for face in data.faces[face_indx_start:face_indx_end]]
@@ -212,40 +477,50 @@ el.replaceWith(d);
             return data
 
         self.logger.info(&#34;Running FaceAnalyzer&#34;)
+        selected_predictors = self._select_predictor_names(
+            include_predictors, exclude_predictors
+        )
+        configured_predictors = set(self.configured_predictors)
 
-        if include_predictors and exclude_predictors:
-            raise ValueError(
-                &#34;Cannot specify both include_predictors and exclude_predictors. &#34;
-                &#34;Use one or the other.&#34;
+        supplied_sources = [
+            name
+            for name, value in (
+                (&#34;image_source&#34;, image_source),
+                (&#34;path_image&#34;, path_image),
+                (&#34;tensor&#34;, tensor),
             )
-
-        if batch_size &lt; 1:
-            raise ValueError(f&#34;batch_size must be &gt;= 1, got {batch_size}.&#34;)
-
-        if path_image is not None and image_source is None:
-            warnings.warn(
-                &#34;path_image is deprecated, use image_source instead.&#34;,
-                DeprecationWarning,
-                stacklevel=2,
+            if value is not None
+        ]
+        if len(supplied_sources) &gt; 1:
+            raise InputError(
+                &#34;Supply exactly one input source using image_source. Received: &#34;
+                + &#34;, &#34;.join(supplied_sources)
+                + &#34;.&#34;
             )
-            image_source = path_image
-
-        if tensor is not None and image_source is None:
-            warnings.warn(
-                &#34;tensor is deprecated, use image_source instead.&#34;,
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            image_source = tensor
-
-        if image_source is None:
-            raise ValueError(
+        if not supplied_sources:
+            raise InputError(
                 &#34;image_source is required. Pass a file path, URL, tensor, numpy array, &#34;
                 &#34;bytes, or PIL Image.&#34;
             )
+        if path_image is not None:
+            message = &#34;path_image is deprecated; use image_source.&#34;
+            warnings.warn(message, DeprecationWarning, stacklevel=2)
+            compatibility_warnings.append(message)
+            image_source = path_image
+        elif tensor is not None:
+            message = &#34;tensor is deprecated; use image_source.&#34;
+            warnings.warn(message, DeprecationWarning, stacklevel=2)
+            compatibility_warnings.append(message)
+            image_source = tensor
 
         self.logger.info(&#34;Reading image&#34;)
-        data = self._read_input(image_source, fix_img_size)
+        data = self._read_input(
+            image_source,
+            fix_img_size,
+            input_policy=input_policy,
+            input_spec=input_spec,
+        )
+        data.warnings.extend(compatibility_warnings)
 
         path_output = None if path_output == &#34;None&#34; else path_output
         data.path_output = path_output
@@ -273,39 +548,47 @@ el.replaceWith(d);
             n_faces = 1
         else:
             self.logger.info(&#34;Detecting faces&#34;)
-            data = self.detector.run(data)
+            data = _run_component(&#34;Face detector&#34;, lambda: self.detector.run(data))
             n_faces = len(data.faces)
 
         self.logger.info(f&#34;Number of faces: {n_faces}&#34;)
 
         if n_faces &gt; 0 and self.unifier is not None:
             self.logger.info(&#34;Unifying faces&#34;)
-            data = self.unifier.run(data)
+            data = _run_component(&#34;Face unifier&#34;, lambda: self.unifier.run(data))
 
             self.logger.info(&#34;Predicting facial features&#34;)
-            for predictor_name, predictor in self.predictors.items():
-                if include_predictors and predictor_name not in include_predictors:
-                    continue
-                if exclude_predictors and predictor_name in exclude_predictors:
-                    continue
+            for predictor_name in selected_predictors:
+                predictor = self.predictors[predictor_name]
                 self.logger.info(f&#34;Running FacePredictor: {predictor_name}&#34;)
-                data = _predict_batch(data, predictor, predictor_name)
+                data = _run_component(
+                    f&#34;Face predictor {predictor_name!r}&#34;,
+                    lambda: _predict_batch(data, predictor, predictor_name),
+                )
 
             self.logger.info(&#34;Utilizing facial features&#34;)
             ran_predictors = (
                 set(data.faces[0].preds.keys()) if data.faces else set()
             )
-            for utilizer_name, utilizer in self.utilizers.items():
-                if utilizer_name in self.predictors and utilizer_name not in ran_predictors:
+            for utilizer_name in self.utilizers:
+                if (
+                    utilizer_name in configured_predictors
+                    and utilizer_name not in ran_predictors
+                ):
                     self.logger.info(
                         f&#34;Skipping BaseUtilizer: {utilizer_name} (predictor not run)&#34;
                     )
                     continue
+                utilizer = self.utilizers[utilizer_name]
                 self.logger.info(f&#34;Running BaseUtilizer: {utilizer_name}&#34;)
-                data = utilizer.run(data)
+                data = _run_component(
+                    f&#34;Face utilizer {utilizer_name!r}&#34;, lambda: utilizer.run(data)
+                )
         else:
             if &#34;save&#34; in self.utilizers:
-                self.utilizers[&#34;save&#34;].run(data)
+                _run_component(
+                    &#34;Face utilizer &#39;save&#39;&#34;, lambda: self.utilizers[&#34;save&#34;].run(data)
+                )
 
         if not include_tensors:
             self.logger.debug(
@@ -313,55 +596,127 @@ el.replaceWith(d);
             )
             data.reset_tensors()
 
-        response = Response(faces=data.faces, version=data.version)
+        result = AnalysisResult.from_image_data(data, include_tensors=include_tensors)
+        self.logger.debug(
+            &#34;Returning analysis result&#34;,
+            extra={&#34;face_count&#34;: len(result.faces), &#34;version&#34;: result.version},
+        )
+        return result
 
-        if return_img_data:
-            self.logger.debug(&#34;Returning image data object&#34;, extra=data.__dict__)
-            return data
-        else:
-            self.logger.debug(&#34;Returning response with faces&#34;, extra=response.__dict__)
-            return response
+    def run_legacy(
+        self,
+        *args,
+        return_img_data: bool = False,
+        **kwargs,
+    ) -&gt; Union[Response, ImageData]:
+        &#34;&#34;&#34;Run the canonical pipeline and adapt its result to the v0.x return union.&#34;&#34;&#34;
+        warnings.warn(
+            &#34;FaceAnalyzer.run_legacy is a v1.x compatibility adapter; migrate to run().&#34;,
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        result = self.run(*args, **kwargs)
+        if not return_img_data:
+            return Response(faces=result.faces, version=result.version)
+
+        return ImageData(
+            path_input=result.path_input,
+            path_output=result.path_output,
+            img=result.image if result.image is not None else torch.tensor([]),
+            tensor=result.tensor if result.tensor is not None else torch.tensor([]),
+            dims=result.dimensions,
+            det=result.detection if result.detection is not None else Detection(),
+            faces=result.faces,
+            version=result.version,
+            warnings=list(result.warnings),
+        )
 
     def _read_input(
         self,
-        image_source: Union[str, torch.Tensor, np.ndarray, bytes, Image.Image],
+        image_source: Union[
+            str, os.PathLike, torch.Tensor, np.ndarray, bytes, Image.Image
+        ],
         fix_img_size: bool,
+        *,
+        input_policy: str = &#34;coerce&#34;,
+        input_spec: Optional[InputSpec] = None,
     ) -&gt; ImageData:
-        &#34;&#34;&#34;Routes image_source to the appropriate reader method.
+        &#34;&#34;&#34;Delegate every source type to the configured public reader entry point.&#34;&#34;&#34;
+        run = self.reader.run
+        if self.__dict__.get(&#34;_reader_signature_owner&#34;) is self.reader:
+            parameters = self.__dict__.get(&#34;_reader_signature_parameters&#34;)
+        else:
+            try:
+                parameters = inspect.signature(run).parameters
+            except (TypeError, ValueError) as exc:
+                raise ConfigurationError(
+                    &#34;Configured reader.run must expose an inspectable public signature.&#34;
+                ) from exc
+            self._reader_signature_owner = self.reader
+            self._reader_signature_parameters = parameters
 
-        For string inputs (file paths, URLs), delegates to self.reader.run().
-        For all other types (tensor, array, bytes, PIL Image), converts to tensor
-        and uses self.reader.process_tensor() — works with any reader type.
-        &#34;&#34;&#34;
-        if isinstance(image_source, str):
-            return self.reader.run(image_source, fix_img_size=fix_img_size)
+        accepts_kwargs = any(
+            parameter.kind == inspect.Parameter.VAR_KEYWORD
+            for parameter in parameters.values()
+        )
+        reader_kwargs = {}
+        if &#34;fix_img_size&#34; in parameters or accepts_kwargs:
+            reader_kwargs[&#34;fix_img_size&#34;] = fix_img_size
 
-        if isinstance(image_source, torch.Tensor):
-            return self.reader.process_tensor(image_source, fix_img_size=fix_img_size)
-
-        if isinstance(image_source, np.ndarray):
-            image_tensor = numpy_to_chw_tensor(image_source)
-            return self.reader.process_tensor(image_tensor, fix_img_size=fix_img_size)
-
-        if isinstance(image_source, bytes):
-            with Image.open(io.BytesIO(image_source)) as img:
-                pil_image = img.convert(&#34;RGB&#34;) if img.mode != &#34;RGB&#34; else img.copy()
-            image_tensor = torchvision.transforms.functional.pil_to_tensor(pil_image)
-            return self.reader.process_tensor(image_tensor, fix_img_size=fix_img_size)
-
-        if isinstance(image_source, Image.Image):
-            pil_image = (
-                image_source.convert(&#34;RGB&#34;)
-                if image_source.mode != &#34;RGB&#34;
-                else image_source
+        supports_policy = &#34;input_policy&#34; in parameters or accepts_kwargs
+        supports_spec = &#34;input_spec&#34; in parameters or accepts_kwargs
+        if not supports_policy and input_policy != &#34;coerce&#34;:
+            raise ConfigurationError(
+                &#34;Configured reader uses the legacy protocol and cannot honor strict mode.&#34;
             )
-            image_tensor = torchvision.transforms.functional.pil_to_tensor(pil_image)
-            return self.reader.process_tensor(image_tensor, fix_img_size=fix_img_size)
+        if not supports_spec and input_spec is not None:
+            raise ConfigurationError(
+                &#34;Configured reader uses the legacy protocol and cannot honor InputSpec.&#34;
+            )
+        if supports_policy:
+            reader_kwargs[&#34;input_policy&#34;] = input_policy
+        if supports_spec:
+            reader_kwargs[&#34;input_spec&#34;] = input_spec
 
-        raise TypeError(
-            f&#34;Unsupported image_source type: {type(image_source).__name__}. &#34;
-            &#34;Expected str, torch.Tensor, np.ndarray, bytes, or PIL.Image.Image.&#34;
-        )</code></pre>
+        data = run(image_source, **reader_kwargs)
+        if not isinstance(data, ImageData):
+            raise ConfigurationError(
+                &#34;Configured reader.run must return facetorch.datastruct.ImageData.&#34;
+            )
+        if not supports_policy or not supports_spec:
+            message = (
+                &#34;Configured reader uses the deprecated v0.x protocol; add keyword-only &#34;
+                &#34;input_policy and input_spec parameters.&#34;
+            )
+            warnings.warn(message, DeprecationWarning, stacklevel=3)
+            data.warnings.append(message)
+
+        self._validate_reader_output(data)
+        return data
+
+    @staticmethod
+    def _validate_reader_output(data: ImageData) -&gt; None:
+        tensor = data.tensor
+        if not isinstance(tensor, torch.Tensor) or tensor.ndim != 4:
+            raise ConfigurationError(&#34;Reader output tensor must have BCHW rank 4.&#34;)
+        if tensor.shape[0] != 1:
+            raise InputError(
+                &#34;Batched image input is not supported. Expected B=1, &#34;
+                f&#34;got B={tensor.shape[0]}.&#34;
+            )
+        if tensor.shape[1] != 3:
+            raise ConfigurationError(
+                &#34;Reader output must use the canonical three-channel RGB representation.&#34;
+            )
+        if tensor.dtype != torch.float32:
+            raise ConfigurationError(&#34;Reader output tensor must use float32 values.&#34;)
+        if not getattr(data, &#34;_facetorch_canonical&#34;, False):
+            if not torch.isfinite(tensor).all():
+                raise InputError(&#34;Reader output contains NaN or Inf values.&#34;)
+            if tensor.numel() and (
+                float(tensor.min()) &lt; 0.0 or float(tensor.max()) &gt; 255.0
+            ):
+                raise ConfigurationError(&#34;Reader output values must stay within 0..255.&#34;)</code></pre>
 </details>
 <div class="desc"><p>FaceAnalyzer is the main class that reads images, runs face detection, tensor unification and facial feature prediction.
 It also draws bounding boxes and facial landmarks over the image.</p>
@@ -373,32 +728,170 @@ It also draws bounding boxes and facial landmarks over the image.</p>
 <li>Predictor dict - dict of wrappers around neural networks trained to analyze facial features.</li>
 <li>Utilizer dict - dict of utilizer processors that can for example extract 3D face landmarks or draw boxes over the image.</li>
 </ol>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>cfg</code></strong> :&ensp;<code>OmegaConf</code></dt>
 <dd>Config object with image reader, face detector, unifier and predictor configurations.</dd>
-</dl>
-<h2 id="attributes">Attributes</h2>
-<dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
 <dt><strong><code>cfg</code></strong> :&ensp;<code>OmegaConf</code></dt>
 <dd>Config object with image reader, face detector, unifier and predictor configurations.</dd>
 <dt><strong><code>reader</code></strong> :&ensp;<code>BaseReader</code></dt>
 <dd>Reader object that reads the image and returns an ImageData object containing the image tensor.</dd>
 <dt><strong><code>detector</code></strong> :&ensp;<code>FaceDetector</code></dt>
-<dd>FaceDetector object that wraps a neural network that detects faces.</dd>
+<dd>Lazily loaded and cached FaceDetector object.</dd>
 <dt><strong><code>unifier</code></strong> :&ensp;<code>FaceUnifier</code></dt>
 <dd>FaceUnifier object that unifies sizes of all faces and normalizes them between 0 and 1.</dd>
-<dt><strong><code>predictors</code></strong> :&ensp;<code>Dict[str, FacePredictor]</code></dt>
-<dd>Dict of FacePredictor objects that predict facial features. Key is the name of the predictor.</dd>
-<dt><strong><code>utilizers</code></strong> :&ensp;<code>Dict[str, FaceUtilizer]</code></dt>
-<dd>Dict of FaceUtilizer objects that can extract 3D face landmarks, draw boxes over the image, etc. Key is the name of the utilizer.</dd>
+<dt><strong><code>predictors</code></strong> :&ensp;<code>MutableMapping[str, FacePredictor]</code></dt>
+<dd>Mapping of lazily loaded
+and cached predictors. Iterating names does not load models; accessing
+a value does.</dd>
+<dt><strong><code>utilizers</code></strong> :&ensp;<code>MutableMapping[str, FaceUtilizer]</code></dt>
+<dd>Mapping of lazily loaded
+utilizer objects. Selection-linked utilizers load only when their
+predictor ran.</dd>
 <dt><strong><code>logger</code></strong> :&ensp;<code>logging.Logger</code></dt>
 <dd>Logger object that logs messages to the console or to a file.</dd>
 </dl></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="facetorch.analyzer.FaceAnalyzer.detector"><code class="name">prop <span class="ident">detector</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def detector(self):
+    &#34;&#34;&#34;Return the configured detector, constructing and caching it on demand.&#34;&#34;&#34;
+    detector = self.__dict__.get(&#34;_detector&#34;, _UNLOADED)
+    if detector is not _UNLOADED:
+        return detector
+
+    detector_config = self.__dict__.get(&#34;_detector_config&#34;)
+    if detector_config is None:
+        raise ConfigurationError(&#34;No face detector is configured.&#34;)
+
+    lock = self._get_component_lock()
+    with lock:
+        if self._detector is _UNLOADED:
+            self.logger.info(&#34;Initializing FaceDetector&#34;)
+            self._detector = instantiate(detector_config)
+    return self._detector</code></pre>
+</details>
+<div class="desc"><p>Return the configured detector, constructing and caching it on demand.</p></div>
+</dd>
+<dt id="facetorch.analyzer.FaceAnalyzer.predictors"><code class="name">prop <span class="ident">predictors</span> : MutableMapping[str, <a title="facetorch.analyzer.predictor.core.FacePredictor" href="predictor/core.html#facetorch.analyzer.predictor.core.FacePredictor">FacePredictor</a>]</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def predictors(self) -&gt; MutableMapping[str, FacePredictor]:
+    &#34;&#34;&#34;Return the lazy predictor mapping without constructing its values.&#34;&#34;&#34;
+    registry = self.__dict__.get(&#34;_predictors&#34;)
+    if registry is None:
+        registry = _LazyComponentRegistry(lock=self._get_component_lock())
+        self._predictors = registry
+    return registry</code></pre>
+</details>
+<div class="desc"><p>Return the lazy predictor mapping without constructing its values.</p></div>
+</dd>
+<dt id="facetorch.analyzer.FaceAnalyzer.configured_predictors"><code class="name">prop <span class="ident">configured_predictors</span> : tuple[str, ...]</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def configured_predictors(self) -&gt; tuple[str, ...]:
+    &#34;&#34;&#34;Predictor names in deterministic configuration order, without loading.&#34;&#34;&#34;
+    return tuple(self.predictors)</code></pre>
+</details>
+<div class="desc"><p>Predictor names in deterministic configuration order, without loading.</p></div>
+</dd>
+<dt id="facetorch.analyzer.FaceAnalyzer.loaded_predictors"><code class="name">prop <span class="ident">loaded_predictors</span> : tuple[str, ...]</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def loaded_predictors(self) -&gt; tuple[str, ...]:
+    &#34;&#34;&#34;Predictor names whose wrappers and models are already cached.&#34;&#34;&#34;
+    registry = self.predictors
+    if isinstance(registry, _LazyComponentRegistry):
+        return registry.loaded_names
+    return tuple(registry)</code></pre>
+</details>
+<div class="desc"><p>Predictor names whose wrappers and models are already cached.</p></div>
+</dd>
+<dt id="facetorch.analyzer.FaceAnalyzer.utilizers"><code class="name">prop <span class="ident">utilizers</span> : MutableMapping[str, typing.Any]</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def utilizers(self) -&gt; MutableMapping[str, Any]:
+    &#34;&#34;&#34;Return the lazy utilizer mapping without constructing its values.&#34;&#34;&#34;
+    registry = self.__dict__.get(&#34;_utilizers&#34;)
+    if registry is None:
+        registry = _LazyComponentRegistry(lock=self._get_component_lock())
+        self._utilizers = registry
+    return registry</code></pre>
+</details>
+<div class="desc"><p>Return the lazy utilizer mapping without constructing its values.</p></div>
+</dd>
+<dt id="facetorch.analyzer.FaceAnalyzer.configured_utilizers"><code class="name">prop <span class="ident">configured_utilizers</span> : tuple[str, ...]</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def configured_utilizers(self) -&gt; tuple[str, ...]:
+    &#34;&#34;&#34;Utilizer names in deterministic configuration order, without loading.&#34;&#34;&#34;
+    return tuple(self.utilizers)</code></pre>
+</details>
+<div class="desc"><p>Utilizer names in deterministic configuration order, without loading.</p></div>
+</dd>
+<dt id="facetorch.analyzer.FaceAnalyzer.loaded_utilizers"><code class="name">prop <span class="ident">loaded_utilizers</span> : tuple[str, ...]</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def loaded_utilizers(self) -&gt; tuple[str, ...]:
+    &#34;&#34;&#34;Utilizer names whose objects are already cached.&#34;&#34;&#34;
+    registry = self.utilizers
+    if isinstance(registry, _LazyComponentRegistry):
+        return registry.loaded_names
+    return tuple(registry)</code></pre>
+</details>
+<div class="desc"><p>Utilizer names whose objects are already cached.</p></div>
+</dd>
+<dt id="facetorch.analyzer.FaceAnalyzer.detector_loaded"><code class="name">prop <span class="ident">detector_loaded</span> : bool</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def detector_loaded(self) -&gt; bool:
+    &#34;&#34;&#34;Whether the detector wrapper and model are already cached.&#34;&#34;&#34;
+    return self.__dict__.get(&#34;_detector&#34;, _UNLOADED) is not _UNLOADED</code></pre>
+</details>
+<div class="desc"><p>Whether the detector wrapper and model are already cached.</p></div>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="facetorch.analyzer.FaceAnalyzer.run"><code class="name flex">
-<span>def <span class="ident">run</span></span>(<span>self,<br>image_source: str | torch.Tensor | numpy.ndarray | bytes | PIL.Image.Image | None = None,<br>path_image: str | None = None,<br>batch_size: int = 8,<br>fix_img_size: bool = False,<br>return_img_data: bool = False,<br>include_tensors: bool = False,<br>path_output: str | None = None,<br>tensor: torch.Tensor | None = None,<br>include_predictors: List[str] | None = None,<br>exclude_predictors: List[str] | None = None,<br>skip_detector: bool = False) ‑> <a title="facetorch.datastruct.Response" href="../datastruct.html#facetorch.datastruct.Response">Response</a> | <a title="facetorch.datastruct.ImageData" href="../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+<span>def <span class="ident">run</span></span>(<span>self,<br>image_source: str | os.PathLike | torch.Tensor | numpy.ndarray | bytes | PIL.Image.Image | None = None,<br>path_image: str | None = None,<br>face_batch_size: int | None = None,<br>fix_img_size: bool = False,<br>return_img_data: bool | None = None,<br>include_tensors: bool = False,<br>path_output: str | None = None,<br>tensor: torch.Tensor | None = None,<br>include_predictors: List[str] | None = None,<br>exclude_predictors: List[str] | None = None,<br>skip_detector: bool = False,<br>*,<br>batch_size: int | None = None,<br>input_policy: str = 'coerce',<br>input_spec: <a title="facetorch.input.InputSpec" href="../input.html#facetorch.input.InputSpec">InputSpec</a> | None = None) ‑> <a title="facetorch.datastruct.AnalysisResult" href="../datastruct.html#facetorch.datastruct.AnalysisResult">AnalysisResult</a></span>
 </code></dt>
 <dd>
 <details class="source">
@@ -409,47 +902,110 @@ It also draws bounding boxes and facial landmarks over the image.</p>
 def run(
     self,
     image_source: Optional[
-        Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]
+        Union[str, os.PathLike, torch.Tensor, np.ndarray, bytes, Image.Image]
     ] = None,
     path_image: Optional[str] = None,
-    batch_size: int = 8,
+    face_batch_size: Optional[int] = None,
     fix_img_size: bool = False,
-    return_img_data: bool = False,
+    return_img_data: Optional[bool] = None,
     include_tensors: bool = False,
     path_output: Optional[str] = None,
     tensor: Optional[torch.Tensor] = None,
     include_predictors: Optional[List[str]] = None,
     exclude_predictors: Optional[List[str]] = None,
     skip_detector: bool = False,
-) -&gt; Union[Response, ImageData]:
-    &#34;&#34;&#34;Reads image, detects faces, unifies the detected faces, predicts facial features
-     and returns analyzed data.
+    *,
+    batch_size: Optional[int] = None,
+    input_policy: str = &#34;coerce&#34;,
+    input_spec: Optional[InputSpec] = None,
+) -&gt; AnalysisResult:
+    &#34;&#34;&#34;Analyze exactly one source image and return one stable result type.
 
     Args:
-        image_source (Optional[Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]]): Input to be analyzed. Accepts file paths, URLs, tensors, numpy arrays, bytes, or PIL Images. Default: None.
+        image_source: Input accepted by the configured reader. The default
+            reader accepts local paths, tensors, NumPy arrays, bytes, and PIL
+            images. URLs require an explicit URLReader configuration.
         path_image (Optional[str]): Deprecated. Use image_source instead.
-        batch_size (int): Batch size for making predictions on the faces. Default is 8.
+        face_batch_size (Optional[int]): Number of faces from this image sent to
+            each predictor at once. Default: 8.
         fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False.
-        return_img_data (bool): If True, returns all image data including tensors, otherwise only returns the faces. Default is False.
+        return_img_data (Optional[bool]): Deprecated no-op. Use
+            ``include_tensors`` and the fields on ``AnalysisResult`` or call
+            ``run_legacy`` for the former flag-dependent return type.
         include_tensors (bool): If True, includes tensors in the returned data object. If False, tensors are removed. Default is False.
         path_output (Optional[str]): Path where to save the image with detected faces. If None, the image is not saved. Default: None.
         tensor (Optional[torch.Tensor]): Deprecated. Use image_source instead.
-        include_predictors (Optional[List[str]]): If provided, only run these predictors. Default: None (run all).
-        exclude_predictors (Optional[List[str]]): If provided, skip these predictors. Default: None (skip none).
-        skip_detector (bool): If True, skip face detection and treat the input as a pre-cropped face. Default: False.
+        include_predictors (Optional[List[str]]): Names to run. None runs all
+            configured predictors and an empty collection runs none.
+        exclude_predictors (Optional[List[str]]): Names to omit. None and an
+            empty collection omit none. Cannot be combined with an include.
+        skip_detector (bool): If True, skip face detection, avoid constructing
+            its model, and treat the input as a pre-cropped face. Default: False.
+        batch_size (Optional[int]): Deprecated warning alias for
+            ``face_batch_size`` throughout v1.x.
+        input_policy (str): ``coerce`` (default) or ``strict``.
+        input_spec (Optional[InputSpec]): Explicit source layout/range/color
+            description, especially for strict-mode conversions.
 
     Returns:
-        Union[Response, ImageData]: If return_img_data is False, returns a Response object containing the faces and their facial features. If return_img_data is True, returns the entire ImageData object.
+        AnalysisResult: Stable result for the one source image.
 
     &#34;&#34;&#34;
+
+    compatibility_warnings = []
+
+    if face_batch_size is not None and batch_size is not None:
+        raise ConfigurationError(
+            &#34;Specify only face_batch_size; batch_size is its deprecated alias.&#34;
+        )
+    if batch_size is not None:
+        message = (
+            &#34;batch_size is deprecated and will be removed after v1.x; &#34;
+            &#34;use face_batch_size.&#34;
+        )
+        warnings.warn(message, DeprecationWarning, stacklevel=2)
+        compatibility_warnings.append(message)
+        effective_face_batch_size = batch_size
+    elif face_batch_size is None:
+        effective_face_batch_size = 8
+    else:
+        effective_face_batch_size = face_batch_size
+
+    if (
+        isinstance(effective_face_batch_size, bool)
+        or not isinstance(effective_face_batch_size, int)
+        or effective_face_batch_size &lt; 1
+    ):
+        raise ConfigurationError(
+            &#34;face_batch_size must be an integer greater than or equal to 1, &#34;
+            f&#34;got {effective_face_batch_size!r}.&#34;
+        )
+
+    if return_img_data is not None:
+        message = (
+            &#34;return_img_data no longer changes FaceAnalyzer.run&#39;s return type; &#34;
+            &#34;use include_tensors or the explicit run_legacy adapter.&#34;
+        )
+        warnings.warn(message, DeprecationWarning, stacklevel=2)
+        compatibility_warnings.append(message)
+
+    def _run_component(label, operation):
+        try:
+            return operation()
+        except FacetorchError:
+            raise
+        except Exception as exc:
+            raise InferenceError(f&#34;{label} failed during analysis.&#34;) from exc
 
     def _predict_batch(
         data: ImageData, predictor: FacePredictor, predictor_name: str
     ) -&gt; ImageData:
         n_faces = len(data.faces)
 
-        for face_indx_start in range(0, n_faces, batch_size):
-            face_indx_end = min(face_indx_start + batch_size, n_faces)
+        for face_indx_start in range(0, n_faces, effective_face_batch_size):
+            face_indx_end = min(
+                face_indx_start + effective_face_batch_size, n_faces
+            )
 
             face_batch_tensor = torch.stack(
                 [face.tensor for face in data.faces[face_indx_start:face_indx_end]]
@@ -460,40 +1016,50 @@ def run(
         return data
 
     self.logger.info(&#34;Running FaceAnalyzer&#34;)
+    selected_predictors = self._select_predictor_names(
+        include_predictors, exclude_predictors
+    )
+    configured_predictors = set(self.configured_predictors)
 
-    if include_predictors and exclude_predictors:
-        raise ValueError(
-            &#34;Cannot specify both include_predictors and exclude_predictors. &#34;
-            &#34;Use one or the other.&#34;
+    supplied_sources = [
+        name
+        for name, value in (
+            (&#34;image_source&#34;, image_source),
+            (&#34;path_image&#34;, path_image),
+            (&#34;tensor&#34;, tensor),
         )
-
-    if batch_size &lt; 1:
-        raise ValueError(f&#34;batch_size must be &gt;= 1, got {batch_size}.&#34;)
-
-    if path_image is not None and image_source is None:
-        warnings.warn(
-            &#34;path_image is deprecated, use image_source instead.&#34;,
-            DeprecationWarning,
-            stacklevel=2,
+        if value is not None
+    ]
+    if len(supplied_sources) &gt; 1:
+        raise InputError(
+            &#34;Supply exactly one input source using image_source. Received: &#34;
+            + &#34;, &#34;.join(supplied_sources)
+            + &#34;.&#34;
         )
-        image_source = path_image
-
-    if tensor is not None and image_source is None:
-        warnings.warn(
-            &#34;tensor is deprecated, use image_source instead.&#34;,
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        image_source = tensor
-
-    if image_source is None:
-        raise ValueError(
+    if not supplied_sources:
+        raise InputError(
             &#34;image_source is required. Pass a file path, URL, tensor, numpy array, &#34;
             &#34;bytes, or PIL Image.&#34;
         )
+    if path_image is not None:
+        message = &#34;path_image is deprecated; use image_source.&#34;
+        warnings.warn(message, DeprecationWarning, stacklevel=2)
+        compatibility_warnings.append(message)
+        image_source = path_image
+    elif tensor is not None:
+        message = &#34;tensor is deprecated; use image_source.&#34;
+        warnings.warn(message, DeprecationWarning, stacklevel=2)
+        compatibility_warnings.append(message)
+        image_source = tensor
 
     self.logger.info(&#34;Reading image&#34;)
-    data = self._read_input(image_source, fix_img_size)
+    data = self._read_input(
+        image_source,
+        fix_img_size,
+        input_policy=input_policy,
+        input_spec=input_spec,
+    )
+    data.warnings.extend(compatibility_warnings)
 
     path_output = None if path_output == &#34;None&#34; else path_output
     data.path_output = path_output
@@ -521,39 +1087,47 @@ def run(
         n_faces = 1
     else:
         self.logger.info(&#34;Detecting faces&#34;)
-        data = self.detector.run(data)
+        data = _run_component(&#34;Face detector&#34;, lambda: self.detector.run(data))
         n_faces = len(data.faces)
 
     self.logger.info(f&#34;Number of faces: {n_faces}&#34;)
 
     if n_faces &gt; 0 and self.unifier is not None:
         self.logger.info(&#34;Unifying faces&#34;)
-        data = self.unifier.run(data)
+        data = _run_component(&#34;Face unifier&#34;, lambda: self.unifier.run(data))
 
         self.logger.info(&#34;Predicting facial features&#34;)
-        for predictor_name, predictor in self.predictors.items():
-            if include_predictors and predictor_name not in include_predictors:
-                continue
-            if exclude_predictors and predictor_name in exclude_predictors:
-                continue
+        for predictor_name in selected_predictors:
+            predictor = self.predictors[predictor_name]
             self.logger.info(f&#34;Running FacePredictor: {predictor_name}&#34;)
-            data = _predict_batch(data, predictor, predictor_name)
+            data = _run_component(
+                f&#34;Face predictor {predictor_name!r}&#34;,
+                lambda: _predict_batch(data, predictor, predictor_name),
+            )
 
         self.logger.info(&#34;Utilizing facial features&#34;)
         ran_predictors = (
             set(data.faces[0].preds.keys()) if data.faces else set()
         )
-        for utilizer_name, utilizer in self.utilizers.items():
-            if utilizer_name in self.predictors and utilizer_name not in ran_predictors:
+        for utilizer_name in self.utilizers:
+            if (
+                utilizer_name in configured_predictors
+                and utilizer_name not in ran_predictors
+            ):
                 self.logger.info(
                     f&#34;Skipping BaseUtilizer: {utilizer_name} (predictor not run)&#34;
                 )
                 continue
+            utilizer = self.utilizers[utilizer_name]
             self.logger.info(f&#34;Running BaseUtilizer: {utilizer_name}&#34;)
-            data = utilizer.run(data)
+            data = _run_component(
+                f&#34;Face utilizer {utilizer_name!r}&#34;, lambda: utilizer.run(data)
+            )
     else:
         if &#34;save&#34; in self.utilizers:
-            self.utilizers[&#34;save&#34;].run(data)
+            _run_component(
+                &#34;Face utilizer &#39;save&#39;&#34;, lambda: self.utilizers[&#34;save&#34;].run(data)
+            )
 
     if not include_tensors:
         self.logger.debug(
@@ -561,29 +1135,32 @@ def run(
         )
         data.reset_tensors()
 
-    response = Response(faces=data.faces, version=data.version)
-
-    if return_img_data:
-        self.logger.debug(&#34;Returning image data object&#34;, extra=data.__dict__)
-        return data
-    else:
-        self.logger.debug(&#34;Returning response with faces&#34;, extra=response.__dict__)
-        return response</code></pre>
+    result = AnalysisResult.from_image_data(data, include_tensors=include_tensors)
+    self.logger.debug(
+        &#34;Returning analysis result&#34;,
+        extra={&#34;face_count&#34;: len(result.faces), &#34;version&#34;: result.version},
+    )
+    return result</code></pre>
 </details>
-<div class="desc"><p>Reads image, detects faces, unifies the detected faces, predicts facial features
-and returns analyzed data.</p>
-<h2 id="args">Args</h2>
+<div class="desc"><p>Analyze exactly one source image and return one stable result type.</p>
 <dl>
-<dt><strong><code>image_source</code></strong> :&ensp;<code>Optional[Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]]</code></dt>
-<dd>Input to be analyzed. Accepts file paths, URLs, tensors, numpy arrays, bytes, or PIL Images. Default: None.</dd>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>image_source</code></strong></dt>
+<dd>Input accepted by the configured reader. The default
+reader accepts local paths, tensors, NumPy arrays, bytes, and PIL
+images. URLs require an explicit URLReader configuration.</dd>
 <dt><strong><code>path_image</code></strong> :&ensp;<code>Optional[str]</code></dt>
 <dd>Deprecated. Use image_source instead.</dd>
-<dt><strong><code>batch_size</code></strong> :&ensp;<code>int</code></dt>
-<dd>Batch size for making predictions on the faces. Default is 8.</dd>
+<dt><strong><code>face_batch_size</code></strong> :&ensp;<code>Optional[int]</code></dt>
+<dd>Number of faces from this image sent to
+each predictor at once. Default: 8.</dd>
 <dt><strong><code>fix_img_size</code></strong> :&ensp;<code>bool</code></dt>
 <dd>If True, resizes the image to the size specified in reader. Default is False.</dd>
-<dt><strong><code>return_img_data</code></strong> :&ensp;<code>bool</code></dt>
-<dd>If True, returns all image data including tensors, otherwise only returns the faces. Default is False.</dd>
+<dt><strong><code>return_img_data</code></strong> :&ensp;<code>Optional[bool]</code></dt>
+<dd>Deprecated no-op. Use
+<code>include_tensors</code> and the fields on <code>AnalysisResult</code> or call
+<code>run_legacy</code> for the former flag-dependent return type.</dd>
 <dt><strong><code>include_tensors</code></strong> :&ensp;<code>bool</code></dt>
 <dd>If True, includes tensors in the returned data object. If False, tensors are removed. Default is False.</dd>
 <dt><strong><code>path_output</code></strong> :&ensp;<code>Optional[str]</code></dt>
@@ -591,17 +1168,65 @@ and returns analyzed data.</p>
 <dt><strong><code>tensor</code></strong> :&ensp;<code>Optional[torch.Tensor]</code></dt>
 <dd>Deprecated. Use image_source instead.</dd>
 <dt><strong><code>include_predictors</code></strong> :&ensp;<code>Optional[List[str]]</code></dt>
-<dd>If provided, only run these predictors. Default: None (run all).</dd>
+<dd>Names to run. None runs all
+configured predictors and an empty collection runs none.</dd>
 <dt><strong><code>exclude_predictors</code></strong> :&ensp;<code>Optional[List[str]]</code></dt>
-<dd>If provided, skip these predictors. Default: None (skip none).</dd>
+<dd>Names to omit. None and an
+empty collection omit none. Cannot be combined with an include.</dd>
 <dt><strong><code>skip_detector</code></strong> :&ensp;<code>bool</code></dt>
-<dd>If True, skip face detection and treat the input as a pre-cropped face. Default: False.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>Union[Response, ImageData]</code></dt>
-<dd>If return_img_data is False, returns a Response object containing the faces and their facial features. If return_img_data is True, returns the entire ImageData object.</dd>
+<dd>If True, skip face detection, avoid constructing
+its model, and treat the input as a pre-cropped face. Default: False.</dd>
+<dt><strong><code>batch_size</code></strong> :&ensp;<code>Optional[int]</code></dt>
+<dd>Deprecated warning alias for
+<code>face_batch_size</code> throughout v1.x.</dd>
+<dt><strong><code>input_policy</code></strong> :&ensp;<code>str</code></dt>
+<dd><code>coerce</code> (default) or <code>strict</code>.</dd>
+<dt><strong><code>input_spec</code></strong> :&ensp;<code>Optional[InputSpec]</code></dt>
+<dd>Explicit source layout/range/color
+description, especially for strict-mode conversions.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>AnalysisResult</code></dt>
+<dd>Stable result for the one source image.</dd>
 </dl></div>
+</dd>
+<dt id="facetorch.analyzer.FaceAnalyzer.run_legacy"><code class="name flex">
+<span>def <span class="ident">run_legacy</span></span>(<span>self, *args, return_img_data: bool = False, **kwargs) ‑> <a title="facetorch.datastruct.Response" href="../datastruct.html#facetorch.datastruct.Response">Response</a> | <a title="facetorch.datastruct.ImageData" href="../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_legacy(
+    self,
+    *args,
+    return_img_data: bool = False,
+    **kwargs,
+) -&gt; Union[Response, ImageData]:
+    &#34;&#34;&#34;Run the canonical pipeline and adapt its result to the v0.x return union.&#34;&#34;&#34;
+    warnings.warn(
+        &#34;FaceAnalyzer.run_legacy is a v1.x compatibility adapter; migrate to run().&#34;,
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    result = self.run(*args, **kwargs)
+    if not return_img_data:
+        return Response(faces=result.faces, version=result.version)
+
+    return ImageData(
+        path_input=result.path_input,
+        path_output=result.path_output,
+        img=result.image if result.image is not None else torch.tensor([]),
+        tensor=result.tensor if result.tensor is not None else torch.tensor([]),
+        dims=result.dimensions,
+        det=result.detection if result.detection is not None else Detection(),
+        faces=result.faces,
+        version=result.version,
+        warnings=list(result.warnings),
+    )</code></pre>
+</details>
+<div class="desc"><p>Run the canonical pipeline and adapt its result to the v0.x return union.</p></div>
 </dd>
 </dl>
 </dd>
@@ -680,6 +1305,15 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="facetorch.analyzer.FaceAnalyzer" href="#facetorch.analyzer.FaceAnalyzer">FaceAnalyzer</a></code></h4>
 <ul class="">
 <li><code><a title="facetorch.analyzer.FaceAnalyzer.run" href="#facetorch.analyzer.FaceAnalyzer.run">run</a></code></li>
+<li><code><a title="facetorch.analyzer.FaceAnalyzer.run_legacy" href="#facetorch.analyzer.FaceAnalyzer.run_legacy">run_legacy</a></code></li>
+<li><code><a title="facetorch.analyzer.FaceAnalyzer.detector" href="#facetorch.analyzer.FaceAnalyzer.detector">detector</a></code></li>
+<li><code><a title="facetorch.analyzer.FaceAnalyzer.predictors" href="#facetorch.analyzer.FaceAnalyzer.predictors">predictors</a></code></li>
+<li><code><a title="facetorch.analyzer.FaceAnalyzer.configured_predictors" href="#facetorch.analyzer.FaceAnalyzer.configured_predictors">configured_predictors</a></code></li>
+<li><code><a title="facetorch.analyzer.FaceAnalyzer.loaded_predictors" href="#facetorch.analyzer.FaceAnalyzer.loaded_predictors">loaded_predictors</a></code></li>
+<li><code><a title="facetorch.analyzer.FaceAnalyzer.utilizers" href="#facetorch.analyzer.FaceAnalyzer.utilizers">utilizers</a></code></li>
+<li><code><a title="facetorch.analyzer.FaceAnalyzer.configured_utilizers" href="#facetorch.analyzer.FaceAnalyzer.configured_utilizers">configured_utilizers</a></code></li>
+<li><code><a title="facetorch.analyzer.FaceAnalyzer.loaded_utilizers" href="#facetorch.analyzer.FaceAnalyzer.loaded_utilizers">loaded_utilizers</a></code></li>
+<li><code><a title="facetorch.analyzer.FaceAnalyzer.detector_loaded" href="#facetorch.analyzer.FaceAnalyzer.detector_loaded">detector_loaded</a></code></li>
 </ul>
 </li>
 </ul>

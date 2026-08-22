@@ -42,7 +42,7 @@ el.replaceWith(d);
 <dl>
 <dt><code class="name"><a title="facetorch.analyzer.reader.core" href="core.html">facetorch.analyzer.reader.core</a></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Public image readers feeding facetorch's canonical input pipeline.</p></div>
 </dd>
 </dl>
 </section>
@@ -63,63 +63,60 @@ el.replaceWith(d);
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class ImageReader(BaseReader):
+    &#34;&#34;&#34;Reader restricted to local filesystem paths.&#34;&#34;&#34;
+
     def __init__(
         self,
         transform: torchvision.transforms.Compose,
         device: torch.device,
         optimize_transform: bool,
     ):
-        &#34;&#34;&#34;ImageReader is a wrapper around a functionality for reading images by Torchvision.
+        super().__init__(transform, device, optimize_transform)
 
-        Args:
-            transform (torchvision.transforms.Compose): Transform compose object to be applied to the image, if fix_image_size is True.
-            device (torch.device): Torch device cpu or cuda object.
-            optimize_transform (bool): Whether to optimize the transforms that are: resizing the image to a fixed size.
-
-        &#34;&#34;&#34;
-        super().__init__(
-            transform,
-            device,
-            optimize_transform,
-        )
+    read_pil_image = UniversalReader.read_pil_image
+    read_image_from_path = UniversalReader.read_image_from_path
 
     @Timer(&#34;ImageReader.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
-    def run(self, path_image: str, fix_img_size: bool = False) -&gt; ImageData:
-        &#34;&#34;&#34;Reads an image from a path and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image.
-
-        Args:
-            path_image (str): Path to the image.
-            fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
-
-        Returns:
-            ImageData: ImageData object with image tensor and pil Image.
-        &#34;&#34;&#34;
-        data = ImageData(path_input=path_image)
-        data.img = torchvision.io.read_image(
-            data.path_input, mode=torchvision.io.ImageReadMode.RGB
-        )
-        data.img = data.img.unsqueeze(0)
-        data.img = data.img.to(self.device)
-
-        if fix_img_size:
-            data.img = self.transform(data.img)
-
-        data.tensor = data.img.type(torch.float32)
-        data.img = data.img.squeeze(0).cpu()
-        data.set_dims()
-
-        return data</code></pre>
+    def run(
+        self,
+        image_source: LocalPath,
+        fix_img_size: bool = False,
+        *,
+        input_policy: str = &#34;coerce&#34;,
+        input_spec: Optional[InputSpec] = None,
+    ) -&gt; ImageData:
+        if not isinstance(image_source, (str, os.PathLike)):
+            raise InputError(
+                f&#34;ImageReader accepts only a local path, got {type(image_source).__name__}.&#34;
+            )
+        path = os.fspath(image_source)
+        if _is_remote_reference(path):
+            raise InputError(&#34;ImageReader does not permit remote URLs; configure URLReader.&#34;)
+        return self.read_image_from_path(
+            path,
+            fix_img_size,
+            input_policy=input_policy,
+            input_spec=input_spec,
+        )</code></pre>
 </details>
-<div class="desc"><p>ImageReader is a wrapper around a functionality for reading images by Torchvision.</p>
-<h2 id="args">Args</h2>
+<div class="desc"><p>Reader restricted to local filesystem paths.</p>
+<p>Base class for image reader.</p>
+<p>All image readers should subclass it.
+All subclass should overwrite:</p>
+<ul>
+<li>Methods:<code>run</code>, used for running the reading process and return a tensor.</li>
+</ul>
 <dl>
-<dt><strong><code>transform</code></strong> :&ensp;<code>torchvision.transforms.Compose</code></dt>
-<dd>Transform compose object to be applied to the image, if fix_image_size is True.</dd>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>transform</code></strong> :&ensp;<code>transforms.Compose</code></dt>
+<dd>Transform to be applied to the image.</dd>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
-<dd>Torch device cpu or cuda object.</dd>
+<dd>Torch device cpu or cuda.</dd>
 <dt><strong><code>optimize_transform</code></strong> :&ensp;<code>bool</code></dt>
-<dd>Whether to optimize the transforms that are: resizing the image to a fixed size.</dd>
-</dl></div>
+<dd>Whether to optimize the transforms that are resizing</dd>
+</dl>
+<p>the image to a fixed size.</p></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li><a title="facetorch.base.BaseReader" href="../../base.html#facetorch.base.BaseReader">BaseReader</a></li>
@@ -127,54 +124,87 @@ el.replaceWith(d);
 </ul>
 <h3>Methods</h3>
 <dl>
-<dt id="facetorch.analyzer.reader.ImageReader.run"><code class="name flex">
-<span>def <span class="ident">run</span></span>(<span>self, path_image: str, fix_img_size: bool = False) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+<dt id="facetorch.analyzer.reader.ImageReader.read_pil_image"><code class="name flex">
+<span>def <span class="ident">read_pil_image</span></span>(<span>self,<br>pil_image: PIL.Image.Image,<br>fix_img_size: bool,<br>*,<br>input_policy: str = 'coerce',<br>input_spec: <a title="facetorch.input.InputSpec" href="../../input.html#facetorch.input.InputSpec">InputSpec</a> | None = None,<br>path_input: str | None = None) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;ImageReader.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
-def run(self, path_image: str, fix_img_size: bool = False) -&gt; ImageData:
-    &#34;&#34;&#34;Reads an image from a path and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image.
+<pre><code class="python">def read_pil_image(
+    self,
+    pil_image: Image.Image,
+    fix_img_size: bool,
+    *,
+    input_policy: str = &#34;coerce&#34;,
+    input_spec: Optional[InputSpec] = None,
+    path_input: Optional[str] = None,
+) -&gt; ImageData:
+    mode = getattr(pil_image, &#34;mode&#34;, None)
+    source = pil_image
+    converted = None
+    conversion_message = None
+    if mode not in {&#34;L&#34;, &#34;RGB&#34;, &#34;RGBA&#34;}:
+        if str(input_policy).lower().strip() == &#34;strict&#34;:
+            raise InputError(
+                f&#34;Strict mode does not accept decoded PIL mode {mode!r}; &#34;
+                &#34;convert it explicitly to L, RGB, or RGBA.&#34;
+            )
+        conversion_message = f&#34;Converted decoded PIL mode {mode!r} to RGB.&#34;
+        warnings.warn(conversion_message, InputCoercionWarning, stacklevel=3)
+        converted = pil_image.convert(&#34;RGB&#34;)
+        source = converted
 
-    Args:
-        path_image (str): Path to the image.
-        fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
+    try:
+        array = np.array(source, copy=True)
+    finally:
+        if converted is not None:
+            converted.close()
 
-    Returns:
-        ImageData: ImageData object with image tensor and pil Image.
-    &#34;&#34;&#34;
-    data = ImageData(path_input=path_image)
-    data.img = torchvision.io.read_image(
-        data.path_input, mode=torchvision.io.ImageReadMode.RGB
+    data = self.process_tensor(
+        _array_to_tensor(array),
+        fix_img_size,
+        input_policy=input_policy,
+        input_spec=input_spec,
+        source_kind=&#34;decoded&#34;,
+        path_input=path_input,
     )
-    data.img = data.img.unsqueeze(0)
-    data.img = data.img.to(self.device)
-
-    if fix_img_size:
-        data.img = self.transform(data.img)
-
-    data.tensor = data.img.type(torch.float32)
-    data.img = data.img.squeeze(0).cpu()
-    data.set_dims()
-
+    if conversion_message is not None:
+        data.warnings.insert(0, conversion_message)
     return data</code></pre>
 </details>
-<div class="desc"><p>Reads an image from a path and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>path_image</code></strong> :&ensp;<code>str</code></dt>
-<dd>Path to the image.</dd>
-<dt><strong><code>fix_img_size</code></strong> :&ensp;<code>bool</code></dt>
-<dd>Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>ImageData</code></dt>
-<dd>ImageData object with image tensor and pil Image.</dd>
-</dl></div>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.analyzer.reader.ImageReader.read_image_from_path"><code class="name flex">
+<span>def <span class="ident">read_image_from_path</span></span>(<span>self,<br>path_image: str,<br>fix_img_size: bool,<br>*,<br>input_policy: str = 'coerce',<br>input_spec: <a title="facetorch.input.InputSpec" href="../../input.html#facetorch.input.InputSpec">InputSpec</a> | None = None) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def read_image_from_path(
+    self,
+    path_image: str,
+    fix_img_size: bool,
+    *,
+    input_policy: str = &#34;coerce&#34;,
+    input_spec: Optional[InputSpec] = None,
+) -&gt; ImageData:
+    try:
+        with Image.open(path_image) as pil_image:
+            return self.read_pil_image(
+                pil_image,
+                fix_img_size,
+                input_policy=input_policy,
+                input_spec=input_spec,
+                path_input=str(Path(path_image)),
+            )
+    except (FileNotFoundError, PermissionError, UnidentifiedImageError, OSError) as exc:
+        raise InputError(f&#34;Could not read local image path {path_image!r}.&#34;) from exc</code></pre>
+</details>
+<div class="desc"></div>
 </dd>
 </dl>
 <h3>Inherited members</h3>
@@ -183,9 +213,63 @@ def run(self, path_image: str, fix_img_size: bool = False) -&gt; ImageData:
 <ul class="hlist">
 <li><code><a title="facetorch.base.BaseReader.optimize" href="../../base.html#facetorch.base.BaseProcessor.optimize">optimize</a></code></li>
 <li><code><a title="facetorch.base.BaseReader.process_tensor" href="../../base.html#facetorch.base.BaseReader.process_tensor">process_tensor</a></code></li>
+<li><code><a title="facetorch.base.BaseReader.run" href="../../base.html#facetorch.base.BaseReader.run">run</a></code></li>
 </ul>
 </li>
 </ul>
+</dd>
+<dt id="facetorch.analyzer.reader.ReaderProtocol"><code class="flex name class">
+<span>class <span class="ident">ReaderProtocol</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@runtime_checkable
+class ReaderProtocol(Protocol):
+    &#34;&#34;&#34;Small public reader extension point used by :class:`FaceAnalyzer`.&#34;&#34;&#34;
+
+    def run(
+        self,
+        image_source: ImageSource,
+        fix_img_size: bool = False,
+        *,
+        input_policy: str = &#34;coerce&#34;,
+        input_spec: Optional[InputSpec] = None,
+    ) -&gt; ImageData:
+        &#34;&#34;&#34;Decode and canonicalize exactly one source image.&#34;&#34;&#34;</code></pre>
+</details>
+<div class="desc"><p>Small public reader extension point used by :class:<code>FaceAnalyzer</code>.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="facetorch.analyzer.reader.ReaderProtocol.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self,<br>image_source: str | os.PathLike | torch.Tensor | numpy.ndarray | bytes | PIL.Image.Image,<br>fix_img_size: bool = False,<br>*,<br>input_policy: str = 'coerce',<br>input_spec: <a title="facetorch.input.InputSpec" href="../../input.html#facetorch.input.InputSpec">InputSpec</a> | None = None) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run(
+    self,
+    image_source: ImageSource,
+    fix_img_size: bool = False,
+    *,
+    input_policy: str = &#34;coerce&#34;,
+    input_spec: Optional[InputSpec] = None,
+) -&gt; ImageData:
+    &#34;&#34;&#34;Decode and canonicalize exactly one source image.&#34;&#34;&#34;</code></pre>
+</details>
+<div class="desc"><p>Decode and canonicalize exactly one source image.</p></div>
+</dd>
+</dl>
 </dd>
 <dt id="facetorch.analyzer.reader.TensorReader"><code class="flex name class">
 <span>class <span class="ident">TensorReader</span></span>
@@ -197,98 +281,68 @@ def run(self, path_image: str, fix_img_size: bool = False) -&gt; ImageData:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class TensorReader(BaseReader):
+    &#34;&#34;&#34;Reader restricted to Torch tensors.&#34;&#34;&#34;
+
     def __init__(
         self,
         transform: torchvision.transforms.Compose,
         device: torch.device,
         optimize_transform: bool,
     ):
-        &#34;&#34;&#34;TensorReader is a wrapper around a functionality for reading tensors by Torchvision.
-
-        Args:
-            transform (torchvision.transforms.Compose): Transform compose object to be applied to the image, if fix_image_size is True.
-            device (torch.device): Torch device cpu or cuda object.
-            optimize_transform (bool): Whether to optimize the transforms that are: resizing the image to a fixed size.
-
-        &#34;&#34;&#34;
-        super().__init__(
-            transform,
-            device,
-            optimize_transform,
-        )
+        super().__init__(transform, device, optimize_transform)
 
     @Timer(&#34;TensorReader.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
-    def run(self, tensor: torch.Tensor, fix_img_size: bool = False) -&gt; ImageData:
-        &#34;&#34;&#34;Reads a tensor and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image.
-
-        Args:
-            tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width).
-            fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
-
-        Returns:
-            ImageData: ImageData object with image tensor and pil Image.
-        &#34;&#34;&#34;
-        return self.process_tensor(tensor, fix_img_size)</code></pre>
+    def run(
+        self,
+        image_source: torch.Tensor,
+        fix_img_size: bool = False,
+        *,
+        input_policy: str = &#34;coerce&#34;,
+        input_spec: Optional[InputSpec] = None,
+    ) -&gt; ImageData:
+        if not isinstance(image_source, torch.Tensor):
+            raise InputError(
+                f&#34;TensorReader accepts only Torch tensors, got &#34;
+                f&#34;{type(image_source).__name__}.&#34;
+            )
+        return self.process_tensor(
+            image_source,
+            fix_img_size,
+            input_policy=input_policy,
+            input_spec=input_spec,
+            source_kind=&#34;torch&#34;,
+        )</code></pre>
 </details>
-<div class="desc"><p>TensorReader is a wrapper around a functionality for reading tensors by Torchvision.</p>
-<h2 id="args">Args</h2>
+<div class="desc"><p>Reader restricted to Torch tensors.</p>
+<p>Base class for image reader.</p>
+<p>All image readers should subclass it.
+All subclass should overwrite:</p>
+<ul>
+<li>Methods:<code>run</code>, used for running the reading process and return a tensor.</li>
+</ul>
 <dl>
-<dt><strong><code>transform</code></strong> :&ensp;<code>torchvision.transforms.Compose</code></dt>
-<dd>Transform compose object to be applied to the image, if fix_image_size is True.</dd>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>transform</code></strong> :&ensp;<code>transforms.Compose</code></dt>
+<dd>Transform to be applied to the image.</dd>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
-<dd>Torch device cpu or cuda object.</dd>
+<dd>Torch device cpu or cuda.</dd>
 <dt><strong><code>optimize_transform</code></strong> :&ensp;<code>bool</code></dt>
-<dd>Whether to optimize the transforms that are: resizing the image to a fixed size.</dd>
-</dl></div>
+<dd>Whether to optimize the transforms that are resizing</dd>
+</dl>
+<p>the image to a fixed size.</p></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li><a title="facetorch.base.BaseReader" href="../../base.html#facetorch.base.BaseReader">BaseReader</a></li>
 <li><a title="facetorch.base.BaseProcessor" href="../../base.html#facetorch.base.BaseProcessor">BaseProcessor</a></li>
 </ul>
-<h3>Methods</h3>
-<dl>
-<dt id="facetorch.analyzer.reader.TensorReader.run"><code class="name flex">
-<span>def <span class="ident">run</span></span>(<span>self, tensor: torch.Tensor, fix_img_size: bool = False) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
-</code></dt>
-<dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@Timer(&#34;TensorReader.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
-def run(self, tensor: torch.Tensor, fix_img_size: bool = False) -&gt; ImageData:
-    &#34;&#34;&#34;Reads a tensor and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image.
-
-    Args:
-        tensor (torch.Tensor): Tensor of a single image with RGB values between 0-255 and shape (channels, height, width).
-        fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
-
-    Returns:
-        ImageData: ImageData object with image tensor and pil Image.
-    &#34;&#34;&#34;
-    return self.process_tensor(tensor, fix_img_size)</code></pre>
-</details>
-<div class="desc"><p>Reads a tensor and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>tensor</code></strong> :&ensp;<code>torch.Tensor</code></dt>
-<dd>Tensor of a single image with RGB values between 0-255 and shape (channels, height, width).</dd>
-<dt><strong><code>fix_img_size</code></strong> :&ensp;<code>bool</code></dt>
-<dd>Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>ImageData</code></dt>
-<dd>ImageData object with image tensor and pil Image.</dd>
-</dl></div>
-</dd>
-</dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
 <li><code><b><a title="facetorch.base.BaseReader" href="../../base.html#facetorch.base.BaseReader">BaseReader</a></b></code>:
 <ul class="hlist">
 <li><code><a title="facetorch.base.BaseReader.optimize" href="../../base.html#facetorch.base.BaseProcessor.optimize">optimize</a></code></li>
 <li><code><a title="facetorch.base.BaseReader.process_tensor" href="../../base.html#facetorch.base.BaseReader.process_tensor">process_tensor</a></code></li>
+<li><code><a title="facetorch.base.BaseReader.run" href="../../base.html#facetorch.base.BaseReader.run">run</a></code></li>
 </ul>
 </li>
 </ul>
@@ -303,207 +357,326 @@ def run(self, tensor: torch.Tensor, fix_img_size: bool = False) -&gt; ImageData:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class UniversalReader(BaseReader):
+    &#34;&#34;&#34;Read local paths and in-memory images; network access is intentionally absent.&#34;&#34;&#34;
+
     def __init__(
         self,
         transform: torchvision.transforms.Compose,
         device: torch.device,
         optimize_transform: bool,
     ):
-        &#34;&#34;&#34;UniversalReader can read images from a path, URL, tensor, numpy array, bytes or PIL Image and return an ImageData object containing the image tensor.
-
-        Args:
-            transform (torchvision.transforms.Compose): Transform compose object to be applied to the image, if fix_image_size is True.
-            device (torch.device): Torch device cpu or cuda object.
-            optimize_transform (bool): Whether to optimize the transforms that are: resizing the image to a fixed size.
-
-        &#34;&#34;&#34;
         super().__init__(transform, device, optimize_transform)
 
     @Timer(&#34;UniversalReader.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(
         self,
-        image_source: Union[str, torch.Tensor, np.ndarray, bytes, Image.Image],
+        image_source: ImageSource,
         fix_img_size: bool = False,
+        *,
+        input_policy: str = &#34;coerce&#34;,
+        input_spec: Optional[InputSpec] = None,
     ) -&gt; ImageData:
-        &#34;&#34;&#34;Reads an image from a path, URL, tensor, numpy array, bytes or PIL Image and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image.
+        if isinstance(image_source, (str, os.PathLike)):
+            path = os.fspath(image_source)
+            if _is_remote_reference(path):
+                raise InputError(
+                    &#34;Remote image input requires an explicit URLReader configuration.&#34;
+                )
+            return self.read_image_from_path(
+                path,
+                fix_img_size,
+                input_policy=input_policy,
+                input_spec=input_spec,
+            )
+        if isinstance(image_source, torch.Tensor):
+            return self.read_tensor(
+                image_source,
+                fix_img_size,
+                input_policy=input_policy,
+                input_spec=input_spec,
+            )
+        if isinstance(image_source, np.ndarray):
+            return self.read_numpy_array(
+                image_source,
+                fix_img_size,
+                input_policy=input_policy,
+                input_spec=input_spec,
+            )
+        if isinstance(image_source, bytes):
+            return self.read_image_from_bytes(
+                image_source,
+                fix_img_size,
+                input_policy=input_policy,
+                input_spec=input_spec,
+            )
+        if isinstance(image_source, Image.Image):
+            return self.read_pil_image(
+                image_source,
+                fix_img_size,
+                input_policy=input_policy,
+                input_spec=input_spec,
+            )
+        raise InputError(
+            f&#34;Unsupported image source type {type(image_source).__name__}; expected a &#34;
+            &#34;local path, bytes, PIL image, NumPy array, or Torch tensor.&#34;
+        )
 
-        Args:
-            image_source (Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]): Image source to be read.
-            fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
+    def read_tensor(
+        self,
+        tensor: torch.Tensor,
+        fix_img_size: bool,
+        *,
+        input_policy: str = &#34;coerce&#34;,
+        input_spec: Optional[InputSpec] = None,
+    ) -&gt; ImageData:
+        return self.process_tensor(
+            tensor,
+            fix_img_size,
+            input_policy=input_policy,
+            input_spec=input_spec,
+            source_kind=&#34;torch&#34;,
+        )
 
-        Returns:
-            ImageData: ImageData object with image tensor and pil Image.
-        &#34;&#34;&#34;
-        if isinstance(image_source, str):
-            if image_source.startswith(&#34;http&#34;):
-                return self.read_image_from_url(image_source, fix_img_size)
-            else:
-                return self.read_image_from_path(image_source, fix_img_size)
-        elif isinstance(image_source, torch.Tensor):
-            return self.read_tensor(image_source, fix_img_size)
-        elif isinstance(image_source, np.ndarray):
-            return self.read_numpy_array(image_source, fix_img_size)
-        elif isinstance(image_source, bytes):
-            return self.read_image_from_bytes(image_source, fix_img_size)
-        elif isinstance(image_source, Image.Image):
-            return self.read_pil_image(image_source, fix_img_size)
-        else:
-            raise ValueError(&#34;Unsupported data type&#34;)
+    def read_pil_image(
+        self,
+        pil_image: Image.Image,
+        fix_img_size: bool,
+        *,
+        input_policy: str = &#34;coerce&#34;,
+        input_spec: Optional[InputSpec] = None,
+        path_input: Optional[str] = None,
+    ) -&gt; ImageData:
+        mode = getattr(pil_image, &#34;mode&#34;, None)
+        source = pil_image
+        converted = None
+        conversion_message = None
+        if mode not in {&#34;L&#34;, &#34;RGB&#34;, &#34;RGBA&#34;}:
+            if str(input_policy).lower().strip() == &#34;strict&#34;:
+                raise InputError(
+                    f&#34;Strict mode does not accept decoded PIL mode {mode!r}; &#34;
+                    &#34;convert it explicitly to L, RGB, or RGBA.&#34;
+                )
+            conversion_message = f&#34;Converted decoded PIL mode {mode!r} to RGB.&#34;
+            warnings.warn(conversion_message, InputCoercionWarning, stacklevel=3)
+            converted = pil_image.convert(&#34;RGB&#34;)
+            source = converted
 
-    def read_tensor(self, tensor: torch.Tensor, fix_img_size: bool) -&gt; ImageData:
-        return self.process_tensor(tensor, fix_img_size)
+        try:
+            array = np.array(source, copy=True)
+        finally:
+            if converted is not None:
+                converted.close()
 
-    def read_pil_image(self, pil_image: Image.Image, fix_img_size: bool) -&gt; ImageData:
-        if pil_image.mode != &#34;RGB&#34;:
-            pil_image = pil_image.convert(&#34;RGB&#34;)
-        tensor = torchvision.transforms.functional.pil_to_tensor(pil_image)
-        return self.process_tensor(tensor, fix_img_size)
+        data = self.process_tensor(
+            _array_to_tensor(array),
+            fix_img_size,
+            input_policy=input_policy,
+            input_spec=input_spec,
+            source_kind=&#34;decoded&#34;,
+            path_input=path_input,
+        )
+        if conversion_message is not None:
+            data.warnings.insert(0, conversion_message)
+        return data
 
-    def read_numpy_array(self, array: np.ndarray, fix_img_size: bool) -&gt; ImageData:
-        image_tensor = numpy_to_chw_tensor(array)
-        return self.process_tensor(image_tensor, fix_img_size)
+    def read_numpy_array(
+        self,
+        array: np.ndarray,
+        fix_img_size: bool,
+        *,
+        input_policy: str = &#34;coerce&#34;,
+        input_spec: Optional[InputSpec] = None,
+    ) -&gt; ImageData:
+        return self.process_tensor(
+            _array_to_tensor(array),
+            fix_img_size,
+            input_policy=input_policy,
+            input_spec=input_spec,
+            source_kind=&#34;numpy&#34;,
+        )
 
     def read_image_from_bytes(
-        self, image_bytes: bytes, fix_img_size: bool
+        self,
+        image_bytes: bytes,
+        fix_img_size: bool,
+        *,
+        input_policy: str = &#34;coerce&#34;,
+        input_spec: Optional[InputSpec] = None,
+        path_input: Optional[str] = None,
     ) -&gt; ImageData:
-        pil_image = Image.open(io.BytesIO(image_bytes))
-        return self.read_pil_image(pil_image, fix_img_size)
-
-    def read_image_from_path(self, path_image: str, fix_img_size: bool) -&gt; ImageData:
         try:
-            image_tensor = torchvision.io.read_image(path_image)
-        except Exception as e:
-            logger.error(f&#34;Failed to read image from path {path_image}: {e}&#34;)
-            raise ValueError(f&#34;Could not read image from path {path_image}: {e}&#34;) from e
+            with io.BytesIO(image_bytes) as buffer, Image.open(buffer) as pil_image:
+                return self.read_pil_image(
+                    pil_image,
+                    fix_img_size,
+                    input_policy=input_policy,
+                    input_spec=input_spec,
+                    path_input=path_input,
+                )
+        except (UnidentifiedImageError, OSError, ValueError) as exc:
+            if isinstance(exc, FacetorchError):
+                raise
+            raise InputError(&#34;The supplied bytes are not a supported image.&#34;) from exc
 
-        return self.process_tensor(image_tensor, fix_img_size)
-
-    def read_image_from_url(self, url: str, fix_img_size: bool) -&gt; ImageData:
+    def read_image_from_path(
+        self,
+        path_image: str,
+        fix_img_size: bool,
+        *,
+        input_policy: str = &#34;coerce&#34;,
+        input_spec: Optional[InputSpec] = None,
+    ) -&gt; ImageData:
         try:
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
-        except requests.RequestException as e:
-            logger.error(f&#34;Failed to fetch image from URL {url}: {e}&#34;)
-            raise ValueError(f&#34;Could not fetch image from URL {url}: {e}&#34;) from e
+            with Image.open(path_image) as pil_image:
+                return self.read_pil_image(
+                    pil_image,
+                    fix_img_size,
+                    input_policy=input_policy,
+                    input_spec=input_spec,
+                    path_input=str(Path(path_image)),
+                )
+        except (FileNotFoundError, PermissionError, UnidentifiedImageError, OSError) as exc:
+            raise InputError(f&#34;Could not read local image path {path_image!r}.&#34;) from exc
 
-        image_bytes = response.content
-        return self.read_image_from_bytes(image_bytes, fix_img_size)</code></pre>
+    def read_image_from_url(self, *_args, **_kwargs) -&gt; ImageData:
+        &#34;&#34;&#34;Compatibility guard for callers that previously used implicit networking.&#34;&#34;&#34;
+        raise InputError(&#34;Remote image input requires an explicit URLReader configuration.&#34;)</code></pre>
 </details>
-<div class="desc"><p>UniversalReader can read images from a path, URL, tensor, numpy array, bytes or PIL Image and return an ImageData object containing the image tensor.</p>
-<h2 id="args">Args</h2>
+<div class="desc"><p>Read local paths and in-memory images; network access is intentionally absent.</p>
+<p>Base class for image reader.</p>
+<p>All image readers should subclass it.
+All subclass should overwrite:</p>
+<ul>
+<li>Methods:<code>run</code>, used for running the reading process and return a tensor.</li>
+</ul>
 <dl>
-<dt><strong><code>transform</code></strong> :&ensp;<code>torchvision.transforms.Compose</code></dt>
-<dd>Transform compose object to be applied to the image, if fix_image_size is True.</dd>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>transform</code></strong> :&ensp;<code>transforms.Compose</code></dt>
+<dd>Transform to be applied to the image.</dd>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
-<dd>Torch device cpu or cuda object.</dd>
+<dd>Torch device cpu or cuda.</dd>
 <dt><strong><code>optimize_transform</code></strong> :&ensp;<code>bool</code></dt>
-<dd>Whether to optimize the transforms that are: resizing the image to a fixed size.</dd>
-</dl></div>
+<dd>Whether to optimize the transforms that are resizing</dd>
+</dl>
+<p>the image to a fixed size.</p></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li><a title="facetorch.base.BaseReader" href="../../base.html#facetorch.base.BaseReader">BaseReader</a></li>
 <li><a title="facetorch.base.BaseProcessor" href="../../base.html#facetorch.base.BaseProcessor">BaseProcessor</a></li>
 </ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="facetorch.analyzer.reader.core.URLReader" href="core.html#facetorch.analyzer.reader.core.URLReader">URLReader</a></li>
+</ul>
 <h3>Methods</h3>
 <dl>
-<dt id="facetorch.analyzer.reader.UniversalReader.run"><code class="name flex">
-<span>def <span class="ident">run</span></span>(<span>self,<br>image_source: str | torch.Tensor | numpy.ndarray | bytes | PIL.Image.Image,<br>fix_img_size: bool = False) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
-</code></dt>
-<dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@Timer(&#34;UniversalReader.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
-def run(
-    self,
-    image_source: Union[str, torch.Tensor, np.ndarray, bytes, Image.Image],
-    fix_img_size: bool = False,
-) -&gt; ImageData:
-    &#34;&#34;&#34;Reads an image from a path, URL, tensor, numpy array, bytes or PIL Image and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image.
-
-    Args:
-        image_source (Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]): Image source to be read.
-        fix_img_size (bool): Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.
-
-    Returns:
-        ImageData: ImageData object with image tensor and pil Image.
-    &#34;&#34;&#34;
-    if isinstance(image_source, str):
-        if image_source.startswith(&#34;http&#34;):
-            return self.read_image_from_url(image_source, fix_img_size)
-        else:
-            return self.read_image_from_path(image_source, fix_img_size)
-    elif isinstance(image_source, torch.Tensor):
-        return self.read_tensor(image_source, fix_img_size)
-    elif isinstance(image_source, np.ndarray):
-        return self.read_numpy_array(image_source, fix_img_size)
-    elif isinstance(image_source, bytes):
-        return self.read_image_from_bytes(image_source, fix_img_size)
-    elif isinstance(image_source, Image.Image):
-        return self.read_pil_image(image_source, fix_img_size)
-    else:
-        raise ValueError(&#34;Unsupported data type&#34;)</code></pre>
-</details>
-<div class="desc"><p>Reads an image from a path, URL, tensor, numpy array, bytes or PIL Image and returns a tensor of the image with values between 0-255 and shape (batch, channels, height, width). The order of color channels is RGB. PyTorch and Torchvision are used to read the image.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>image_source</code></strong> :&ensp;<code>Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]</code></dt>
-<dd>Image source to be read.</dd>
-<dt><strong><code>fix_img_size</code></strong> :&ensp;<code>bool</code></dt>
-<dd>Whether to resize the image to a fixed size. If False, the size_portrait and size_landscape are ignored. Default is False.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>ImageData</code></dt>
-<dd>ImageData object with image tensor and pil Image.</dd>
-</dl></div>
-</dd>
 <dt id="facetorch.analyzer.reader.UniversalReader.read_tensor"><code class="name flex">
-<span>def <span class="ident">read_tensor</span></span>(<span>self, tensor: torch.Tensor, fix_img_size: bool) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+<span>def <span class="ident">read_tensor</span></span>(<span>self,<br>tensor: torch.Tensor,<br>fix_img_size: bool,<br>*,<br>input_policy: str = 'coerce',<br>input_spec: <a title="facetorch.input.InputSpec" href="../../input.html#facetorch.input.InputSpec">InputSpec</a> | None = None) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def read_tensor(self, tensor: torch.Tensor, fix_img_size: bool) -&gt; ImageData:
-    return self.process_tensor(tensor, fix_img_size)</code></pre>
+<pre><code class="python">def read_tensor(
+    self,
+    tensor: torch.Tensor,
+    fix_img_size: bool,
+    *,
+    input_policy: str = &#34;coerce&#34;,
+    input_spec: Optional[InputSpec] = None,
+) -&gt; ImageData:
+    return self.process_tensor(
+        tensor,
+        fix_img_size,
+        input_policy=input_policy,
+        input_spec=input_spec,
+        source_kind=&#34;torch&#34;,
+    )</code></pre>
 </details>
 <div class="desc"></div>
 </dd>
 <dt id="facetorch.analyzer.reader.UniversalReader.read_pil_image"><code class="name flex">
-<span>def <span class="ident">read_pil_image</span></span>(<span>self, pil_image: PIL.Image.Image, fix_img_size: bool) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+<span>def <span class="ident">read_pil_image</span></span>(<span>self,<br>pil_image: PIL.Image.Image,<br>fix_img_size: bool,<br>*,<br>input_policy: str = 'coerce',<br>input_spec: <a title="facetorch.input.InputSpec" href="../../input.html#facetorch.input.InputSpec">InputSpec</a> | None = None,<br>path_input: str | None = None) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def read_pil_image(self, pil_image: Image.Image, fix_img_size: bool) -&gt; ImageData:
-    if pil_image.mode != &#34;RGB&#34;:
-        pil_image = pil_image.convert(&#34;RGB&#34;)
-    tensor = torchvision.transforms.functional.pil_to_tensor(pil_image)
-    return self.process_tensor(tensor, fix_img_size)</code></pre>
+<pre><code class="python">def read_pil_image(
+    self,
+    pil_image: Image.Image,
+    fix_img_size: bool,
+    *,
+    input_policy: str = &#34;coerce&#34;,
+    input_spec: Optional[InputSpec] = None,
+    path_input: Optional[str] = None,
+) -&gt; ImageData:
+    mode = getattr(pil_image, &#34;mode&#34;, None)
+    source = pil_image
+    converted = None
+    conversion_message = None
+    if mode not in {&#34;L&#34;, &#34;RGB&#34;, &#34;RGBA&#34;}:
+        if str(input_policy).lower().strip() == &#34;strict&#34;:
+            raise InputError(
+                f&#34;Strict mode does not accept decoded PIL mode {mode!r}; &#34;
+                &#34;convert it explicitly to L, RGB, or RGBA.&#34;
+            )
+        conversion_message = f&#34;Converted decoded PIL mode {mode!r} to RGB.&#34;
+        warnings.warn(conversion_message, InputCoercionWarning, stacklevel=3)
+        converted = pil_image.convert(&#34;RGB&#34;)
+        source = converted
+
+    try:
+        array = np.array(source, copy=True)
+    finally:
+        if converted is not None:
+            converted.close()
+
+    data = self.process_tensor(
+        _array_to_tensor(array),
+        fix_img_size,
+        input_policy=input_policy,
+        input_spec=input_spec,
+        source_kind=&#34;decoded&#34;,
+        path_input=path_input,
+    )
+    if conversion_message is not None:
+        data.warnings.insert(0, conversion_message)
+    return data</code></pre>
 </details>
 <div class="desc"></div>
 </dd>
 <dt id="facetorch.analyzer.reader.UniversalReader.read_numpy_array"><code class="name flex">
-<span>def <span class="ident">read_numpy_array</span></span>(<span>self, array: numpy.ndarray, fix_img_size: bool) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+<span>def <span class="ident">read_numpy_array</span></span>(<span>self,<br>array: numpy.ndarray,<br>fix_img_size: bool,<br>*,<br>input_policy: str = 'coerce',<br>input_spec: <a title="facetorch.input.InputSpec" href="../../input.html#facetorch.input.InputSpec">InputSpec</a> | None = None) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def read_numpy_array(self, array: np.ndarray, fix_img_size: bool) -&gt; ImageData:
-    image_tensor = numpy_to_chw_tensor(array)
-    return self.process_tensor(image_tensor, fix_img_size)</code></pre>
+<pre><code class="python">def read_numpy_array(
+    self,
+    array: np.ndarray,
+    fix_img_size: bool,
+    *,
+    input_policy: str = &#34;coerce&#34;,
+    input_spec: Optional[InputSpec] = None,
+) -&gt; ImageData:
+    return self.process_tensor(
+        _array_to_tensor(array),
+        fix_img_size,
+        input_policy=input_policy,
+        input_spec=input_spec,
+        source_kind=&#34;numpy&#34;,
+    )</code></pre>
 </details>
 <div class="desc"></div>
 </dd>
 <dt id="facetorch.analyzer.reader.UniversalReader.read_image_from_bytes"><code class="name flex">
-<span>def <span class="ident">read_image_from_bytes</span></span>(<span>self, image_bytes: bytes, fix_img_size: bool) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+<span>def <span class="ident">read_image_from_bytes</span></span>(<span>self,<br>image_bytes: bytes,<br>fix_img_size: bool,<br>*,<br>input_policy: str = 'coerce',<br>input_spec: <a title="facetorch.input.InputSpec" href="../../input.html#facetorch.input.InputSpec">InputSpec</a> | None = None,<br>path_input: str | None = None) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
 </code></dt>
 <dd>
 <details class="source">
@@ -511,52 +684,73 @@ def run(
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def read_image_from_bytes(
-    self, image_bytes: bytes, fix_img_size: bool
+    self,
+    image_bytes: bytes,
+    fix_img_size: bool,
+    *,
+    input_policy: str = &#34;coerce&#34;,
+    input_spec: Optional[InputSpec] = None,
+    path_input: Optional[str] = None,
 ) -&gt; ImageData:
-    pil_image = Image.open(io.BytesIO(image_bytes))
-    return self.read_pil_image(pil_image, fix_img_size)</code></pre>
+    try:
+        with io.BytesIO(image_bytes) as buffer, Image.open(buffer) as pil_image:
+            return self.read_pil_image(
+                pil_image,
+                fix_img_size,
+                input_policy=input_policy,
+                input_spec=input_spec,
+                path_input=path_input,
+            )
+    except (UnidentifiedImageError, OSError, ValueError) as exc:
+        if isinstance(exc, FacetorchError):
+            raise
+        raise InputError(&#34;The supplied bytes are not a supported image.&#34;) from exc</code></pre>
 </details>
 <div class="desc"></div>
 </dd>
 <dt id="facetorch.analyzer.reader.UniversalReader.read_image_from_path"><code class="name flex">
-<span>def <span class="ident">read_image_from_path</span></span>(<span>self, path_image: str, fix_img_size: bool) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+<span>def <span class="ident">read_image_from_path</span></span>(<span>self,<br>path_image: str,<br>fix_img_size: bool,<br>*,<br>input_policy: str = 'coerce',<br>input_spec: <a title="facetorch.input.InputSpec" href="../../input.html#facetorch.input.InputSpec">InputSpec</a> | None = None) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def read_image_from_path(self, path_image: str, fix_img_size: bool) -&gt; ImageData:
+<pre><code class="python">def read_image_from_path(
+    self,
+    path_image: str,
+    fix_img_size: bool,
+    *,
+    input_policy: str = &#34;coerce&#34;,
+    input_spec: Optional[InputSpec] = None,
+) -&gt; ImageData:
     try:
-        image_tensor = torchvision.io.read_image(path_image)
-    except Exception as e:
-        logger.error(f&#34;Failed to read image from path {path_image}: {e}&#34;)
-        raise ValueError(f&#34;Could not read image from path {path_image}: {e}&#34;) from e
-
-    return self.process_tensor(image_tensor, fix_img_size)</code></pre>
+        with Image.open(path_image) as pil_image:
+            return self.read_pil_image(
+                pil_image,
+                fix_img_size,
+                input_policy=input_policy,
+                input_spec=input_spec,
+                path_input=str(Path(path_image)),
+            )
+    except (FileNotFoundError, PermissionError, UnidentifiedImageError, OSError) as exc:
+        raise InputError(f&#34;Could not read local image path {path_image!r}.&#34;) from exc</code></pre>
 </details>
 <div class="desc"></div>
 </dd>
 <dt id="facetorch.analyzer.reader.UniversalReader.read_image_from_url"><code class="name flex">
-<span>def <span class="ident">read_image_from_url</span></span>(<span>self, url: str, fix_img_size: bool) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+<span>def <span class="ident">read_image_from_url</span></span>(<span>self, *_args, **_kwargs) ‑> <a title="facetorch.datastruct.ImageData" href="../../datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def read_image_from_url(self, url: str, fix_img_size: bool) -&gt; ImageData:
-    try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-    except requests.RequestException as e:
-        logger.error(f&#34;Failed to fetch image from URL {url}: {e}&#34;)
-        raise ValueError(f&#34;Could not fetch image from URL {url}: {e}&#34;) from e
-
-    image_bytes = response.content
-    return self.read_image_from_bytes(image_bytes, fix_img_size)</code></pre>
+<pre><code class="python">def read_image_from_url(self, *_args, **_kwargs) -&gt; ImageData:
+    &#34;&#34;&#34;Compatibility guard for callers that previously used implicit networking.&#34;&#34;&#34;
+    raise InputError(&#34;Remote image input requires an explicit URLReader configuration.&#34;)</code></pre>
 </details>
-<div class="desc"></div>
+<div class="desc"><p>Compatibility guard for callers that previously used implicit networking.</p></div>
 </dd>
 </dl>
 <h3>Inherited members</h3>
@@ -565,6 +759,172 @@ def run(
 <ul class="hlist">
 <li><code><a title="facetorch.base.BaseReader.optimize" href="../../base.html#facetorch.base.BaseProcessor.optimize">optimize</a></code></li>
 <li><code><a title="facetorch.base.BaseReader.process_tensor" href="../../base.html#facetorch.base.BaseReader.process_tensor">process_tensor</a></code></li>
+<li><code><a title="facetorch.base.BaseReader.run" href="../../base.html#facetorch.base.BaseReader.run">run</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="facetorch.analyzer.reader.URLReader"><code class="flex name class">
+<span>class <span class="ident">URLReader</span></span>
+<span>(</span><span>transform: torchvision.transforms.transforms.Compose,<br>device: torch.device,<br>optimize_transform: bool,<br>allowed_schemes: Sequence[str] = ('https',),<br>timeout: float = 10.0,<br>max_redirects: int = 3,<br>max_bytes: int = 10485760)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class URLReader(UniversalReader):
+    &#34;&#34;&#34;Explicit, bounded HTTP(S) image reader.&#34;&#34;&#34;
+
+    _REDIRECT_STATUSES = {301, 302, 303, 307, 308}
+
+    def __init__(
+        self,
+        transform: torchvision.transforms.Compose,
+        device: torch.device,
+        optimize_transform: bool,
+        allowed_schemes: Sequence[str] = (&#34;https&#34;,),
+        timeout: float = 10.0,
+        max_redirects: int = 3,
+        max_bytes: int = 10 * 1024 * 1024,
+    ):
+        super().__init__(transform, device, optimize_transform)
+        if isinstance(allowed_schemes, str):
+            allowed_schemes = (allowed_schemes,)
+        self.allowed_schemes = tuple(
+            str(scheme).lower().strip() for scheme in allowed_schemes
+        )
+        if not self.allowed_schemes or any(
+            scheme not in {&#34;http&#34;, &#34;https&#34;} for scheme in self.allowed_schemes
+        ):
+            raise InputError(&#34;allowed_schemes must contain only &#39;http&#39; and/or &#39;https&#39;.&#34;)
+        if timeout &lt;= 0:
+            raise InputError(&#34;URLReader timeout must be greater than zero.&#34;)
+        if max_redirects &lt; 0:
+            raise InputError(&#34;URLReader max_redirects must be non-negative.&#34;)
+        if max_bytes &lt; 1:
+            raise InputError(&#34;URLReader max_bytes must be at least one byte.&#34;)
+        self.timeout = timeout
+        self.max_redirects = max_redirects
+        self.max_bytes = max_bytes
+
+    @Timer(&#34;URLReader.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    def run(
+        self,
+        image_source: str,
+        fix_img_size: bool = False,
+        *,
+        input_policy: str = &#34;coerce&#34;,
+        input_spec: Optional[InputSpec] = None,
+    ) -&gt; ImageData:
+        if not isinstance(image_source, str):
+            raise InputError(
+                f&#34;URLReader accepts only a URL string, got {type(image_source).__name__}.&#34;
+            )
+
+        current_url = image_source
+        for redirect_count in range(self.max_redirects + 1):
+            parsed = urlsplit(current_url)
+            if parsed.scheme.lower() not in self.allowed_schemes or not parsed.netloc:
+                raise InputError(&#34;URL scheme is not allowed or the URL has no host.&#34;)
+            _validate_public_url_target(parsed)
+            try:
+                response = requests.get(
+                    current_url,
+                    timeout=self.timeout,
+                    allow_redirects=False,
+                    stream=True,
+                )
+            except requests.RequestException as exc:
+                raise InputError(&#34;Remote image request failed or timed out.&#34;) from exc
+
+            try:
+                if response.status_code in self._REDIRECT_STATUSES:
+                    location = response.headers.get(&#34;Location&#34;)
+                    if location is None:
+                        raise InputError(&#34;Remote image redirect omitted its target.&#34;)
+                    if redirect_count &gt;= self.max_redirects:
+                        raise InputError(&#34;Remote image exceeded the redirect limit.&#34;)
+                    current_url = urljoin(current_url, location)
+                    continue
+
+                response.raise_for_status()
+                content_length = response.headers.get(&#34;Content-Length&#34;)
+                if content_length is not None:
+                    try:
+                        declared_size = int(content_length)
+                    except ValueError as exc:
+                        raise InputError(
+                            &#34;Remote image returned an invalid Content-Length header.&#34;
+                        ) from exc
+                    if declared_size &gt; self.max_bytes:
+                        raise InputError(&#34;Remote image exceeds the configured size limit.&#34;)
+
+                chunks = []
+                received = 0
+                for chunk in response.iter_content(chunk_size=64 * 1024):
+                    if not chunk:
+                        continue
+                    received += len(chunk)
+                    if received &gt; self.max_bytes:
+                        raise InputError(&#34;Remote image exceeds the configured size limit.&#34;)
+                    chunks.append(chunk)
+            except requests.RequestException as exc:
+                raise InputError(&#34;Remote image returned an unsuccessful response.&#34;) from exc
+            finally:
+                response.close()
+
+            hostname = parsed.hostname or &#34;&#34;
+            if &#34;:&#34; in hostname:
+                hostname = f&#34;[{hostname}]&#34;
+            safe_netloc = hostname
+            if parsed.port is not None:
+                safe_netloc = f&#34;{safe_netloc}:{parsed.port}&#34;
+            safe_url = urlunsplit((parsed.scheme, safe_netloc, parsed.path, &#34;&#34;, &#34;&#34;))
+            return self.read_image_from_bytes(
+                b&#34;&#34;.join(chunks),
+                fix_img_size,
+                input_policy=input_policy,
+                input_spec=input_spec,
+                path_input=safe_url,
+            )</code></pre>
+</details>
+<div class="desc"><p>Explicit, bounded HTTP(S) image reader.</p>
+<p>Base class for image reader.</p>
+<p>All image readers should subclass it.
+All subclass should overwrite:</p>
+<ul>
+<li>Methods:<code>run</code>, used for running the reading process and return a tensor.</li>
+</ul>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>transform</code></strong> :&ensp;<code>transforms.Compose</code></dt>
+<dd>Transform to be applied to the image.</dd>
+<dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
+<dd>Torch device cpu or cuda.</dd>
+<dt><strong><code>optimize_transform</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Whether to optimize the transforms that are resizing</dd>
+</dl>
+<p>the image to a fixed size.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="facetorch.analyzer.reader.core.UniversalReader" href="core.html#facetorch.analyzer.reader.core.UniversalReader">UniversalReader</a></li>
+<li><a title="facetorch.base.BaseReader" href="../../base.html#facetorch.base.BaseReader">BaseReader</a></li>
+<li><a title="facetorch.base.BaseProcessor" href="../../base.html#facetorch.base.BaseProcessor">BaseProcessor</a></li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="facetorch.analyzer.reader.core.UniversalReader" href="core.html#facetorch.analyzer.reader.core.UniversalReader">UniversalReader</a></b></code>:
+<ul class="hlist">
+<li><code><a title="facetorch.analyzer.reader.core.UniversalReader.optimize" href="../../base.html#facetorch.base.BaseProcessor.optimize">optimize</a></code></li>
+<li><code><a title="facetorch.analyzer.reader.core.UniversalReader.process_tensor" href="../../base.html#facetorch.base.BaseReader.process_tensor">process_tensor</a></code></li>
+<li><code><a title="facetorch.analyzer.reader.core.UniversalReader.read_image_from_url" href="core.html#facetorch.analyzer.reader.core.UniversalReader.read_image_from_url">read_image_from_url</a></code></li>
+</ul>
+</li>
+<li><code><b><a title="facetorch.base.BaseReader" href="../../base.html#facetorch.base.BaseReader">BaseReader</a></b></code>:
+<ul class="hlist">
+<li><code><a title="facetorch.base.BaseReader.run" href="../../base.html#facetorch.base.BaseReader.run">run</a></code></li>
 </ul>
 </li>
 </ul>
@@ -638,19 +998,22 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="facetorch.analyzer.reader.ImageReader" href="#facetorch.analyzer.reader.ImageReader">ImageReader</a></code></h4>
 <ul class="">
-<li><code><a title="facetorch.analyzer.reader.ImageReader.run" href="#facetorch.analyzer.reader.ImageReader.run">run</a></code></li>
+<li><code><a title="facetorch.analyzer.reader.ImageReader.read_pil_image" href="#facetorch.analyzer.reader.ImageReader.read_pil_image">read_pil_image</a></code></li>
+<li><code><a title="facetorch.analyzer.reader.ImageReader.read_image_from_path" href="#facetorch.analyzer.reader.ImageReader.read_image_from_path">read_image_from_path</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.analyzer.reader.ReaderProtocol" href="#facetorch.analyzer.reader.ReaderProtocol">ReaderProtocol</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.analyzer.reader.ReaderProtocol.run" href="#facetorch.analyzer.reader.ReaderProtocol.run">run</a></code></li>
 </ul>
 </li>
 <li>
 <h4><code><a title="facetorch.analyzer.reader.TensorReader" href="#facetorch.analyzer.reader.TensorReader">TensorReader</a></code></h4>
-<ul class="">
-<li><code><a title="facetorch.analyzer.reader.TensorReader.run" href="#facetorch.analyzer.reader.TensorReader.run">run</a></code></li>
-</ul>
 </li>
 <li>
 <h4><code><a title="facetorch.analyzer.reader.UniversalReader" href="#facetorch.analyzer.reader.UniversalReader">UniversalReader</a></code></h4>
 <ul class="">
-<li><code><a title="facetorch.analyzer.reader.UniversalReader.run" href="#facetorch.analyzer.reader.UniversalReader.run">run</a></code></li>
 <li><code><a title="facetorch.analyzer.reader.UniversalReader.read_tensor" href="#facetorch.analyzer.reader.UniversalReader.read_tensor">read_tensor</a></code></li>
 <li><code><a title="facetorch.analyzer.reader.UniversalReader.read_pil_image" href="#facetorch.analyzer.reader.UniversalReader.read_pil_image">read_pil_image</a></code></li>
 <li><code><a title="facetorch.analyzer.reader.UniversalReader.read_numpy_array" href="#facetorch.analyzer.reader.UniversalReader.read_numpy_array">read_numpy_array</a></code></li>
@@ -658,6 +1021,9 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="facetorch.analyzer.reader.UniversalReader.read_image_from_path" href="#facetorch.analyzer.reader.UniversalReader.read_image_from_path">read_image_from_path</a></code></li>
 <li><code><a title="facetorch.analyzer.reader.UniversalReader.read_image_from_url" href="#facetorch.analyzer.reader.UniversalReader.read_image_from_url">read_image_from_url</a></code></li>
 </ul>
+</li>
+<li>
+<h4><code><a title="facetorch.analyzer.reader.URLReader" href="#facetorch.analyzer.reader.URLReader">URLReader</a></code></h4>
 </li>
 </ul>
 </li>

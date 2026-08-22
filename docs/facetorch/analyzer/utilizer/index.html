@@ -93,10 +93,33 @@ el.replaceWith(d);
 
         self.downloader_meta = downloader_meta
         self.image_size = image_size
-        if not os.path.exists(self.downloader_meta.path_local):
-            self.downloader_meta.run()
+        path_meta = self.downloader_meta.path_local
+        should_verify = (
+            getattr(self.downloader_meta, &#34;verify_on_use&#34;, False) is True
+        )
+        if should_verify or not os.path.exists(path_meta):
+            resolved_path = self.downloader_meta.run()
+            if isinstance(resolved_path, (str, os.PathLike)):
+                path_meta = os.fspath(resolved_path)
 
-        self.meta = torch.load(self.downloader_meta.path_local)
+        self.meta = torch.load(
+            path_meta,
+            map_location=&#34;cpu&#34;,
+            weights_only=True,
+        )
+        required_keys = {
+            &#34;keypoints&#34;,
+            &#34;param_mean&#34;,
+            &#34;param_std&#34;,
+            &#34;u_exp&#34;,
+            &#34;u_shp&#34;,
+            &#34;w_exp&#34;,
+            &#34;w_shp&#34;,
+        }
+        if not isinstance(self.meta, dict) or not required_keys.issubset(self.meta):
+            raise ArtifactIntegrityError(
+                &#34;Verified 3DMM metadata has an invalid structure.&#34;
+            )
 
         for key in self.meta.keys():
             if isinstance(self.meta[key], torch.Tensor):
@@ -403,8 +426,9 @@ el.replaceWith(d);
         return angles, t3d</code></pre>
 </details>
 <div class="desc"><p>Initializes the Lmk3DMeshPose class. This class is used to convert the face parameter vector to 3D landmarks, mesh and pose.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>transform</code></strong> :&ensp;<code>Compose</code></dt>
 <dd>Composed Torch transform object.</dd>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
@@ -472,13 +496,13 @@ def run(self, data: ImageData) -&gt; ImageData:
 <li>mesh [[y, x, z], 53215 (points)]</li>
 <li>pose (Euler angles [yaw, pitch, roll] and translation [y, x, z])</li>
 </ul>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>data</code></strong> :&ensp;<code>ImageData</code></dt>
 <dd>ImageData object containing most of the data including the predictions.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>ImageData</code></dt>
 <dd>ImageData object containing lmk3d, mesh and pose.</dd>
 </dl></div>
@@ -547,8 +571,9 @@ def run(self, data: ImageData) -&gt; ImageData:
         return data</code></pre>
 </details>
 <div class="desc"><p>Initializes the BoxDrawer class. This class is used to draw the face boxes to the image tensor.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>transform</code></strong> :&ensp;<code>Compose</code></dt>
 <dd>Composed Torch transform object.</dd>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
@@ -597,13 +622,13 @@ def run(self, data: ImageData) -&gt; ImageData:
     return data</code></pre>
 </details>
 <div class="desc"><p>Draws face boxes to the image tensor.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>data</code></strong> :&ensp;<code>ImageData</code></dt>
 <dd>ImageData object containing the image tensor and face locations.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>ImageData</code></dt>
 <dd>ImageData object containing the image tensor with face boxes.</dd>
 </dl></div>
@@ -696,8 +721,9 @@ def run(self, data: ImageData) -&gt; ImageData:
         return data</code></pre>
 </details>
 <div class="desc"><p>Initializes the LandmarkDrawer class. This class is used to draw the 3D face landmarks to the image tensor.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>transform</code></strong> :&ensp;<code>Compose</code></dt>
 <dd>Composed Torch transform object.</dd>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
@@ -738,13 +764,13 @@ def run(self, data: ImageData) -&gt; ImageData:
     return data</code></pre>
 </details>
 <div class="desc"><p>Draws 3D face landmarks to the image tensor.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>data</code></strong> :&ensp;<code>ImageData</code></dt>
 <dd>ImageData object containing the image tensor and 3D face landmarks.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>ImageData</code></dt>
 <dd>ImageData object containing the image tensor with 3D face landmarks.</dd>
 </dl></div>
@@ -796,15 +822,27 @@ def run(self, data: ImageData) -&gt; ImageData:
             ImageData: ImageData object containing the same data as the input.
         &#34;&#34;&#34;
         if data.path_output is not None:
-            os.makedirs(os.path.dirname(data.path_output), exist_ok=True)
+            parent = os.path.dirname(data.path_output)
+            if parent:
+                try:
+                    os.makedirs(parent, exist_ok=True)
+                except OSError as exc:
+                    raise ConfigurationError(
+                        f&#34;Cannot create image output directory {parent!r}. Choose a &#34;
+                        &#34;writable path_output or leave image output disabled.&#34;
+                    ) from exc
             pil_image = torchvision.transforms.functional.to_pil_image(data.img)
-            pil_image.save(data.path_output)
+            try:
+                pil_image.save(data.path_output)
+            finally:
+                pil_image.close()
 
         return data</code></pre>
 </details>
 <div class="desc"><p>Initializes the ImageSaver class. This class is used to save the image tensor to an image file.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>transform</code></strong> :&ensp;<code>Compose</code></dt>
 <dd>Composed Torch transform object.</dd>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
@@ -838,20 +876,31 @@ def run(self, data: ImageData) -&gt; ImageData:
         ImageData: ImageData object containing the same data as the input.
     &#34;&#34;&#34;
     if data.path_output is not None:
-        os.makedirs(os.path.dirname(data.path_output), exist_ok=True)
+        parent = os.path.dirname(data.path_output)
+        if parent:
+            try:
+                os.makedirs(parent, exist_ok=True)
+            except OSError as exc:
+                raise ConfigurationError(
+                    f&#34;Cannot create image output directory {parent!r}. Choose a &#34;
+                    &#34;writable path_output or leave image output disabled.&#34;
+                ) from exc
         pil_image = torchvision.transforms.functional.to_pil_image(data.img)
-        pil_image.save(data.path_output)
+        try:
+            pil_image.save(data.path_output)
+        finally:
+            pil_image.close()
 
     return data</code></pre>
 </details>
 <div class="desc"><p>Saves the image tensor to an image file, if the path_output attribute of ImageData is not None.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>data</code></strong> :&ensp;<code>ImageData</code></dt>
 <dd>ImageData object containing the img tensor.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>ImageData</code></dt>
 <dd>ImageData object containing the same data as the input.</dd>
 </dl></div>

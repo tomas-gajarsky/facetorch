@@ -45,7 +45,7 @@ el.replaceWith(d);
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="facetorch.transforms.script_transform"><code class="name flex">
-<span>def <span class="ident">script_transform</span></span>(<span>transform: torchvision.transforms.transforms.Compose) ‑> torch.jit._script.ScriptModule | torch.jit.ScriptFunction</span>
+<span>def <span class="ident">script_transform</span></span>(<span>transform: torchvision.transforms.transforms.Compose) ‑> torch.jit._script.ScriptModule | torch.jit.torch.jit.ScriptFunction</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -69,13 +69,13 @@ el.replaceWith(d);
     return transform_jit</code></pre>
 </details>
 <div class="desc"><p>Convert the composed transform to a TorchScript module.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>transform</code></strong> :&ensp;<code>transforms.Compose</code></dt>
 <dd>Transform compose object to be scripted.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>Union[torch.jit.ScriptModule, torch.jit.ScriptFunction]</code></dt>
 <dd>Scripted transform.</dd>
 </dl></div>
@@ -164,13 +164,13 @@ el.replaceWith(d);
     return self.__call__(tensor)</code></pre>
 </details>
 <div class="desc"><p>Pads a tensor to a square.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>tensor</code></strong> :&ensp;<code>torch.Tensor</code></dt>
 <dd>tensor to pad.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>torch.Tensor</code></dt>
 <dd>Padded tensor.</dd>
 </dl></div>

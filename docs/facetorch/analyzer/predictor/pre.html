@@ -100,8 +100,9 @@ All subclass should overwrite:</p>
 <ul>
 <li>Methods:<code>run</code>, used for running the processing</li>
 </ul>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
 <dd>Torch device cpu or cuda.</dd>
 <dt><strong><code>transform</code></strong> :&ensp;<code>transforms.Compose</code></dt>
@@ -141,13 +142,13 @@ def run(self, faces: torch.Tensor) -&gt; torch.Tensor:
     &#34;&#34;&#34;</code></pre>
 </details>
 <div class="desc"><p>Abstract method that runs the predictor pre processing functionality and returns a batch of preprocessed face tensors.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>faces</code></strong> :&ensp;<code>torch.Tensor</code></dt>
 <dd>Batch of face tensors with shape (batch, channels, height, width).</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>torch.Tensor</code></dt>
 <dd>Batch of preprocessed face tensors with shape (batch, channels, height, width).</dd>
 </dl></div>
@@ -213,8 +214,9 @@ def run(self, faces: torch.Tensor) -&gt; torch.Tensor:
         return faces</code></pre>
 </details>
 <div class="desc"><p>Torch transform based pre-processor that is applied to face tensors before they are passed to the predictor model.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>transform</code></strong> :&ensp;<code>transforms.Compose</code></dt>
 <dd>Composed Torch transform object.</dd>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
@@ -262,13 +264,13 @@ def run(self, faces: torch.Tensor) -&gt; torch.Tensor:
     return faces</code></pre>
 </details>
 <div class="desc"><p>Runs the trasform on a batch of face tensors.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>faces</code></strong> :&ensp;<code>torch.Tensor</code></dt>
 <dd>Batch of face tensors.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>torch.Tensor</code></dt>
 <dd>Batch of preprocessed face tensors.</dd>
 </dl></div>
