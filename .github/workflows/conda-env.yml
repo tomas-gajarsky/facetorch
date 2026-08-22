@@ -22,7 +22,8 @@ jobs:
       - uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3
         with:
           miniforge-version: 26.5.3-0
-          auto-activate-base: true
+          activate-environment: base
+          auto-activate: true
       - name: Build the branch wheel
         run: |
           python -m pip install "build>=1.2.2"
@@ -30,7 +31,7 @@ jobs:
       - name: Install the exact CPU conda lock and branch wheel
         run: |
           conda install --name base --channel conda-forge "conda-lock=4.0.2"
-          conda-lock install --name facetorch-ci --force conda-lock.yml
+          conda run --name base conda-lock install --name facetorch-ci --force conda-lock.yml
           conda run --name facetorch-ci python -m pip install --no-deps dist/*.whl
           conda run --name facetorch-ci python -m pip check
       - name: Smoke candidate rather than the public package
@@ -58,12 +59,13 @@ jobs:
       - uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3
         with:
           miniforge-version: 26.5.3-0
-          auto-activate-base: true
+          activate-environment: base
+          auto-activate: true
       - name: Install exact GPU system lock and CUDA Python profile
         run: |
           python -m pip install "uv==0.9.14"
           conda install --name base --channel conda-forge "conda-lock=4.0.2"
-          conda-lock install --name facetorch-gpu-ci --force gpu.conda-lock.yml
+          conda run --name base conda-lock install --name facetorch-gpu-ci --force gpu.conda-lock.yml
           uv sync --project environments/torch-2.6-cu124 --frozen --python 3.12
           uv build --wheel --out-dir "$RUNNER_TEMP/gpu-dist"
           uv pip install \

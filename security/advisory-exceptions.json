@@ -4,9 +4,20 @@
   "exceptions": [
     {
       "vulnerability_id": "PYSEC-2026-3447",
+      "aliases": [
+        "BIT-setuptools-2026-59890",
+        "CVE-2026-59890",
+        "GHSA-h35f-9h28-mq5c"
+      ],
       "package": "setuptools",
       "versions": ["81.0.0"],
-      "profiles": ["root", "torch-2.11-cpu", "torch-2.11-cu130"],
+      "profiles": [
+        "root",
+        "torch-2.6-cpu",
+        "torch-2.6-cu124",
+        "torch-2.11-cpu",
+        "torch-2.11-cu130"
+      ],
       "status": "approved",
       "approved_on": "2026-08-22",
       "expires_on": "2026-11-20",
