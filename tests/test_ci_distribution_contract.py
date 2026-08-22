@@ -347,7 +347,9 @@ def test_install_matrix_covers_every_supported_python_in_an_empty_environment():
     for version in ("3.10", "3.11", "3.12"):
         assert f'"{version}"' in workflow
     assert "python -m venv" in workflow
-    assert "uv pip sync" in workflow
+    assert 'VIRTUAL_ENV="$RUNNER_TEMP/wheel-venv" uv sync' in workflow
+    assert "--active --frozen --no-dev --no-install-project" in workflow
+    assert "uv export" not in workflow
     assert "uv pip install" in workflow and "--no-deps dist/*.whl" in workflow
     assert "cd \"$RUNNER_TEMP/empty\"" in workflow
 

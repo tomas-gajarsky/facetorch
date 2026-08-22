@@ -62,9 +62,9 @@ jobs:
       - name: Install the exact branch wheel from a frozen runtime graph
         run: |
           python -m pip install "uv==0.9.14"
-          uv export --frozen --no-dev --no-emit-project --output-file "$RUNNER_TEMP/runtime.txt"
           python -m venv "$RUNNER_TEMP/wheel-venv"
-          uv pip sync --python "$RUNNER_TEMP/wheel-venv/bin/python" --require-hashes "$RUNNER_TEMP/runtime.txt"
+          VIRTUAL_ENV="$RUNNER_TEMP/wheel-venv" uv sync \
+            --active --frozen --no-dev --no-install-project
           uv pip install --python "$RUNNER_TEMP/wheel-venv/bin/python" --no-deps dist/*.whl
           uv pip check --python "$RUNNER_TEMP/wheel-venv/bin/python"
       - name: Smoke installed package and packaged config outside the checkout
