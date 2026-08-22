@@ -109,7 +109,7 @@ cython_debug/
 =*
 
 ## User folders
-models/
+/models/
 models_local/
 outputs/
 tests/data/output/

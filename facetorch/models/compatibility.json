@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "status": "candidate",
+  "python": {
+    "specifier": ">=3.10,<3.13",
+    "minor_lines": ["3.10", "3.11", "3.12"]
+  },
+  "torch": {
+    "specifier": ">=2.3,<2.12,!=2.4.*,!=2.5.*,!=2.7.*,!=2.8.*,!=2.9.*,!=2.10.*",
+    "supported_minor_lines": ["2.3", "2.6", "2.11"],
+    "explicitly_unsupported_minor_lines": ["2.4", "2.5", "2.7", "2.8", "2.9", "2.10"]
+  },
+  "platform_policy": {
+    "official_system": "Linux",
+    "official_machine": "x86_64",
+    "required_devices": ["cpu", "cuda"],
+    "experimental": ["Windows", "macOS", "Linux ARM", "MPS"]
+  },
+  "validation_policy": {
+    "reference_device": "cpu",
+    "numeric": {
+      "dtype": "float32",
+      "cudnn_allow_tf32": false,
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": true,
+      "cuda_matmul_allow_tf32": false,
+      "float32_matmul_precision": "highest"
+    },
+    "predictor_batch_sizes": [1, 2, 4, 8],
+    "seeds": [0, 17],
+    "scales": [1.0, 0.25],
+    "input_variants": ["randn", "randu"],
+    "reference_batching": {
+      "default": "native",
+      "per_sample_models": ["au-opengraph"]
+    },
+    "detector": {
+      "batch_sizes": [1],
+      "spatial_multiple": 32,
+      "spatial_shapes": [[480, 640], [512, 512], [480, 608]]
+    },
+    "same_device_tolerances": {"max_abs": 0.0001, "mean_abs": 0.00001},
+    "cross_device_tolerances": {"max_abs": 0.002, "mean_abs": 0.001}
+  },
+  "candidate_evidence": {
+    "status": "validated_uncommitted_tree",
+    "date": "2026-08-21",
+    "platform": {"system": "Linux", "machine": "x86_64"},
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "cohorts": 3,
+    "models_per_cohort": 10,
+    "artifacts": 30,
+    "executed_cases": 1872,
+    "publication_status": "not_published",
+    "release_limitations": [
+      "Evidence was produced from an uncommitted working tree and must be repeated from the exact clean release commit.",
+      "The model manifest and governance records remain unapproved.",
+      "The AU cohorts preserve digest-pinned published programs because the original native checkpoint mapping is incomplete."
+    ]
+  },
+  "cohorts": [
+    {
+      "torch_minor": "2.3",
+      "validated_patch": "2.3.1",
+      "torchvision_patch": "0.18.1",
+      "artifact_cohort": "2.3",
+      "export_schema": {"major": 5, "minor": 1},
+      "cpu": {"runtime": "cpu", "evidence_status": "candidate_validated_uncommitted_tree"},
+      "cuda": {"runtime": "12.1", "evidence_status": "candidate_validated_local_rtx3090_uncommitted_tree"}
+    },
+    {
+      "torch_minor": "2.6",
+      "validated_patch": "2.6.0",
+      "torchvision_patch": "0.21.0",
+      "artifact_cohort": "2.6",
+      "export_schema": {"major": 8, "minor": 2},
+      "cpu": {"runtime": "cpu", "evidence_status": "candidate_validated_uncommitted_tree"},
+      "cuda": {"runtime": "12.4", "evidence_status": "candidate_validated_local_rtx3090_uncommitted_tree"}
+    },
+    {
+      "torch_minor": "2.11",
+      "validated_patch": "2.11.0",
+      "torchvision_patch": "0.26.0",
+      "artifact_cohort": "2.11",
+      "export_schema": {"major": 8, "minor": 17},
+      "cpu": {"runtime": "cpu", "evidence_status": "candidate_validated_uncommitted_tree"},
+      "cuda": {"runtime": "13.0", "evidence_status": "candidate_validated_local_rtx3090_uncommitted_tree"}
+    }
+  ]
+}

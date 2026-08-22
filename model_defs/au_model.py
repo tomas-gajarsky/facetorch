@@ -157,6 +157,28 @@ class OpenGraphAU(nn.Module):
                 mapped[new_key] = v
             else:
                 mapped[k] = v
-        # timm computes relative_position_index and attn_mask buffers on init,
-        # so missing keys for those are expected
-        return super().load_state_dict(mapped, strict=False, assign=assign)
+        result = super().load_state_dict(mapped, strict=False, assign=assign)
+        if strict:
+            # Newer timm versions generate these deterministic attention buffers
+            # from architecture parameters instead of persisting them. Historical
+            # checkpoints may still contain them; no learned key is allowlisted.
+            generated_buffer = re.compile(
+                r"backbone\.layers\.\d+\.blocks\.\d+\."
+                r"(?:attn_mask|attn\.relative_position_index)"
+            )
+            rejected_missing = list(result.missing_keys)
+            rejected_unexpected = [
+                key
+                for key in result.unexpected_keys
+                if generated_buffer.fullmatch(key) is None
+            ]
+            if rejected_missing or rejected_unexpected:
+                details = []
+                if rejected_missing:
+                    details.append(f"missing={rejected_missing}")
+                if rejected_unexpected:
+                    details.append(f"unexpected={rejected_unexpected}")
+                raise RuntimeError(
+                    "OpenGraphAU checkpoint is incompatible: " + "; ".join(details)
+                )
+        return result
