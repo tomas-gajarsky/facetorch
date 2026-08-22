@@ -153,6 +153,27 @@ def test_every_external_action_is_commit_pinned_and_recorded():
 
 
 @pytest.mark.release_blocker
+def test_miniforge_input_matches_the_reviewed_installer():
+    release_inputs = json.loads(
+        (REPO_ROOT / "security" / "release-inputs.json").read_text(encoding="utf-8")
+    )
+    reviewed = release_inputs["tools"]["miniforge"]
+    version = reviewed["version"]
+    workflow = _workflow(REPO_ROOT / ".github" / "workflows" / "conda-env.yml")
+    configured_versions = {
+        str(step.get("with", {}).get("miniforge-version"))
+        for job in workflow["jobs"].values()
+        for step in job.get("steps", [])
+        if str(step.get("uses", "")).startswith("conda-incubator/setup-miniconda@")
+    }
+
+    assert re.fullmatch(r"\d+\.\d+\.\d+-\d+", version)
+    assert configured_versions == {version}
+    assert reviewed["asset"] == f"Miniforge3-{version}-Linux-x86_64.sh"
+    assert re.fullmatch(r"[0-9a-f]{64}", reviewed["sha256"])
+
+
+@pytest.mark.release_blocker
 def test_release_uses_trusted_publishing_attestations_and_fail_closed_governance():
     workflow = (REPO_ROOT / ".github" / "workflows" / "release.yml").read_text(
         encoding="utf-8"

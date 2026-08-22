@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3
         with:
-          miniforge-version: Miniforge3-26.3.2-3
+          miniforge-version: 26.5.3-0
           auto-activate-base: true
       - name: Build the branch wheel
         run: |
@@ -57,7 +57,7 @@ jobs:
           python-version: "3.12"
       - uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3
         with:
-          miniforge-version: Miniforge3-26.3.2-3
+          miniforge-version: 26.5.3-0
           auto-activate-base: true
       - name: Install exact GPU system lock and CUDA Python profile
         run: |
