@@ -40,8 +40,12 @@ def _make_dummy_downloader(path_local):
     return dl
 
 
-DETECTOR_PT = "/opt/facetorch/models_local/detector.pt"
-DETECTOR_PTH = "/opt/facetorch/models_local/state_dicts/detector.pth"
+# Optional integration assets must be selected explicitly. Using a fixed path under
+# the source mount made the default suite depend on whatever ignored developer files
+# happened to exist on the host, and could pair an old checkpoint with the v1 model
+# definition. The mocked tests below cover both loaders hermetically.
+DETECTOR_PT = os.environ.get("FACETORCH_TEST_DETECTOR_TORCHSCRIPT", "")
+DETECTOR_PTH = os.environ.get("FACETORCH_TEST_DETECTOR_STATE_DICT", "")
 DETECTOR_CLASS = "model_defs.detector_model.RetinaFaceResNet50"
 
 
@@ -304,7 +308,7 @@ class TestBaseModelMisc:
         mock_makedirs.assert_not_called()
         assert m.model is not None
 
-    def test_exported_model_is_on_device(self, tmp_path):
+    def test_exported_model_is_on_device_without_mutating_captured_mode(self, tmp_path):
         bad_pt2 = str(tmp_path / "model.pt2")
         with open(bad_pt2, "wb") as f:
             f.write(b"placeholder")
@@ -314,6 +318,11 @@ class TestBaseModelMisc:
             def __init__(self):
                 super().__init__()
                 self.linear = torch.nn.Linear(2, 2)
+
+            def eval(self):
+                raise AssertionError(
+                    "exported programs must not be switched to eval mode"
+                )
 
         fake_model = _FakeExported()
 

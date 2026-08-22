@@ -98,6 +98,7 @@ def test_au_legacy_artifact_is_cpu_only():
 
 @pytest.mark.release_blocker
 def test_prefetch_plan_matches_requested_runtime_components():
+    torch_minor = ".".join(str(torch.__version__).split("+", 1)[0].split(".")[:2])
     fer = plan_model_prefetch(
         "cpu",
         include_predictors=["fer"],
@@ -105,7 +106,7 @@ def test_prefetch_plan_matches_requested_runtime_components():
         offline=True,
     )
     assert [(item.component, item.artifact_id) for item in fer.items] == [
-        ("predictor.fer", "fer-efficientnet-b2-torch2.11")
+        ("predictor.fer", f"fer-efficientnet-b2-torch{torch_minor}")
     ]
 
     align = plan_model_prefetch(

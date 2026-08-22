@@ -391,6 +391,9 @@ class BaseModel(object, metaclass=ABCMeta):
         ep = torch.export.load(self.path_local)
         model = ep.module()
         model.to(self.device)
+        # ExportedProgram captures its training/evaluation semantics at export
+        # time. Its GraphModule deliberately rejects train()/eval(), so only
+        # move the loaded program to the configured device here.
         return model
 
     def _load_native_model(self) -> torch.nn.Module:
