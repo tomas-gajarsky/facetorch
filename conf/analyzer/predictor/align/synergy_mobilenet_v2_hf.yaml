@@ -26,7 +26,7 @@ preprocessor:
       - _target_: torchvision.transforms.Resize
         size: [120, 120] # List[int]
         antialias: True # bool
-  device: 
+  device:
     _target_: torch.device
     type: ${analyzer.predictor.align.device.type}
   optimize_transform: ${analyzer.optimize_transforms}
@@ -35,7 +35,7 @@ preprocessor:
 postprocessor:
   _target_: facetorch.analyzer.predictor.post.PostEmbedder
   transform: None
-  device: 
+  device:
     _target_: torch.device
     type: ${analyzer.predictor.align.device.type}
   optimize_transform: ${analyzer.optimize_transforms}

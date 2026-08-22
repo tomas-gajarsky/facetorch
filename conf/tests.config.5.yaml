@@ -19,7 +19,7 @@ defaults:
 
 main:
     sleep: 3
- 
+
 debug: true
 offline: false
 allow_legacy_models: false
