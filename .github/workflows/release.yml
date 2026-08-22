@@ -1,87 +1,1035 @@
-name: release
+name: coordinated-release
 
 on:
+  workflow_call:
+    inputs:
+      source_sha:
+        description: Full immutable source commit SHA
+        required: true
+        type: string
+      tag:
+        description: Strict release tag, for example v1.0.0-rc.1
+        required: true
+        type: string
+      model_manifest_repo:
+        description: Public OWNER/REPOSITORY containing the model release manifest
+        required: true
+        type: string
+      model_manifest_revision:
+        description: Immutable 40-character Hub commit for the model manifest
+        required: true
+        type: string
+      model_manifest_filename:
+        description: Manifest path within the Hub repository
+        required: true
+        type: string
+      model_manifest_sha256:
+        description: Approved SHA-256 of the model manifest bytes
+        required: true
+        type: string
+      dry_run:
+        description: Build and verify everything without external publication
+        required: false
+        default: true
+        type: boolean
   workflow_dispatch:
     inputs:
+      source_sha:
+        description: Full immutable source commit SHA
+        required: true
+        type: string
       tag:
-        description: "Release tag (e.g., v1.0.0). Defaults to pyproject.toml version."
-        required: false
+        description: Strict release tag, for example v1.0.0-rc.1
+        required: true
+        type: string
+      model_manifest_repo:
+        description: Public OWNER/REPOSITORY containing the model release manifest
+        required: true
+        type: string
+      model_manifest_revision:
+        description: Immutable 40-character Hub commit for the model manifest
+        required: true
+        type: string
+      model_manifest_filename:
+        description: Manifest path within the Hub repository
+        required: true
+        type: string
+      model_manifest_sha256:
+        description: Approved SHA-256 of the model manifest bytes
+        required: true
+        type: string
+      dry_run:
+        description: Build and verify everything without external publication
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: coordinated-release-${{ inputs.source_sha }}
+  cancel-in-progress: false
+
+env:
+  CPU_REPOSITORY: docker.io/tomasgajarsky/facetorch
+  GPU_REPOSITORY: docker.io/tomasgajarsky/facetorch-gpu
+  UV_VERSION: 0.9.14
 
 jobs:
-  resolve-version:
-    runs-on: ubuntu-latest
+  validate-inputs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     outputs:
-      version: ${{ steps.resolve.outputs.VERSION }}
-      tag: ${{ steps.resolve.outputs.TAG }}
+      source_sha: ${{ steps.validate.outputs.source_sha }}
+      tag: ${{ steps.validate.outputs.tag }}
+      model_manifest_repo: ${{ steps.validate.outputs.model_manifest_repo }}
+      model_manifest_revision: ${{ steps.validate.outputs.model_manifest_revision }}
+      model_manifest_filename: ${{ steps.validate.outputs.model_manifest_filename }}
+      model_manifest_sha256: ${{ steps.validate.outputs.model_manifest_sha256 }}
+      dry_run: ${{ steps.validate.outputs.dry_run }}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Resolve version
-        id: resolve
-        run: |
-          if [ -n "${{ github.event.inputs.tag }}" ]; then
-            TAG="${{ github.event.inputs.tag }}"
-          else
-            FILE_VERSION=$(python3 -c "import re; print(re.search(r'^version\s*=\s*\"(.+?)\"', open('pyproject.toml').read(), re.MULTILINE).group(1))")
-            TAG="v$FILE_VERSION"
-          fi
-          VERSION="${TAG#v}"
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "TAG=$TAG" >> $GITHUB_OUTPUT
-          echo "Releasing version: $VERSION (tag: $TAG)"
-
-  pypi-publish:
-    needs: resolve-version
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
-          python-version: "3.12"
-
-      - name: Install build dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install build twine
-
-      - name: Build package
-        run: |
-          python -m build
-
-      - name: Publish package to PyPI
+          python-version: "3.12.12"
+      - name: Validate untrusted dispatch values before checkout or shell use
+        id: validate
         env:
-          TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+          INPUT_SOURCE_SHA: ${{ inputs.source_sha }}
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_MODEL_REPO: ${{ inputs.model_manifest_repo }}
+          INPUT_MODEL_REVISION: ${{ inputs.model_manifest_revision }}
+          INPUT_MODEL_FILENAME: ${{ inputs.model_manifest_filename }}
+          INPUT_MODEL_SHA256: ${{ inputs.model_manifest_sha256 }}
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+          SOURCE_REF_PROTECTED: ${{ github.ref_protected }}
+          WORKFLOW_SOURCE_SHA: ${{ github.sha }}
         run: |
-          twine upload -u $TWINE_USERNAME -p $TWINE_PASSWORD dist/*
+          python - <<'PY'
+          import os
+          from pathlib import PurePosixPath
+          import re
 
-  docker-push:
-    needs: resolve-version
-    runs-on: ubuntu-latest
+          values = {
+              "source_sha": os.environ["INPUT_SOURCE_SHA"],
+              "tag": os.environ["INPUT_TAG"],
+              "model_manifest_repo": os.environ["INPUT_MODEL_REPO"],
+              "model_manifest_revision": os.environ["INPUT_MODEL_REVISION"],
+              "model_manifest_filename": os.environ["INPUT_MODEL_FILENAME"],
+              "model_manifest_sha256": os.environ["INPUT_MODEL_SHA256"],
+              "dry_run": os.environ["INPUT_DRY_RUN"].lower(),
+          }
+          if not re.fullmatch(r"[0-9a-f]{40}", values["source_sha"]):
+              raise SystemExit("source_sha must be a full lowercase commit SHA")
+          if not re.fullmatch(
+              r"v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\."
+              r"(?:0|[1-9][0-9]*)(?:-rc\.[1-9][0-9]*)?",
+              values["tag"],
+          ):
+              raise SystemExit("tag must be strict stable or release-candidate SemVer")
+          if not re.fullmatch(
+              r"[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*",
+              values["model_manifest_repo"],
+          ):
+              raise SystemExit("model manifest repository must be OWNER/REPOSITORY")
+          if not re.fullmatch(r"[0-9a-f]{40}", values["model_manifest_revision"]):
+              raise SystemExit("model manifest revision must be an immutable commit")
+          if not re.fullmatch(r"[0-9a-f]{64}", values["model_manifest_sha256"]):
+              raise SystemExit("model manifest digest must be SHA-256")
+          filename = PurePosixPath(values["model_manifest_filename"])
+          if (
+              len(values["model_manifest_filename"]) > 512
+              or filename.is_absolute()
+              or not filename.parts
+              or any(
+                  re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", part) is None
+                  for part in values["model_manifest_filename"].split("/")
+              )
+          ):
+              raise SystemExit("model manifest filename is unsafe")
+          if values["dry_run"] not in {"true", "false"}:
+              raise SystemExit("dry_run must be boolean")
+          if os.environ["SOURCE_REF_PROTECTED"] != "true":
+              raise SystemExit("Release validation must be dispatched from a protected ref")
+          if values["source_sha"] != os.environ["WORKFLOW_SOURCE_SHA"]:
+              raise SystemExit("source_sha must equal the selected protected ref commit")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              for name, value in values.items():
+                  output.write(f"{name}={value}\n")
+          PY
+
+  resolve-candidate:
+    needs: validate-inputs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.identity.outputs.version }}
+      docker_tag: ${{ steps.identity.outputs.docker_tag }}
+      is_prerelease: ${{ steps.identity.outputs.is_prerelease }}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set VERSION variable
-        run: echo "VERSION=${{ needs.resolve-version.outputs.version }}" >> $GITHUB_ENV
-
-      - name: Login to Docker Hub
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          clean: true
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ needs.validate-inputs.outputs.source_sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12.12"
+      - name: Bind project metadata, changelog, checkout, and annotated tag
+        id: identity
         env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DRY_RUN: ${{ needs.validate-inputs.outputs.dry_run }}
+          SOURCE_SHA: ${{ needs.validate-inputs.outputs.source_sha }}
+          TAG: ${{ needs.validate-inputs.outputs.tag }}
+        run: |
+          args=()
+          if [ "$DRY_RUN" = "true" ]; then
+            args+=(--allow-missing-tag)
+          fi
+          python scripts/release_transaction.py validate-identity \
+            --repo-root . --source-sha "$SOURCE_SHA" --tag "$TAG" \
+            --output "$RUNNER_TEMP/release-identity.json" "${args[@]}"
+          echo "version=$(jq -r .project_version "$RUNNER_TEMP/release-identity.json")" >> "$GITHUB_OUTPUT"
+          echo "docker_tag=$(jq -r .docker_tag "$RUNNER_TEMP/release-identity.json")" >> "$GITHUB_OUTPUT"
+          echo "is_prerelease=$(jq -r .is_prerelease "$RUNNER_TEMP/release-identity.json")" >> "$GITHUB_OUTPUT"
+      - name: Fetch and verify the immutable public model manifest
+        env:
+          MODEL_FILENAME: ${{ needs.validate-inputs.outputs.model_manifest_filename }}
+          MODEL_REPO: ${{ needs.validate-inputs.outputs.model_manifest_repo }}
+          MODEL_REVISION: ${{ needs.validate-inputs.outputs.model_manifest_revision }}
+          MODEL_SHA256: ${{ needs.validate-inputs.outputs.model_manifest_sha256 }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/model-manifest-evidence"
+          python scripts/release_transaction.py fetch-model-manifest \
+            --repo "$MODEL_REPO" --revision "$MODEL_REVISION" \
+            --filename "$MODEL_FILENAME" --sha256 "$MODEL_SHA256" \
+            --output "$RUNNER_TEMP/model-manifest-evidence/model-manifest.json" \
+            --report "$RUNNER_TEMP/model-manifest-evidence/model-manifest-report.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-model-manifest-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/model-manifest-evidence
+          if-no-files-found: error
+          retention-days: 30
+
+  build-distributions:
+    needs: [validate-inputs, resolve-candidate]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          clean: true
+          persist-credentials: false
+          ref: ${{ needs.validate-inputs.outputs.source_sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12.12"
+      - name: Build and inspect the candidate distributions once
+        env:
+          SOURCE_SHA: ${{ needs.validate-inputs.outputs.source_sha }}
+        run: |
+          python -m pip install "uv==$UV_VERSION"
+          uv sync --frozen --extra dev --extra release
+          docs_check_dir="$(mktemp -d "$RUNNER_TEMP/facetorch-docs.XXXXXX")"
+          uv run --frozen --extra dev pdoc --html facetorch \
+            --output-dir "$docs_check_dir" --force --template-dir pdoc/templates
+          diff -ru "$docs_check_dir/facetorch" docs/facetorch
+          cmp "$docs_check_dir/index.js" docs/index.js
+          cmp "$docs_check_dir/doc-search.html" docs/doc-search.html
+          mkdir -p "$RUNNER_TEMP/distribution-part/distributions" \
+            "$RUNNER_TEMP/distribution-part/sboms"
+          export SOURCE_DATE_EPOCH="$(git show -s --format=%ct "$SOURCE_SHA")"
+          uv run --frozen --extra dev --extra release python -m build \
+            --outdir "$RUNNER_TEMP/distribution-part/distributions"
+          uv run --frozen --extra dev --extra release twine check \
+            "$RUNNER_TEMP"/distribution-part/distributions/*
+          uv run --frozen --extra dev --extra release check-wheel-contents \
+            "$RUNNER_TEMP"/distribution-part/distributions/*.whl
+          uv run --frozen --extra release python scripts/audit_dependencies.py \
+            --output-dir "$RUNNER_TEMP/distribution-part/evidence/dependency-audit"
+      - name: Generate distribution SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          path: ${{ runner.temp }}/distribution-part/distributions
+          format: spdx-json
+          output-file: ${{ runner.temp }}/distribution-part/sboms/distributions.spdx.json
+          artifact-name: release-distributions.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          syft-version: v1.42.3
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-distributions-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/distribution-part
+          if-no-files-found: error
+          retention-days: 7
+
+  build-images:
+    needs: [validate-inputs, resolve-candidate]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - flavor: cpu
+            dockerfile: docker/Dockerfile
+            config: ""
+          - flavor: gpu
+            dockerfile: docker/Dockerfile.gpu
+            config: gpu
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          clean: true
+          persist-credentials: false
+          ref: ${{ needs.validate-inputs.outputs.source_sha }}
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      - name: Build the exact ${{ matrix.flavor }} image once
+        env:
+          FLAVOR: ${{ matrix.flavor }}
+          SOURCE_SHA: ${{ needs.validate-inputs.outputs.source_sha }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/image-part/sboms"
+          source_date_epoch="$(git show -s --format=%ct "$SOURCE_SHA")"
+          docker buildx build --load --file "${{ matrix.dockerfile }}" \
+            --build-arg "SOURCE_DATE_EPOCH=$source_date_epoch" \
+            --label "org.opencontainers.image.revision=$SOURCE_SHA" \
+            --tag "facetorch:${FLAVOR}-${SOURCE_SHA}" .
+      - name: Smoke the installed ${{ matrix.flavor }} image
+        env:
+          CONFIG_NAME: ${{ matrix.config }}
+          FLAVOR: ${{ matrix.flavor }}
+          SOURCE_SHA: ${{ needs.validate-inputs.outputs.source_sha }}
+        run: |
+          docker run --rm --network none --read-only --tmpfs /tmp:rw,noexec,nosuid \
+            --entrypoint python "facetorch:${FLAVOR}-${SOURCE_SHA}" -c \
+            "import facetorch, os; assert os.getuid() != 0; facetorch.load_config('${CONFIG_NAME}', offline=True)"
+      - name: Generate ${{ matrix.flavor }} image SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          image: facetorch:${{ matrix.flavor }}-${{ needs.validate-inputs.outputs.source_sha }}
+          format: spdx-json
+          output-file: ${{ runner.temp }}/image-part/sboms/facetorch-${{ matrix.flavor }}.spdx.json
+          artifact-name: release-facetorch-${{ matrix.flavor }}.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          syft-version: v1.42.3
+      - name: Save exact image bytes and identity
+        env:
+          FLAVOR: ${{ matrix.flavor }}
+          SOURCE_SHA: ${{ needs.validate-inputs.outputs.source_sha }}
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/image-part/images" "$RUNNER_TEMP/image-part/evidence"
+          docker image inspect --format='{{.Id}}' "facetorch:${FLAVOR}-${SOURCE_SHA}" \
+            > "$RUNNER_TEMP/image-part/evidence/${FLAVOR}-image-digest.txt"
+          docker save "facetorch:${FLAVOR}-${SOURCE_SHA}" | \
+            zstd -T0 -10 -o "$RUNNER_TEMP/image-part/images/facetorch-${FLAVOR}.tar.zst"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-${{ matrix.flavor }}-image-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/image-part
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+
+  validate-exact-images-on-local-gpu:
+    needs: [validate-inputs, build-images]
+    environment: local-gpu-release
+    runs-on: [self-hosted, linux, x64, facetorch-ephemeral-gpu]
+    timeout-minutes: 720
+    env:
+      SOURCE_SHA: ${{ needs.validate-inputs.outputs.source_sha }}
+    steps:
+      - name: Verify the ephemeral trusted-runner boundary before checkout
+        run: |
+          test "$FACETORCH_RUNNER_EPHEMERAL" = "1"
+          test "$(uv --version)" = "uv 0.9.14"
+          test -n "$RUNNER_TEMP"
+          command -v docker
+          command -v zstd
+          for credential in HF_TOKEN HUGGING_FACE_HUB_TOKEN TWINE_PASSWORD PYPI_API_TOKEN DOCKER_PASSWORD; do
+            test -z "${!credential:-}" || {
+              echo "Persistent publication credential is forbidden: $credential" >&2
+              exit 1
+            }
+          done
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          clean: true
+          fetch-depth: 1
+          persist-credentials: false
+          ref: ${{ needs.validate-inputs.outputs.source_sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12.12"
+      - name: Verify the exact clean CUDA candidate
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          test "$(uname -s)" = "Linux"
+          test "$(uname -m)" = "x86_64"
+          nvidia-smi
+      - name: Allocate isolated evidence root
+        run: |
+          facetorch_staging="$(mktemp -d "$RUNNER_TEMP/facetorch-release-${SOURCE_SHA}.XXXXXX")"
+          echo "FACETORCH_STAGING=$facetorch_staging" >> "$GITHUB_ENV"
+      - name: Verify the CUDA lock and dependency advisories
+        run: |
+          uv sync --project environments/torch-2.6-cu124 --frozen \
+            --extra test --extra release --python 3.10
+          environments/torch-2.6-cu124/.venv/bin/python scripts/check_dependency_sync.py
+          environments/torch-2.6-cu124/.venv/bin/python scripts/audit_dependencies.py \
+            --profile torch-2.6-cu124 \
+            --output-dir "$FACETORCH_STAGING/dependency-audit"
+      - name: Export and validate all exact CUDA cohorts
+        run: |
+          python scripts/run_local_cuda_release_matrix.py \
+            --repo-root . --source-sha "$SOURCE_SHA" \
+            --staging-root "$FACETORCH_STAGING"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-cpu-image-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/release-cpu-image
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-gpu-image-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/release-gpu-image
+      - name: Load and verify the exact hosted-built images
+        run: |
+          set -o pipefail
+          for flavor in cpu gpu; do
+            root="$RUNNER_TEMP/release-${flavor}-image"
+            zstd -d --stdout "$root/images/facetorch-${flavor}.tar.zst" | docker load
+            expected="$(tr -d '\n' < "$root/evidence/${flavor}-image-digest.txt")"
+            observed="$(docker image inspect --format='{{.Id}}' "facetorch:${flavor}-${SOURCE_SHA}")"
+            test "$observed" = "$expected"
+          done
+      - name: Run the full analyzer in both exact production images
+        run: |
+          install -d -m 0777 "$FACETORCH_STAGING/container-reports"
+          docker run --rm --network none --read-only \
+            --tmpfs /tmp:rw,noexec,nosuid,size=4g \
+            --volume "$GITHUB_WORKSPACE:/release-source:ro" \
+            --volume "$FACETORCH_STAGING:/evidence:ro" \
+            --volume "$FACETORCH_STAGING/container-reports:/reports:rw" \
+            --entrypoint python "facetorch:cpu-${SOURCE_SHA}" \
+            /release-source/scripts/smoke_staged_default_analyzer.py \
+            --repo-root /release-source --staging-root /evidence \
+            --summary /evidence/torch-2.6/summary-torch2.6.json \
+            --device cpu --cache-root /tmp/facetorch-cache \
+            --report /reports/cpu-image-smoke.json
+          docker run --rm --gpus all --network none --read-only \
+            --tmpfs /tmp:rw,noexec,nosuid,size=4g \
+            --volume "$GITHUB_WORKSPACE:/release-source:ro" \
+            --volume "$FACETORCH_STAGING:/evidence:ro" \
+            --volume "$FACETORCH_STAGING/container-reports:/reports:rw" \
+            --entrypoint python "facetorch:gpu-${SOURCE_SHA}" \
+            /release-source/scripts/smoke_staged_default_analyzer.py \
+            --repo-root /release-source --staging-root /evidence \
+            --summary /evidence/torch-2.6/summary-torch2.6.json \
+            --device cuda --cache-root /tmp/facetorch-cache \
+            --report /reports/gpu-image-smoke.json
+      - name: Bind exact image identities to the successful CUDA evidence
+        run: |
+          python scripts/record_container_evidence.py \
+            --repo-root . --staging-root "$FACETORCH_STAGING" \
+            --source-sha "$SOURCE_SHA" \
+            --runner-report "$FACETORCH_STAGING/local-cuda-runner-report.json" \
+            --cpu-smoke "$FACETORCH_STAGING/container-reports/cpu-image-smoke.json" \
+            --gpu-smoke "$FACETORCH_STAGING/container-reports/gpu-image-smoke.json" \
+            --cpu-image "facetorch:cpu-${SOURCE_SHA}" \
+            --gpu-image "facetorch:gpu-${SOURCE_SHA}" \
+            --output "$FACETORCH_STAGING/container-evidence.json"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ always() && env.FACETORCH_STAGING != '' }}
+        with:
+          name: release-local-gpu-evidence-${{ needs.validate-inputs.outputs.source_sha }}
+          path: |
+            ${{ env.FACETORCH_STAGING }}/candidate-matrix-report.json
+            ${{ env.FACETORCH_STAGING }}/local-cuda-runner-report.json
+            ${{ env.FACETORCH_STAGING }}/default-analyzer-cuda-smoke.json
+            ${{ env.FACETORCH_STAGING }}/facetorch-notebook-report.json
+            ${{ env.FACETORCH_STAGING }}/facetorch-notebook-executed.ipynb
+            ${{ env.FACETORCH_STAGING }}/torch-*/summary-torch*.json
+            ${{ env.FACETORCH_STAGING }}/container-reports/*.json
+            ${{ env.FACETORCH_STAGING }}/container-evidence.json
+            ${{ env.FACETORCH_STAGING }}/dependency-audit/**
+          if-no-files-found: error
+          retention-days: 30
+
+  assemble-candidate:
+    needs:
+      - validate-inputs
+      - resolve-candidate
+      - build-distributions
+      - build-images
+      - validate-exact-images-on-local-gpu
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    outputs:
+      plan_id: ${{ steps.plan.outputs.plan_id }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          clean: true
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ needs.validate-inputs.outputs.source_sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12.12"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-model-manifest-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/release-bundle/evidence
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-distributions-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/release-bundle
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-cpu-image-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/release-bundle
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-gpu-image-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/release-bundle
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-local-gpu-evidence-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/release-bundle/evidence/local-gpu
+      - name: Generate local provenance and the immutable release plan
+        id: plan
+        env:
+          DRY_RUN: ${{ needs.validate-inputs.outputs.dry_run }}
+          MODEL_REPO: ${{ needs.validate-inputs.outputs.model_manifest_repo }}
+          MODEL_REVISION: ${{ needs.validate-inputs.outputs.model_manifest_revision }}
+          MODEL_SHA256: ${{ needs.validate-inputs.outputs.model_manifest_sha256 }}
+          SOURCE_SHA: ${{ needs.validate-inputs.outputs.source_sha }}
+          TAG: ${{ needs.validate-inputs.outputs.tag }}
+        run: |
+          cp security/release-inputs.json "$RUNNER_TEMP/release-bundle/evidence/release-inputs.json"
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = Path(os.environ["RUNNER_TEMP"]) / "release-bundle/evidence"
+          provenance = {
+              "schema_version": 1,
+              "builder": "github-actions",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "source_sha": os.environ["SOURCE_SHA"],
+              "workflow_ref": os.environ["GITHUB_WORKFLOW_REF"],
+              "model_manifest_revision": os.environ["MODEL_REVISION"],
+              "release_inputs_sha256": hashlib.sha256(
+                  (Path("security") / "release-inputs.json").read_bytes()
+              ).hexdigest(),
+          }
+          (evidence / "build-provenance.json").write_text(
+              json.dumps(provenance, sort_keys=True) + "\n", encoding="utf-8"
+          )
+          PY
+          source_date_epoch="$(git show -s --format=%ct "$SOURCE_SHA")"
+          tar --sort=name --mtime="@$source_date_epoch" --owner=0 --group=0 \
+            --numeric-owner --zstd \
+            -cf "$RUNNER_TEMP/release-bundle/release-evidence.tar.zst" \
+            -C "$RUNNER_TEMP/release-bundle" evidence sboms
+          args=()
+          if [ "$DRY_RUN" = "true" ]; then
+            args+=(--allow-missing-tag)
+          fi
+          python scripts/release_transaction.py prepare \
+            --repo-root . --bundle-root "$RUNNER_TEMP/release-bundle" \
+            --source-sha "$SOURCE_SHA" --tag "$TAG" \
+            --model-manifest-repo "$MODEL_REPO" \
+            --model-manifest-revision "$MODEL_REVISION" \
+            --model-manifest-sha256 "$MODEL_SHA256" \
+            --cpu-image-digest "$(tr -d '\n' < "$RUNNER_TEMP/release-bundle/evidence/cpu-image-digest.txt")" \
+            --gpu-image-digest "$(tr -d '\n' < "$RUNNER_TEMP/release-bundle/evidence/gpu-image-digest.txt")" \
+            --output "$RUNNER_TEMP/release-bundle/release-plan.json" "${args[@]}"
+          python scripts/release_transaction.py checksums \
+            --bundle-root "$RUNNER_TEMP/release-bundle" \
+            --output "$RUNNER_TEMP/release-bundle/SHA256SUMS"
+          python scripts/release_transaction.py verify \
+            --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+            --bundle-root "$RUNNER_TEMP/release-bundle" \
+            --checksums "$RUNNER_TEMP/release-bundle/SHA256SUMS"
+          echo "plan_id=$(jq -r .plan_id "$RUNNER_TEMP/release-bundle/release-plan.json")" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-metadata-${{ needs.validate-inputs.outputs.source_sha }}
+          path: |
+            ${{ runner.temp }}/release-bundle/distributions
+            ${{ runner.temp }}/release-bundle/sboms
+            ${{ runner.temp }}/release-bundle/evidence
+            ${{ runner.temp }}/release-bundle/release-evidence.tar.zst
+            ${{ runner.temp }}/release-bundle/release-plan.json
+            ${{ runner.temp }}/release-bundle/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 30
+
+  dry-run-complete:
+    if: needs.validate-inputs.outputs.dry_run == 'true'
+    needs: [validate-inputs, assemble-candidate]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Confirm that no external publication job was eligible
+        env:
+          PLAN_ID: ${{ needs.assemble-candidate.outputs.plan_id }}
+        run: test -n "$PLAN_ID"
+
+  create-github-draft:
+    if: needs.validate-inputs.outputs.dry_run == 'false'
+    needs:
+      - validate-inputs
+      - resolve-candidate
+      - build-distributions
+      - build-images
+      - assemble-candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: github-release
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          clean: true
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ needs.validate-inputs.outputs.source_sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12.12"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-metadata-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/release-bundle
+      - name: Create or verify the same draft and immutable assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IS_PRERELEASE: ${{ needs.resolve-candidate.outputs.is_prerelease }}
+          SOURCE_SHA: ${{ needs.validate-inputs.outputs.source_sha }}
+          TAG: ${{ needs.validate-inputs.outputs.tag }}
+          VERSION: ${{ needs.resolve-candidate.outputs.version }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import re
+
+          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          version = re.escape(os.environ["VERSION"])
+          match = re.search(
+              rf"(?ms)^##\s+{version}(?:\s.*)?$\n(.*?)(?=^##\s|\Z)", changelog
+          )
+          if match is None or not match.group(1).strip():
+              raise SystemExit("Release changelog section is empty")
+          Path(os.environ["RUNNER_TEMP"], "release-notes.md").write_text(
+              match.group(1).strip() + "\n", encoding="utf-8"
+          )
+          PY
+          if gh release view "$TAG" --json tagName,isDraft,isPrerelease,name,body > "$RUNNER_TEMP/release.json" 2>/dev/null; then
+            test "$(jq -r .tagName "$RUNNER_TEMP/release.json")" = "$TAG"
+            test "$(jq -r .isDraft "$RUNNER_TEMP/release.json")" = "true"
+            test "$(jq -r .isPrerelease "$RUNNER_TEMP/release.json")" = "$IS_PRERELEASE"
+            test "$(jq -r .name "$RUNNER_TEMP/release.json")" = "$TAG"
+            python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          release = json.loads(Path(os.environ["RUNNER_TEMP"], "release.json").read_text())
+          expected = Path(os.environ["RUNNER_TEMP"], "release-notes.md").read_text()
+          if str(release.get("body", "")).rstrip("\n") != expected.rstrip("\n"):
+              raise SystemExit("Existing draft release notes differ from this candidate")
+          PY
+          else
+            release_args=(--verify-tag --draft --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md")
+            if [ "$IS_PRERELEASE" = "true" ]; then
+              release_args+=(--prerelease)
+            fi
+            gh release create "$TAG" "${release_args[@]}"
+          fi
+          upload_identical() {
+            local path="$1"
+            local name
+            name="$(basename "$path")"
+            local existing="$RUNNER_TEMP/existing-$name"
+            mkdir -p "$existing"
+            if gh release download "$TAG" --pattern "$name" --dir "$existing" 2>/dev/null; then
+              cmp --silent "$path" "$existing/$name" || {
+                echo "Existing release asset differs: $name" >&2
+                return 1
+              }
+            else
+              gh release upload "$TAG" "$path"
+            fi
+          }
+          for path in "$RUNNER_TEMP"/release-bundle/distributions/* \
+            "$RUNNER_TEMP/release-bundle/release-evidence.tar.zst" \
+            "$RUNNER_TEMP/release-bundle/release-plan.json" \
+            "$RUNNER_TEMP/release-bundle/SHA256SUMS"; do
+            upload_identical "$path"
+          done
+          printf '{"draft":true,"source_sha":"%s","tag":"%s"}\n' "$SOURCE_SHA" "$TAG" \
+            > "$RUNNER_TEMP/github-release-details.json"
+          python scripts/release_transaction.py record-channel \
+            --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+            --receipt "$RUNNER_TEMP/receipt-model-manifest.json" \
+            --channel model-manifest \
+            --digest "$(jq -r '.channel_subjects["model-manifest"]' "$RUNNER_TEMP/release-bundle/release-plan.json")"
+          python scripts/release_transaction.py record-channel \
+            --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+            --receipt "$RUNNER_TEMP/receipt-github-release.json" \
+            --channel github-release \
+            --digest "$(jq -r .plan_id "$RUNNER_TEMP/release-bundle/release-plan.json")" \
+            --details "$RUNNER_TEMP/github-release-details.json"
+          upload_identical "$RUNNER_TEMP/receipt-model-manifest.json"
+          upload_identical "$RUNNER_TEMP/receipt-github-release.json"
+
+  publish-images:
+    if: needs.validate-inputs.outputs.dry_run == 'false'
+    needs: [validate-inputs, resolve-candidate, assemble-candidate, create-github-draft]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    environment: dockerhub
+    permissions:
+      actions: read
+      contents: write
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - flavor: cpu
+            channel: docker-cpu
+            repository: docker.io/tomasgajarsky/facetorch
+          - flavor: gpu
+            channel: docker-gpu
+            repository: docker.io/tomasgajarsky/facetorch-gpu
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          clean: true
+          persist-credentials: false
+          ref: ${{ needs.validate-inputs.outputs.source_sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12.12"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-metadata-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/release-bundle
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-${{ matrix.flavor }}-image-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/image-part
+      - name: Load and verify the exact saved image
+        env:
+          CHANNEL: ${{ matrix.channel }}
+          FLAVOR: ${{ matrix.flavor }}
+          SOURCE_SHA: ${{ needs.validate-inputs.outputs.source_sha }}
+        run: |
+          set -o pipefail
+          zstd -d --stdout "$RUNNER_TEMP/image-part/images/facetorch-${FLAVOR}.tar.zst" | docker load
+          expected="$(jq -r --arg channel "$CHANNEL" '.channel_subjects[$channel]' "$RUNNER_TEMP/release-bundle/release-plan.json")"
+          test "$(docker image inspect --format='{{.Id}}' "facetorch:${FLAVOR}-${SOURCE_SHA}")" = "$expected"
+      - name: Authenticate to Docker Hub through standard input
+        env:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD docker.io
-
-      - name: Build and push facetorch
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        run: printf '%s' "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin docker.io
+      - name: Publish missing versioned image or verify identical remote state
+        id: publish
+        env:
+          CHANNEL: ${{ matrix.channel }}
+          FLAVOR: ${{ matrix.flavor }}
+          REPOSITORY: ${{ matrix.repository }}
+          SOURCE_SHA: ${{ needs.validate-inputs.outputs.source_sha }}
+          VERSION_TAG: ${{ needs.resolve-candidate.outputs.docker_tag }}
         run: |
-          docker compose build facetorch
-          docker tag tomasgajarsky/facetorch:latest tomasgajarsky/facetorch:${{ env.VERSION }}
-          docker push tomasgajarsky/facetorch:latest
-          docker push tomasgajarsky/facetorch:${{ env.VERSION }}
+          target="$REPOSITORY:$VERSION_TAG"
+          python scripts/release_transaction.py docker-state \
+            --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+            --channel "$CHANNEL" --reference "$target" \
+            --output "$RUNNER_TEMP/docker-state-before.json"
+          if [ "$(jq -r .status "$RUNNER_TEMP/docker-state-before.json")" = "publish-required" ]; then
+            docker tag "facetorch:${FLAVOR}-${SOURCE_SHA}" "$target"
+            docker push "$target"
+          fi
+          python scripts/release_transaction.py docker-state \
+            --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+            --channel "$CHANNEL" --reference "$target" \
+            --output "$RUNNER_TEMP/docker-state-after.json"
+          test "$(jq -r .status "$RUNNER_TEMP/docker-state-after.json")" = "identical"
+          docker manifest inspect --verbose "$target" > "$RUNNER_TEMP/docker-manifest.json"
+          python - <<'PY'
+          import json
+          import os
 
-      - name: Build and push facetorch-gpu
+          value = json.load(open(os.environ["RUNNER_TEMP"] + "/docker-manifest.json"))
+          entries = value if isinstance(value, list) else [value]
+          digests = {
+              item.get("Descriptor", {}).get("digest")
+              for item in entries
+              if item.get("Descriptor", {}).get("platform", {}).get("os", "linux") == "linux"
+              and item.get("Descriptor", {}).get("platform", {}).get("architecture", "amd64") == "amd64"
+          }
+          digests.discard(None)
+          if len(digests) != 1:
+              raise SystemExit(f"Cannot resolve one remote manifest digest: {digests}")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"remote_digest={digests.pop()}\n")
+          PY
+      - name: Attest the versioned image manifest
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-name: ${{ matrix.repository }}
+          subject-digest: ${{ steps.publish.outputs.remote_digest }}
+          push-to-registry: true
+      - name: Attach immutable image receipt to the draft
+        env:
+          CHANNEL: ${{ matrix.channel }}
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ matrix.repository }}
+          TAG: ${{ needs.validate-inputs.outputs.tag }}
+          VERSION_TAG: ${{ needs.resolve-candidate.outputs.docker_tag }}
         run: |
-          docker compose build facetorch-gpu-no-device
-          docker tag tomasgajarsky/facetorch-gpu:latest tomasgajarsky/facetorch-gpu:${{ env.VERSION }}
-          docker push tomasgajarsky/facetorch-gpu:latest
-          docker push tomasgajarsky/facetorch-gpu:${{ env.VERSION }}
+          expected="$(jq -r --arg channel "$CHANNEL" '.channel_subjects[$channel]' "$RUNNER_TEMP/release-bundle/release-plan.json")"
+          jq -n --arg reference "$REPOSITORY:$VERSION_TAG" \
+            --arg manifest_digest "${{ steps.publish.outputs.remote_digest }}" \
+            '{reference: $reference, remote_manifest_digest: $manifest_digest}' \
+            > "$RUNNER_TEMP/docker-details.json"
+          receipt="$RUNNER_TEMP/receipt-${CHANNEL}.json"
+          python scripts/release_transaction.py record-channel \
+            --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+            --receipt "$receipt" --channel "$CHANNEL" --digest "$expected" \
+            --details "$RUNNER_TEMP/docker-details.json"
+          existing="$RUNNER_TEMP/existing-${CHANNEL}"
+          mkdir -p "$existing"
+          if gh release download "$TAG" --pattern "receipt-${CHANNEL}.json" --dir "$existing" 2>/dev/null; then
+            cmp --silent "$receipt" "$existing/receipt-${CHANNEL}.json"
+          else
+            gh release upload "$TAG" "$receipt"
+          fi
+
+  publish-pypi:
+    if: needs.validate-inputs.outputs.dry_run == 'false'
+    needs: [validate-inputs, resolve-candidate, assemble-candidate, create-github-draft]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: pypi
+    permissions:
+      actions: read
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          clean: true
+          persist-credentials: false
+          ref: ${{ needs.validate-inputs.outputs.source_sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12.12"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-metadata-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/release-bundle
+      - name: Reconcile existing PyPI files before publication
+        id: state
+        run: |
+          python scripts/release_transaction.py pypi-state \
+            --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+            --dist-dir "$RUNNER_TEMP/release-bundle/distributions" \
+            --missing-dir "$RUNNER_TEMP/pypi-missing" \
+            --output "$RUNNER_TEMP/pypi-state-before.json"
+          if [ "$(jq -r .status "$RUNNER_TEMP/pypi-state-before.json")" = "publish-required" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Attest exact Python distributions
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: ${{ runner.temp }}/release-bundle/distributions/*
+      - name: Publish only missing files with PyPI trusted publishing
+        if: steps.state.outputs.publish == 'true'
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          packages-dir: ${{ runner.temp }}/pypi-missing
+          skip-existing: false
+          verbose: true
+      - name: Verify PyPI and attach its immutable receipt to the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.validate-inputs.outputs.tag }}
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if python scripts/release_transaction.py pypi-state \
+              --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+              --dist-dir "$RUNNER_TEMP/release-bundle/distributions" \
+              --missing-dir "$RUNNER_TEMP/pypi-after-$attempt" \
+              --output "$RUNNER_TEMP/pypi-state-after.json" \
+              && [ "$(jq -r .status "$RUNNER_TEMP/pypi-state-after.json")" = "identical" ]; then
+              break
+            fi
+            if [ "$attempt" = "5" ]; then
+              echo "PyPI did not converge to the approved distribution set" >&2
+              exit 1
+            fi
+            sleep 10
+          done
+          expected="$(jq -r '.channel_subjects.pypi' "$RUNNER_TEMP/release-bundle/release-plan.json")"
+          receipt="$RUNNER_TEMP/receipt-pypi.json"
+          python scripts/release_transaction.py record-channel \
+            --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+            --receipt "$receipt" --channel pypi --digest "$expected" \
+            --details "$RUNNER_TEMP/pypi-state-after.json"
+          mkdir -p "$RUNNER_TEMP/existing-pypi"
+          if gh release download "$TAG" --pattern receipt-pypi.json --dir "$RUNNER_TEMP/existing-pypi" 2>/dev/null; then
+            cmp --silent "$receipt" "$RUNNER_TEMP/existing-pypi/receipt-pypi.json"
+          else
+            gh release upload "$TAG" "$receipt"
+          fi
+
+  finalize-github-release:
+    if: needs.validate-inputs.outputs.dry_run == 'false'
+    needs:
+      - validate-inputs
+      - resolve-candidate
+      - assemble-candidate
+      - create-github-draft
+      - publish-images
+      - publish-pypi
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: github-release
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          clean: true
+          persist-credentials: false
+          ref: ${{ needs.validate-inputs.outputs.source_sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12.12"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-metadata-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/release-bundle
+      - name: Require every coordinated immutable channel, then publish the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.validate-inputs.outputs.tag }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/channel-receipts"
+          combined="$RUNNER_TEMP/publication-receipt.json"
+          for name in model-manifest github-release docker-cpu docker-gpu pypi; do
+            gh release download "$TAG" --pattern "receipt-${name}.json" \
+              --dir "$RUNNER_TEMP/channel-receipts"
+            source="$RUNNER_TEMP/channel-receipts/receipt-${name}.json"
+            test "$(jq -r '.channels | keys | length' "$source")" = "1"
+            test "$(jq -r '.channels | keys | .[0]' "$source")" = "$name"
+            digest="$(jq -r --arg channel "$name" '.channels[$channel].subject_digest' "$source")"
+            python scripts/release_transaction.py record-channel \
+              --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+              --receipt "$combined" --channel "$name" --digest "$digest"
+          done
+          python scripts/release_transaction.py verify-receipt \
+            --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+            --receipt "$combined"
+          mkdir -p "$RUNNER_TEMP/existing-combined"
+          if gh release download "$TAG" --pattern publication-receipt.json \
+            --dir "$RUNNER_TEMP/existing-combined" 2>/dev/null; then
+            cmp --silent "$combined" "$RUNNER_TEMP/existing-combined/publication-receipt.json"
+          else
+            gh release upload "$TAG" "$combined"
+          fi
+          gh release edit "$TAG" --draft=false
+          test "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = "false"
+
+  promote-stable-aliases:
+    if: >-
+      needs.validate-inputs.outputs.dry_run == 'false' &&
+      needs.resolve-candidate.outputs.is_prerelease == 'false'
+    needs:
+      - validate-inputs
+      - resolve-candidate
+      - create-github-draft
+      - publish-images
+      - publish-pypi
+      - finalize-github-release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: stable-release
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          clean: true
+          persist-credentials: false
+          ref: ${{ needs.validate-inputs.outputs.source_sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12.12"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-metadata-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/release-bundle
+      - name: Prove stable promotion prerequisites
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.validate-inputs.outputs.tag }}
+        run: |
+          gh release download "$TAG" --pattern publication-receipt.json --dir "$RUNNER_TEMP"
+          python scripts/release_transaction.py assert-stable-alias \
+            --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+            --receipt "$RUNNER_TEMP/publication-receipt.json"
+      - name: Authenticate to Docker Hub through standard input
+        env:
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        run: printf '%s' "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin docker.io
+      - name: Move mutable aliases only from verified immutable images
+        env:
+          VERSION_TAG: ${{ needs.resolve-candidate.outputs.docker_tag }}
+        run: |
+          python scripts/release_transaction.py docker-state \
+            --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+            --channel docker-cpu --reference "$CPU_REPOSITORY:$VERSION_TAG" \
+            --output "$RUNNER_TEMP/cpu-versioned.json"
+          python scripts/release_transaction.py docker-state \
+            --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+            --channel docker-gpu --reference "$GPU_REPOSITORY:$VERSION_TAG" \
+            --output "$RUNNER_TEMP/gpu-versioned.json"
+          test "$(jq -r .status "$RUNNER_TEMP/cpu-versioned.json")" = "identical"
+          test "$(jq -r .status "$RUNNER_TEMP/gpu-versioned.json")" = "identical"
+          docker pull "$CPU_REPOSITORY:$VERSION_TAG"
+          docker tag "$CPU_REPOSITORY:$VERSION_TAG" docker.io/tomasgajarsky/facetorch:latest
+          docker push docker.io/tomasgajarsky/facetorch:latest
+          docker pull "$GPU_REPOSITORY:$VERSION_TAG"
+          docker tag "$GPU_REPOSITORY:$VERSION_TAG" docker.io/tomasgajarsky/facetorch-gpu:latest
+          docker push docker.io/tomasgajarsky/facetorch-gpu:latest
+      - name: Mark the stable GitHub release latest after every channel succeeds
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.validate-inputs.outputs.tag }}
+        run: gh release edit "$TAG" --latest

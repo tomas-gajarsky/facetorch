@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-08-22",
+  "github_actions": {
+    "actions/attest-build-provenance": "977bb373ede98d70efdf65b84cb5f73e068dcc2a",
+    "actions/checkout": "11d5960a326750d5838078e36cf38b85af677262",
+    "actions/dependency-review-action": "2031cfc080254a8a887f58cffee85186f0e49e48",
+    "actions/download-artifact": "d3f86a106a0bac45b974a628896c90dbdf5c8093",
+    "actions/setup-python": "a26af69be951a213d495a4c3e4e4022e16d87065",
+    "actions/upload-artifact": "ea165f8d65b6e75b540449e92b4886f43607fa02",
+    "anchore/sbom-action": "e22c389904149dbc22b58101806040fa8d37a610",
+    "conda-incubator/setup-miniconda": "fc2d68f6413eb2d87b895e92f8584b5b94a10167",
+    "docker/setup-buildx-action": "37fe631027851001ddb9b187196cc803df7f5f0e",
+    "gitleaks/gitleaks-action": "ff98106e4c7b2bc287b24eaf42907196329070c7",
+    "pypa/gh-action-pypi-publish": "dc37677b2e1c63e2034f94d8a5b11f265b73ba33"
+  },
+  "container_inputs": {
+    "ghcr.io/astral-sh/uv:0.9.14/linux-amd64": "sha256:ad3f022815822ee5124d1e3d77169ba4420ed8906815ecb486164a48fdba360b",
+    "nvidia/cuda:12.4.1-runtime-ubuntu22.04/linux-amd64": "sha256:cff3a0d82d2c2b47bab252d67fa9b34a20ef4c50781d98501b5c7367ea9afd10",
+    "python:3.12-slim/linux-amd64": "sha256:876416ecde9aca2bcc90e1fb0c7a9500bbf749f5788b70f82d4c5a5c2357f8b4"
+  },
+  "tools": {
+    "build_python": "3.12.12",
+    "github_runner": "ubuntu-24.04",
+    "miniforge": {
+      "asset": "Miniforge3-26.3.2-3-Linux-x86_64.sh",
+      "sha256": "848194851a98903134187fbb4ab50efe87b003e0c0f808f97644b7524a62bf2c",
+      "version": "Miniforge3-26.3.2-3"
+    },
+    "syft": "v1.42.3",
+    "uv": "0.9.14"
+  }
+}
