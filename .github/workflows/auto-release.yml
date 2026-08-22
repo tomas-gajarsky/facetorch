@@ -1,125 +1,109 @@
-name: auto-release
+name: release-candidate-dry-run
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths:
       - "pyproject.toml"
+      - "CHANGELOG.md"
+      - "facetorch/models/**"
+      - ".github/workflows/release.yml"
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: release-candidate-dry-run-${{ github.sha }}
+  cancel-in-progress: false
 
 jobs:
-  create-release:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
+  resolve-dry-run-inputs:
+    runs-on: ubuntu-24.04
     outputs:
-      version: ${{ steps.version.outputs.VERSION }}
-      tag: ${{ steps.version.outputs.TAG }}
-      skipped: ${{ steps.check_tag.outputs.SKIP }}
+      configured: ${{ steps.resolve.outputs.configured }}
+      source_sha: ${{ steps.resolve.outputs.source_sha }}
+      tag: ${{ steps.resolve.outputs.tag }}
+      model_manifest_repo: ${{ steps.resolve.outputs.model_manifest_repo }}
+      model_manifest_revision: ${{ steps.resolve.outputs.model_manifest_revision }}
+      model_manifest_filename: ${{ steps.resolve.outputs.model_manifest_filename }}
+      model_manifest_sha256: ${{ steps.resolve.outputs.model_manifest_sha256 }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          fetch-depth: 0
-
-      - name: Read version
-        id: version
-        run: |
-          VERSION=$(python3 -c "import re; print(re.search(r'^version\s*=\s*\"(.+?)\"', open('pyproject.toml').read(), re.MULTILINE).group(1))")
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "TAG=v$VERSION" >> $GITHUB_OUTPUT
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "TAG=v$VERSION" >> $GITHUB_ENV
-
-      - name: Check if tag already exists
-        id: check_tag
-        run: |
-          if git rev-parse "${{ env.TAG }}" >/dev/null 2>&1; then
-            echo "Tag ${{ env.TAG }} already exists, skipping release."
-            echo "SKIP=true" >> $GITHUB_OUTPUT
-          else
-            echo "SKIP=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Extract changelog for this version
-        if: steps.check_tag.outputs.SKIP == 'false'
-        run: |
-          CHANGELOG=$(awk -v ver="${VERSION}" '
-            /^## / {
-              if (found) exit
-              if ($2 == ver) { found=1; next }
-            }
-            found { print }
-          ' CHANGELOG.md | sed '/^$/N;/^\n$/d')
-
-          echo "$CHANGELOG" > /tmp/release_notes.md
-          echo "Changelog extracted:"
-          cat /tmp/release_notes.md
-
-      - name: Create GitHub Release
-        if: steps.check_tag.outputs.SKIP == 'false'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "${{ env.TAG }}" \
-            --title "${{ env.TAG }}" \
-            --notes-file /tmp/release_notes.md \
-            --target main
-
-  pypi-publish:
-    needs: create-release
-    if: needs.create-release.outputs.skipped == 'false'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+          clean: true
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
-          python-version: "3.12"
-
-      - name: Install build dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install build twine
-
-      - name: Build package
-        run: |
-          python -m build
-
-      - name: Publish package to PyPI
+          python-version: "3.12.12"
+      - name: Resolve immutable dry-run inputs
+        id: resolve
         env:
-          TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+          MODEL_FILENAME: ${{ vars.FACETORCH_MODEL_MANIFEST_FILENAME }}
+          MODEL_REPO: ${{ vars.FACETORCH_MODEL_MANIFEST_REPO }}
+          MODEL_REVISION: ${{ vars.FACETORCH_MODEL_MANIFEST_REVISION }}
+          MODEL_SHA256: ${{ vars.FACETORCH_MODEL_MANIFEST_SHA256 }}
+          SOURCE_SHA: ${{ github.sha }}
         run: |
-          twine upload -u $TWINE_USERNAME -p $TWINE_PASSWORD dist/*
+          python - <<'PY'
+          import os
+          from pathlib import PurePosixPath
+          import re
+          import tomllib
 
-  docker-push:
-    needs: create-release
-    if: needs.create-release.outputs.skipped == 'false'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+          from scripts.release_transaction import tag_for_project_version
 
-      - name: Set VERSION variable
+          version = tomllib.loads(open("pyproject.toml", "rb").read().decode())["project"]["version"]
+          values = {
+              "source_sha": os.environ["SOURCE_SHA"],
+              "tag": tag_for_project_version(version),
+              "model_manifest_repo": os.environ["MODEL_REPO"],
+              "model_manifest_revision": os.environ["MODEL_REVISION"],
+              "model_manifest_filename": os.environ["MODEL_FILENAME"],
+              "model_manifest_sha256": os.environ["MODEL_SHA256"],
+          }
+          configured = all(values[name] for name in values if name.startswith("model_"))
+          if configured:
+              filename = values["model_manifest_filename"]
+              path = PurePosixPath(filename)
+              if (
+                  re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*", values["model_manifest_repo"]) is None
+                  or re.fullmatch(r"[0-9a-f]{40}", values["model_manifest_revision"]) is None
+                  or re.fullmatch(r"[0-9a-f]{64}", values["model_manifest_sha256"]) is None
+                  or len(filename) > 512
+                  or path.is_absolute()
+                  or not path.parts
+                  or any(
+                      re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", part) is None
+                      for part in filename.split("/")
+                  )
+              ):
+                  raise SystemExit("Configured model-manifest variables are invalid")
+          else:
+              for name in values:
+                  if name.startswith("model_"):
+                      values[name] = ""
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"configured={str(configured).lower()}\n")
+              for name, value in values.items():
+                  output.write(f"{name}={value}\n")
+          PY
+      - name: Explain an intentionally unconfigured automatic dry run
+        if: steps.resolve.outputs.configured != 'true'
         run: |
-          VERSION=$(python3 -c "import re; print(re.search(r'^version\s*=\s*\"(.+?)\"', open('pyproject.toml').read(), re.MULTILINE).group(1))")
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Set the four FACETORCH_MODEL_MANIFEST_* repository variables after"
+          echo "the immutable model manifest is approved; publication is never automatic."
 
-      - name: Login to Docker Hub
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD docker.io
-
-      - name: Build and push facetorch
-        run: |
-          docker compose build facetorch
-          docker tag tomasgajarsky/facetorch:latest tomasgajarsky/facetorch:${{ env.VERSION }}
-          docker push tomasgajarsky/facetorch:latest
-          docker push tomasgajarsky/facetorch:${{ env.VERSION }}
-
-      - name: Build and push facetorch-gpu
-        run: |
-          docker compose build facetorch-gpu-no-device
-          docker tag tomasgajarsky/facetorch-gpu:latest tomasgajarsky/facetorch-gpu:${{ env.VERSION }}
-          docker push tomasgajarsky/facetorch-gpu:latest
-          docker push tomasgajarsky/facetorch-gpu:${{ env.VERSION }}
+  coordinated-dry-run:
+    if: needs.resolve-dry-run-inputs.outputs.configured == 'true'
+    needs: resolve-dry-run-inputs
+    uses: ./.github/workflows/release.yml
+    with:
+      source_sha: ${{ needs.resolve-dry-run-inputs.outputs.source_sha }}
+      tag: ${{ needs.resolve-dry-run-inputs.outputs.tag }}
+      model_manifest_repo: ${{ needs.resolve-dry-run-inputs.outputs.model_manifest_repo }}
+      model_manifest_revision: ${{ needs.resolve-dry-run-inputs.outputs.model_manifest_revision }}
+      model_manifest_filename: ${{ needs.resolve-dry-run-inputs.outputs.model_manifest_filename }}
+      model_manifest_sha256: ${{ needs.resolve-dry-run-inputs.outputs.model_manifest_sha256 }}
+      dry_run: true

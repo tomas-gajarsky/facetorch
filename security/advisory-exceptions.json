@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "maximum_exception_days": 90,
+  "exceptions": [
+    {
+      "vulnerability_id": "PYSEC-2026-3447",
+      "package": "setuptools",
+      "versions": ["81.0.0"],
+      "profiles": ["root", "torch-2.11-cpu", "torch-2.11-cu130"],
+      "status": "approved",
+      "approved_on": "2026-08-22",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Torch 2.11.0 requires setuptools<82. The advisory affects Unicode-normalization handling while building source distributions on macOS; Facetorch's official platform and release builders are Linux.",
+      "mitigations": [
+        "Facetorch source distributions use an isolated setuptools>=83 build backend.",
+        "Release jobs reject non-Linux production targets.",
+        "The runtime environment does not invoke setuptools to build source distributions."
+      ],
+      "upstream_constraint": "torch 2.11.0 metadata requires setuptools<82",
+      "removal_condition": "Remove when a validated Torch 2.11 patch no longer requires vulnerable setuptools, or drop the cohort."
+    }
+  ]
+}
