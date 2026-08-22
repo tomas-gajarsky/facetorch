@@ -489,6 +489,11 @@ class DownloaderHuggingFace(_VerifiedDownloader):
                 expected_format=self.expected_format,
                 device=self.device,
             )
+            if descriptor.format == "torchscript" and not self.allow_legacy_models:
+                raise ModelCompatibilityError(
+                    "Direct Hugging Face TorchScript models require "
+                    "allow_legacy_models=True."
+                )
             candidates = (descriptor,)
         else:
             candidates = self.manifest.candidates(

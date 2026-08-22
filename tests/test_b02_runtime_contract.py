@@ -2,6 +2,7 @@ import io
 import json
 import logging
 from contextlib import nullcontext
+from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -19,7 +20,7 @@ from facetorch.analyzer.reader import TensorReader, UniversalReader, URLReader
 from facetorch.analyzer.utilizer.save import ImageSaver
 from facetorch.datastruct import Detection, Dimensions, Face, ImageData, Location, Prediction
 from facetorch.exceptions import ConfigurationError, InputCoercionWarning, InputError
-from facetorch.input import InputSpec
+from facetorch.input import InputSpec, canonicalize_image_tensor
 from facetorch.logger import LoggerJsonFile
 
 
@@ -777,3 +778,254 @@ def test_inference_failures_use_a_payload_safe_public_error():
 
     assert "probe" in str(caught.value)
     assert "payload" not in str(caught.value)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({"layout": 3}, "must be a string"),
+        ({"layout": "sideways"}, "Invalid InputSpec.layout"),
+        ({"value_range": "wide"}, "Invalid InputSpec.value_range"),
+        ({"color_space": "YUV"}, "Invalid InputSpec.color_space"),
+        ({"alpha_mode": "blend"}, "Invalid InputSpec.alpha_mode"),
+    ],
+)
+def test_input_spec_rejects_invalid_declarations(kwargs, message):
+    with pytest.raises(InputError, match=message):
+        InputSpec(**kwargs)
+
+
+@pytest.mark.parametrize(
+    ("source", "kwargs", "message"),
+    [
+        (torch.zeros(3), {}, "Unsupported image rank"),
+        (
+            torch.zeros((3, 4, 5), dtype=torch.uint8),
+            {"input_spec": InputSpec(layout="BCHW")},
+            "requires rank 4",
+        ),
+        (
+            torch.zeros((3, 0, 5), dtype=torch.uint8),
+            {},
+            "spatial dimensions must be positive",
+        ),
+        (torch.zeros((2, 4, 5), dtype=torch.uint8), {}, "channel count"),
+        (
+            torch.zeros((3, 4, 5), dtype=torch.uint8),
+            {"input_spec": InputSpec(color_space="GRAY")},
+            "requires 1 channels",
+        ),
+        (
+            torch.full((3, 4, 5), 2.0),
+            {"input_spec": InputSpec(value_range="0_1")},
+            "declares 0..1",
+        ),
+        (
+            torch.full((3, 4, 5), 256.0),
+            {"input_spec": InputSpec(value_range="0_255")},
+            "declares 0..255",
+        ),
+    ],
+)
+def test_canonical_input_rejects_inconsistent_shape_color_and_range(
+    source, kwargs, message
+):
+    with pytest.raises(InputError, match=message):
+        canonicalize_image_tensor(source, source_kind="torch", **kwargs)
+
+
+@pytest.mark.parametrize(
+    ("source", "kwargs", "message"),
+    [
+        ("not-a-tensor", {}, "Expected a Torch tensor"),
+        (torch.zeros((3, 4, 5), dtype=torch.bool), {}, "Unsupported image dtype"),
+        (
+            torch.zeros((3, 4, 5), dtype=torch.complex64),
+            {},
+            "Unsupported image dtype",
+        ),
+        (
+            torch.zeros((3, 4, 5), dtype=torch.uint8),
+            {"input_spec": object()},
+            "input_spec must be an InputSpec",
+        ),
+    ],
+)
+def test_canonical_input_rejects_invalid_types(source, kwargs, message):
+    with pytest.raises(InputError, match=message):
+        canonicalize_image_tensor(source, source_kind="torch", **kwargs)
+
+
+def test_canonical_input_handles_declared_bgr_and_integer_coercion():
+    bgr = torch.tensor([10, 20, 30], dtype=torch.uint8).reshape(3, 1, 1)
+    converted = canonicalize_image_tensor(
+        bgr,
+        source_kind="torch",
+        input_policy="strict",
+        input_spec=InputSpec(layout="CHW", value_range="0_255", color_space="BGR"),
+    )
+    assert converted.tensor[:, :, 0, 0].tolist() == [[30.0, 20.0, 10.0]]
+
+    with pytest.warns(InputCoercionWarning, match="integer image dtype"):
+        integer = canonicalize_image_tensor(
+            torch.ones((3, 2, 2), dtype=torch.int16),
+            source_kind="torch",
+        )
+    assert integer.tensor.dtype == torch.float32
+
+
+def test_strict_rgba_requires_an_explicit_alpha_policy():
+    with pytest.raises(InputError, match="alpha_mode"):
+        canonicalize_image_tensor(
+            torch.zeros((4, 2, 2), dtype=torch.uint8),
+            source_kind="torch",
+            input_policy="strict",
+            input_spec=InputSpec(layout="CHW", value_range="0_255", color_space="RGBA"),
+        )
+
+
+def test_reader_rejects_unsupported_numpy_and_local_path_inputs(tmp_path):
+    universal = UniversalReader(None, torch.device("cpu"), False)
+    with pytest.raises(InputError, match="Expected a NumPy array"):
+        universal.read_numpy_array("not-an-array", False)
+    with pytest.raises(InputError, match="Unsupported NumPy image dtype"):
+        universal.read_numpy_array(np.array([[object()]], dtype=object), False)
+    with pytest.raises(InputError, match="Could not read local image"):
+        universal.read_image_from_path(str(tmp_path / "missing.png"), False)
+
+    image_reader = facetorch.analyzer.reader.ImageReader(
+        None, torch.device("cpu"), False
+    )
+    with pytest.raises(InputError, match="only a local path"):
+        image_reader.run(torch.zeros((3, 2, 2)))
+    with pytest.raises(InputError, match="does not permit remote URLs"):
+        image_reader.run("https://example.test/image.png")
+
+
+def test_decoded_unusual_pil_modes_are_explicitly_coerced_or_rejected():
+    reader = UniversalReader(None, torch.device("cpu"), False)
+    image = Image.new("CMYK", (3, 2), (0, 20, 40, 0))
+    with pytest.raises(InputError, match="Strict mode"):
+        reader.read_pil_image(image, False, input_policy="strict")
+    with pytest.warns(InputCoercionWarning, match="PIL mode"):
+        result = reader.read_pil_image(image, False)
+    assert result.tensor.shape == (1, 3, 2, 3)
+    assert result.warnings[0].startswith("Converted decoded PIL mode")
+    image.close()
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({"allowed_schemes": ()}, "allowed_schemes"),
+        ({"allowed_schemes": ("ftp",)}, "allowed_schemes"),
+        ({"timeout": 0}, "timeout"),
+        ({"max_redirects": -1}, "max_redirects"),
+        ({"max_bytes": 0}, "max_bytes"),
+    ],
+)
+def test_url_reader_rejects_invalid_limits(kwargs, message):
+    with pytest.raises(InputError, match=message):
+        URLReader(None, torch.device("cpu"), False, **kwargs)
+
+
+@pytest.mark.parametrize(
+    ("resolver", "message"),
+    [
+        (lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError()), "resolved safely"),
+        (lambda *_args, **_kwargs: [], "did not resolve"),
+        (
+            lambda _host, port, **_kwargs: [(2, 1, 6, "", ("not-an-ip", port))],
+            "resolved unexpectedly",
+        ),
+    ],
+)
+def test_url_reader_fails_closed_on_unsafe_dns_results(monkeypatch, resolver, message):
+    monkeypatch.setattr("facetorch.analyzer.reader.core.socket.getaddrinfo", resolver)
+    reader = URLReader(None, torch.device("cpu"), False)
+    with pytest.raises(InputError, match=message):
+        reader.run("https://example.test/image.png")
+
+
+def test_url_reader_rejects_credentials_missing_hosts_and_non_strings(monkeypatch):
+    reader = URLReader(None, torch.device("cpu"), False)
+    with pytest.raises(InputError, match="only a URL string"):
+        reader.run(Path("image.png"))
+    with pytest.raises(InputError, match="no host"):
+        reader.run("https:///image.png")
+    with pytest.raises(InputError, match="credentials"):
+        reader.run("https://user:secret@example.test/image.png")
+
+
+def test_url_reader_handles_redirect_and_stream_protocol_errors(monkeypatch):
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core.socket.getaddrinfo",
+        lambda _host, port, **_kwargs: [(2, 1, 6, "", ("93.184.216.34", port))],
+    )
+    reader = URLReader(
+        None,
+        torch.device("cpu"),
+        False,
+        max_redirects=1,
+        max_bytes=4,
+    )
+
+    missing_target = _FakeResponse(status_code=302)
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core.requests.get",
+        lambda *_args, **_kwargs: missing_target,
+    )
+    with pytest.raises(InputError, match="omitted its target"):
+        reader.run("https://example.test/image.png")
+    assert missing_target.closed
+
+    invalid_length = _FakeResponse(headers={"Content-Length": "many"})
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core.requests.get",
+        lambda *_args, **_kwargs: invalid_length,
+    )
+    with pytest.raises(InputError, match="invalid Content-Length"):
+        reader.run("https://example.test/image.png")
+    assert invalid_length.closed
+
+    streamed = _FakeResponse(body=b"12345")
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core.requests.get",
+        lambda *_args, **_kwargs: streamed,
+    )
+    with pytest.raises(InputError, match="size limit"):
+        reader.run("https://example.test/image.png")
+    assert streamed.closed
+
+    failed = _FakeResponse(status_code=500)
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core.requests.get",
+        lambda *_args, **_kwargs: failed,
+    )
+    with pytest.raises(InputError, match="unsuccessful response"):
+        reader.run("https://example.test/image.png")
+    assert failed.closed
+
+
+def test_url_reader_follows_one_redirect_and_sanitizes_ipv6_metadata(monkeypatch):
+    responses = [
+        _FakeResponse(status_code=302, headers={"Location": "/final.png"}),
+        _FakeResponse(_png_bytes(_rgb_array())),
+    ]
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core.socket.getaddrinfo",
+        lambda _host, port, **_kwargs: [
+            (10, 1, 6, "", ("2606:2800:220:1:248:1893:25c8:1946", port, 0, 0))
+        ],
+    )
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core.requests.get",
+        lambda *_args, **_kwargs: responses.pop(0),
+    )
+    reader = URLReader(None, torch.device("cpu"), False, max_redirects=1)
+    result = reader.run(
+        "https://[2606:2800:220:1:248:1893:25c8:1946]:444/start.png?token=x"
+    )
+    assert result.path_input == (
+        "https://[2606:2800:220:1:248:1893:25c8:1946]:444/final.png"
+    )

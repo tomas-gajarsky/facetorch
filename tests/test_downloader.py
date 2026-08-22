@@ -1,5 +1,7 @@
+import errno
 import hashlib
 import json
+import os
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import shutil
@@ -15,6 +17,8 @@ from facetorch.downloader import (
     DownloaderHuggingFace,
     _DirectoryLock,
     _atomic_promote,
+    _ensure_directory,
+    _quarantine,
 )
 from facetorch.exceptions import (
     ArtifactIntegrityError,
@@ -34,6 +38,12 @@ def _sha256(path):
 
 
 def _make_export(path):
+    # Torch 2.6 keeps a process-global Dynamo cache for torch.export's wrapper.
+    # These tests create many short-lived Identity modules, so isolate each
+    # fixture export from prior tests instead of exhausting that unrelated cache.
+    reset_dynamo = getattr(getattr(torch, "_dynamo", None), "reset", None)
+    if callable(reset_dynamo):
+        reset_dynamo()
     exported = torch.export.export(torch.nn.Identity(), (torch.ones(1),))
     torch.export.save(exported, str(path))
     assert detect_model_format(path) == "pt2"
@@ -434,3 +444,163 @@ def test_atomic_promotion_renames_same_filesystem_candidate(tmp_path):
     copy.assert_not_called()
     assert target.is_file()
     assert not candidate.exists()
+
+
+@pytest.mark.unit
+@pytest.mark.downloader
+def test_direct_hub_torchscript_requires_explicit_legacy_opt_in(tmp_path):
+    source = _make_torchscript(tmp_path / "source.pt")
+    kwargs = {
+        "file_id": "owner/toy",
+        "repo_id": "owner/toy",
+        "filename": "toy.pt",
+        "path_local": str(tmp_path / "cache" / "toy.pt"),
+        "revision": REVISION,
+        "sha256": _sha256(source),
+        "size_bytes": source.stat().st_size,
+        "device": "cpu",
+    }
+    disabled = DownloaderHuggingFace(**kwargs)
+    with patch("facetorch.downloader.hf_hub_download") as download:
+        with pytest.raises(ModelCompatibilityError, match="allow_legacy_models=True"):
+            disabled.run()
+    download.assert_not_called()
+
+    enabled = DownloaderHuggingFace(**kwargs, allow_legacy_models=True)
+    with patch("facetorch.downloader.hf_hub_download", side_effect=_hub_copy(source)):
+        with pytest.warns(LegacyModelWarning):
+            result = Path(enabled.run())
+    assert result.name == "toy.pt"
+    assert enabled.active_format == "torchscript"
+
+
+@pytest.mark.unit
+@pytest.mark.downloader
+def test_downloader_options_and_manifest_binding_fail_closed(tmp_path):
+    source = _make_export(tmp_path / "source.pt2")
+    manifest = _manifest(source)
+    with pytest.raises(ConfigurationError, match="allow_legacy_models"):
+        _downloader(tmp_path, manifest, allow_legacy_models="yes")
+    with pytest.raises(ConfigurationError, match="offline"):
+        _downloader(tmp_path, manifest, offline="yes")
+
+    mismatched_repo = _downloader(tmp_path, manifest)
+    mismatched_repo.repo_id = "other/repo"
+    with pytest.raises(ConfigurationError, match="repo_id"):
+        mismatched_repo.run()
+
+    mismatched_revision = _downloader(tmp_path, manifest)
+    mismatched_revision.revision = "b" * 40
+    with pytest.raises(ConfigurationError, match="revision"):
+        mismatched_revision.run()
+
+
+@pytest.mark.unit
+@pytest.mark.downloader
+def test_incompatibility_sidecar_is_quarantined_and_can_exhaust_a_cohort(tmp_path):
+    source = _make_export(tmp_path / "source.pt2")
+    manifest = _manifest(source)
+    downloader = _downloader(tmp_path, manifest, offline=True)
+    sidecar = tmp_path / "cache" / ".incompatible.json"
+    sidecar.parent.mkdir()
+    sidecar.write_text("not json", encoding="utf-8")
+    assert downloader._read_incompatible() == set()
+    assert not sidecar.exists()
+    assert len(list(sidecar.parent.glob(".incompatible.json.quarantine.*"))) == 1
+
+    downloader.active_descriptor = manifest.descriptor("toy-torch2.11")
+    downloader.mark_incompatible()
+    restarted = _downloader(tmp_path, manifest, offline=True)
+    with pytest.raises(ModelCompatibilityError, match="already rejected"):
+        restarted.run()
+
+
+@pytest.mark.unit
+@pytest.mark.downloader
+def test_targeted_candidate_download_and_try_next_validate_state(tmp_path):
+    exported = _make_export(tmp_path / "export.pt2")
+    legacy = _make_torchscript(tmp_path / "legacy.pt")
+    manifest = _manifest(exported, legacy)
+    downloader = _downloader(tmp_path, manifest, allow_legacy_models=True)
+    downloader._resolve_candidates()
+
+    with pytest.raises(ConfigurationError, match="not an eligible"):
+        downloader._download_one_candidate("invented.pt")
+
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    shutil.copy2(exported, cache / "toy.pt2")
+    shutil.copy2(legacy, cache / "toy.pt")
+    assert Path(downloader.run()).name == "toy.pt2"
+    with pytest.warns(LegacyModelWarning):
+        assert downloader.try_next() is True
+    assert Path(downloader.path_local).name == "toy.pt"
+    assert downloader.try_next() is False
+
+
+@pytest.mark.unit
+@pytest.mark.downloader
+def test_directory_lock_process_probes_and_malformed_owner_recovery(
+    tmp_path, monkeypatch
+):
+    assert _DirectoryLock._process_exists(0) is False
+    with patch("facetorch.downloader.os.kill", side_effect=ProcessLookupError):
+        assert _DirectoryLock._process_exists(10) is False
+    with patch("facetorch.downloader.os.kill", side_effect=PermissionError):
+        assert _DirectoryLock._process_exists(10) is True
+    with patch(
+        "facetorch.downloader.os.kill",
+        side_effect=OSError(errno.EPERM, "not permitted"),
+    ):
+        assert _DirectoryLock._process_exists(10) is True
+
+    lock_path = tmp_path / ".lock"
+    lock_path.mkdir()
+    (lock_path / "owner.json").write_text("broken", encoding="utf-8")
+    old = time.time() - 10
+    os.utime(lock_path, (old, old))
+    with _DirectoryLock(lock_path, timeout=0.1):
+        assert (lock_path / "owner.json").is_file()
+    assert not lock_path.exists()
+
+
+@pytest.mark.unit
+@pytest.mark.downloader
+def test_cache_directory_and_quarantine_failures_are_typed(tmp_path):
+    _ensure_directory(Path("."))
+    with patch("facetorch.downloader.os.makedirs", side_effect=OSError("read-only")):
+        with pytest.raises(ConfigurationError, match="Cannot create model cache"):
+            _ensure_directory(tmp_path / "blocked")
+
+    missing = tmp_path / "missing"
+    assert _quarantine(missing, "missing") is None
+    cached = tmp_path / "cached.pt2"
+    cached.write_bytes(b"bad")
+    with patch("facetorch.downloader.os.replace", side_effect=OSError("read-only")):
+        with pytest.raises(ArtifactIntegrityError, match="could not be quarantined"):
+            _quarantine(cached, "bad digest")
+
+
+@pytest.mark.unit
+@pytest.mark.downloader
+def test_atomic_promotion_copies_only_for_cross_device_moves(tmp_path):
+    candidate = _make_export(tmp_path / "candidate.pt2")
+    descriptor = _manifest(candidate).descriptor("toy-torch2.11")
+    target = tmp_path / descriptor.filename
+    real_replace = os.replace
+
+    def cross_device_once(source, destination):
+        if Path(source) == candidate:
+            raise OSError(errno.EXDEV, "cross-device")
+        return real_replace(source, destination)
+
+    with (
+        patch("facetorch.downloader.os.replace", side_effect=cross_device_once),
+        patch(
+            "facetorch.downloader.shutil.copyfileobj", wraps=shutil.copyfileobj
+        ) as copied,
+    ):
+        _atomic_promote(candidate, target, descriptor)
+
+    copied.assert_called_once()
+    assert target.read_bytes() == candidate.read_bytes()

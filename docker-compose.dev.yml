@@ -38,7 +38,7 @@ services:
         "pytest",
         "-v",
         "--cov=facetorch",
-        "--cov-report=term",
+        "--cov-report=term-missing",
         "--cov-fail-under=95"
       ]
 

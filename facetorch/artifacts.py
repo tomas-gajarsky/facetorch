@@ -416,7 +416,7 @@ class ArtifactManifest:
             )
         except ConfigurationError:
             raise
-        except (KeyError, TypeError, ValueError) as exc:
+        except (AttributeError, KeyError, TypeError, ValueError) as exc:
             raise ConfigurationError("Invalid model manifest structure.") from exc
 
     @classmethod

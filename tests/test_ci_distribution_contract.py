@@ -384,6 +384,19 @@ def test_docker_context_excludes_nested_profile_virtual_environments():
 
 
 @pytest.mark.release_blocker
+def test_source_test_container_trusts_only_its_mount_and_keeps_coverage_gate():
+    dockerfile = (REPO_ROOT / "docker" / "Dockerfile.tests").read_text(
+        encoding="utf-8"
+    )
+    compose = (REPO_ROOT / "docker-compose.dev.yml").read_text(encoding="utf-8")
+
+    assert 'git config --system --add safe.directory "$WORKDIR"' in dockerfile
+    assert "safe.directory '*'" not in dockerfile
+    assert '"--cov-report=term-missing"' in compose
+    assert '"--cov-fail-under=95"' in compose
+
+
+@pytest.mark.release_blocker
 def test_local_release_runner_rejects_ignored_packaging_residue():
     content = (REPO_ROOT / "scripts" / "run_local_cuda_release_matrix.py").read_text(
         encoding="utf-8"
