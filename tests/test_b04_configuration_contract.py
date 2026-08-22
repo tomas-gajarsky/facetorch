@@ -167,6 +167,18 @@ def test_packaged_and_source_runtime_configs_remain_synchronized():
 
 
 @pytest.mark.release_blocker
+def test_default_detector_is_a_nonduplicating_hugging_face_alias():
+    detector_root = REPO_ROOT / "facetorch" / "configs" / "analyzer" / "detector"
+    assert (detector_root / "retinaface.yaml").read_bytes() != (
+        detector_root / "retinaface_hf.yaml"
+    ).read_bytes()
+
+    detector = facetorch.load_config(offline=True).analyzer.detector
+    assert detector._target_ == "facetorch.analyzer.detector.FaceDetector"
+    assert detector.downloader.manifest_id == "detector-retinaface"
+
+
+@pytest.mark.release_blocker
 def test_packaged_config_is_composable_from_a_zip_import(tmp_path):
     archive_path = tmp_path / "facetorch-source.zip"
     package_root = REPO_ROOT / "facetorch"
