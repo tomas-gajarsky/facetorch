@@ -83,15 +83,27 @@ el.replaceWith(d);
             ImageData: ImageData object containing the same data as the input.
         &#34;&#34;&#34;
         if data.path_output is not None:
-            os.makedirs(os.path.dirname(data.path_output), exist_ok=True)
+            parent = os.path.dirname(data.path_output)
+            if parent:
+                try:
+                    os.makedirs(parent, exist_ok=True)
+                except OSError as exc:
+                    raise ConfigurationError(
+                        f&#34;Cannot create image output directory {parent!r}. Choose a &#34;
+                        &#34;writable path_output or leave image output disabled.&#34;
+                    ) from exc
             pil_image = torchvision.transforms.functional.to_pil_image(data.img)
-            pil_image.save(data.path_output)
+            try:
+                pil_image.save(data.path_output)
+            finally:
+                pil_image.close()
 
         return data</code></pre>
 </details>
 <div class="desc"><p>Initializes the ImageSaver class. This class is used to save the image tensor to an image file.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>transform</code></strong> :&ensp;<code>Compose</code></dt>
 <dd>Composed Torch transform object.</dd>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
@@ -125,20 +137,31 @@ def run(self, data: ImageData) -&gt; ImageData:
         ImageData: ImageData object containing the same data as the input.
     &#34;&#34;&#34;
     if data.path_output is not None:
-        os.makedirs(os.path.dirname(data.path_output), exist_ok=True)
+        parent = os.path.dirname(data.path_output)
+        if parent:
+            try:
+                os.makedirs(parent, exist_ok=True)
+            except OSError as exc:
+                raise ConfigurationError(
+                    f&#34;Cannot create image output directory {parent!r}. Choose a &#34;
+                    &#34;writable path_output or leave image output disabled.&#34;
+                ) from exc
         pil_image = torchvision.transforms.functional.to_pil_image(data.img)
-        pil_image.save(data.path_output)
+        try:
+            pil_image.save(data.path_output)
+        finally:
+            pil_image.close()
 
     return data</code></pre>
 </details>
 <div class="desc"><p>Saves the image tensor to an image file, if the path_output attribute of ImageData is not None.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>data</code></strong> :&ensp;<code>ImageData</code></dt>
 <dd>ImageData object containing the img tensor.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>ImageData</code></dt>
 <dd>ImageData object containing the same data as the input.</dd>
 </dl></div>

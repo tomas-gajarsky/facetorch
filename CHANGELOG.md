@@ -1,15 +1,19 @@
 # Change Log
 
-## 1.0.0
+## 1.0.0 (Unreleased)
 
-Released on May 1, 2026.
+This is the v1 release candidate change set. The section becomes released only
+when the immutable v1.0.0 tag and all publication receipts have been verified.
 
 ### Breaking Changes
 * Minimum Python version raised from 3.8 to 3.10
-* Supported Python range is now explicitly capped at `<3.14`, matching the tested v1 CI matrix
-* Minimum PyTorch version raised from 1.9 to 2.3
-* All models migrated from TorchScript (.pt) to torch.export (.pt2) format
-* Default model loading now relies on Hugging Face `.pt2` artifacts; Google Drive/TorchScript artifacts are retained only as legacy fallbacks where available
+* Supported Python range is explicitly capped at `<3.13` for Python 3.10-3.12
+* PyTorch support is bounded to the explicit 2.3.x, 2.6.x, and 2.11.x cohort lines;
+  2.4, 2.5, and 2.7-2.10 are rejected before model download
+* Default models migrated from TorchScript (`.pt`) to `torch.export` (`.pt2`);
+  verified TorchScript artifacts now require explicit `allow_legacy_models=True`
+* Google Drive model configs are deprecated and fail closed without immutable size
+  and digest metadata
 * `path_image` and `tensor` parameters in `FaceAnalyzer.run()` are deprecated in favor of `image_source`
 
 ### Added
@@ -20,19 +24,41 @@ Released on May 1, 2026.
 * Optional logger configuration: `FaceAnalyzer` falls back to `logging.getLogger("facetorch")` when no logger is configured
 * Robust input routing in `FaceAnalyzer.run()` — tensor, numpy array, PIL Image, bytes, and file path inputs work with any reader type
 * All .pt2 models uploaded to Hugging Face Hub with model cards
-* Torch-versioned exported model cohorts and runtime fallback routing for `.pt2` artifacts (for example `model-torch2.3.pt2`, `model-torch2.6.pt2`, `model-torch2.11.pt2`)
+* Versioned model-artifact manifest with immutable Hub revisions, byte sizes,
+  SHA-256 digests, real formats, runtime/schema cohorts, and device eligibility
+* Verified atomic downloads, concurrent first-use locking, cache quarantine,
+  explicit offline mode, and persistent schema-incompatibility records
+* Cost-planning and explicit prefetch APIs plus non-executing legacy inspection,
+  exact-hash migration, quarantine reporting, and confirmed cleanup APIs
 * Cohort export/validation/upload script: `scripts/export_model_cohorts_hf.py`
 * Device-aware cohort validation in export script via `--validate-devices` (for example `cpu,cuda`)
+* Fail-closed cohort validation for recursive non-finite outputs, strict state
+  reconstruction, complete batch/shape/device matrices, output schemas, and
+  task-level invariants
+* Digest-bound, review-gated model publication plans with per-model atomic Hub
+  commits, resumable receipts, and manifest-last promotion
+* Machine-readable compatibility and per-model governance/limitations records;
+  incomplete weight rights or source-checkpoint mapping block manifest approval
+* Immutable Hub object auditor and complete local CPU/CUDA cohort-matrix verifier
+* CPU-golden model validation with a recorded highest-precision float32 policy,
+  deterministic cuDNN settings, and TensorFloat-32 disabled
 * Export-only `model_defs/` architecture definitions for reproducible `.pt2` cohort generation without making them runtime model dependencies
 * Dependency alignment check script: `scripts/check_dependency_sync.py`
 * `uv.lock` for reproducible PyPI-based dependency resolution
 * `[tool.uv]` configuration in `pyproject.toml`
+* Exact CPU and CUDA uv lock profiles for every supported Torch cohort, refreshed
+  CPU/GPU conda locks, dependency advisory gating, and CycloneDX SBOM generation
+* Tiered CI for source tests, Python 3.10-3.12 wheel installs, Torch 2.3/2.6/2.11
+  CPU cohorts, branch-wheel conda validation, and frozen production images
+* Owner-only protected-commit local GPU workflow covering all cohort devices, the
+  installed default analyzer, public notebook, and both production images
 
 ### Changed
 * Migrated from `setup.py` + `version` file to `pyproject.toml` (PEP 621)
 * All model files migrated from TorchScript (.pt) to torch.export (.pt2) portable format with dynamic batch support
 * Model artifact strategy changed to prioritize portability and install-time simplicity over TorchScript-specific runtime behavior: `.pt2` artifacts do not require bundled model source code, while versioned cohorts handle PyTorch exported-program schema differences across supported torch runtimes (`2.3`, `2.6`, `2.11`)
-* Built-in Hugging Face model configs now prefer explicit torch-versioned export cohorts before generic `model.pt2` fallbacks
+* Built-in Hugging Face model configs now select exactly one declared compatible
+  manifest artifact; they no longer synthesize filenames or cascade downloads
 * AU predictor model rewritten with timm Swin Transformer backbone for torch.export compatibility
 * Build metadata now uses PEP 639 SPDX license fields with `setuptools>=77.0.3`, removing the setuptools license-table deprecation warning
 * uv PyTorch index configuration now uses explicit `torch`/`torchvision` sources instead of a global extra index, so non-PyTorch packages resolve from PyPI by default
@@ -44,11 +70,16 @@ Released on May 1, 2026.
 * Docker production images now install facetorch from the checked-out release source with uv instead of racing against the PyPI publication job
 * Development dependencies consolidated from `requirements.dev.txt` into `pyproject.toml`
 * Development release-validation dependencies now include `build` and `packaging>=25.0` for Metadata 2.4 / PEP 639 checks
-* Removed hard torch `<2.5.0` constraint from uv configuration
+* Replaced the misleading open-ended Torch dependency with a bounded disjoint
+  specifier matching the three declared artifact cohorts
 * Docker base images updated to Python 3.12 and CUDA 12.4
-* CI test matrix updated to Python 3.10, 3.11, 3.12, 3.13
+* Production images now build and install the exact branch wheel as a non-root
+  user from the same locked Torch 2.6 CPU/CUDA 12.4 profiles used in CI
+* Candidate Python support narrowed to 3.10, 3.11, and 3.12 pending final CI lanes
+* Predictor cohort validation defines batches as independent faces from one image;
+  multi-image batching remains outside the v1 API
 * GPU environment updated from CUDA 11.2 to CUDA 12.1+
-* Development status classifier updated from Alpha to Production/Stable
+* Development status remains Beta through the approved release-candidate soak
 * Google Colab notebook updated to v1.0.0 (uses `image_source`, removes pinned torch versions)
 
 ### Fixed
@@ -56,8 +87,15 @@ Released on May 1, 2026.
 * AU predictor YAML indentation error in merged config files
 * Numpy array reader now handles (H, W) and (H, W, 1) grayscale arrays
 * AU `.pt2` CUDA device mismatch by re-exporting validated AU cohorts (`2.3`, `2.6`, `2.11`) and publishing refreshed Hugging Face artifacts with metadata
-* Exported-model schema mismatch fallback now also handles additional cross-version `.pt2` archive load errors (for example missing `version` entry)
+* Exported-model schema mismatches are recorded per manifest/runtime/device so the
+  same incompatible artifact is not downloaded or executed repeatedly
 * Export cohort validation now fails on numerical drift beyond configured max/mean absolute-difference tolerances instead of only recording comparison metrics
+* Model export no longer uploads inline; a late validation failure cannot publish
+  an early model, and requested CUDA cannot be hidden by a successful CPU result
+* Detector cohorts recover exact legacy TorchScript BatchNorm attributes before a
+  strict native load and support dynamic multiple-of-32 spatial inputs on Torch 2.3
+* AU validation compares batched artifacts with concatenated one-face golden calls,
+  avoiding the legacy trace's batch-coupled behavior
 * Test configs now resolve `/opt/facetorch` paths to the checked-out repository during local pytest runs, and honor `FACETORCH_TEST_MODEL_ROOT` for isolated model caches
 * `python-json-logger` v4 import deprecation warning by using the new module path with fallback for older versions
 

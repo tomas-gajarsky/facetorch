@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>facetorch.model_cache API documentation</title>
+<meta name="description" content="Public planning, prefetch, inspection, and cache-recovery APIs.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>facetorch.model_cache</code></h1>
+</header>
+<section id="section-intro">
+<p>Public planning, prefetch, inspection, and cache-recovery APIs.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="facetorch.model_cache.cleanup_quarantined_cache"><code class="name flex">
+<span>def <span class="ident">cleanup_quarantined_cache</span></span>(<span>root: Optional[str | os.PathLike] = None, *, confirm: bool = False) ‑> <a title="facetorch.model_cache.CacheCleanupReport" href="#facetorch.model_cache.CacheCleanupReport">CacheCleanupReport</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cleanup_quarantined_cache(
+    root: Optional[str | os.PathLike] = None,
+    *,
+    confirm: bool = False,
+) -&gt; CacheCleanupReport:
+    &#34;&#34;&#34;Delete only reported quarantine files and only after explicit confirmation.&#34;&#34;&#34;
+    report = inspect_quarantined_cache(root)
+    if not confirm:
+        return report
+    for path in report.paths:
+        path.unlink()
+    return CacheCleanupReport(
+        paths=report.paths,
+        total_bytes=report.total_bytes,
+        deleted=True,
+    )</code></pre>
+</details>
+<div class="desc"><p>Delete only reported quarantine files and only after explicit confirmation.</p></div>
+</dd>
+<dt id="facetorch.model_cache.inspect_incompatible_cache"><code class="name flex">
+<span>def <span class="ident">inspect_incompatible_cache</span></span>(<span>root: Optional[str | os.PathLike] = None) ‑> <a title="facetorch.model_cache.CacheCleanupReport" href="#facetorch.model_cache.CacheCleanupReport">CacheCleanupReport</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def inspect_incompatible_cache(
+    root: Optional[str | os.PathLike] = None,
+) -&gt; CacheCleanupReport:
+    &#34;&#34;&#34;Report persisted runtime/schema rejections without changing the cache.&#34;&#34;&#34;
+    model_root = get_model_dir().resolve()
+    selected = model_root if root is None else Path(root).expanduser().resolve()
+    if selected != model_root and not selected.is_relative_to(model_root):
+        raise ConfigurationError(
+            &#34;Incompatibility reset is restricted to facetorch&#39;s versioned model &#34;
+            &#34;cache directory.&#34;
+        )
+    paths = (
+        tuple(sorted(selected.rglob(&#34;.incompatible.json&#34;)))
+        if selected.exists()
+        else ()
+    )
+    files = tuple(path for path in paths if path.is_file())
+    return CacheCleanupReport(
+        paths=files,
+        total_bytes=sum(path.stat().st_size for path in files),
+        deleted=False,
+    )</code></pre>
+</details>
+<div class="desc"><p>Report persisted runtime/schema rejections without changing the cache.</p></div>
+</dd>
+<dt id="facetorch.model_cache.inspect_legacy_cache"><code class="name flex">
+<span>def <span class="ident">inspect_legacy_cache</span></span>(<span>path: str | os.PathLike) ‑> tuple[<a title="facetorch.model_cache.CacheEntryInspection" href="#facetorch.model_cache.CacheEntryInspection">CacheEntryInspection</a>, ...]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def inspect_legacy_cache(path: str | os.PathLike) -&gt; tuple[CacheEntryInspection, ...]:
+    &#34;&#34;&#34;Hash and classify old model files without deserializing or executing them.&#34;&#34;&#34;
+    root = Path(path).expanduser()
+    if not root.exists():
+        raise ConfigurationError(f&#34;Legacy cache path does not exist: {root}.&#34;)
+    candidates = [root] if root.is_file() else sorted(root.rglob(&#34;*&#34;))
+    entries = []
+    for candidate in candidates:
+        if not candidate.is_file() or candidate.suffix.lower() not in {&#34;.pt&#34;, &#34;.pt2&#34;}:
+            continue
+        detected = detect_model_format(candidate)
+        entries.append(
+            CacheEntryInspection(
+                path=candidate,
+                size_bytes=candidate.stat().st_size,
+                sha256=sha256_file(candidate),
+                detected_format=detected,
+                mislabeled=candidate.suffix.lower() == &#34;.pt2&#34;
+                and detected == &#34;torchscript&#34;,
+            )
+        )
+    return tuple(entries)</code></pre>
+</details>
+<div class="desc"><p>Hash and classify old model files without deserializing or executing them.</p></div>
+</dd>
+<dt id="facetorch.model_cache.inspect_quarantined_cache"><code class="name flex">
+<span>def <span class="ident">inspect_quarantined_cache</span></span>(<span>root: Optional[str | os.PathLike] = None) ‑> <a title="facetorch.model_cache.CacheCleanupReport" href="#facetorch.model_cache.CacheCleanupReport">CacheCleanupReport</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def inspect_quarantined_cache(
+    root: Optional[str | os.PathLike] = None,
+) -&gt; CacheCleanupReport:
+    &#34;&#34;&#34;Report quarantined entries and reclaimable bytes without deleting anything.&#34;&#34;&#34;
+    paths = []
+    for cache_root in _allowed_quarantine_roots(root):
+        if cache_root.exists():
+            paths.extend(
+                path
+                for path in cache_root.rglob(&#34;*.quarantine.*&#34;)
+                if path.is_file()
+            )
+    unique_paths = tuple(sorted(set(paths)))
+    return CacheCleanupReport(
+        paths=unique_paths,
+        total_bytes=sum(path.stat().st_size for path in unique_paths),
+        deleted=False,
+    )</code></pre>
+</details>
+<div class="desc"><p>Report quarantined entries and reclaimable bytes without deleting anything.</p></div>
+</dd>
+<dt id="facetorch.model_cache.migrate_legacy_artifact"><code class="name flex">
+<span>def <span class="ident">migrate_legacy_artifact</span></span>(<span>source: str | os.PathLike, artifact_id: str, destination: str | os.PathLike) ‑> pathlib.Path</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def migrate_legacy_artifact(
+    source: str | os.PathLike,
+    artifact_id: str,
+    destination: str | os.PathLike,
+) -&gt; Path:
+    &#34;&#34;&#34;Copy one exact manifest match into v1 layout without changing the source.&#34;&#34;&#34;
+    source_path = Path(source).expanduser()
+    destination_path = Path(destination).expanduser()
+    descriptor = get_model_manifest().descriptor(artifact_id)
+    if destination_path.name != descriptor.filename:
+        raise ConfigurationError(
+            f&#34;Migration destination must preserve the authenticated filename &#34;
+            f&#34;{descriptor.filename!r}.&#34;
+        )
+    verify_artifact(source_path, descriptor)
+    if destination_path.exists():
+        try:
+            return verify_artifact(destination_path, descriptor)
+        except ArtifactIntegrityError as exc:
+            raise ArtifactIntegrityError(
+                f&#34;Migration destination already exists and is not the requested &#34;
+                f&#34;artifact: {destination_path}.&#34;
+            ) from exc
+    destination_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: Optional[Path] = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            prefix=f&#34;.{destination_path.name}.&#34;,
+            suffix=&#34;.tmp&#34;,
+            dir=destination_path.parent,
+            delete=False,
+        ) as temporary:
+            temporary_path = Path(temporary.name)
+            with source_path.open(&#34;rb&#34;) as source_file:
+                shutil.copyfileobj(source_file, temporary, length=1024 * 1024)
+            temporary.flush()
+            os.fsync(temporary.fileno())
+        verify_artifact(temporary_path, descriptor)
+        os.replace(temporary_path, destination_path)
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+    return verify_artifact(destination_path, descriptor)</code></pre>
+</details>
+<div class="desc"><p>Copy one exact manifest match into v1 layout without changing the source.</p></div>
+</dd>
+<dt id="facetorch.model_cache.plan_model_prefetch"><code class="name flex">
+<span>def <span class="ident">plan_model_prefetch</span></span>(<span>profile: str = 'cpu',<br>*,<br>include_predictors: Optional[Iterable[str]] = None,<br>skip_detector: bool = False,<br>offline: Optional[bool] = None,<br>allow_legacy_models: bool = False,<br>overrides: Optional[Sequence[str]] = None) ‑> <a title="facetorch.model_cache.PrefetchPlan" href="#facetorch.model_cache.PrefetchPlan">PrefetchPlan</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plan_model_prefetch(
+    profile: str = &#34;cpu&#34;,
+    *,
+    include_predictors: Optional[Iterable[str]] = None,
+    skip_detector: bool = False,
+    offline: Optional[bool] = None,
+    allow_legacy_models: bool = False,
+    overrides: Optional[Sequence[str]] = None,
+) -&gt; PrefetchPlan:
+    &#34;&#34;&#34;Resolve exact artifacts and costs without creating files or using the network.&#34;&#34;&#34;
+    if not isinstance(skip_detector, bool):
+        raise ConfigurationError(&#34;skip_detector must be a boolean.&#34;)
+    cfg = load_config(
+        profile,
+        overrides=overrides,
+        offline=offline,
+        allow_legacy_models=allow_legacy_models,
+    )
+    predictor_names = _selected_predictors(cfg, include_predictors)
+    selected_configs: list[tuple[str, object]] = []
+    if not skip_detector and &#34;detector&#34; in cfg.analyzer:
+        selected_configs.append((&#34;detector&#34;, cfg.analyzer.detector.downloader))
+    selected_configs.extend(
+        (f&#34;predictor.{name}&#34;, cfg.analyzer.predictor[name].downloader)
+        for name in predictor_names
+    )
+
+    manifest = get_model_manifest()
+    items: list[PrefetchItem] = []
+    for component, downloader in selected_configs:
+        candidates = manifest.candidates(
+            str(downloader.manifest_id),
+            torch_version=str(torch.__version__),
+            device=str(downloader.device),
+            allow_legacy_models=allow_legacy_models,
+        )
+        descriptor = candidates[0]
+        path = descriptor.cache_path(str(downloader.path_local))
+        items.append(
+            PrefetchItem(
+                component=component,
+                artifact_id=descriptor.artifact_id,
+                path=path,
+                format=descriptor.format,
+                size_bytes=descriptor.size_bytes,
+                sha256=descriptor.sha256,
+                cached=_is_verified(path, descriptor),
+            )
+        )
+    if &#34;align&#34; in predictor_names:
+        items.append(_metadata_prefetch_item(cfg))
+    return PrefetchPlan(profile=profile, items=tuple(items))</code></pre>
+</details>
+<div class="desc"><p>Resolve exact artifacts and costs without creating files or using the network.</p></div>
+</dd>
+<dt id="facetorch.model_cache.prefetch_models"><code class="name flex">
+<span>def <span class="ident">prefetch_models</span></span>(<span>profile: str = 'cpu',<br>*,<br>include_predictors: Optional[Iterable[str]] = None,<br>skip_detector: bool = False,<br>offline: Optional[bool] = None,<br>allow_legacy_models: bool = False,<br>overrides: Optional[Sequence[str]] = None,<br>confirm: bool = False) ‑> <a title="facetorch.model_cache.PrefetchResult" href="#facetorch.model_cache.PrefetchResult">PrefetchResult</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def prefetch_models(
+    profile: str = &#34;cpu&#34;,
+    *,
+    include_predictors: Optional[Iterable[str]] = None,
+    skip_detector: bool = False,
+    offline: Optional[bool] = None,
+    allow_legacy_models: bool = False,
+    overrides: Optional[Sequence[str]] = None,
+    confirm: bool = False,
+) -&gt; PrefetchResult:
+    &#34;&#34;&#34;Download exactly a planned selection after explicit bulk-cost confirmation.&#34;&#34;&#34;
+    requested_predictors = (
+        tuple(include_predictors)
+        if include_predictors is not None
+        and not isinstance(include_predictors, (str, bytes))
+        else include_predictors
+    )
+    plan = plan_model_prefetch(
+        profile,
+        include_predictors=requested_predictors,
+        skip_detector=skip_detector,
+        offline=offline,
+        allow_legacy_models=allow_legacy_models,
+        overrides=overrides,
+    )
+    if plan.download_bytes and len(plan.items) &gt; 1 and not confirm:
+        mib = plan.download_bytes / (1024 * 1024)
+        raise ConfigurationError(
+            f&#34;Prefetch would download approximately {mib:.1f} MiB across &#34;
+            f&#34;{len(plan.items)} artifacts. Review plan_model_prefetch() and pass &#34;
+            &#34;confirm=True to continue.&#34;
+        )
+
+    cfg = load_config(
+        profile,
+        overrides=overrides,
+        offline=offline,
+        allow_legacy_models=allow_legacy_models,
+    )
+    predictor_names = _selected_predictors(cfg, requested_predictors)
+    downloader_configs = []
+    if not skip_detector and &#34;detector&#34; in cfg.analyzer:
+        downloader_configs.append(cfg.analyzer.detector.downloader)
+    downloader_configs.extend(
+        cfg.analyzer.predictor[name].downloader for name in predictor_names
+    )
+    if &#34;align&#34; in predictor_names:
+        downloader_configs.append(
+            cfg.analyzer.utilizer.align.downloader_meta
+        )
+
+    paths = []
+    for downloader_config in downloader_configs:
+        downloader = instantiate(downloader_config)
+        paths.append(Path(downloader.run()))
+    return PrefetchResult(plan=plan, paths=tuple(paths))</code></pre>
+</details>
+<div class="desc"><p>Download exactly a planned selection after explicit bulk-cost confirmation.</p></div>
+</dd>
+<dt id="facetorch.model_cache.reset_incompatible_cache"><code class="name flex">
+<span>def <span class="ident">reset_incompatible_cache</span></span>(<span>root: Optional[str | os.PathLike] = None, *, confirm: bool = False) ‑> <a title="facetorch.model_cache.CacheCleanupReport" href="#facetorch.model_cache.CacheCleanupReport">CacheCleanupReport</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_incompatible_cache(
+    root: Optional[str | os.PathLike] = None,
+    *,
+    confirm: bool = False,
+) -&gt; CacheCleanupReport:
+    &#34;&#34;&#34;Explicitly clear persisted runtime/schema rejections after remediation.&#34;&#34;&#34;
+    report = inspect_incompatible_cache(root)
+    if not confirm:
+        return report
+    for path in report.paths:
+        path.unlink()
+    return CacheCleanupReport(
+        paths=report.paths,
+        total_bytes=report.total_bytes,
+        deleted=True,
+    )</code></pre>
+</details>
+<div class="desc"><p>Explicitly clear persisted runtime/schema rejections after remediation.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="facetorch.model_cache.CacheCleanupReport"><code class="flex name class">
+<span>class <span class="ident">CacheCleanupReport</span></span>
+<span>(</span><span>paths: tuple[Path, ...], total_bytes: int, deleted: bool)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass(frozen=True)
+class CacheCleanupReport:
+    &#34;&#34;&#34;Quarantine inventory and optional explicit cleanup result.&#34;&#34;&#34;
+
+    paths: tuple[Path, ...]
+    total_bytes: int
+    deleted: bool</code></pre>
+</details>
+<div class="desc"><p>Quarantine inventory and optional explicit cleanup result.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="facetorch.model_cache.CacheCleanupReport.paths"><code class="name">var <span class="ident">paths</span> : tuple[pathlib.Path, ...]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.model_cache.CacheCleanupReport.total_bytes"><code class="name">var <span class="ident">total_bytes</span> : int</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.model_cache.CacheCleanupReport.deleted"><code class="name">var <span class="ident">deleted</span> : bool</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="facetorch.model_cache.CacheEntryInspection"><code class="flex name class">
+<span>class <span class="ident">CacheEntryInspection</span></span>
+<span>(</span><span>path: Path, size_bytes: int, sha256: str, detected_format: str, mislabeled: bool)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass(frozen=True)
+class CacheEntryInspection:
+    &#34;&#34;&#34;Non-executing inspection result for one possible legacy artifact.&#34;&#34;&#34;
+
+    path: Path
+    size_bytes: int
+    sha256: str
+    detected_format: str
+    mislabeled: bool</code></pre>
+</details>
+<div class="desc"><p>Non-executing inspection result for one possible legacy artifact.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="facetorch.model_cache.CacheEntryInspection.path"><code class="name">var <span class="ident">path</span> : pathlib.Path</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.model_cache.CacheEntryInspection.size_bytes"><code class="name">var <span class="ident">size_bytes</span> : int</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.model_cache.CacheEntryInspection.sha256"><code class="name">var <span class="ident">sha256</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.model_cache.CacheEntryInspection.detected_format"><code class="name">var <span class="ident">detected_format</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.model_cache.CacheEntryInspection.mislabeled"><code class="name">var <span class="ident">mislabeled</span> : bool</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="facetorch.model_cache.PrefetchItem"><code class="flex name class">
+<span>class <span class="ident">PrefetchItem</span></span>
+<span>(</span><span>component: str,<br>artifact_id: str,<br>path: Path,<br>format: str,<br>size_bytes: int,<br>sha256: str,<br>cached: bool)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass(frozen=True)
+class PrefetchItem:
+    &#34;&#34;&#34;One selected artifact and its current verified-cache state.&#34;&#34;&#34;
+
+    component: str
+    artifact_id: str
+    path: Path
+    format: str
+    size_bytes: int
+    sha256: str
+    cached: bool</code></pre>
+</details>
+<div class="desc"><p>One selected artifact and its current verified-cache state.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="facetorch.model_cache.PrefetchItem.component"><code class="name">var <span class="ident">component</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.model_cache.PrefetchItem.artifact_id"><code class="name">var <span class="ident">artifact_id</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.model_cache.PrefetchItem.path"><code class="name">var <span class="ident">path</span> : pathlib.Path</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.model_cache.PrefetchItem.format"><code class="name">var <span class="ident">format</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.model_cache.PrefetchItem.size_bytes"><code class="name">var <span class="ident">size_bytes</span> : int</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.model_cache.PrefetchItem.sha256"><code class="name">var <span class="ident">sha256</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.model_cache.PrefetchItem.cached"><code class="name">var <span class="ident">cached</span> : bool</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="facetorch.model_cache.PrefetchPlan"><code class="flex name class">
+<span>class <span class="ident">PrefetchPlan</span></span>
+<span>(</span><span>profile: str,<br>items: tuple[<a title="facetorch.model_cache.PrefetchItem" href="#facetorch.model_cache.PrefetchItem">PrefetchItem</a>, ...])</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass(frozen=True)
+class PrefetchPlan:
+    &#34;&#34;&#34;Download-cost estimate produced before any network request.&#34;&#34;&#34;
+
+    profile: str
+    items: tuple[PrefetchItem, ...]
+
+    @property
+    def total_bytes(self) -&gt; int:
+        return sum(item.size_bytes for item in self.items)
+
+    @property
+    def cached_bytes(self) -&gt; int:
+        return sum(item.size_bytes for item in self.items if item.cached)
+
+    @property
+    def download_bytes(self) -&gt; int:
+        return self.total_bytes - self.cached_bytes</code></pre>
+</details>
+<div class="desc"><p>Download-cost estimate produced before any network request.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="facetorch.model_cache.PrefetchPlan.profile"><code class="name">var <span class="ident">profile</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.model_cache.PrefetchPlan.items"><code class="name">var <span class="ident">items</span> : tuple[<a title="facetorch.model_cache.PrefetchItem" href="#facetorch.model_cache.PrefetchItem">PrefetchItem</a>, ...]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.model_cache.PrefetchPlan.total_bytes"><code class="name">prop <span class="ident">total_bytes</span> : int</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def total_bytes(self) -&gt; int:
+    return sum(item.size_bytes for item in self.items)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.model_cache.PrefetchPlan.cached_bytes"><code class="name">prop <span class="ident">cached_bytes</span> : int</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def cached_bytes(self) -&gt; int:
+    return sum(item.size_bytes for item in self.items if item.cached)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.model_cache.PrefetchPlan.download_bytes"><code class="name">prop <span class="ident">download_bytes</span> : int</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def download_bytes(self) -&gt; int:
+    return self.total_bytes - self.cached_bytes</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="facetorch.model_cache.PrefetchResult"><code class="flex name class">
+<span>class <span class="ident">PrefetchResult</span></span>
+<span>(</span><span>plan: <a title="facetorch.model_cache.PrefetchPlan" href="#facetorch.model_cache.PrefetchPlan">PrefetchPlan</a>,<br>paths: tuple[Path, ...])</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass(frozen=True)
+class PrefetchResult:
+    &#34;&#34;&#34;Completed prefetch result with authenticated local paths.&#34;&#34;&#34;
+
+    plan: PrefetchPlan
+    paths: tuple[Path, ...]</code></pre>
+</details>
+<div class="desc"><p>Completed prefetch result with authenticated local paths.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="facetorch.model_cache.PrefetchResult.plan"><code class="name">var <span class="ident">plan</span> : <a title="facetorch.model_cache.PrefetchPlan" href="#facetorch.model_cache.PrefetchPlan">PrefetchPlan</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.model_cache.PrefetchResult.paths"><code class="name">var <span class="ident">paths</span> : tuple[pathlib.Path, ...]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="facetorch" href="index.html">facetorch</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="facetorch.model_cache.cleanup_quarantined_cache" href="#facetorch.model_cache.cleanup_quarantined_cache">cleanup_quarantined_cache</a></code></li>
+<li><code><a title="facetorch.model_cache.inspect_incompatible_cache" href="#facetorch.model_cache.inspect_incompatible_cache">inspect_incompatible_cache</a></code></li>
+<li><code><a title="facetorch.model_cache.inspect_legacy_cache" href="#facetorch.model_cache.inspect_legacy_cache">inspect_legacy_cache</a></code></li>
+<li><code><a title="facetorch.model_cache.inspect_quarantined_cache" href="#facetorch.model_cache.inspect_quarantined_cache">inspect_quarantined_cache</a></code></li>
+<li><code><a title="facetorch.model_cache.migrate_legacy_artifact" href="#facetorch.model_cache.migrate_legacy_artifact">migrate_legacy_artifact</a></code></li>
+<li><code><a title="facetorch.model_cache.plan_model_prefetch" href="#facetorch.model_cache.plan_model_prefetch">plan_model_prefetch</a></code></li>
+<li><code><a title="facetorch.model_cache.prefetch_models" href="#facetorch.model_cache.prefetch_models">prefetch_models</a></code></li>
+<li><code><a title="facetorch.model_cache.reset_incompatible_cache" href="#facetorch.model_cache.reset_incompatible_cache">reset_incompatible_cache</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="facetorch.model_cache.CacheCleanupReport" href="#facetorch.model_cache.CacheCleanupReport">CacheCleanupReport</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.model_cache.CacheCleanupReport.paths" href="#facetorch.model_cache.CacheCleanupReport.paths">paths</a></code></li>
+<li><code><a title="facetorch.model_cache.CacheCleanupReport.total_bytes" href="#facetorch.model_cache.CacheCleanupReport.total_bytes">total_bytes</a></code></li>
+<li><code><a title="facetorch.model_cache.CacheCleanupReport.deleted" href="#facetorch.model_cache.CacheCleanupReport.deleted">deleted</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.model_cache.CacheEntryInspection" href="#facetorch.model_cache.CacheEntryInspection">CacheEntryInspection</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.model_cache.CacheEntryInspection.path" href="#facetorch.model_cache.CacheEntryInspection.path">path</a></code></li>
+<li><code><a title="facetorch.model_cache.CacheEntryInspection.size_bytes" href="#facetorch.model_cache.CacheEntryInspection.size_bytes">size_bytes</a></code></li>
+<li><code><a title="facetorch.model_cache.CacheEntryInspection.sha256" href="#facetorch.model_cache.CacheEntryInspection.sha256">sha256</a></code></li>
+<li><code><a title="facetorch.model_cache.CacheEntryInspection.detected_format" href="#facetorch.model_cache.CacheEntryInspection.detected_format">detected_format</a></code></li>
+<li><code><a title="facetorch.model_cache.CacheEntryInspection.mislabeled" href="#facetorch.model_cache.CacheEntryInspection.mislabeled">mislabeled</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.model_cache.PrefetchItem" href="#facetorch.model_cache.PrefetchItem">PrefetchItem</a></code></h4>
+<ul class="two-column">
+<li><code><a title="facetorch.model_cache.PrefetchItem.component" href="#facetorch.model_cache.PrefetchItem.component">component</a></code></li>
+<li><code><a title="facetorch.model_cache.PrefetchItem.artifact_id" href="#facetorch.model_cache.PrefetchItem.artifact_id">artifact_id</a></code></li>
+<li><code><a title="facetorch.model_cache.PrefetchItem.path" href="#facetorch.model_cache.PrefetchItem.path">path</a></code></li>
+<li><code><a title="facetorch.model_cache.PrefetchItem.format" href="#facetorch.model_cache.PrefetchItem.format">format</a></code></li>
+<li><code><a title="facetorch.model_cache.PrefetchItem.size_bytes" href="#facetorch.model_cache.PrefetchItem.size_bytes">size_bytes</a></code></li>
+<li><code><a title="facetorch.model_cache.PrefetchItem.sha256" href="#facetorch.model_cache.PrefetchItem.sha256">sha256</a></code></li>
+<li><code><a title="facetorch.model_cache.PrefetchItem.cached" href="#facetorch.model_cache.PrefetchItem.cached">cached</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.model_cache.PrefetchPlan" href="#facetorch.model_cache.PrefetchPlan">PrefetchPlan</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.model_cache.PrefetchPlan.profile" href="#facetorch.model_cache.PrefetchPlan.profile">profile</a></code></li>
+<li><code><a title="facetorch.model_cache.PrefetchPlan.items" href="#facetorch.model_cache.PrefetchPlan.items">items</a></code></li>
+<li><code><a title="facetorch.model_cache.PrefetchPlan.total_bytes" href="#facetorch.model_cache.PrefetchPlan.total_bytes">total_bytes</a></code></li>
+<li><code><a title="facetorch.model_cache.PrefetchPlan.cached_bytes" href="#facetorch.model_cache.PrefetchPlan.cached_bytes">cached_bytes</a></code></li>
+<li><code><a title="facetorch.model_cache.PrefetchPlan.download_bytes" href="#facetorch.model_cache.PrefetchPlan.download_bytes">download_bytes</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.model_cache.PrefetchResult" href="#facetorch.model_cache.PrefetchResult">PrefetchResult</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.model_cache.PrefetchResult.plan" href="#facetorch.model_cache.PrefetchResult.plan">plan</a></code></li>
+<li><code><a title="facetorch.model_cache.PrefetchResult.paths" href="#facetorch.model_cache.PrefetchResult.paths">paths</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

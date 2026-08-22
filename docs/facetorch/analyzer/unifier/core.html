@@ -87,8 +87,9 @@ el.replaceWith(d);
         return data</code></pre>
 </details>
 <div class="desc"><p>FaceUnifier is a transform based processor that can unify sizes of all faces and normalize them between 0 and 1.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>transform</code></strong> :&ensp;<code>Compose</code></dt>
 <dd>Composed Torch transform object.</dd>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
@@ -126,13 +127,13 @@ def run(self, data: ImageData) -&gt; ImageData:
     return data</code></pre>
 </details>
 <div class="desc"><p>Runs unifying transform on each face tensor one by one.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>data</code></strong> :&ensp;<code>ImageData</code></dt>
 <dd>ImageData object containing the face tensors.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>ImageData</code></dt>
 <dd>ImageData object containing the unified face tensors normalized between 0 and 1.</dd>
 </dl></div>

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <meta name="generator" content="pdoc3 0.11.6">
 <title>facetorch.downloader API documentation</title>
-<meta name="description" content="">
+<meta name="description" content="Authenticated, manifest-aware model artifact downloaders.">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" crossorigin>
@@ -36,6 +36,7 @@ el.replaceWith(d);
 <h1 class="title">Module <code>facetorch.downloader</code></h1>
 </header>
 <section id="section-intro">
+<p>Authenticated, manifest-aware model artifact downloaders.</p>
 </section>
 <section>
 </section>
@@ -48,385 +49,424 @@ el.replaceWith(d);
 <dl>
 <dt id="facetorch.downloader.DownloaderGDrive"><code class="flex name class">
 <span>class <span class="ident">DownloaderGDrive</span></span>
-<span>(</span><span>file_id: str, path_local: str)</span>
+<span>(</span><span>file_id: str,<br>path_local: str,<br>*,<br>sha256: Optional[str] = None,<br>size_bytes: Optional[int] = None,<br>expected_format: Optional[str] = None,<br>revision: str = 'local-gdrive-object-v1',<br>offline: Optional[bool] = None,<br>allow_legacy_models: bool = False,<br>verify_on_use: bool = True,<br>device: Any = 'cpu')</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class DownloaderGDrive(base.BaseDownloader):
-    def __init__(self, file_id: str, path_local: str):
-        &#34;&#34;&#34;Downloader for Google Drive files.
+<pre><code class="python">class DownloaderGDrive(_VerifiedDownloader):
+    &#34;&#34;&#34;Verified Google Drive downloader for explicitly described artifacts.&#34;&#34;&#34;
 
-        Args:
-            file_id (str): ID of the file hosted on Google Drive.
-            path_local (str): The file is downloaded to this local path.
-        &#34;&#34;&#34;
-        super().__init__(file_id, path_local)
-
-    @Timer(&#34;DownloaderGDrive.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
-    def run(self):
-        &#34;&#34;&#34;Downloads a file from Google Drive.&#34;&#34;&#34;
-        dir_local = os.path.dirname(self.path_local)
-        if dir_local:
-            os.makedirs(dir_local, exist_ok=True)
-        url = f&#34;https://drive.google.com/uc?&amp;id={self.file_id}&amp;confirm=t&#34;
-        gdown.download(url, output=self.path_local, quiet=False)</code></pre>
-</details>
-<div class="desc"><p>Downloader for Google Drive files.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>file_id</code></strong> :&ensp;<code>str</code></dt>
-<dd>ID of the file hosted on Google Drive.</dd>
-<dt><strong><code>path_local</code></strong> :&ensp;<code>str</code></dt>
-<dd>The file is downloaded to this local path.</dd>
-</dl></div>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li><a title="facetorch.base.BaseDownloader" href="base.html#facetorch.base.BaseDownloader">BaseDownloader</a></li>
-</ul>
-<h3>Methods</h3>
-<dl>
-<dt id="facetorch.downloader.DownloaderGDrive.run"><code class="name flex">
-<span>def <span class="ident">run</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@Timer(&#34;DownloaderGDrive.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
-def run(self):
-    &#34;&#34;&#34;Downloads a file from Google Drive.&#34;&#34;&#34;
-    dir_local = os.path.dirname(self.path_local)
-    if dir_local:
-        os.makedirs(dir_local, exist_ok=True)
-    url = f&#34;https://drive.google.com/uc?&amp;id={self.file_id}&amp;confirm=t&#34;
-    gdown.download(url, output=self.path_local, quiet=False)</code></pre>
-</details>
-<div class="desc"><p>Downloads a file from Google Drive.</p></div>
-</dd>
-</dl>
-</dd>
-<dt id="facetorch.downloader.DownloaderHuggingFace"><code class="flex name class">
-<span>class <span class="ident">DownloaderHuggingFace</span></span>
-<span>(</span><span>file_id: str,<br>path_local: str,<br>repo_id: str = None,<br>filename: str = None,<br>export_filenames_by_torch_minor: Dict[str, str] | None = None,<br>fallback_filenames: List[str] | None = None,<br>enable_default_torch_export_routing: bool = True)</span>
-</code></dt>
-<dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class DownloaderHuggingFace(base.BaseDownloader):
     def __init__(
         self,
         file_id: str,
         path_local: str,
-        repo_id: str = None,
-        filename: str = None,
-        export_filenames_by_torch_minor: Optional[Dict[str, str]] = None,
-        fallback_filenames: Optional[List[str]] = None,
-        enable_default_torch_export_routing: bool = True,
-    ):
-        &#34;&#34;&#34;Downloader for HuggingFace Hub files.
+        *,
+        sha256: Optional[str] = None,
+        size_bytes: Optional[int] = None,
+        expected_format: Optional[str] = None,
+        revision: str = &#34;local-gdrive-object-v1&#34;,
+        offline: Optional[bool] = None,
+        allow_legacy_models: bool = False,
+        verify_on_use: bool = True,
+        device: Any = &#34;cpu&#34;,
+    ) -&gt; None:
+        super().__init__(
+            file_id,
+            path_local,
+            offline=offline,
+            allow_legacy_models=allow_legacy_models,
+            verify_on_use=verify_on_use,
+        )
+        self.sha256 = sha256
+        self.size_bytes = size_bytes
+        self.expected_format = expected_format
+        self.revision = revision
+        self.device = device
 
-        This downloader retrieves model files from the HuggingFace Hub, serving as an alternative
-        to Google Drive for storing and accessing facetorch models. This allows for better
-        discoverability, versioning, and reliability compared to Google Drive links.
-
-        Args:
-            file_id (str): Not directly used for HuggingFace downloads, but kept for API compatibility.
-                Can be used as a fallback for repo_id if repo_id is not provided.
-            path_local (str): The file is downloaded to this local path.
-            repo_id (str, optional): HuggingFace Hub repository ID in the format &#39;username/repo_name&#39;.
-                If not provided, attempts to parse from file_id.
-            filename (str, optional): Name of the file to download from the repository.
-                If not provided, uses the basename from path_local.
-            export_filenames_by_torch_minor (Optional[Dict[str, str]]): Mapping from torch
-                major.minor version (e.g. &#34;2.11&#34;) to export filename (e.g.
-                &#34;model-torch2.11.pt2&#34;). The downloader selects the best compatible
-                filename for the current torch version before trying the generic
-                filename, then falls back to older entries.
-            fallback_filenames (Optional[List[str]]): Additional fallback filenames to try
-                if the preferred filename cannot be downloaded.
-            enable_default_torch_export_routing (bool): If True and filename ends with
-                &#34;.pt2&#34;, automatically enables fallback cohort names following
-                (&#34;*-torch2.3.pt2&#34;, &#34;*-torch2.6.pt2&#34;, &#34;*-torch2.11.pt2&#34;).
-                If no explicit export_filenames_by_torch_minor map is supplied, the
-                configured filename is still tried first.
-        &#34;&#34;&#34;
-        super().__init__(file_id, path_local)
-        self.repo_id = repo_id if repo_id else file_id
-        self.filename = filename if filename else os.path.basename(path_local)
-        self.export_filenames_by_torch_minor = export_filenames_by_torch_minor or {}
-        self.fallback_filenames = fallback_filenames or []
-        self.enable_default_torch_export_routing = enable_default_torch_export_routing
-
-        self._active_candidate_index = -1
-        self._active_filename = None
-        self._last_candidates: List[str] = []
-
-    @staticmethod
-    def _parse_version_key(version_key: str) -&gt; Optional[Tuple[int, int]]:
-        &#34;&#34;&#34;Parse a `major.minor` string into a comparable tuple.&#34;&#34;&#34;
-        match = re.fullmatch(r&#34;\s*(\d+)\.(\d+)\s*&#34;, str(version_key))
-        if not match:
-            return None
-        return int(match.group(1)), int(match.group(2))
-
-    @staticmethod
-    def _current_torch_major_minor() -&gt; Optional[Tuple[int, int]]:
-        &#34;&#34;&#34;Extract current torch major.minor from torch.__version__ safely.&#34;&#34;&#34;
-        try:
-            import torch
-
-            match = re.search(r&#34;(\d+)\.(\d+)&#34;, str(torch.__version__))
-            if not match:
-                return None
-            return int(match.group(1)), int(match.group(2))
-        except Exception:
-            return None
-
-    def _default_export_filename_map(self) -&gt; Dict[str, str]:
-        &#34;&#34;&#34;Build default export filename cohorts from the base filename.&#34;&#34;&#34;
-        if not self.filename.endswith(&#34;.pt2&#34;):
-            return {}
-
-        stem, ext = os.path.splitext(self.filename)
-        if &#34;-torch&#34; in stem:
-            return {}
-
-        return {
-            &#34;2.3&#34;: f&#34;{stem}-torch2.3{ext}&#34;,
-            &#34;2.6&#34;: f&#34;{stem}-torch2.6{ext}&#34;,
-            &#34;2.11&#34;: f&#34;{stem}-torch2.11{ext}&#34;,
-        }
-
-    def _ordered_export_filenames(
-        self, export_map: Dict[str, str], current_version: Optional[Tuple[int, int]]
-    ) -&gt; List[str]:
-        &#34;&#34;&#34;Order mapped export filenames by best compatibility with current torch.&#34;&#34;&#34;
-        parsed: List[Tuple[Tuple[int, int], str]] = []
-        for key, filename in export_map.items():
-            version_tuple = self._parse_version_key(key)
-            if version_tuple is not None:
-                parsed.append((version_tuple, filename))
-
-        if not parsed:
-            return []
-
-        parsed.sort(key=lambda item: item[0])
-
-        if current_version is None:
-            return [filename for _, filename in reversed(parsed)]
-
-        compatible = [item for item in parsed if item[0] &lt;= current_version]
-        incompatible_newer = [item for item in parsed if item[0] &gt; current_version]
-
-        ordered = list(reversed(compatible))
-        ordered.extend(incompatible_newer)
-        return [filename for _, filename in ordered]
-
-    def _build_candidate_filenames(self) -&gt; List[str]:
-        &#34;&#34;&#34;Build ordered list of candidate filenames to try on HF Hub.&#34;&#34;&#34;
-        current_version = self._current_torch_major_minor()
-
-        explicit_export_map = dict(self.export_filenames_by_torch_minor)
-        export_map = dict(explicit_export_map)
-        if not explicit_export_map and self.enable_default_torch_export_routing:
-            export_map = self._default_export_filename_map()
-
-        ordered_exports = self._ordered_export_filenames(export_map, current_version)
-        candidates: List[str] = []
-        if explicit_export_map:
-            candidates.extend(ordered_exports)
-            candidates.append(self.filename)
-        else:
-            # Custom repos with only model.pt2 should not pay versioned 404s by default.
-            candidates.append(self.filename)
-            candidates.extend(ordered_exports)
-        candidates.extend(self.fallback_filenames)
-
-        # Final fallback for legacy TorchScript model in the same repo.
-        if self.filename.endswith(&#34;.pt2&#34;):
-            stem, _ = os.path.splitext(self.filename)
-            candidates.append(f&#34;{stem}.pt&#34;)
-
-        # De-duplicate while preserving order.
-        return list(dict.fromkeys(candidates))
-
-    def _download_one_candidate(self, filename: str, force_download: bool = False):
-        &#34;&#34;&#34;Download a single candidate filename from HF and place it at path_local.&#34;&#34;&#34;
-        local_dir = os.path.dirname(self.path_local) or &#34;.&#34;
-        downloaded_path = hf_hub_download(
-            repo_id=self.repo_id,
+    def _descriptor(self) -&gt; ArtifactDescriptor:
+        filename = Path(self.path_local).name
+        return _direct_descriptor(
+            source=&#34;gdrive&#34;,
+            repo_id=self.file_id,
+            revision=self.revision,
             filename=filename,
-            local_dir=local_dir,
-            force_download=force_download,
+            path_local=self.path_local,
+            sha256=self.sha256,
+            size_bytes=self.size_bytes,
+            expected_format=self.expected_format,
+            device=self.device,
         )
 
-        if os.path.abspath(downloaded_path) != os.path.abspath(self.path_local):
-            if os.path.exists(self.path_local):
-                os.remove(self.path_local)
-            os.replace(downloaded_path, self.path_local)
-
-    def _download_from_candidates(
-        self,
-        start_index: int = 0,
-        force_download: bool = False,
-        raise_on_failure: bool = True,
-    ) -&gt; bool:
-        &#34;&#34;&#34;Try candidate filenames in order; return True on first success.&#34;&#34;&#34;
-        candidates = self._build_candidate_filenames()
-        self._last_candidates = candidates
-        start_index = max(0, start_index)
-
-        last_error = None
-        for idx in range(start_index, len(candidates)):
-            candidate = candidates[idx]
-            try:
-                self._download_one_candidate(candidate, force_download=force_download)
-                self._active_candidate_index = idx
-                self._active_filename = candidate
-                logger.info(
-                    f&#34;Successfully downloaded {candidate} from {self.repo_id}&#34;
-                )
-                return True
-            except Exception as e:
-                last_error = e
-                logger.warning(
-                    f&#34;Failed downloading {candidate} from {self.repo_id}: {e}&#34;
-                )
-
-        if raise_on_failure:
-            if last_error is not None:
-                raise last_error
-            raise RuntimeError(
-                f&#34;No download candidates available for repo {self.repo_id}.&#34;
+    def run(self, force_download: bool = False) -&gt; str:
+        target = Path(self.path_local).expanduser()
+        _ensure_directory(target.parent)
+        descriptor = self._descriptor()
+        if descriptor.format == &#34;torchscript&#34; and not self.allow_legacy_models:
+            raise ModelCompatibilityError(
+                &#34;Google Drive TorchScript models require allow_legacy_models=True.&#34;
             )
-        return False
-
-    @Timer(
-        &#34;DownloaderHuggingFace.run&#34;,
-        &#34;{name}: {milliseconds:.2f} ms&#34;,
-        logger=logger.debug,
-    )
-    def run(self, force_download: bool = False):
-        &#34;&#34;&#34;Downloads a file from HuggingFace Hub.
-
-        This method:
-        1. Creates the necessary directory structure
-        2. Resolves the best artifact filename for current torch version
-        3. Downloads from HuggingFace Hub with fallback candidates
-        4. Ensures the file is saved with the correct name at the specified path
-
-        If the download fails, an informative error message is printed.
-        &#34;&#34;&#34;
-        try:
-            dir_local = os.path.dirname(self.path_local)
-            if dir_local:
-                os.makedirs(dir_local, exist_ok=True)
-            self._download_from_candidates(
-                start_index=0,
-                force_download=force_download,
-                raise_on_failure=True,
-            )
-        except Exception as e:
-            logger.error(f&#34;Error downloading from HuggingFace Hub: {e}&#34;)
-            raise
-
-    def try_next(self, force_download: bool = False) -&gt; bool:
-        &#34;&#34;&#34;Try downloading the next candidate filename (used after load mismatch).&#34;&#34;&#34;
-        return self._download_from_candidates(
-            start_index=self._active_candidate_index + 1,
-            force_download=force_download,
-            raise_on_failure=False,
-        )</code></pre>
+        with _DirectoryLock(target.parent / &#34;.facetorch-download.lock&#34;):
+            if not force_download:
+                existing = self._verified_existing(descriptor, target)
+                if existing is not None:
+                    return existing
+            if self.offline:
+                raise OfflineCacheError(
+                    f&#34;Offline mode requires a verified cached artifact at {target}.&#34;
+                )
+            with tempfile.TemporaryDirectory(
+                prefix=&#34;.facetorch-download-&#34;, dir=target.parent
+            ) as temporary_dir:
+                temporary_path = Path(temporary_dir) / descriptor.filename
+                url = (
+                    &#34;https://drive.google.com/uc?&amp;id=&#34;
+                    f&#34;{self.file_id}&amp;confirm=t&#34;
+                )
+                downloaded = gdown.download(
+                    url, output=os.fspath(temporary_path), quiet=False
+                )
+                candidate = Path(downloaded) if downloaded else temporary_path
+                _atomic_promote(candidate, target, descriptor)
+        return self._activate(descriptor, target)</code></pre>
 </details>
-<div class="desc"><p>Downloader for HuggingFace Hub files.</p>
-<p>This downloader retrieves model files from the HuggingFace Hub, serving as an alternative
-to Google Drive for storing and accessing facetorch models. This allows for better
-discoverability, versioning, and reliability compared to Google Drive links.</p>
-<h2 id="args">Args</h2>
+<div class="desc"><p>Verified Google Drive downloader for explicitly described artifacts.</p>
+<p>Base class for downloaders.</p>
+<p>All downloaders should subclass it.
+All subclass should overwrite:</p>
+<ul>
+<li>Methods:<code>run</code>, supporting to run the download functionality.</li>
+</ul>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>file_id</code></strong> :&ensp;<code>str</code></dt>
-<dd>Not directly used for HuggingFace downloads, but kept for API compatibility.
-Can be used as a fallback for repo_id if repo_id is not provided.</dd>
+<dd>ID of the hosted file (e.g. Google Drive File ID).</dd>
 <dt><strong><code>path_local</code></strong> :&ensp;<code>str</code></dt>
 <dd>The file is downloaded to this local path.</dd>
-<dt><strong><code>repo_id</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>HuggingFace Hub repository ID in the format 'username/repo_name'.
-If not provided, attempts to parse from file_id.</dd>
-<dt><strong><code>filename</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>Name of the file to download from the repository.
-If not provided, uses the basename from path_local.</dd>
-<dt><strong><code>export_filenames_by_torch_minor</code></strong> :&ensp;<code>Optional[Dict[str, str]]</code></dt>
-<dd>Mapping from torch
-major.minor version (e.g. "2.11") to export filename (e.g.
-"model-torch2.11.pt2"). The downloader selects the best compatible
-filename for the current torch version before trying the generic
-filename, then falls back to older entries.</dd>
-<dt><strong><code>fallback_filenames</code></strong> :&ensp;<code>Optional[List[str]]</code></dt>
-<dd>Additional fallback filenames to try
-if the preferred filename cannot be downloaded.</dd>
-<dt><strong><code>enable_default_torch_export_routing</code></strong> :&ensp;<code>bool</code></dt>
-<dd>If True and filename ends with
-".pt2", automatically enables fallback cohort names following
-("<em>-torch2.3.pt2", "</em>-torch2.6.pt2", "*-torch2.11.pt2").
-If no explicit export_filenames_by_torch_minor map is supplied, the
-configured filename is still tried first.</dd>
 </dl></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
+<li>facetorch.downloader._VerifiedDownloader</li>
 <li><a title="facetorch.base.BaseDownloader" href="base.html#facetorch.base.BaseDownloader">BaseDownloader</a></li>
 </ul>
-<h3>Methods</h3>
-<dl>
-<dt id="facetorch.downloader.DownloaderHuggingFace.run"><code class="name flex">
-<span>def <span class="ident">run</span></span>(<span>self, force_download: bool = False)</span>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="facetorch.base.BaseDownloader" href="base.html#facetorch.base.BaseDownloader">BaseDownloader</a></b></code>:
+<ul class="hlist">
+<li><code><a title="facetorch.base.BaseDownloader.run" href="base.html#facetorch.base.BaseDownloader.run">run</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="facetorch.downloader.DownloaderHuggingFace"><code class="flex name class">
+<span>class <span class="ident">DownloaderHuggingFace</span></span>
+<span>(</span><span>file_id: str,<br>path_local: str,<br>repo_id: Optional[str] = None,<br>filename: Optional[str] = None,<br>export_filenames_by_torch_minor: Optional[Dict[str, str]] = None,<br>fallback_filenames: Optional[List[str]] = None,<br>enable_default_torch_export_routing: bool = False,<br>*,<br>manifest_id: Optional[str] = None,<br>revision: Optional[str] = None,<br>sha256: Optional[str] = None,<br>size_bytes: Optional[int] = None,<br>expected_format: Optional[str] = None,<br>offline: Optional[bool] = None,<br>allow_legacy_models: bool = False,<br>verify_on_use: bool = True,<br>device: Any = 'cpu',<br>manifest: Optional[ArtifactManifest] = None,<br>torch_version: Optional[str] = None)</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(
-    &#34;DownloaderHuggingFace.run&#34;,
-    &#34;{name}: {milliseconds:.2f} ms&#34;,
-    logger=logger.debug,
-)
-def run(self, force_download: bool = False):
-    &#34;&#34;&#34;Downloads a file from HuggingFace Hub.
+<pre><code class="python">class DownloaderHuggingFace(_VerifiedDownloader):
+    &#34;&#34;&#34;Resolve and authenticate one immutable Hugging Face model artifact.&#34;&#34;&#34;
 
-    This method:
-    1. Creates the necessary directory structure
-    2. Resolves the best artifact filename for current torch version
-    3. Downloads from HuggingFace Hub with fallback candidates
-    4. Ensures the file is saved with the correct name at the specified path
-
-    If the download fails, an informative error message is printed.
-    &#34;&#34;&#34;
-    try:
-        dir_local = os.path.dirname(self.path_local)
-        if dir_local:
-            os.makedirs(dir_local, exist_ok=True)
-        self._download_from_candidates(
-            start_index=0,
-            force_download=force_download,
-            raise_on_failure=True,
+    def __init__(
+        self,
+        file_id: str,
+        path_local: str,
+        repo_id: Optional[str] = None,
+        filename: Optional[str] = None,
+        export_filenames_by_torch_minor: Optional[Dict[str, str]] = None,
+        fallback_filenames: Optional[List[str]] = None,
+        enable_default_torch_export_routing: bool = False,
+        *,
+        manifest_id: Optional[str] = None,
+        revision: Optional[str] = None,
+        sha256: Optional[str] = None,
+        size_bytes: Optional[int] = None,
+        expected_format: Optional[str] = None,
+        offline: Optional[bool] = None,
+        allow_legacy_models: bool = False,
+        verify_on_use: bool = True,
+        device: Any = &#34;cpu&#34;,
+        manifest: Optional[ArtifactManifest] = None,
+        torch_version: Optional[str] = None,
+    ) -&gt; None:
+        super().__init__(
+            file_id,
+            path_local,
+            offline=offline,
+            allow_legacy_models=allow_legacy_models,
+            verify_on_use=verify_on_use,
         )
-    except Exception as e:
-        logger.error(f&#34;Error downloading from HuggingFace Hub: {e}&#34;)
-        raise</code></pre>
+        self.repo_id = repo_id if repo_id else file_id
+        self.filename = filename if filename else Path(path_local).name
+        self.manifest_id = manifest_id
+        self.revision = revision
+        self.sha256 = sha256
+        self.size_bytes = size_bytes
+        self.expected_format = expected_format
+        self.device = device
+        self.manifest = manifest or get_model_manifest()
+        self.torch_version = torch_version
+        # Retained as inert attributes for source-configuration compatibility.
+        self.export_filenames_by_torch_minor = export_filenames_by_torch_minor or {}
+        self.fallback_filenames = fallback_filenames or []
+        self.enable_default_torch_export_routing = enable_default_torch_export_routing
+        self._candidate_index = -1
+        self._resolved_candidates: tuple[ArtifactDescriptor, ...] = ()
+        self._active_filename: Optional[str] = None
+        self._last_candidates: List[str] = []
+
+    def _runtime_version(self) -&gt; str:
+        if self.torch_version is not None:
+            return self.torch_version
+        import torch
+
+        return str(torch.__version__)
+
+    @property
+    def _incompatibility_path(self) -&gt; Path:
+        return Path(self.path_local).expanduser().parent / &#34;.incompatible.json&#34;
+
+    def _incompatibility_key(self) -&gt; str:
+        device = normalize_device(self.device)
+        runtime = parse_runtime_version(self._runtime_version())
+        return (
+            f&#34;{self.manifest.manifest_revision}|&#34;
+            f&#34;{runtime[0]}.{runtime[1]}|{device}&#34;
+        )
+
+    def _read_incompatible(self) -&gt; set[str]:
+        path = self._incompatibility_path
+        if not path.is_file():
+            return set()
+        try:
+            raw = json.loads(path.read_text(encoding=&#34;utf-8&#34;))
+            values = raw.get(self._incompatibility_key(), [])
+            if not isinstance(values, list) or not all(
+                isinstance(value, str) for value in values
+            ):
+                raise ValueError(&#34;invalid incompatibility record&#34;)
+            return set(values)
+        except (OSError, ValueError, json.JSONDecodeError):
+            _quarantine(path, &#34;invalid incompatibility sidecar&#34;)
+            return set()
+
+    def mark_incompatible(self) -&gt; None:
+        &#34;&#34;&#34;Persist a runtime/schema rejection without executing the artifact again.&#34;&#34;&#34;
+        if self.active_descriptor is None or self.manifest_id is None:
+            return
+        path = self._incompatibility_path
+        _ensure_directory(path.parent)
+        with _DirectoryLock(path.parent / &#34;.facetorch-sidecar.lock&#34;):
+            raw: Mapping[str, Any] = {}
+            if path.is_file():
+                try:
+                    loaded = json.loads(path.read_text(encoding=&#34;utf-8&#34;))
+                    if isinstance(loaded, dict):
+                        raw = loaded
+                except (OSError, json.JSONDecodeError):
+                    _quarantine(path, &#34;invalid incompatibility sidecar&#34;)
+            updated = dict(raw)
+            values = set(updated.get(self._incompatibility_key(), []))
+            values.add(self.active_descriptor.artifact_id)
+            updated[self._incompatibility_key()] = sorted(values)
+            temporary = path.with_name(f&#34;.{path.name}.{uuid4().hex}.tmp&#34;)
+            temporary.write_text(
+                json.dumps(updated, indent=2, sort_keys=True) + &#34;\n&#34;,
+                encoding=&#34;utf-8&#34;,
+            )
+            os.replace(temporary, path)
+
+    def _resolve_candidates(self) -&gt; tuple[ArtifactDescriptor, ...]:
+        if self.manifest_id is None:
+            descriptor = _direct_descriptor(
+                source=&#34;huggingface&#34;,
+                repo_id=self.repo_id,
+                revision=self.revision,
+                filename=self.filename,
+                path_local=self.path_local,
+                sha256=self.sha256,
+                size_bytes=self.size_bytes,
+                expected_format=self.expected_format,
+                device=self.device,
+            )
+            candidates = (descriptor,)
+        else:
+            candidates = self.manifest.candidates(
+                self.manifest_id,
+                torch_version=self._runtime_version(),
+                device=self.device,
+                allow_legacy_models=self.allow_legacy_models,
+            )
+            if any(item.repo_id != self.repo_id for item in candidates):
+                raise ConfigurationError(
+                    f&#34;Configured repo_id for {self.manifest_id!r} does not match &#34;
+                    &#34;the packaged immutable manifest.&#34;
+                )
+            if self.revision is not None and any(
+                item.revision != self.revision for item in candidates
+            ):
+                raise ConfigurationError(
+                    f&#34;Configured revision for {self.manifest_id!r} does not match &#34;
+                    &#34;the packaged immutable manifest.&#34;
+                )
+        incompatible = self._read_incompatible() if self.manifest_id else set()
+        filtered = tuple(
+            item for item in candidates if item.artifact_id not in incompatible
+        )
+        if not filtered:
+            raise ModelCompatibilityError(
+                f&#34;All eligible artifacts for {self.manifest_id!r} were already &#34;
+                f&#34;rejected by torch {self._runtime_version()} on &#34;
+                f&#34;{normalize_device(self.device)}.&#34;
+            )
+        self._resolved_candidates = filtered
+        self._last_candidates = [item.filename for item in filtered]
+        return filtered
+
+    def _target_for(self, descriptor: ArtifactDescriptor) -&gt; Path:
+        return descriptor.cache_path(self.path_local)
+
+    def _download_descriptor(
+        self, descriptor: ArtifactDescriptor, *, force_download: bool = False
+    ) -&gt; str:
+        target = self._target_for(descriptor)
+        _ensure_directory(target.parent)
+        with _DirectoryLock(target.parent / &#34;.facetorch-download.lock&#34;):
+            if not force_download:
+                existing = self._verified_existing(descriptor, target)
+                if existing is not None:
+                    self._active_filename = descriptor.filename
+                    return existing
+            if self.offline:
+                raise OfflineCacheError(
+                    f&#34;Offline mode requires verified artifact &#34;
+                    f&#34;{descriptor.artifact_id!r} at {target}.&#34;
+                )
+            with tempfile.TemporaryDirectory(
+                prefix=&#34;.facetorch-download-&#34;, dir=target.parent
+            ) as temporary_dir:
+                downloaded_path = hf_hub_download(
+                    repo_id=descriptor.repo_id,
+                    filename=descriptor.filename,
+                    revision=descriptor.revision,
+                    local_dir=temporary_dir,
+                    force_download=force_download,
+                )
+                candidate = Path(downloaded_path)
+                _atomic_promote(candidate, target, descriptor)
+        self._active_filename = descriptor.filename
+        return self._activate(descriptor, target)
+
+    def _download_one_candidate(
+        self, filename: str, force_download: bool = False
+    ) -&gt; str:
+        &#34;&#34;&#34;Download one authenticated candidate; retained for targeted callers.&#34;&#34;&#34;
+        candidates = self._resolved_candidates or self._resolve_candidates()
+        try:
+            descriptor = next(item for item in candidates if item.filename == filename)
+        except StopIteration as exc:
+            raise ConfigurationError(
+                f&#34;Filename {filename!r} is not an eligible authenticated candidate.&#34;
+            ) from exc
+        return self._download_descriptor(descriptor, force_download=force_download)
+
+    def _build_candidate_filenames(self) -&gt; List[str]:
+        &#34;&#34;&#34;Return only manifest-eligible candidates; never synthesize filenames.&#34;&#34;&#34;
+        return [item.filename for item in self._resolve_candidates()]
+
+    def run(self, force_download: bool = False) -&gt; str:
+        candidates = self._resolve_candidates()
+        self._candidate_index = 0
+        return self._download_descriptor(
+            candidates[0], force_download=force_download
+        )
+
+    def try_next(self, force_download: bool = False) -&gt; bool:
+        &#34;&#34;&#34;Select one next manifest candidate after a persisted load rejection.&#34;&#34;&#34;
+        candidates = self._resolve_candidates()
+        if self.active_descriptor is None:
+            next_index = 0
+        else:
+            try:
+                current = next(
+                    index
+                    for index, item in enumerate(candidates)
+                    if item.artifact_id == self.active_descriptor.artifact_id
+                )
+                next_index = current + 1
+            except StopIteration:
+                next_index = 0
+        if next_index &gt;= len(candidates):
+            return False
+        self._candidate_index = next_index
+        self._download_descriptor(
+            candidates[next_index], force_download=force_download
+        )
+        return True</code></pre>
 </details>
-<div class="desc"><p>Downloads a file from HuggingFace Hub.</p>
-<p>This method:
-1. Creates the necessary directory structure
-2. Resolves the best artifact filename for current torch version
-3. Downloads from HuggingFace Hub with fallback candidates
-4. Ensures the file is saved with the correct name at the specified path</p>
-<p>If the download fails, an informative error message is printed.</p></div>
+<div class="desc"><p>Resolve and authenticate one immutable Hugging Face model artifact.</p>
+<p>Base class for downloaders.</p>
+<p>All downloaders should subclass it.
+All subclass should overwrite:</p>
+<ul>
+<li>Methods:<code>run</code>, supporting to run the download functionality.</li>
+</ul>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>file_id</code></strong> :&ensp;<code>str</code></dt>
+<dd>ID of the hosted file (e.g. Google Drive File ID).</dd>
+<dt><strong><code>path_local</code></strong> :&ensp;<code>str</code></dt>
+<dd>The file is downloaded to this local path.</dd>
+</dl></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>facetorch.downloader._VerifiedDownloader</li>
+<li><a title="facetorch.base.BaseDownloader" href="base.html#facetorch.base.BaseDownloader">BaseDownloader</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="facetorch.downloader.DownloaderHuggingFace.mark_incompatible"><code class="name flex">
+<span>def <span class="ident">mark_incompatible</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def mark_incompatible(self) -&gt; None:
+    &#34;&#34;&#34;Persist a runtime/schema rejection without executing the artifact again.&#34;&#34;&#34;
+    if self.active_descriptor is None or self.manifest_id is None:
+        return
+    path = self._incompatibility_path
+    _ensure_directory(path.parent)
+    with _DirectoryLock(path.parent / &#34;.facetorch-sidecar.lock&#34;):
+        raw: Mapping[str, Any] = {}
+        if path.is_file():
+            try:
+                loaded = json.loads(path.read_text(encoding=&#34;utf-8&#34;))
+                if isinstance(loaded, dict):
+                    raw = loaded
+            except (OSError, json.JSONDecodeError):
+                _quarantine(path, &#34;invalid incompatibility sidecar&#34;)
+        updated = dict(raw)
+        values = set(updated.get(self._incompatibility_key(), []))
+        values.add(self.active_descriptor.artifact_id)
+        updated[self._incompatibility_key()] = sorted(values)
+        temporary = path.with_name(f&#34;.{path.name}.{uuid4().hex}.tmp&#34;)
+        temporary.write_text(
+            json.dumps(updated, indent=2, sort_keys=True) + &#34;\n&#34;,
+            encoding=&#34;utf-8&#34;,
+        )
+        os.replace(temporary, path)</code></pre>
+</details>
+<div class="desc"><p>Persist a runtime/schema rejection without executing the artifact again.</p></div>
 </dd>
 <dt id="facetorch.downloader.DownloaderHuggingFace.try_next"><code class="name flex">
 <span>def <span class="ident">try_next</span></span>(<span>self, force_download: bool = False) ‑> bool</span>
@@ -437,16 +477,39 @@ def run(self, force_download: bool = False):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def try_next(self, force_download: bool = False) -&gt; bool:
-    &#34;&#34;&#34;Try downloading the next candidate filename (used after load mismatch).&#34;&#34;&#34;
-    return self._download_from_candidates(
-        start_index=self._active_candidate_index + 1,
-        force_download=force_download,
-        raise_on_failure=False,
-    )</code></pre>
+    &#34;&#34;&#34;Select one next manifest candidate after a persisted load rejection.&#34;&#34;&#34;
+    candidates = self._resolve_candidates()
+    if self.active_descriptor is None:
+        next_index = 0
+    else:
+        try:
+            current = next(
+                index
+                for index, item in enumerate(candidates)
+                if item.artifact_id == self.active_descriptor.artifact_id
+            )
+            next_index = current + 1
+        except StopIteration:
+            next_index = 0
+    if next_index &gt;= len(candidates):
+        return False
+    self._candidate_index = next_index
+    self._download_descriptor(
+        candidates[next_index], force_download=force_download
+    )
+    return True</code></pre>
 </details>
-<div class="desc"><p>Try downloading the next candidate filename (used after load mismatch).</p></div>
+<div class="desc"><p>Select one next manifest candidate after a persisted load rejection.</p></div>
 </dd>
 </dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="facetorch.base.BaseDownloader" href="base.html#facetorch.base.BaseDownloader">BaseDownloader</a></b></code>:
+<ul class="hlist">
+<li><code><a title="facetorch.base.BaseDownloader.run" href="base.html#facetorch.base.BaseDownloader.run">run</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
 </dl>
 </section>
@@ -511,14 +574,11 @@ setTimeout(() => input.focus(), 100);
 <ul>
 <li>
 <h4><code><a title="facetorch.downloader.DownloaderGDrive" href="#facetorch.downloader.DownloaderGDrive">DownloaderGDrive</a></code></h4>
-<ul class="">
-<li><code><a title="facetorch.downloader.DownloaderGDrive.run" href="#facetorch.downloader.DownloaderGDrive.run">run</a></code></li>
-</ul>
 </li>
 <li>
 <h4><code><a title="facetorch.downloader.DownloaderHuggingFace" href="#facetorch.downloader.DownloaderHuggingFace">DownloaderHuggingFace</a></code></h4>
 <ul class="">
-<li><code><a title="facetorch.downloader.DownloaderHuggingFace.run" href="#facetorch.downloader.DownloaderHuggingFace.run">run</a></code></li>
+<li><code><a title="facetorch.downloader.DownloaderHuggingFace.mark_incompatible" href="#facetorch.downloader.DownloaderHuggingFace.mark_incompatible">mark_incompatible</a></code></li>
 <li><code><a title="facetorch.downloader.DownloaderHuggingFace.try_next" href="#facetorch.downloader.DownloaderHuggingFace.try_next">try_next</a></code></li>
 </ul>
 </li>

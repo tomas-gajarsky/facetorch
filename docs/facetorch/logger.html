@@ -63,8 +63,9 @@ el.replaceWith(d);
             del log_record[&#34;taskName&#34;]</code></pre>
 </details>
 <div class="desc"><p>JSON formatter using the standard library's <a href="https://docs.python.org/3/library/json.html"><code>json</code></a> for encoding</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>args</code></strong></dt>
 <dd>see [BaseJsonFormatter][pythonjsonlogger.core.BaseJsonFormatter]</dd>
 <dt><strong><code>json_default</code></strong></dt>
@@ -105,8 +106,9 @@ that will be used to serialize the log record.</dd>
 </details>
 <div class="desc"><p>Extract fields from a LogRecord for logging</p>
 <p>This method can be overridden to implement custom logic for adding fields.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>log_data</code></strong></dt>
 <dd>data that will be logged</dd>
 <dt><strong><code>record</code></strong></dt>
@@ -121,7 +123,7 @@ that will be used to serialize the log record.</dd>
 </dd>
 <dt id="facetorch.logger.LoggerJsonFile"><code class="flex name class">
 <span>class <span class="ident">LoggerJsonFile</span></span>
-<span>(</span><span>name: str = 'facetorch',<br>level: int = 50,<br>path_file: str | None = None,<br>json_format: str = '%(asctime)s %(levelname)s %(message)s')</span>
+<span>(</span><span>name: str = 'facetorch',<br>level: int = 50,<br>path_file: str | None = None,<br>json_format: str = '%(asctime)s %(levelname)s %(message)s',<br>max_bytes: int = 10485760,<br>backup_count: int = 3)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -135,6 +137,8 @@ that will be used to serialize the log record.</dd>
         level: int = logging.CRITICAL,
         path_file: Optional[str] = None,
         json_format: str = &#34;%(asctime)s %(levelname)s %(message)s&#34;,
+        max_bytes: int = 10 * 1024 * 1024,
+        backup_count: int = 3,
     ):
         &#34;&#34;&#34;Logger in json format that writes to a file and console.
 
@@ -143,6 +147,8 @@ that will be used to serialize the log record.</dd>
             level (str): Level of the logger.
             path_file (str): Path to the log file.
             json_format (str): Format of the log record.
+            max_bytes (int): Rotate file logs after this many bytes.
+            backup_count (int): Number of rotated log files to retain.
 
         Attributes:
             logger (logging.Logger): Logger object.
@@ -152,32 +158,78 @@ that will be used to serialize the log record.</dd>
         self.level = level
         self.path_file = path_file
         self.json_format = json_format
+        if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or max_bytes &lt; 1:
+            raise ConfigurationError(&#34;max_bytes must be a positive integer.&#34;)
+        if (
+            isinstance(backup_count, bool)
+            or not isinstance(backup_count, int)
+            or backup_count &lt; 1
+        ):
+            raise ConfigurationError(&#34;backup_count must be a positive integer.&#34;)
+        self.max_bytes = max_bytes
+        self.backup_count = backup_count
 
         self.logger = logging.getLogger(self.name)
         self.configure()
 
     def configure(self):
-        &#34;&#34;&#34;Configures the logger.&#34;&#34;&#34;
+        &#34;&#34;&#34;Configure JSON console/file handlers idempotently.&#34;&#34;&#34;
         if self.logger.level == 0 or self.level &lt; self.logger.level:
             self.logger.setLevel(self.level)
 
-        if len(self.logger.handlers) == 0:
+        formatter = CustomJsonFormatter(fmt=self.json_format)
+        stream_handlers = [
+            handler
+            for handler in self.logger.handlers
+            if getattr(handler, &#34;_facetorch_stream_handler&#34;, False)
+        ]
+        if not stream_handlers:
             json_handler = logging.StreamHandler()
-            formatter = CustomJsonFormatter(fmt=self.json_format)
-            json_handler.setFormatter(formatter)
+            json_handler._facetorch_stream_handler = True
             self.logger.addHandler(json_handler)
+            stream_handlers = [json_handler]
+        for handler in stream_handlers:
+            handler.setLevel(self.level)
+            handler.setFormatter(formatter)
 
-            if self.path_file is not None:
-                os.makedirs(os.path.dirname(self.path_file), exist_ok=True)
-                path_file_handler = logging.FileHandler(self.path_file, mode=&#34;w&#34;)
+        if self.path_file is not None:
+            normalized_path = os.path.abspath(os.fspath(self.path_file))
+            parent = os.path.dirname(normalized_path)
+            if parent:
+                try:
+                    os.makedirs(parent, exist_ok=True)
+                except OSError as exc:
+                    raise ConfigurationError(
+                        f&#34;Cannot create log directory {parent!r}. Choose a writable &#34;
+                        &#34;path_file or leave file logging disabled.&#34;
+                    ) from exc
+            file_handlers = [
+                handler
+                for handler in self.logger.handlers
+                if isinstance(handler, logging.FileHandler)
+                and os.path.abspath(handler.baseFilename) == normalized_path
+            ]
+            if not file_handlers:
+                path_file_handler = RotatingFileHandler(
+                    normalized_path,
+                    mode=&#34;a&#34;,
+                    maxBytes=self.max_bytes,
+                    backupCount=self.backup_count,
+                )
                 path_file_handler.setLevel(self.level)
+                path_file_handler.setFormatter(formatter)
                 self.logger.addHandler(path_file_handler)
+            else:
+                for handler in file_handlers:
+                    handler.setLevel(self.level)
+                    handler.setFormatter(formatter)
 
         self.logger.propagate = False</code></pre>
 </details>
 <div class="desc"><p>Logger in json format that writes to a file and console.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
 <dd>Name of the logger.</dd>
 <dt><strong><code>level</code></strong> :&ensp;<code>str</code></dt>
@@ -186,9 +238,12 @@ that will be used to serialize the log record.</dd>
 <dd>Path to the log file.</dd>
 <dt><strong><code>json_format</code></strong> :&ensp;<code>str</code></dt>
 <dd>Format of the log record.</dd>
-</dl>
-<h2 id="attributes">Attributes</h2>
-<dl>
+<dt><strong><code>max_bytes</code></strong> :&ensp;<code>int</code></dt>
+<dd>Rotate file logs after this many bytes.</dd>
+<dt><strong><code>backup_count</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number of rotated log files to retain.</dd>
+<dt>Attributes</dt>
+<dt>-----=</dt>
 <dt><strong><code>logger</code></strong> :&ensp;<code>logging.Logger</code></dt>
 <dd>Logger object.</dd>
 </dl></div>
@@ -203,25 +258,60 @@ that will be used to serialize the log record.</dd>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def configure(self):
-    &#34;&#34;&#34;Configures the logger.&#34;&#34;&#34;
+    &#34;&#34;&#34;Configure JSON console/file handlers idempotently.&#34;&#34;&#34;
     if self.logger.level == 0 or self.level &lt; self.logger.level:
         self.logger.setLevel(self.level)
 
-    if len(self.logger.handlers) == 0:
+    formatter = CustomJsonFormatter(fmt=self.json_format)
+    stream_handlers = [
+        handler
+        for handler in self.logger.handlers
+        if getattr(handler, &#34;_facetorch_stream_handler&#34;, False)
+    ]
+    if not stream_handlers:
         json_handler = logging.StreamHandler()
-        formatter = CustomJsonFormatter(fmt=self.json_format)
-        json_handler.setFormatter(formatter)
+        json_handler._facetorch_stream_handler = True
         self.logger.addHandler(json_handler)
+        stream_handlers = [json_handler]
+    for handler in stream_handlers:
+        handler.setLevel(self.level)
+        handler.setFormatter(formatter)
 
-        if self.path_file is not None:
-            os.makedirs(os.path.dirname(self.path_file), exist_ok=True)
-            path_file_handler = logging.FileHandler(self.path_file, mode=&#34;w&#34;)
+    if self.path_file is not None:
+        normalized_path = os.path.abspath(os.fspath(self.path_file))
+        parent = os.path.dirname(normalized_path)
+        if parent:
+            try:
+                os.makedirs(parent, exist_ok=True)
+            except OSError as exc:
+                raise ConfigurationError(
+                    f&#34;Cannot create log directory {parent!r}. Choose a writable &#34;
+                    &#34;path_file or leave file logging disabled.&#34;
+                ) from exc
+        file_handlers = [
+            handler
+            for handler in self.logger.handlers
+            if isinstance(handler, logging.FileHandler)
+            and os.path.abspath(handler.baseFilename) == normalized_path
+        ]
+        if not file_handlers:
+            path_file_handler = RotatingFileHandler(
+                normalized_path,
+                mode=&#34;a&#34;,
+                maxBytes=self.max_bytes,
+                backupCount=self.backup_count,
+            )
             path_file_handler.setLevel(self.level)
+            path_file_handler.setFormatter(formatter)
             self.logger.addHandler(path_file_handler)
+        else:
+            for handler in file_handlers:
+                handler.setLevel(self.level)
+                handler.setFormatter(formatter)
 
     self.logger.propagate = False</code></pre>
 </details>
-<div class="desc"><p>Configures the logger.</p></div>
+<div class="desc"><p>Configure JSON console/file handlers idempotently.</p></div>
 </dd>
 </dl>
 </dd>

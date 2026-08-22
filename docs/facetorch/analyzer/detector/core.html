@@ -48,7 +48,7 @@ el.replaceWith(d);
 <dl>
 <dt id="facetorch.analyzer.detector.core.FaceDetector"><code class="flex name class">
 <span>class <span class="ident">FaceDetector</span></span>
-<span>(</span><span>downloader: <a title="facetorch.base.BaseDownloader" href="../../base.html#facetorch.base.BaseDownloader">BaseDownloader</a>,<br>device: torch.device,<br>preprocessor: <a title="facetorch.analyzer.detector.pre.BaseDetPreProcessor" href="pre.html#facetorch.analyzer.detector.pre.BaseDetPreProcessor">BaseDetPreProcessor</a>,<br>postprocessor: <a title="facetorch.analyzer.detector.post.BaseDetPostProcessor" href="post.html#facetorch.analyzer.detector.post.BaseDetPostProcessor">BaseDetPostProcessor</a>,<br>**kwargs)</span>
+<span>(</span><span>downloader: <a title="facetorch.base.BaseDownloader" href="../../base.html#facetorch.base.BaseDownloader">BaseDownloader</a>,<br>device: torch.device,<br>preprocessor: <a title="facetorch.analyzer.detector.pre.BaseDetPreProcessor" href="pre.html#facetorch.analyzer.detector.pre.BaseDetPreProcessor">BaseDetPreProcessor</a>,<br>postprocessor: <a title="facetorch.analyzer.detector.post.BaseDetPostProcessor" href="post.html#facetorch.analyzer.detector.post.BaseDetPostProcessor">BaseDetPostProcessor</a>,<br>native_model_class: str | None = None,<br>compile_model: bool = False,<br>compile_options: dict | None = None)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -65,7 +65,9 @@ el.replaceWith(d);
         device: torch.device,
         preprocessor: BaseDetPreProcessor,
         postprocessor: BaseDetPostProcessor,
-        **kwargs
+        native_model_class: Optional[str] = None,
+        compile_model: bool = False,
+        compile_options: Optional[dict] = None,
     ):
         &#34;&#34;&#34;FaceDetector is a wrapper around a neural network model that is trained to detect faces.
 
@@ -74,9 +76,18 @@ el.replaceWith(d);
             device (torch.device): Torch device cpu or cuda for the model.
             preprocessor (BaseDetPreProcessor): Preprocessor that runs before the model.
             postprocessor (BaseDetPostProcessor): Postprocessor that runs after the model.
+            native_model_class (Optional[str]): Fully qualified native model class.
+            compile_model (bool): If True, compile the loaded model. Default: False.
+            compile_options (Optional[dict]): Keyword arguments forwarded to
+                ``torch.compile``. Default: None.
         &#34;&#34;&#34;
-        self.__dict__.update(kwargs)
-        super().__init__(downloader, device)
+        super().__init__(
+            downloader,
+            device,
+            native_model_class=native_model_class,
+            compile_model=compile_model,
+            compile_options=compile_options,
+        )
 
         self.preprocessor = preprocessor
         self.postprocessor = postprocessor
@@ -91,30 +102,82 @@ el.replaceWith(d);
         Returns:
             ImageData: Image data object with Detection tensors and detected Face objects.
         &#34;&#34;&#34;
-        img_h, img_w = data.tensor.shape[-2], data.tensor.shape[-1]
+        raw_tensor = data.tensor.clone()
+        img_h, img_w = raw_tensor.shape[-2:]
         data = self.preprocessor.run(data)
         logits = self.inference(data.tensor)
         data = self.postprocessor.run(data, logits)
 
-        if data.tensor.shape[-2] != img_h or data.tensor.shape[-1] != img_w:
-            data.tensor = data.tensor[:, :, :img_h, :img_w]
-            data.set_dims()
+        data.tensor = raw_tensor
+        data.set_dims()
 
-            if hasattr(data.det, &#34;dets&#34;) and data.det.dets.numel() &gt; 0:
-                data.det.dets[:, 0].clamp_(0, img_w)
-                data.det.dets[:, 2].clamp_(0, img_w)
-                data.det.dets[:, 1].clamp_(0, img_h)
-                data.det.dets[:, 3].clamp_(0, img_h)
-
+        extract_faces = getattr(self.postprocessor, &#34;extract_faces&#34;, None)
+        if callable(extract_faces):
             data.faces = []
-            if hasattr(self.postprocessor, &#34;_extract_faces&#34;):
-                data = self.postprocessor._extract_faces(data)
+            data = extract_faces(data)
+        else:
+            data.faces = self._restore_custom_faces(data, img_w, img_h)
+        self._clamp_detection_geometry(data, img_w, img_h)
 
-        return data</code></pre>
+        return data
+
+    @staticmethod
+    def _clamp_detection_geometry(
+        data: ImageData, image_width: int, image_height: int
+    ) -&gt; None:
+        &#34;&#34;&#34;Keep all public detector geometry in original-image coordinates.&#34;&#34;&#34;
+        if data.det.dets.numel() &gt; 0 and data.det.dets.ndim == 2:
+            data.det.dets[:, 0].clamp_(0, image_width)
+            data.det.dets[:, 2].clamp_(0, image_width)
+            data.det.dets[:, 1].clamp_(0, image_height)
+            data.det.dets[:, 3].clamp_(0, image_height)
+        if data.det.boxes.numel() &gt; 0 and data.det.boxes.ndim == 2:
+            data.det.boxes[:, 0].clamp_(0, image_width)
+            data.det.boxes[:, 2].clamp_(0, image_width)
+            data.det.boxes[:, 1].clamp_(0, image_height)
+            data.det.boxes[:, 3].clamp_(0, image_height)
+        if data.det.landmarks.numel() &gt; 0 and data.det.landmarks.ndim == 2:
+            data.det.landmarks[:, 0::2].clamp_(0, image_width)
+            data.det.landmarks[:, 1::2].clamp_(0, image_height)
+
+    @staticmethod
+    def _restore_custom_faces(
+        data: ImageData, image_width: int, image_height: int
+    ) -&gt; list:
+        &#34;&#34;&#34;Validate and recrop faces produced directly by a custom postprocessor.&#34;&#34;&#34;
+        restored = []
+        image_area = image_width * image_height
+        for face in data.faces:
+            loc = Location(
+                x1=face.loc.x1,
+                y1=face.loc.y1,
+                x2=face.loc.x2,
+                y2=face.loc.y2,
+            )
+            loc.clamp(image_width, image_height)
+            face_tensor = data.tensor[0, :, loc.y1 : loc.y2, loc.x1 : loc.x2]
+            if face_tensor.numel() == 0:
+                continue
+            dims = Dimensions(
+                height=int(face_tensor.shape[-2]),
+                width=int(face_tensor.shape[-1]),
+            )
+            restored.append(
+                Face(
+                    indx=len(restored),
+                    loc=loc,
+                    dims=dims,
+                    tensor=face_tensor,
+                    ratio=(dims.height * dims.width) / image_area,
+                    preds=face.preds,
+                )
+            )
+        return restored</code></pre>
 </details>
 <div class="desc"><p>FaceDetector is a wrapper around a neural network model that is trained to detect faces.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>downloader</code></strong> :&ensp;<code>BaseDownloader</code></dt>
 <dd>Downloader that downloads the model.</dd>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
@@ -123,6 +186,13 @@ el.replaceWith(d);
 <dd>Preprocessor that runs before the model.</dd>
 <dt><strong><code>postprocessor</code></strong> :&ensp;<code>BaseDetPostProcessor</code></dt>
 <dd>Postprocessor that runs after the model.</dd>
+<dt><strong><code>native_model_class</code></strong> :&ensp;<code>Optional[str]</code></dt>
+<dd>Fully qualified native model class.</dd>
+<dt><strong><code>compile_model</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If True, compile the loaded model. Default: False.</dd>
+<dt><strong><code>compile_options</code></strong> :&ensp;<code>Optional[dict]</code></dt>
+<dd>Keyword arguments forwarded to
+<code>torch.compile</code>. Default: None.</dd>
 </dl></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -148,35 +218,33 @@ def run(self, data: ImageData) -&gt; ImageData:
     Returns:
         ImageData: Image data object with Detection tensors and detected Face objects.
     &#34;&#34;&#34;
-    img_h, img_w = data.tensor.shape[-2], data.tensor.shape[-1]
+    raw_tensor = data.tensor.clone()
+    img_h, img_w = raw_tensor.shape[-2:]
     data = self.preprocessor.run(data)
     logits = self.inference(data.tensor)
     data = self.postprocessor.run(data, logits)
 
-    if data.tensor.shape[-2] != img_h or data.tensor.shape[-1] != img_w:
-        data.tensor = data.tensor[:, :, :img_h, :img_w]
-        data.set_dims()
+    data.tensor = raw_tensor
+    data.set_dims()
 
-        if hasattr(data.det, &#34;dets&#34;) and data.det.dets.numel() &gt; 0:
-            data.det.dets[:, 0].clamp_(0, img_w)
-            data.det.dets[:, 2].clamp_(0, img_w)
-            data.det.dets[:, 1].clamp_(0, img_h)
-            data.det.dets[:, 3].clamp_(0, img_h)
-
+    extract_faces = getattr(self.postprocessor, &#34;extract_faces&#34;, None)
+    if callable(extract_faces):
         data.faces = []
-        if hasattr(self.postprocessor, &#34;_extract_faces&#34;):
-            data = self.postprocessor._extract_faces(data)
+        data = extract_faces(data)
+    else:
+        data.faces = self._restore_custom_faces(data, img_w, img_h)
+    self._clamp_detection_geometry(data, img_w, img_h)
 
     return data</code></pre>
 </details>
 <div class="desc"><p>Detect all faces in the image.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>ImageData</code></strong></dt>
 <dd>ImageData object containing the image tensor with values between 0 - 255 and shape (batch_size, channels, height, width).</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>ImageData</code></dt>
 <dd>Image data object with Detection tensors and detected Face objects.</dd>
 </dl></div>

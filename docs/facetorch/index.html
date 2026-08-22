@@ -44,9 +44,21 @@ el.replaceWith(d);
 <dd>
 <div class="desc"></div>
 </dd>
+<dt><code class="name"><a title="facetorch.artifacts" href="artifacts.html">facetorch.artifacts</a></code></dt>
+<dd>
+<div class="desc"><p>Immutable model-manifest resolution and cache-integrity primitives.</p></div>
+</dd>
 <dt><code class="name"><a title="facetorch.base" href="base.html">facetorch.base</a></code></dt>
 <dd>
 <div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="facetorch.configs" href="configs/index.html">facetorch.configs</a></code></dt>
+<dd>
+<div class="desc"><p>Packaged Hydra configuration resources for :func:<code><a title="facetorch.load_config" href="#facetorch.load_config">load_config()</a></code>.</p></div>
+</dd>
+<dt><code class="name"><a title="facetorch.configuration" href="configuration.html">facetorch.configuration</a></code></dt>
+<dd>
+<div class="desc"><p>Supported resource-backed and external Hydra configuration loaders.</p></div>
 </dd>
 <dt><code class="name"><a title="facetorch.datastruct" href="datastruct.html">facetorch.datastruct</a></code></dt>
 <dd>
@@ -54,11 +66,31 @@ el.replaceWith(d);
 </dd>
 <dt><code class="name"><a title="facetorch.downloader" href="downloader.html">facetorch.downloader</a></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Authenticated, manifest-aware model artifact downloaders.</p></div>
+</dd>
+<dt><code class="name"><a title="facetorch.exceptions" href="exceptions.html">facetorch.exceptions</a></code></dt>
+<dd>
+<div class="desc"><p>Public facetorch exception hierarchy.</p></div>
+</dd>
+<dt><code class="name"><a title="facetorch.input" href="input.html">facetorch.input</a></code></dt>
+<dd>
+<div class="desc"><p>Canonical public image-input contract.</p></div>
 </dd>
 <dt><code class="name"><a title="facetorch.logger" href="logger.html">facetorch.logger</a></code></dt>
 <dd>
 <div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="facetorch.model_cache" href="model_cache.html">facetorch.model_cache</a></code></dt>
+<dd>
+<div class="desc"><p>Public planning, prefetch, inspection, and cache-recovery APIs.</p></div>
+</dd>
+<dt><code class="name"><a title="facetorch.models" href="models/index.html">facetorch.models</a></code></dt>
+<dd>
+<div class="desc"><p>Packaged immutable facetorch model manifest.</p></div>
+</dd>
+<dt><code class="name"><a title="facetorch.paths" href="paths.html">facetorch.paths</a></code></dt>
+<dd>
+<div class="desc"><p>Portable runtime locations used by packaged facetorch configuration.</p></div>
 </dd>
 <dt><code class="name"><a title="facetorch.transforms" href="transforms.html">facetorch.transforms</a></code></dt>
 <dd>
@@ -73,10 +105,877 @@ el.replaceWith(d);
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="facetorch.load_config"><code class="name flex">
+<span>def <span class="ident">load_config</span></span>(<span>profile: str | None = 'cpu',<br>*,<br>overrides: Sequence[str] | None = None,<br>offline: bool | None = None,<br>allow_legacy_models: bool | None = None) ‑> omegaconf.dictconfig.DictConfig</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_config(
+    profile: Optional[str] = &#34;cpu&#34;,
+    *,
+    overrides: Optional[Sequence[str]] = None,
+    offline: Optional[bool] = None,
+    allow_legacy_models: Optional[bool] = None,
+) -&gt; DictConfig:
+    &#34;&#34;&#34;Compose packaged facetorch defaults independently of the current directory.
+
+    Args:
+        profile: ``&#34;cpu&#34;`` (default), ``&#34;gpu&#34;``, or ``None`` to retain the
+            packaged device value.
+        overrides: Hydra override strings applied after the selected profile.
+        offline: Explicitly disable or allow model network access. ``None`` uses
+            the packaged environment-backed default.
+        allow_legacy_models: Explicit opt-in for eligible verified TorchScript
+            fallback artifacts. ``None`` retains the packaged false default.
+
+    Returns:
+        A fully composed configuration with ``cfg.analyzer`` available.
+    &#34;&#34;&#34;
+    register_path_resolvers()
+    option_overrides = _option_overrides(
+        _normalize_overrides(overrides),
+        offline=offline,
+        allow_legacy_models=allow_legacy_models,
+    )
+    composed_overrides = _profile_overrides(profile, option_overrides)
+    try:
+        with initialize_config_module(
+            config_module=&#34;facetorch.configs&#34;,
+            version_base=None,
+            job_name=&#34;facetorch-load-config&#34;,
+        ):
+            return compose(config_name=&#34;config&#34;, overrides=composed_overrides)
+    except ConfigurationError:
+        raise
+    except Exception as exc:
+        raise ConfigurationError(
+            &#34;Could not compose packaged facetorch configuration.&#34;
+        ) from exc</code></pre>
+</details>
+<div class="desc"><p>Compose packaged facetorch defaults independently of the current directory.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>profile</code></strong></dt>
+<dd><code>"cpu"</code> (default), <code>"gpu"</code>, or <code>None</code> to retain the
+packaged device value.</dd>
+<dt><strong><code>overrides</code></strong></dt>
+<dd>Hydra override strings applied after the selected profile.</dd>
+<dt><strong><code>offline</code></strong></dt>
+<dd>Explicitly disable or allow model network access. <code>None</code> uses
+the packaged environment-backed default.</dd>
+<dt><strong><code>allow_legacy_models</code></strong></dt>
+<dd>Explicit opt-in for eligible verified TorchScript
+fallback artifacts. <code>None</code> retains the packaged false default.</dd>
+</dl>
+<p>Returns
+-----=
+A fully composed configuration with <code>cfg.analyzer</code> available.</p></div>
+</dd>
+<dt id="facetorch.load_config_from_path"><code class="name flex">
+<span>def <span class="ident">load_config_from_path</span></span>(<span>path: str | os.PathLike,<br>*,<br>profile: str | None = None,<br>overrides: Sequence[str] | None = None,<br>offline: bool | None = None,<br>allow_legacy_models: bool | None = None) ‑> omegaconf.dictconfig.DictConfig</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_config_from_path(
+    path: ConfigPath,
+    *,
+    profile: Optional[str] = None,
+    overrides: Optional[Sequence[str]] = None,
+    offline: Optional[bool] = None,
+    allow_legacy_models: Optional[bool] = None,
+) -&gt; DictConfig:
+    &#34;&#34;&#34;Compose an advanced external Hydra YAML tree from an explicit file path.
+
+    Relative paths are resolved against the caller&#39;s current directory. The file&#39;s
+    parent becomes Hydra&#39;s configuration directory, so its ``defaults`` list and
+    sibling configuration groups are composed normally.
+    &#34;&#34;&#34;
+    register_path_resolvers()
+    config_file = Path(path).expanduser().resolve()
+    if config_file.suffix.lower() not in {&#34;.yaml&#34;, &#34;.yml&#34;}:
+        raise ConfigurationError(
+            &#34;External configuration must be a .yaml or .yml file.&#34;
+        )
+    if not config_file.is_file():
+        raise ConfigurationError(
+            f&#34;External configuration file does not exist: {config_file}.&#34;
+        )
+
+    option_overrides = _option_overrides(
+        _normalize_overrides(overrides),
+        offline=offline,
+        allow_legacy_models=allow_legacy_models,
+    )
+    composed_overrides = _profile_overrides(profile, option_overrides)
+    try:
+        with initialize_config_dir(
+            config_dir=os.fspath(config_file.parent),
+            version_base=None,
+            job_name=&#34;facetorch-load-external-config&#34;,
+        ):
+            return compose(
+                config_name=config_file.name[: -len(config_file.suffix)],
+                overrides=composed_overrides,
+            )
+    except ConfigurationError:
+        raise
+    except Exception as exc:
+        raise ConfigurationError(
+            f&#34;Could not compose external configuration: {config_file}.&#34;
+        ) from exc</code></pre>
+</details>
+<div class="desc"><p>Compose an advanced external Hydra YAML tree from an explicit file path.</p>
+<p>Relative paths are resolved against the caller's current directory. The file's
+parent becomes Hydra's configuration directory, so its <code>defaults</code> list and
+sibling configuration groups are composed normally.</p></div>
+</dd>
+<dt id="facetorch.get_cache_dir"><code class="name flex">
+<span>def <span class="ident">get_cache_dir</span></span>(<span>) ‑> pathlib.Path</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_cache_dir() -&gt; Path:
+    &#34;&#34;&#34;Return the configured OS-appropriate facetorch cache root without creating it.&#34;&#34;&#34;
+    configured = os.environ.get(CACHE_DIR_ENV)
+    if configured:
+        return _normalized_path(configured)
+    return _default_cache_dir()</code></pre>
+</details>
+<div class="desc"><p>Return the configured OS-appropriate facetorch cache root without creating it.</p></div>
+</dd>
+<dt id="facetorch.get_metadata_dir"><code class="name flex">
+<span>def <span class="ident">get_metadata_dir</span></span>(<span>) ‑> pathlib.Path</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_metadata_dir() -&gt; Path:
+    &#34;&#34;&#34;Return the versioned generated/model metadata location without creating it.&#34;&#34;&#34;
+    configured = os.environ.get(METADATA_DIR_ENV)
+    if configured:
+        return _normalized_path(configured)
+    return get_cache_dir() / &#34;metadata&#34; / &#34;v1&#34;</code></pre>
+</details>
+<div class="desc"><p>Return the versioned generated/model metadata location without creating it.</p></div>
+</dd>
+<dt id="facetorch.get_model_dir"><code class="name flex">
+<span>def <span class="ident">get_model_dir</span></span>(<span>) ‑> pathlib.Path</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_model_dir() -&gt; Path:
+    &#34;&#34;&#34;Return the versioned model cache location without creating it.&#34;&#34;&#34;
+    configured = os.environ.get(MODEL_DIR_ENV)
+    if configured:
+        return _normalized_path(configured)
+    return get_cache_dir() / &#34;models&#34; / &#34;v1&#34;</code></pre>
+</details>
+<div class="desc"><p>Return the versioned model cache location without creating it.</p></div>
+</dd>
+<dt id="facetorch.get_offline_mode"><code class="name flex">
+<span>def <span class="ident">get_offline_mode</span></span>(<span>*, environ: Mapping[str, str] | None = None) ‑> bool</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_offline_mode(*, environ: Optional[Mapping[str, str]] = None) -&gt; bool:
+    &#34;&#34;&#34;Return whether model network access is disabled by the public environment flag.&#34;&#34;&#34;
+    env = os.environ if environ is None else environ
+    raw = str(env.get(OFFLINE_ENV, &#34;&#34;)).strip().lower()
+    if raw in _TRUE_VALUES:
+        return True
+    if raw in _FALSE_VALUES:
+        return False
+    raise ConfigurationError(
+        f&#34;{OFFLINE_ENV} must be one of 1/0, true/false, yes/no, or on/off; &#34;
+        f&#34;got {env.get(OFFLINE_ENV)!r}.&#34;
+    )</code></pre>
+</details>
+<div class="desc"><p>Return whether model network access is disabled by the public environment flag.</p></div>
+</dd>
+<dt id="facetorch.cleanup_quarantined_cache"><code class="name flex">
+<span>def <span class="ident">cleanup_quarantined_cache</span></span>(<span>root: Optional[str | os.PathLike] = None, *, confirm: bool = False) ‑> <a title="facetorch.model_cache.CacheCleanupReport" href="model_cache.html#facetorch.model_cache.CacheCleanupReport">CacheCleanupReport</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cleanup_quarantined_cache(
+    root: Optional[str | os.PathLike] = None,
+    *,
+    confirm: bool = False,
+) -&gt; CacheCleanupReport:
+    &#34;&#34;&#34;Delete only reported quarantine files and only after explicit confirmation.&#34;&#34;&#34;
+    report = inspect_quarantined_cache(root)
+    if not confirm:
+        return report
+    for path in report.paths:
+        path.unlink()
+    return CacheCleanupReport(
+        paths=report.paths,
+        total_bytes=report.total_bytes,
+        deleted=True,
+    )</code></pre>
+</details>
+<div class="desc"><p>Delete only reported quarantine files and only after explicit confirmation.</p></div>
+</dd>
+<dt id="facetorch.inspect_incompatible_cache"><code class="name flex">
+<span>def <span class="ident">inspect_incompatible_cache</span></span>(<span>root: Optional[str | os.PathLike] = None) ‑> <a title="facetorch.model_cache.CacheCleanupReport" href="model_cache.html#facetorch.model_cache.CacheCleanupReport">CacheCleanupReport</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def inspect_incompatible_cache(
+    root: Optional[str | os.PathLike] = None,
+) -&gt; CacheCleanupReport:
+    &#34;&#34;&#34;Report persisted runtime/schema rejections without changing the cache.&#34;&#34;&#34;
+    model_root = get_model_dir().resolve()
+    selected = model_root if root is None else Path(root).expanduser().resolve()
+    if selected != model_root and not selected.is_relative_to(model_root):
+        raise ConfigurationError(
+            &#34;Incompatibility reset is restricted to facetorch&#39;s versioned model &#34;
+            &#34;cache directory.&#34;
+        )
+    paths = (
+        tuple(sorted(selected.rglob(&#34;.incompatible.json&#34;)))
+        if selected.exists()
+        else ()
+    )
+    files = tuple(path for path in paths if path.is_file())
+    return CacheCleanupReport(
+        paths=files,
+        total_bytes=sum(path.stat().st_size for path in files),
+        deleted=False,
+    )</code></pre>
+</details>
+<div class="desc"><p>Report persisted runtime/schema rejections without changing the cache.</p></div>
+</dd>
+<dt id="facetorch.inspect_legacy_cache"><code class="name flex">
+<span>def <span class="ident">inspect_legacy_cache</span></span>(<span>path: str | os.PathLike) ‑> tuple[<a title="facetorch.model_cache.CacheEntryInspection" href="model_cache.html#facetorch.model_cache.CacheEntryInspection">CacheEntryInspection</a>, ...]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def inspect_legacy_cache(path: str | os.PathLike) -&gt; tuple[CacheEntryInspection, ...]:
+    &#34;&#34;&#34;Hash and classify old model files without deserializing or executing them.&#34;&#34;&#34;
+    root = Path(path).expanduser()
+    if not root.exists():
+        raise ConfigurationError(f&#34;Legacy cache path does not exist: {root}.&#34;)
+    candidates = [root] if root.is_file() else sorted(root.rglob(&#34;*&#34;))
+    entries = []
+    for candidate in candidates:
+        if not candidate.is_file() or candidate.suffix.lower() not in {&#34;.pt&#34;, &#34;.pt2&#34;}:
+            continue
+        detected = detect_model_format(candidate)
+        entries.append(
+            CacheEntryInspection(
+                path=candidate,
+                size_bytes=candidate.stat().st_size,
+                sha256=sha256_file(candidate),
+                detected_format=detected,
+                mislabeled=candidate.suffix.lower() == &#34;.pt2&#34;
+                and detected == &#34;torchscript&#34;,
+            )
+        )
+    return tuple(entries)</code></pre>
+</details>
+<div class="desc"><p>Hash and classify old model files without deserializing or executing them.</p></div>
+</dd>
+<dt id="facetorch.inspect_quarantined_cache"><code class="name flex">
+<span>def <span class="ident">inspect_quarantined_cache</span></span>(<span>root: Optional[str | os.PathLike] = None) ‑> <a title="facetorch.model_cache.CacheCleanupReport" href="model_cache.html#facetorch.model_cache.CacheCleanupReport">CacheCleanupReport</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def inspect_quarantined_cache(
+    root: Optional[str | os.PathLike] = None,
+) -&gt; CacheCleanupReport:
+    &#34;&#34;&#34;Report quarantined entries and reclaimable bytes without deleting anything.&#34;&#34;&#34;
+    paths = []
+    for cache_root in _allowed_quarantine_roots(root):
+        if cache_root.exists():
+            paths.extend(
+                path
+                for path in cache_root.rglob(&#34;*.quarantine.*&#34;)
+                if path.is_file()
+            )
+    unique_paths = tuple(sorted(set(paths)))
+    return CacheCleanupReport(
+        paths=unique_paths,
+        total_bytes=sum(path.stat().st_size for path in unique_paths),
+        deleted=False,
+    )</code></pre>
+</details>
+<div class="desc"><p>Report quarantined entries and reclaimable bytes without deleting anything.</p></div>
+</dd>
+<dt id="facetorch.migrate_legacy_artifact"><code class="name flex">
+<span>def <span class="ident">migrate_legacy_artifact</span></span>(<span>source: str | os.PathLike, artifact_id: str, destination: str | os.PathLike) ‑> pathlib.Path</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def migrate_legacy_artifact(
+    source: str | os.PathLike,
+    artifact_id: str,
+    destination: str | os.PathLike,
+) -&gt; Path:
+    &#34;&#34;&#34;Copy one exact manifest match into v1 layout without changing the source.&#34;&#34;&#34;
+    source_path = Path(source).expanduser()
+    destination_path = Path(destination).expanduser()
+    descriptor = get_model_manifest().descriptor(artifact_id)
+    if destination_path.name != descriptor.filename:
+        raise ConfigurationError(
+            f&#34;Migration destination must preserve the authenticated filename &#34;
+            f&#34;{descriptor.filename!r}.&#34;
+        )
+    verify_artifact(source_path, descriptor)
+    if destination_path.exists():
+        try:
+            return verify_artifact(destination_path, descriptor)
+        except ArtifactIntegrityError as exc:
+            raise ArtifactIntegrityError(
+                f&#34;Migration destination already exists and is not the requested &#34;
+                f&#34;artifact: {destination_path}.&#34;
+            ) from exc
+    destination_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: Optional[Path] = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            prefix=f&#34;.{destination_path.name}.&#34;,
+            suffix=&#34;.tmp&#34;,
+            dir=destination_path.parent,
+            delete=False,
+        ) as temporary:
+            temporary_path = Path(temporary.name)
+            with source_path.open(&#34;rb&#34;) as source_file:
+                shutil.copyfileobj(source_file, temporary, length=1024 * 1024)
+            temporary.flush()
+            os.fsync(temporary.fileno())
+        verify_artifact(temporary_path, descriptor)
+        os.replace(temporary_path, destination_path)
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+    return verify_artifact(destination_path, descriptor)</code></pre>
+</details>
+<div class="desc"><p>Copy one exact manifest match into v1 layout without changing the source.</p></div>
+</dd>
+<dt id="facetorch.plan_model_prefetch"><code class="name flex">
+<span>def <span class="ident">plan_model_prefetch</span></span>(<span>profile: str = 'cpu',<br>*,<br>include_predictors: Optional[Iterable[str]] = None,<br>skip_detector: bool = False,<br>offline: Optional[bool] = None,<br>allow_legacy_models: bool = False,<br>overrides: Optional[Sequence[str]] = None) ‑> <a title="facetorch.model_cache.PrefetchPlan" href="model_cache.html#facetorch.model_cache.PrefetchPlan">PrefetchPlan</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plan_model_prefetch(
+    profile: str = &#34;cpu&#34;,
+    *,
+    include_predictors: Optional[Iterable[str]] = None,
+    skip_detector: bool = False,
+    offline: Optional[bool] = None,
+    allow_legacy_models: bool = False,
+    overrides: Optional[Sequence[str]] = None,
+) -&gt; PrefetchPlan:
+    &#34;&#34;&#34;Resolve exact artifacts and costs without creating files or using the network.&#34;&#34;&#34;
+    if not isinstance(skip_detector, bool):
+        raise ConfigurationError(&#34;skip_detector must be a boolean.&#34;)
+    cfg = load_config(
+        profile,
+        overrides=overrides,
+        offline=offline,
+        allow_legacy_models=allow_legacy_models,
+    )
+    predictor_names = _selected_predictors(cfg, include_predictors)
+    selected_configs: list[tuple[str, object]] = []
+    if not skip_detector and &#34;detector&#34; in cfg.analyzer:
+        selected_configs.append((&#34;detector&#34;, cfg.analyzer.detector.downloader))
+    selected_configs.extend(
+        (f&#34;predictor.{name}&#34;, cfg.analyzer.predictor[name].downloader)
+        for name in predictor_names
+    )
+
+    manifest = get_model_manifest()
+    items: list[PrefetchItem] = []
+    for component, downloader in selected_configs:
+        candidates = manifest.candidates(
+            str(downloader.manifest_id),
+            torch_version=str(torch.__version__),
+            device=str(downloader.device),
+            allow_legacy_models=allow_legacy_models,
+        )
+        descriptor = candidates[0]
+        path = descriptor.cache_path(str(downloader.path_local))
+        items.append(
+            PrefetchItem(
+                component=component,
+                artifact_id=descriptor.artifact_id,
+                path=path,
+                format=descriptor.format,
+                size_bytes=descriptor.size_bytes,
+                sha256=descriptor.sha256,
+                cached=_is_verified(path, descriptor),
+            )
+        )
+    if &#34;align&#34; in predictor_names:
+        items.append(_metadata_prefetch_item(cfg))
+    return PrefetchPlan(profile=profile, items=tuple(items))</code></pre>
+</details>
+<div class="desc"><p>Resolve exact artifacts and costs without creating files or using the network.</p></div>
+</dd>
+<dt id="facetorch.prefetch_models"><code class="name flex">
+<span>def <span class="ident">prefetch_models</span></span>(<span>profile: str = 'cpu',<br>*,<br>include_predictors: Optional[Iterable[str]] = None,<br>skip_detector: bool = False,<br>offline: Optional[bool] = None,<br>allow_legacy_models: bool = False,<br>overrides: Optional[Sequence[str]] = None,<br>confirm: bool = False) ‑> <a title="facetorch.model_cache.PrefetchResult" href="model_cache.html#facetorch.model_cache.PrefetchResult">PrefetchResult</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def prefetch_models(
+    profile: str = &#34;cpu&#34;,
+    *,
+    include_predictors: Optional[Iterable[str]] = None,
+    skip_detector: bool = False,
+    offline: Optional[bool] = None,
+    allow_legacy_models: bool = False,
+    overrides: Optional[Sequence[str]] = None,
+    confirm: bool = False,
+) -&gt; PrefetchResult:
+    &#34;&#34;&#34;Download exactly a planned selection after explicit bulk-cost confirmation.&#34;&#34;&#34;
+    requested_predictors = (
+        tuple(include_predictors)
+        if include_predictors is not None
+        and not isinstance(include_predictors, (str, bytes))
+        else include_predictors
+    )
+    plan = plan_model_prefetch(
+        profile,
+        include_predictors=requested_predictors,
+        skip_detector=skip_detector,
+        offline=offline,
+        allow_legacy_models=allow_legacy_models,
+        overrides=overrides,
+    )
+    if plan.download_bytes and len(plan.items) &gt; 1 and not confirm:
+        mib = plan.download_bytes / (1024 * 1024)
+        raise ConfigurationError(
+            f&#34;Prefetch would download approximately {mib:.1f} MiB across &#34;
+            f&#34;{len(plan.items)} artifacts. Review plan_model_prefetch() and pass &#34;
+            &#34;confirm=True to continue.&#34;
+        )
+
+    cfg = load_config(
+        profile,
+        overrides=overrides,
+        offline=offline,
+        allow_legacy_models=allow_legacy_models,
+    )
+    predictor_names = _selected_predictors(cfg, requested_predictors)
+    downloader_configs = []
+    if not skip_detector and &#34;detector&#34; in cfg.analyzer:
+        downloader_configs.append(cfg.analyzer.detector.downloader)
+    downloader_configs.extend(
+        cfg.analyzer.predictor[name].downloader for name in predictor_names
+    )
+    if &#34;align&#34; in predictor_names:
+        downloader_configs.append(
+            cfg.analyzer.utilizer.align.downloader_meta
+        )
+
+    paths = []
+    for downloader_config in downloader_configs:
+        downloader = instantiate(downloader_config)
+        paths.append(Path(downloader.run()))
+    return PrefetchResult(plan=plan, paths=tuple(paths))</code></pre>
+</details>
+<div class="desc"><p>Download exactly a planned selection after explicit bulk-cost confirmation.</p></div>
+</dd>
+<dt id="facetorch.reset_incompatible_cache"><code class="name flex">
+<span>def <span class="ident">reset_incompatible_cache</span></span>(<span>root: Optional[str | os.PathLike] = None, *, confirm: bool = False) ‑> <a title="facetorch.model_cache.CacheCleanupReport" href="model_cache.html#facetorch.model_cache.CacheCleanupReport">CacheCleanupReport</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_incompatible_cache(
+    root: Optional[str | os.PathLike] = None,
+    *,
+    confirm: bool = False,
+) -&gt; CacheCleanupReport:
+    &#34;&#34;&#34;Explicitly clear persisted runtime/schema rejections after remediation.&#34;&#34;&#34;
+    report = inspect_incompatible_cache(root)
+    if not confirm:
+        return report
+    for path in report.paths:
+        path.unlink()
+    return CacheCleanupReport(
+        paths=report.paths,
+        total_bytes=report.total_bytes,
+        deleted=True,
+    )</code></pre>
+</details>
+<div class="desc"><p>Explicitly clear persisted runtime/schema rejections after remediation.</p></div>
+</dd>
+</dl>
 </section>
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
+<dt id="facetorch.AnalysisResult"><code class="flex name class">
+<span>class <span class="ident">AnalysisResult</span></span>
+<span>(</span><span>faces: List[<a title="facetorch.datastruct.Face" href="datastruct.html#facetorch.datastruct.Face">Face</a>] = &lt;factory&gt;,<br>version: str = &lt;factory&gt;,<br>image: torch.Tensor | None = None,<br>tensor: torch.Tensor | None = None,<br>detection: <a title="facetorch.datastruct.Detection" href="datastruct.html#facetorch.datastruct.Detection">Detection</a> | None = None,<br>dimensions: <a title="facetorch.datastruct.Dimensions" href="datastruct.html#facetorch.datastruct.Dimensions">Dimensions</a> = &lt;factory&gt;,<br>path_input: str | None = None,<br>path_output: str | None = None,<br>warnings: List[str] = &lt;factory&gt;)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class AnalysisResult:
+    &#34;&#34;&#34;Stable result for one analyzed source image.
+
+    ``faces``, ``version``, dimensions, paths, and warnings are always available.
+    Tensor-heavy fields are ``None`` unless ``include_tensors=True`` was used.
+    Runtime timing remains diagnostic logging rather than a stable result field.
+    ``img``, ``det``, and ``dims`` remain warning aliases throughout v1.x.
+    &#34;&#34;&#34;
+
+    faces: List[Face] = field(default_factory=list)
+    version: str = field(default_factory=str)
+    image: Optional[torch.Tensor] = None
+    tensor: Optional[torch.Tensor] = None
+    detection: Optional[Detection] = None
+    dimensions: Dimensions = field(default_factory=Dimensions)
+    path_input: Optional[str] = None
+    path_output: Optional[str] = None
+    warnings: List[str] = field(default_factory=list)
+
+    @classmethod
+    def from_image_data(
+        cls, data: ImageData, *, include_tensors: bool
+    ) -&gt; &#34;AnalysisResult&#34;:
+        &#34;&#34;&#34;Create the public result without introducing a second pipeline.&#34;&#34;&#34;
+        return cls(
+            faces=data.faces,
+            version=data.version,
+            image=data.img if include_tensors else None,
+            tensor=data.tensor if include_tensors else None,
+            detection=data.det if include_tensors else None,
+            dimensions=data.dims,
+            path_input=data.path_input,
+            path_output=data.path_output,
+            warnings=list(data.warnings),
+        )
+
+    @property
+    def img(self) -&gt; Optional[torch.Tensor]:
+        &#34;&#34;&#34;Deprecated v0.x alias for :attr:`image`.&#34;&#34;&#34;
+        _warnings.warn(
+            &#34;AnalysisResult.img is deprecated; use AnalysisResult.image.&#34;,
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.image
+
+    @property
+    def det(self) -&gt; Optional[Detection]:
+        &#34;&#34;&#34;Deprecated v0.x alias for :attr:`detection`.&#34;&#34;&#34;
+        _warnings.warn(
+            &#34;AnalysisResult.det is deprecated; use AnalysisResult.detection.&#34;,
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.detection
+
+    @property
+    def dims(self) -&gt; Dimensions:
+        &#34;&#34;&#34;Deprecated v0.x alias for :attr:`dimensions`.&#34;&#34;&#34;
+        _warnings.warn(
+            &#34;AnalysisResult.dims is deprecated; use AnalysisResult.dimensions.&#34;,
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.dimensions</code></pre>
+</details>
+<div class="desc"><p>Stable result for one analyzed source image.</p>
+<p><code>faces</code>, <code>version</code>, dimensions, paths, and warnings are always available.
+Tensor-heavy fields are <code>None</code> unless <code>include_tensors=True</code> was used.
+Runtime timing remains diagnostic logging rather than a stable result field.
+<code>img</code>, <code>det</code>, and <code>dims</code> remain warning aliases throughout v1.x.</p></div>
+<h3>Static methods</h3>
+<dl>
+<dt id="facetorch.AnalysisResult.from_image_data"><code class="name flex">
+<span>def <span class="ident">from_image_data</span></span>(<span>data: <a title="facetorch.datastruct.ImageData" href="datastruct.html#facetorch.datastruct.ImageData">ImageData</a>,<br>*,<br>include_tensors: bool) ‑> <a title="facetorch.datastruct.AnalysisResult" href="datastruct.html#facetorch.datastruct.AnalysisResult">AnalysisResult</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create the public result without introducing a second pipeline.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="facetorch.AnalysisResult.faces"><code class="name">var <span class="ident">faces</span> : List[<a title="facetorch.datastruct.Face" href="datastruct.html#facetorch.datastruct.Face">Face</a>]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.AnalysisResult.version"><code class="name">var <span class="ident">version</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.AnalysisResult.dimensions"><code class="name">var <span class="ident">dimensions</span> : <a title="facetorch.datastruct.Dimensions" href="datastruct.html#facetorch.datastruct.Dimensions">Dimensions</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.AnalysisResult.warnings"><code class="name">var <span class="ident">warnings</span> : List[str]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.AnalysisResult.image"><code class="name">var <span class="ident">image</span> : torch.Tensor | None</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.AnalysisResult.tensor"><code class="name">var <span class="ident">tensor</span> : torch.Tensor | None</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.AnalysisResult.detection"><code class="name">var <span class="ident">detection</span> : <a title="facetorch.datastruct.Detection" href="datastruct.html#facetorch.datastruct.Detection">Detection</a> | None</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.AnalysisResult.path_input"><code class="name">var <span class="ident">path_input</span> : str | None</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.AnalysisResult.path_output"><code class="name">var <span class="ident">path_output</span> : str | None</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.AnalysisResult.img"><code class="name">prop <span class="ident">img</span> : torch.Tensor | None</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def img(self) -&gt; Optional[torch.Tensor]:
+    &#34;&#34;&#34;Deprecated v0.x alias for :attr:`image`.&#34;&#34;&#34;
+    _warnings.warn(
+        &#34;AnalysisResult.img is deprecated; use AnalysisResult.image.&#34;,
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return self.image</code></pre>
+</details>
+<div class="desc"><p>Deprecated v0.x alias for :attr:<code>image</code>.</p></div>
+</dd>
+<dt id="facetorch.AnalysisResult.det"><code class="name">prop <span class="ident">det</span> : <a title="facetorch.datastruct.Detection" href="datastruct.html#facetorch.datastruct.Detection">Detection</a> | None</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def det(self) -&gt; Optional[Detection]:
+    &#34;&#34;&#34;Deprecated v0.x alias for :attr:`detection`.&#34;&#34;&#34;
+    _warnings.warn(
+        &#34;AnalysisResult.det is deprecated; use AnalysisResult.detection.&#34;,
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return self.detection</code></pre>
+</details>
+<div class="desc"><p>Deprecated v0.x alias for :attr:<code>detection</code>.</p></div>
+</dd>
+<dt id="facetorch.AnalysisResult.dims"><code class="name">prop <span class="ident">dims</span> : <a title="facetorch.datastruct.Dimensions" href="datastruct.html#facetorch.datastruct.Dimensions">Dimensions</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def dims(self) -&gt; Dimensions:
+    &#34;&#34;&#34;Deprecated v0.x alias for :attr:`dimensions`.&#34;&#34;&#34;
+    _warnings.warn(
+        &#34;AnalysisResult.dims is deprecated; use AnalysisResult.dimensions.&#34;,
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return self.dimensions</code></pre>
+</details>
+<div class="desc"><p>Deprecated v0.x alias for :attr:<code>dimensions</code>.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="facetorch.ArtifactIntegrityError"><code class="flex name class">
+<span>class <span class="ident">ArtifactIntegrityError</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ArtifactIntegrityError(FacetorchError, RuntimeError):
+    &#34;&#34;&#34;A model or distribution artifact failed integrity verification.&#34;&#34;&#34;</code></pre>
+</details>
+<div class="desc"><p>A model or distribution artifact failed integrity verification.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="facetorch.exceptions.FacetorchError" href="exceptions.html#facetorch.exceptions.FacetorchError">FacetorchError</a></li>
+<li>builtins.RuntimeError</li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+</dd>
+<dt id="facetorch.CacheLockError"><code class="flex name class">
+<span>class <span class="ident">CacheLockError</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CacheLockError(FacetorchError, TimeoutError):
+    &#34;&#34;&#34;A model-cache operation could not acquire its process lock.&#34;&#34;&#34;</code></pre>
+</details>
+<div class="desc"><p>A model-cache operation could not acquire its process lock.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="facetorch.exceptions.FacetorchError" href="exceptions.html#facetorch.exceptions.FacetorchError">FacetorchError</a></li>
+<li>builtins.TimeoutError</li>
+<li>builtins.OSError</li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+</dd>
+<dt id="facetorch.CacheCleanupReport"><code class="flex name class">
+<span>class <span class="ident">CacheCleanupReport</span></span>
+<span>(</span><span>paths: tuple[Path, ...], total_bytes: int, deleted: bool)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass(frozen=True)
+class CacheCleanupReport:
+    &#34;&#34;&#34;Quarantine inventory and optional explicit cleanup result.&#34;&#34;&#34;
+
+    paths: tuple[Path, ...]
+    total_bytes: int
+    deleted: bool</code></pre>
+</details>
+<div class="desc"><p>Quarantine inventory and optional explicit cleanup result.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="facetorch.CacheCleanupReport.paths"><code class="name">var <span class="ident">paths</span> : tuple[pathlib.Path, ...]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.CacheCleanupReport.total_bytes"><code class="name">var <span class="ident">total_bytes</span> : int</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.CacheCleanupReport.deleted"><code class="name">var <span class="ident">deleted</span> : bool</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="facetorch.CacheEntryInspection"><code class="flex name class">
+<span>class <span class="ident">CacheEntryInspection</span></span>
+<span>(</span><span>path: Path, size_bytes: int, sha256: str, detected_format: str, mislabeled: bool)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass(frozen=True)
+class CacheEntryInspection:
+    &#34;&#34;&#34;Non-executing inspection result for one possible legacy artifact.&#34;&#34;&#34;
+
+    path: Path
+    size_bytes: int
+    sha256: str
+    detected_format: str
+    mislabeled: bool</code></pre>
+</details>
+<div class="desc"><p>Non-executing inspection result for one possible legacy artifact.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="facetorch.CacheEntryInspection.path"><code class="name">var <span class="ident">path</span> : pathlib.Path</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.CacheEntryInspection.size_bytes"><code class="name">var <span class="ident">size_bytes</span> : int</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.CacheEntryInspection.sha256"><code class="name">var <span class="ident">sha256</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.CacheEntryInspection.detected_format"><code class="name">var <span class="ident">detected_format</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.CacheEntryInspection.mislabeled"><code class="name">var <span class="ident">mislabeled</span> : bool</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="facetorch.ConfigurationError"><code class="flex name class">
+<span>class <span class="ident">ConfigurationError</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ConfigurationError(FacetorchError, ValueError):
+    &#34;&#34;&#34;The configured component graph or option set is invalid.&#34;&#34;&#34;</code></pre>
+</details>
+<div class="desc"><p>The configured component graph or option set is invalid.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="facetorch.exceptions.FacetorchError" href="exceptions.html#facetorch.exceptions.FacetorchError">FacetorchError</a></li>
+<li>builtins.ValueError</li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+</dd>
 <dt id="facetorch.FaceAnalyzer"><code class="flex name class">
 <span>class <span class="ident">FaceAnalyzer</span></span>
 <span>(</span><span>cfg: omegaconf.omegaconf.OmegaConf)</span>
@@ -108,14 +1007,19 @@ el.replaceWith(d);
         Attributes:
             cfg (OmegaConf): Config object with image reader, face detector, unifier and predictor configurations.
             reader (BaseReader): Reader object that reads the image and returns an ImageData object containing the image tensor.
-            detector (FaceDetector): FaceDetector object that wraps a neural network that detects faces.
+            detector (FaceDetector): Lazily loaded and cached FaceDetector object.
             unifier (FaceUnifier): FaceUnifier object that unifies sizes of all faces and normalizes them between 0 and 1.
-            predictors (Dict[str, FacePredictor]): Dict of FacePredictor objects that predict facial features. Key is the name of the predictor.
-            utilizers (Dict[str, FaceUtilizer]): Dict of FaceUtilizer objects that can extract 3D face landmarks, draw boxes over the image, etc. Key is the name of the utilizer.
+            predictors (MutableMapping[str, FacePredictor]): Mapping of lazily loaded
+                and cached predictors. Iterating names does not load models; accessing
+                a value does.
+            utilizers (MutableMapping[str, FaceUtilizer]): Mapping of lazily loaded
+                utilizer objects. Selection-linked utilizers load only when their
+                predictor ran.
             logger (logging.Logger): Logger object that logs messages to the console or to a file.
 
         &#34;&#34;&#34;
         self.cfg = cfg
+        self._component_lock = threading.RLock()
 
         if hasattr(self.cfg, &#34;logger&#34;) and self.cfg.logger is not None:
             self.logger = instantiate(self.cfg.logger).logger
@@ -130,9 +1034,12 @@ el.replaceWith(d);
 
         self.logger.info(&#34;Initializing BaseReader&#34;)
         self.reader = instantiate(self.cfg.reader)
+        self._reader_signature_owner = None
+        self._reader_signature_parameters = None
 
-        self.logger.info(&#34;Initializing FaceDetector&#34;)
-        self.detector = instantiate(self.cfg.detector)
+        self.logger.info(&#34;Registering lazy FaceDetector&#34;)
+        self._detector_config = self.cfg.detector if &#34;detector&#34; in self.cfg else None
+        self._detector = _UNLOADED
 
         self.logger.info(&#34;Initializing FaceUnifier&#34;)
         if &#34;unifier&#34; in self.cfg:
@@ -140,72 +1047,329 @@ el.replaceWith(d);
         else:
             self.unifier = None
 
-        self.logger.info(&#34;Initializing FacePredictor objects&#34;)
-        self.predictors = {}
+        self.logger.info(&#34;Registering lazy FacePredictor objects&#34;)
+        predictor_configs = {}
         if &#34;predictor&#34; in self.cfg:
             for predictor_name in self.cfg.predictor:
-                self.logger.info(f&#34;Initializing FacePredictor {predictor_name}&#34;)
-                self.predictors[predictor_name] = instantiate(
-                    self.cfg.predictor[predictor_name]
-                )
+                self.logger.info(f&#34;Registering FacePredictor {predictor_name}&#34;)
+                predictor_configs[predictor_name] = self.cfg.predictor[predictor_name]
+        self._predictors = _LazyComponentRegistry(
+            predictor_configs,
+            loader=self._load_predictor,
+            lock=self._component_lock,
+        )
 
-        self.utilizers = {}
+        utilizer_configs = {}
         if &#34;utilizer&#34; in self.cfg:
-            self.logger.info(&#34;Initializing BaseUtilizer objects&#34;)
+            self.logger.info(&#34;Registering lazy BaseUtilizer objects&#34;)
             for utilizer_name in self.cfg.utilizer:
-                self.logger.info(f&#34;Initializing BaseUtilizer {utilizer_name}&#34;)
-                self.utilizers[utilizer_name] = instantiate(
-                    self.cfg.utilizer[utilizer_name]
-                )
+                self.logger.info(f&#34;Registering BaseUtilizer {utilizer_name}&#34;)
+                utilizer_configs[utilizer_name] = self.cfg.utilizer[utilizer_name]
+        self._utilizers = _LazyComponentRegistry(
+            utilizer_configs,
+            loader=self._load_utilizer,
+            lock=self._component_lock,
+        )
 
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
+
+    @property
+    def detector(self):
+        &#34;&#34;&#34;Return the configured detector, constructing and caching it on demand.&#34;&#34;&#34;
+        detector = self.__dict__.get(&#34;_detector&#34;, _UNLOADED)
+        if detector is not _UNLOADED:
+            return detector
+
+        detector_config = self.__dict__.get(&#34;_detector_config&#34;)
+        if detector_config is None:
+            raise ConfigurationError(&#34;No face detector is configured.&#34;)
+
+        lock = self._get_component_lock()
+        with lock:
+            if self._detector is _UNLOADED:
+                self.logger.info(&#34;Initializing FaceDetector&#34;)
+                self._detector = instantiate(detector_config)
+        return self._detector
+
+    @detector.setter
+    def detector(self, detector) -&gt; None:
+        &#34;&#34;&#34;Install an already-constructed detector, primarily for extensions/tests.&#34;&#34;&#34;
+        self._detector_config = None
+        self._detector = detector
+
+    @property
+    def predictors(self) -&gt; MutableMapping[str, FacePredictor]:
+        &#34;&#34;&#34;Return the lazy predictor mapping without constructing its values.&#34;&#34;&#34;
+        registry = self.__dict__.get(&#34;_predictors&#34;)
+        if registry is None:
+            registry = _LazyComponentRegistry(lock=self._get_component_lock())
+            self._predictors = registry
+        return registry
+
+    @predictors.setter
+    def predictors(self, predictors: Mapping[str, FacePredictor]) -&gt; None:
+        &#34;&#34;&#34;Replace configured predictors with already-constructed components.&#34;&#34;&#34;
+        if not isinstance(predictors, Mapping):
+            raise TypeError(&#34;predictors must be a mapping from names to predictors.&#34;)
+        self._predictors = _LazyComponentRegistry(
+            loaded=predictors,
+            lock=self._get_component_lock(),
+        )
+
+    @property
+    def configured_predictors(self) -&gt; tuple[str, ...]:
+        &#34;&#34;&#34;Predictor names in deterministic configuration order, without loading.&#34;&#34;&#34;
+        return tuple(self.predictors)
+
+    @property
+    def loaded_predictors(self) -&gt; tuple[str, ...]:
+        &#34;&#34;&#34;Predictor names whose wrappers and models are already cached.&#34;&#34;&#34;
+        registry = self.predictors
+        if isinstance(registry, _LazyComponentRegistry):
+            return registry.loaded_names
+        return tuple(registry)
+
+    @property
+    def utilizers(self) -&gt; MutableMapping[str, Any]:
+        &#34;&#34;&#34;Return the lazy utilizer mapping without constructing its values.&#34;&#34;&#34;
+        registry = self.__dict__.get(&#34;_utilizers&#34;)
+        if registry is None:
+            registry = _LazyComponentRegistry(lock=self._get_component_lock())
+            self._utilizers = registry
+        return registry
+
+    @utilizers.setter
+    def utilizers(self, utilizers: Mapping[str, Any]) -&gt; None:
+        &#34;&#34;&#34;Replace configured utilizers with already-constructed components.&#34;&#34;&#34;
+        if not isinstance(utilizers, Mapping):
+            raise TypeError(&#34;utilizers must be a mapping from names to utilizers.&#34;)
+        self._utilizers = _LazyComponentRegistry(
+            loaded=utilizers,
+            lock=self._get_component_lock(),
+        )
+
+    @property
+    def configured_utilizers(self) -&gt; tuple[str, ...]:
+        &#34;&#34;&#34;Utilizer names in deterministic configuration order, without loading.&#34;&#34;&#34;
+        return tuple(self.utilizers)
+
+    @property
+    def loaded_utilizers(self) -&gt; tuple[str, ...]:
+        &#34;&#34;&#34;Utilizer names whose objects are already cached.&#34;&#34;&#34;
+        registry = self.utilizers
+        if isinstance(registry, _LazyComponentRegistry):
+            return registry.loaded_names
+        return tuple(registry)
+
+    @property
+    def detector_loaded(self) -&gt; bool:
+        &#34;&#34;&#34;Whether the detector wrapper and model are already cached.&#34;&#34;&#34;
+        return self.__dict__.get(&#34;_detector&#34;, _UNLOADED) is not _UNLOADED
+
+    def _get_component_lock(self):
+        lock = self.__dict__.get(&#34;_component_lock&#34;)
+        if lock is None:
+            lock = threading.RLock()
+            self._component_lock = lock
+        return lock
+
+    def _load_predictor(self, name: str, predictor_config) -&gt; FacePredictor:
+        self.logger.info(f&#34;Initializing FacePredictor {name}&#34;)
+        return instantiate(predictor_config)
+
+    def _load_utilizer(self, name: str, utilizer_config):
+        self.logger.info(f&#34;Initializing BaseUtilizer {name}&#34;)
+        return instantiate(utilizer_config)
+
+    @staticmethod
+    def _normalize_predictor_selection(
+        selection: Optional[Iterable[str]], option_name: str
+    ) -&gt; Optional[tuple[str, ...]]:
+        if selection is None:
+            return None
+        if isinstance(selection, (str, bytes)):
+            raise ConfigurationError(
+                f&#34;{option_name} must be a collection of predictor names, not a string.&#34;
+            )
+        try:
+            names = tuple(selection)
+        except TypeError as exc:
+            raise ConfigurationError(
+                f&#34;{option_name} must be a collection of predictor names.&#34;
+            ) from exc
+
+        invalid = [name for name in names if not isinstance(name, str) or not name]
+        if invalid:
+            raise ConfigurationError(
+                f&#34;{option_name} must contain only non-empty predictor names.&#34;
+            )
+
+        seen = set()
+        duplicates = []
+        for name in names:
+            if name in seen and name not in duplicates:
+                duplicates.append(name)
+            seen.add(name)
+        if duplicates:
+            raise ConfigurationError(
+                f&#34;{option_name} contains duplicate predictor names: &#34;
+                + &#34;, &#34;.join(duplicates)
+                + &#34;.&#34;
+            )
+        return names
+
+    def _select_predictor_names(
+        self,
+        include_predictors: Optional[Iterable[str]],
+        exclude_predictors: Optional[Iterable[str]],
+    ) -&gt; tuple[str, ...]:
+        &#34;&#34;&#34;Validate selection and return names in configuration order.&#34;&#34;&#34;
+        include = self._normalize_predictor_selection(
+            include_predictors, &#34;include_predictors&#34;
+        )
+        exclude = self._normalize_predictor_selection(
+            exclude_predictors, &#34;exclude_predictors&#34;
+        )
+        if include is not None and exclude is not None:
+            raise ConfigurationError(
+                &#34;Cannot specify both include_predictors and exclude_predictors. &#34;
+                &#34;Use one or the other.&#34;
+            )
+
+        configured = self.configured_predictors
+        configured_set = set(configured)
+        requested = include if include is not None else exclude
+        unknown = (
+            [name for name in requested if name not in configured_set]
+            if requested is not None
+            else []
+        )
+        if unknown:
+            raise ConfigurationError(
+                &#34;Unknown predictor name(s): &#34;
+                + &#34;, &#34;.join(unknown)
+                + &#34;. Configured predictors: &#34;
+                + (&#34;, &#34;.join(configured) if configured else &#34;none&#34;)
+                + &#34;.&#34;
+            )
+
+        if include is not None:
+            included = set(include)
+            return tuple(name for name in configured if name in included)
+        if exclude is not None:
+            excluded = set(exclude)
+            return tuple(name for name in configured if name not in excluded)
+        return configured
 
     @Timer(&#34;FaceAnalyzer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(
         self,
         image_source: Optional[
-            Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]
+            Union[str, os.PathLike, torch.Tensor, np.ndarray, bytes, Image.Image]
         ] = None,
         path_image: Optional[str] = None,
-        batch_size: int = 8,
+        face_batch_size: Optional[int] = None,
         fix_img_size: bool = False,
-        return_img_data: bool = False,
+        return_img_data: Optional[bool] = None,
         include_tensors: bool = False,
         path_output: Optional[str] = None,
         tensor: Optional[torch.Tensor] = None,
         include_predictors: Optional[List[str]] = None,
         exclude_predictors: Optional[List[str]] = None,
         skip_detector: bool = False,
-    ) -&gt; Union[Response, ImageData]:
-        &#34;&#34;&#34;Reads image, detects faces, unifies the detected faces, predicts facial features
-         and returns analyzed data.
+        *,
+        batch_size: Optional[int] = None,
+        input_policy: str = &#34;coerce&#34;,
+        input_spec: Optional[InputSpec] = None,
+    ) -&gt; AnalysisResult:
+        &#34;&#34;&#34;Analyze exactly one source image and return one stable result type.
 
         Args:
-            image_source (Optional[Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]]): Input to be analyzed. Accepts file paths, URLs, tensors, numpy arrays, bytes, or PIL Images. Default: None.
+            image_source: Input accepted by the configured reader. The default
+                reader accepts local paths, tensors, NumPy arrays, bytes, and PIL
+                images. URLs require an explicit URLReader configuration.
             path_image (Optional[str]): Deprecated. Use image_source instead.
-            batch_size (int): Batch size for making predictions on the faces. Default is 8.
+            face_batch_size (Optional[int]): Number of faces from this image sent to
+                each predictor at once. Default: 8.
             fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False.
-            return_img_data (bool): If True, returns all image data including tensors, otherwise only returns the faces. Default is False.
+            return_img_data (Optional[bool]): Deprecated no-op. Use
+                ``include_tensors`` and the fields on ``AnalysisResult`` or call
+                ``run_legacy`` for the former flag-dependent return type.
             include_tensors (bool): If True, includes tensors in the returned data object. If False, tensors are removed. Default is False.
             path_output (Optional[str]): Path where to save the image with detected faces. If None, the image is not saved. Default: None.
             tensor (Optional[torch.Tensor]): Deprecated. Use image_source instead.
-            include_predictors (Optional[List[str]]): If provided, only run these predictors. Default: None (run all).
-            exclude_predictors (Optional[List[str]]): If provided, skip these predictors. Default: None (skip none).
-            skip_detector (bool): If True, skip face detection and treat the input as a pre-cropped face. Default: False.
+            include_predictors (Optional[List[str]]): Names to run. None runs all
+                configured predictors and an empty collection runs none.
+            exclude_predictors (Optional[List[str]]): Names to omit. None and an
+                empty collection omit none. Cannot be combined with an include.
+            skip_detector (bool): If True, skip face detection, avoid constructing
+                its model, and treat the input as a pre-cropped face. Default: False.
+            batch_size (Optional[int]): Deprecated warning alias for
+                ``face_batch_size`` throughout v1.x.
+            input_policy (str): ``coerce`` (default) or ``strict``.
+            input_spec (Optional[InputSpec]): Explicit source layout/range/color
+                description, especially for strict-mode conversions.
 
         Returns:
-            Union[Response, ImageData]: If return_img_data is False, returns a Response object containing the faces and their facial features. If return_img_data is True, returns the entire ImageData object.
+            AnalysisResult: Stable result for the one source image.
 
         &#34;&#34;&#34;
+
+        compatibility_warnings = []
+
+        if face_batch_size is not None and batch_size is not None:
+            raise ConfigurationError(
+                &#34;Specify only face_batch_size; batch_size is its deprecated alias.&#34;
+            )
+        if batch_size is not None:
+            message = (
+                &#34;batch_size is deprecated and will be removed after v1.x; &#34;
+                &#34;use face_batch_size.&#34;
+            )
+            warnings.warn(message, DeprecationWarning, stacklevel=2)
+            compatibility_warnings.append(message)
+            effective_face_batch_size = batch_size
+        elif face_batch_size is None:
+            effective_face_batch_size = 8
+        else:
+            effective_face_batch_size = face_batch_size
+
+        if (
+            isinstance(effective_face_batch_size, bool)
+            or not isinstance(effective_face_batch_size, int)
+            or effective_face_batch_size &lt; 1
+        ):
+            raise ConfigurationError(
+                &#34;face_batch_size must be an integer greater than or equal to 1, &#34;
+                f&#34;got {effective_face_batch_size!r}.&#34;
+            )
+
+        if return_img_data is not None:
+            message = (
+                &#34;return_img_data no longer changes FaceAnalyzer.run&#39;s return type; &#34;
+                &#34;use include_tensors or the explicit run_legacy adapter.&#34;
+            )
+            warnings.warn(message, DeprecationWarning, stacklevel=2)
+            compatibility_warnings.append(message)
+
+        def _run_component(label, operation):
+            try:
+                return operation()
+            except FacetorchError:
+                raise
+            except Exception as exc:
+                raise InferenceError(f&#34;{label} failed during analysis.&#34;) from exc
 
         def _predict_batch(
             data: ImageData, predictor: FacePredictor, predictor_name: str
         ) -&gt; ImageData:
             n_faces = len(data.faces)
 
-            for face_indx_start in range(0, n_faces, batch_size):
-                face_indx_end = min(face_indx_start + batch_size, n_faces)
+            for face_indx_start in range(0, n_faces, effective_face_batch_size):
+                face_indx_end = min(
+                    face_indx_start + effective_face_batch_size, n_faces
+                )
 
                 face_batch_tensor = torch.stack(
                     [face.tensor for face in data.faces[face_indx_start:face_indx_end]]
@@ -216,40 +1380,50 @@ el.replaceWith(d);
             return data
 
         self.logger.info(&#34;Running FaceAnalyzer&#34;)
+        selected_predictors = self._select_predictor_names(
+            include_predictors, exclude_predictors
+        )
+        configured_predictors = set(self.configured_predictors)
 
-        if include_predictors and exclude_predictors:
-            raise ValueError(
-                &#34;Cannot specify both include_predictors and exclude_predictors. &#34;
-                &#34;Use one or the other.&#34;
+        supplied_sources = [
+            name
+            for name, value in (
+                (&#34;image_source&#34;, image_source),
+                (&#34;path_image&#34;, path_image),
+                (&#34;tensor&#34;, tensor),
             )
-
-        if batch_size &lt; 1:
-            raise ValueError(f&#34;batch_size must be &gt;= 1, got {batch_size}.&#34;)
-
-        if path_image is not None and image_source is None:
-            warnings.warn(
-                &#34;path_image is deprecated, use image_source instead.&#34;,
-                DeprecationWarning,
-                stacklevel=2,
+            if value is not None
+        ]
+        if len(supplied_sources) &gt; 1:
+            raise InputError(
+                &#34;Supply exactly one input source using image_source. Received: &#34;
+                + &#34;, &#34;.join(supplied_sources)
+                + &#34;.&#34;
             )
-            image_source = path_image
-
-        if tensor is not None and image_source is None:
-            warnings.warn(
-                &#34;tensor is deprecated, use image_source instead.&#34;,
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            image_source = tensor
-
-        if image_source is None:
-            raise ValueError(
+        if not supplied_sources:
+            raise InputError(
                 &#34;image_source is required. Pass a file path, URL, tensor, numpy array, &#34;
                 &#34;bytes, or PIL Image.&#34;
             )
+        if path_image is not None:
+            message = &#34;path_image is deprecated; use image_source.&#34;
+            warnings.warn(message, DeprecationWarning, stacklevel=2)
+            compatibility_warnings.append(message)
+            image_source = path_image
+        elif tensor is not None:
+            message = &#34;tensor is deprecated; use image_source.&#34;
+            warnings.warn(message, DeprecationWarning, stacklevel=2)
+            compatibility_warnings.append(message)
+            image_source = tensor
 
         self.logger.info(&#34;Reading image&#34;)
-        data = self._read_input(image_source, fix_img_size)
+        data = self._read_input(
+            image_source,
+            fix_img_size,
+            input_policy=input_policy,
+            input_spec=input_spec,
+        )
+        data.warnings.extend(compatibility_warnings)
 
         path_output = None if path_output == &#34;None&#34; else path_output
         data.path_output = path_output
@@ -277,39 +1451,47 @@ el.replaceWith(d);
             n_faces = 1
         else:
             self.logger.info(&#34;Detecting faces&#34;)
-            data = self.detector.run(data)
+            data = _run_component(&#34;Face detector&#34;, lambda: self.detector.run(data))
             n_faces = len(data.faces)
 
         self.logger.info(f&#34;Number of faces: {n_faces}&#34;)
 
         if n_faces &gt; 0 and self.unifier is not None:
             self.logger.info(&#34;Unifying faces&#34;)
-            data = self.unifier.run(data)
+            data = _run_component(&#34;Face unifier&#34;, lambda: self.unifier.run(data))
 
             self.logger.info(&#34;Predicting facial features&#34;)
-            for predictor_name, predictor in self.predictors.items():
-                if include_predictors and predictor_name not in include_predictors:
-                    continue
-                if exclude_predictors and predictor_name in exclude_predictors:
-                    continue
+            for predictor_name in selected_predictors:
+                predictor = self.predictors[predictor_name]
                 self.logger.info(f&#34;Running FacePredictor: {predictor_name}&#34;)
-                data = _predict_batch(data, predictor, predictor_name)
+                data = _run_component(
+                    f&#34;Face predictor {predictor_name!r}&#34;,
+                    lambda: _predict_batch(data, predictor, predictor_name),
+                )
 
             self.logger.info(&#34;Utilizing facial features&#34;)
             ran_predictors = (
                 set(data.faces[0].preds.keys()) if data.faces else set()
             )
-            for utilizer_name, utilizer in self.utilizers.items():
-                if utilizer_name in self.predictors and utilizer_name not in ran_predictors:
+            for utilizer_name in self.utilizers:
+                if (
+                    utilizer_name in configured_predictors
+                    and utilizer_name not in ran_predictors
+                ):
                     self.logger.info(
                         f&#34;Skipping BaseUtilizer: {utilizer_name} (predictor not run)&#34;
                     )
                     continue
+                utilizer = self.utilizers[utilizer_name]
                 self.logger.info(f&#34;Running BaseUtilizer: {utilizer_name}&#34;)
-                data = utilizer.run(data)
+                data = _run_component(
+                    f&#34;Face utilizer {utilizer_name!r}&#34;, lambda: utilizer.run(data)
+                )
         else:
             if &#34;save&#34; in self.utilizers:
-                self.utilizers[&#34;save&#34;].run(data)
+                _run_component(
+                    &#34;Face utilizer &#39;save&#39;&#34;, lambda: self.utilizers[&#34;save&#34;].run(data)
+                )
 
         if not include_tensors:
             self.logger.debug(
@@ -317,55 +1499,127 @@ el.replaceWith(d);
             )
             data.reset_tensors()
 
-        response = Response(faces=data.faces, version=data.version)
+        result = AnalysisResult.from_image_data(data, include_tensors=include_tensors)
+        self.logger.debug(
+            &#34;Returning analysis result&#34;,
+            extra={&#34;face_count&#34;: len(result.faces), &#34;version&#34;: result.version},
+        )
+        return result
 
-        if return_img_data:
-            self.logger.debug(&#34;Returning image data object&#34;, extra=data.__dict__)
-            return data
-        else:
-            self.logger.debug(&#34;Returning response with faces&#34;, extra=response.__dict__)
-            return response
+    def run_legacy(
+        self,
+        *args,
+        return_img_data: bool = False,
+        **kwargs,
+    ) -&gt; Union[Response, ImageData]:
+        &#34;&#34;&#34;Run the canonical pipeline and adapt its result to the v0.x return union.&#34;&#34;&#34;
+        warnings.warn(
+            &#34;FaceAnalyzer.run_legacy is a v1.x compatibility adapter; migrate to run().&#34;,
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        result = self.run(*args, **kwargs)
+        if not return_img_data:
+            return Response(faces=result.faces, version=result.version)
+
+        return ImageData(
+            path_input=result.path_input,
+            path_output=result.path_output,
+            img=result.image if result.image is not None else torch.tensor([]),
+            tensor=result.tensor if result.tensor is not None else torch.tensor([]),
+            dims=result.dimensions,
+            det=result.detection if result.detection is not None else Detection(),
+            faces=result.faces,
+            version=result.version,
+            warnings=list(result.warnings),
+        )
 
     def _read_input(
         self,
-        image_source: Union[str, torch.Tensor, np.ndarray, bytes, Image.Image],
+        image_source: Union[
+            str, os.PathLike, torch.Tensor, np.ndarray, bytes, Image.Image
+        ],
         fix_img_size: bool,
+        *,
+        input_policy: str = &#34;coerce&#34;,
+        input_spec: Optional[InputSpec] = None,
     ) -&gt; ImageData:
-        &#34;&#34;&#34;Routes image_source to the appropriate reader method.
+        &#34;&#34;&#34;Delegate every source type to the configured public reader entry point.&#34;&#34;&#34;
+        run = self.reader.run
+        if self.__dict__.get(&#34;_reader_signature_owner&#34;) is self.reader:
+            parameters = self.__dict__.get(&#34;_reader_signature_parameters&#34;)
+        else:
+            try:
+                parameters = inspect.signature(run).parameters
+            except (TypeError, ValueError) as exc:
+                raise ConfigurationError(
+                    &#34;Configured reader.run must expose an inspectable public signature.&#34;
+                ) from exc
+            self._reader_signature_owner = self.reader
+            self._reader_signature_parameters = parameters
 
-        For string inputs (file paths, URLs), delegates to self.reader.run().
-        For all other types (tensor, array, bytes, PIL Image), converts to tensor
-        and uses self.reader.process_tensor() — works with any reader type.
-        &#34;&#34;&#34;
-        if isinstance(image_source, str):
-            return self.reader.run(image_source, fix_img_size=fix_img_size)
+        accepts_kwargs = any(
+            parameter.kind == inspect.Parameter.VAR_KEYWORD
+            for parameter in parameters.values()
+        )
+        reader_kwargs = {}
+        if &#34;fix_img_size&#34; in parameters or accepts_kwargs:
+            reader_kwargs[&#34;fix_img_size&#34;] = fix_img_size
 
-        if isinstance(image_source, torch.Tensor):
-            return self.reader.process_tensor(image_source, fix_img_size=fix_img_size)
-
-        if isinstance(image_source, np.ndarray):
-            image_tensor = numpy_to_chw_tensor(image_source)
-            return self.reader.process_tensor(image_tensor, fix_img_size=fix_img_size)
-
-        if isinstance(image_source, bytes):
-            with Image.open(io.BytesIO(image_source)) as img:
-                pil_image = img.convert(&#34;RGB&#34;) if img.mode != &#34;RGB&#34; else img.copy()
-            image_tensor = torchvision.transforms.functional.pil_to_tensor(pil_image)
-            return self.reader.process_tensor(image_tensor, fix_img_size=fix_img_size)
-
-        if isinstance(image_source, Image.Image):
-            pil_image = (
-                image_source.convert(&#34;RGB&#34;)
-                if image_source.mode != &#34;RGB&#34;
-                else image_source
+        supports_policy = &#34;input_policy&#34; in parameters or accepts_kwargs
+        supports_spec = &#34;input_spec&#34; in parameters or accepts_kwargs
+        if not supports_policy and input_policy != &#34;coerce&#34;:
+            raise ConfigurationError(
+                &#34;Configured reader uses the legacy protocol and cannot honor strict mode.&#34;
             )
-            image_tensor = torchvision.transforms.functional.pil_to_tensor(pil_image)
-            return self.reader.process_tensor(image_tensor, fix_img_size=fix_img_size)
+        if not supports_spec and input_spec is not None:
+            raise ConfigurationError(
+                &#34;Configured reader uses the legacy protocol and cannot honor InputSpec.&#34;
+            )
+        if supports_policy:
+            reader_kwargs[&#34;input_policy&#34;] = input_policy
+        if supports_spec:
+            reader_kwargs[&#34;input_spec&#34;] = input_spec
 
-        raise TypeError(
-            f&#34;Unsupported image_source type: {type(image_source).__name__}. &#34;
-            &#34;Expected str, torch.Tensor, np.ndarray, bytes, or PIL.Image.Image.&#34;
-        )</code></pre>
+        data = run(image_source, **reader_kwargs)
+        if not isinstance(data, ImageData):
+            raise ConfigurationError(
+                &#34;Configured reader.run must return facetorch.datastruct.ImageData.&#34;
+            )
+        if not supports_policy or not supports_spec:
+            message = (
+                &#34;Configured reader uses the deprecated v0.x protocol; add keyword-only &#34;
+                &#34;input_policy and input_spec parameters.&#34;
+            )
+            warnings.warn(message, DeprecationWarning, stacklevel=3)
+            data.warnings.append(message)
+
+        self._validate_reader_output(data)
+        return data
+
+    @staticmethod
+    def _validate_reader_output(data: ImageData) -&gt; None:
+        tensor = data.tensor
+        if not isinstance(tensor, torch.Tensor) or tensor.ndim != 4:
+            raise ConfigurationError(&#34;Reader output tensor must have BCHW rank 4.&#34;)
+        if tensor.shape[0] != 1:
+            raise InputError(
+                &#34;Batched image input is not supported. Expected B=1, &#34;
+                f&#34;got B={tensor.shape[0]}.&#34;
+            )
+        if tensor.shape[1] != 3:
+            raise ConfigurationError(
+                &#34;Reader output must use the canonical three-channel RGB representation.&#34;
+            )
+        if tensor.dtype != torch.float32:
+            raise ConfigurationError(&#34;Reader output tensor must use float32 values.&#34;)
+        if not getattr(data, &#34;_facetorch_canonical&#34;, False):
+            if not torch.isfinite(tensor).all():
+                raise InputError(&#34;Reader output contains NaN or Inf values.&#34;)
+            if tensor.numel() and (
+                float(tensor.min()) &lt; 0.0 or float(tensor.max()) &gt; 255.0
+            ):
+                raise ConfigurationError(&#34;Reader output values must stay within 0..255.&#34;)</code></pre>
 </details>
 <div class="desc"><p>FaceAnalyzer is the main class that reads images, runs face detection, tensor unification and facial feature prediction.
 It also draws bounding boxes and facial landmarks over the image.</p>
@@ -377,32 +1631,170 @@ It also draws bounding boxes and facial landmarks over the image.</p>
 <li>Predictor dict - dict of wrappers around neural networks trained to analyze facial features.</li>
 <li>Utilizer dict - dict of utilizer processors that can for example extract 3D face landmarks or draw boxes over the image.</li>
 </ol>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>cfg</code></strong> :&ensp;<code>OmegaConf</code></dt>
 <dd>Config object with image reader, face detector, unifier and predictor configurations.</dd>
-</dl>
-<h2 id="attributes">Attributes</h2>
-<dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
 <dt><strong><code>cfg</code></strong> :&ensp;<code>OmegaConf</code></dt>
 <dd>Config object with image reader, face detector, unifier and predictor configurations.</dd>
 <dt><strong><code>reader</code></strong> :&ensp;<code>BaseReader</code></dt>
 <dd>Reader object that reads the image and returns an ImageData object containing the image tensor.</dd>
 <dt><strong><code>detector</code></strong> :&ensp;<code>FaceDetector</code></dt>
-<dd>FaceDetector object that wraps a neural network that detects faces.</dd>
+<dd>Lazily loaded and cached FaceDetector object.</dd>
 <dt><strong><code>unifier</code></strong> :&ensp;<code>FaceUnifier</code></dt>
 <dd>FaceUnifier object that unifies sizes of all faces and normalizes them between 0 and 1.</dd>
-<dt><strong><code>predictors</code></strong> :&ensp;<code>Dict[str, FacePredictor]</code></dt>
-<dd>Dict of FacePredictor objects that predict facial features. Key is the name of the predictor.</dd>
-<dt><strong><code>utilizers</code></strong> :&ensp;<code>Dict[str, FaceUtilizer]</code></dt>
-<dd>Dict of FaceUtilizer objects that can extract 3D face landmarks, draw boxes over the image, etc. Key is the name of the utilizer.</dd>
+<dt><strong><code>predictors</code></strong> :&ensp;<code>MutableMapping[str, FacePredictor]</code></dt>
+<dd>Mapping of lazily loaded
+and cached predictors. Iterating names does not load models; accessing
+a value does.</dd>
+<dt><strong><code>utilizers</code></strong> :&ensp;<code>MutableMapping[str, FaceUtilizer]</code></dt>
+<dd>Mapping of lazily loaded
+utilizer objects. Selection-linked utilizers load only when their
+predictor ran.</dd>
 <dt><strong><code>logger</code></strong> :&ensp;<code>logging.Logger</code></dt>
 <dd>Logger object that logs messages to the console or to a file.</dd>
 </dl></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="facetorch.FaceAnalyzer.detector"><code class="name">prop <span class="ident">detector</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def detector(self):
+    &#34;&#34;&#34;Return the configured detector, constructing and caching it on demand.&#34;&#34;&#34;
+    detector = self.__dict__.get(&#34;_detector&#34;, _UNLOADED)
+    if detector is not _UNLOADED:
+        return detector
+
+    detector_config = self.__dict__.get(&#34;_detector_config&#34;)
+    if detector_config is None:
+        raise ConfigurationError(&#34;No face detector is configured.&#34;)
+
+    lock = self._get_component_lock()
+    with lock:
+        if self._detector is _UNLOADED:
+            self.logger.info(&#34;Initializing FaceDetector&#34;)
+            self._detector = instantiate(detector_config)
+    return self._detector</code></pre>
+</details>
+<div class="desc"><p>Return the configured detector, constructing and caching it on demand.</p></div>
+</dd>
+<dt id="facetorch.FaceAnalyzer.predictors"><code class="name">prop <span class="ident">predictors</span> : MutableMapping[str, <a title="facetorch.analyzer.predictor.core.FacePredictor" href="analyzer/predictor/core.html#facetorch.analyzer.predictor.core.FacePredictor">FacePredictor</a>]</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def predictors(self) -&gt; MutableMapping[str, FacePredictor]:
+    &#34;&#34;&#34;Return the lazy predictor mapping without constructing its values.&#34;&#34;&#34;
+    registry = self.__dict__.get(&#34;_predictors&#34;)
+    if registry is None:
+        registry = _LazyComponentRegistry(lock=self._get_component_lock())
+        self._predictors = registry
+    return registry</code></pre>
+</details>
+<div class="desc"><p>Return the lazy predictor mapping without constructing its values.</p></div>
+</dd>
+<dt id="facetorch.FaceAnalyzer.configured_predictors"><code class="name">prop <span class="ident">configured_predictors</span> : tuple[str, ...]</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def configured_predictors(self) -&gt; tuple[str, ...]:
+    &#34;&#34;&#34;Predictor names in deterministic configuration order, without loading.&#34;&#34;&#34;
+    return tuple(self.predictors)</code></pre>
+</details>
+<div class="desc"><p>Predictor names in deterministic configuration order, without loading.</p></div>
+</dd>
+<dt id="facetorch.FaceAnalyzer.loaded_predictors"><code class="name">prop <span class="ident">loaded_predictors</span> : tuple[str, ...]</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def loaded_predictors(self) -&gt; tuple[str, ...]:
+    &#34;&#34;&#34;Predictor names whose wrappers and models are already cached.&#34;&#34;&#34;
+    registry = self.predictors
+    if isinstance(registry, _LazyComponentRegistry):
+        return registry.loaded_names
+    return tuple(registry)</code></pre>
+</details>
+<div class="desc"><p>Predictor names whose wrappers and models are already cached.</p></div>
+</dd>
+<dt id="facetorch.FaceAnalyzer.utilizers"><code class="name">prop <span class="ident">utilizers</span> : MutableMapping[str, typing.Any]</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def utilizers(self) -&gt; MutableMapping[str, Any]:
+    &#34;&#34;&#34;Return the lazy utilizer mapping without constructing its values.&#34;&#34;&#34;
+    registry = self.__dict__.get(&#34;_utilizers&#34;)
+    if registry is None:
+        registry = _LazyComponentRegistry(lock=self._get_component_lock())
+        self._utilizers = registry
+    return registry</code></pre>
+</details>
+<div class="desc"><p>Return the lazy utilizer mapping without constructing its values.</p></div>
+</dd>
+<dt id="facetorch.FaceAnalyzer.configured_utilizers"><code class="name">prop <span class="ident">configured_utilizers</span> : tuple[str, ...]</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def configured_utilizers(self) -&gt; tuple[str, ...]:
+    &#34;&#34;&#34;Utilizer names in deterministic configuration order, without loading.&#34;&#34;&#34;
+    return tuple(self.utilizers)</code></pre>
+</details>
+<div class="desc"><p>Utilizer names in deterministic configuration order, without loading.</p></div>
+</dd>
+<dt id="facetorch.FaceAnalyzer.loaded_utilizers"><code class="name">prop <span class="ident">loaded_utilizers</span> : tuple[str, ...]</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def loaded_utilizers(self) -&gt; tuple[str, ...]:
+    &#34;&#34;&#34;Utilizer names whose objects are already cached.&#34;&#34;&#34;
+    registry = self.utilizers
+    if isinstance(registry, _LazyComponentRegistry):
+        return registry.loaded_names
+    return tuple(registry)</code></pre>
+</details>
+<div class="desc"><p>Utilizer names whose objects are already cached.</p></div>
+</dd>
+<dt id="facetorch.FaceAnalyzer.detector_loaded"><code class="name">prop <span class="ident">detector_loaded</span> : bool</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def detector_loaded(self) -&gt; bool:
+    &#34;&#34;&#34;Whether the detector wrapper and model are already cached.&#34;&#34;&#34;
+    return self.__dict__.get(&#34;_detector&#34;, _UNLOADED) is not _UNLOADED</code></pre>
+</details>
+<div class="desc"><p>Whether the detector wrapper and model are already cached.</p></div>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="facetorch.FaceAnalyzer.run"><code class="name flex">
-<span>def <span class="ident">run</span></span>(<span>self,<br>image_source: str | torch.Tensor | numpy.ndarray | bytes | PIL.Image.Image | None = None,<br>path_image: str | None = None,<br>batch_size: int = 8,<br>fix_img_size: bool = False,<br>return_img_data: bool = False,<br>include_tensors: bool = False,<br>path_output: str | None = None,<br>tensor: torch.Tensor | None = None,<br>include_predictors: List[str] | None = None,<br>exclude_predictors: List[str] | None = None,<br>skip_detector: bool = False) ‑> <a title="facetorch.datastruct.Response" href="datastruct.html#facetorch.datastruct.Response">Response</a> | <a title="facetorch.datastruct.ImageData" href="datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+<span>def <span class="ident">run</span></span>(<span>self,<br>image_source: str | os.PathLike | torch.Tensor | numpy.ndarray | bytes | PIL.Image.Image | None = None,<br>path_image: str | None = None,<br>face_batch_size: int | None = None,<br>fix_img_size: bool = False,<br>return_img_data: bool | None = None,<br>include_tensors: bool = False,<br>path_output: str | None = None,<br>tensor: torch.Tensor | None = None,<br>include_predictors: List[str] | None = None,<br>exclude_predictors: List[str] | None = None,<br>skip_detector: bool = False,<br>*,<br>batch_size: int | None = None,<br>input_policy: str = 'coerce',<br>input_spec: <a title="facetorch.input.InputSpec" href="input.html#facetorch.input.InputSpec">InputSpec</a> | None = None) ‑> <a title="facetorch.datastruct.AnalysisResult" href="datastruct.html#facetorch.datastruct.AnalysisResult">AnalysisResult</a></span>
 </code></dt>
 <dd>
 <details class="source">
@@ -413,47 +1805,110 @@ It also draws bounding boxes and facial landmarks over the image.</p>
 def run(
     self,
     image_source: Optional[
-        Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]
+        Union[str, os.PathLike, torch.Tensor, np.ndarray, bytes, Image.Image]
     ] = None,
     path_image: Optional[str] = None,
-    batch_size: int = 8,
+    face_batch_size: Optional[int] = None,
     fix_img_size: bool = False,
-    return_img_data: bool = False,
+    return_img_data: Optional[bool] = None,
     include_tensors: bool = False,
     path_output: Optional[str] = None,
     tensor: Optional[torch.Tensor] = None,
     include_predictors: Optional[List[str]] = None,
     exclude_predictors: Optional[List[str]] = None,
     skip_detector: bool = False,
-) -&gt; Union[Response, ImageData]:
-    &#34;&#34;&#34;Reads image, detects faces, unifies the detected faces, predicts facial features
-     and returns analyzed data.
+    *,
+    batch_size: Optional[int] = None,
+    input_policy: str = &#34;coerce&#34;,
+    input_spec: Optional[InputSpec] = None,
+) -&gt; AnalysisResult:
+    &#34;&#34;&#34;Analyze exactly one source image and return one stable result type.
 
     Args:
-        image_source (Optional[Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]]): Input to be analyzed. Accepts file paths, URLs, tensors, numpy arrays, bytes, or PIL Images. Default: None.
+        image_source: Input accepted by the configured reader. The default
+            reader accepts local paths, tensors, NumPy arrays, bytes, and PIL
+            images. URLs require an explicit URLReader configuration.
         path_image (Optional[str]): Deprecated. Use image_source instead.
-        batch_size (int): Batch size for making predictions on the faces. Default is 8.
+        face_batch_size (Optional[int]): Number of faces from this image sent to
+            each predictor at once. Default: 8.
         fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False.
-        return_img_data (bool): If True, returns all image data including tensors, otherwise only returns the faces. Default is False.
+        return_img_data (Optional[bool]): Deprecated no-op. Use
+            ``include_tensors`` and the fields on ``AnalysisResult`` or call
+            ``run_legacy`` for the former flag-dependent return type.
         include_tensors (bool): If True, includes tensors in the returned data object. If False, tensors are removed. Default is False.
         path_output (Optional[str]): Path where to save the image with detected faces. If None, the image is not saved. Default: None.
         tensor (Optional[torch.Tensor]): Deprecated. Use image_source instead.
-        include_predictors (Optional[List[str]]): If provided, only run these predictors. Default: None (run all).
-        exclude_predictors (Optional[List[str]]): If provided, skip these predictors. Default: None (skip none).
-        skip_detector (bool): If True, skip face detection and treat the input as a pre-cropped face. Default: False.
+        include_predictors (Optional[List[str]]): Names to run. None runs all
+            configured predictors and an empty collection runs none.
+        exclude_predictors (Optional[List[str]]): Names to omit. None and an
+            empty collection omit none. Cannot be combined with an include.
+        skip_detector (bool): If True, skip face detection, avoid constructing
+            its model, and treat the input as a pre-cropped face. Default: False.
+        batch_size (Optional[int]): Deprecated warning alias for
+            ``face_batch_size`` throughout v1.x.
+        input_policy (str): ``coerce`` (default) or ``strict``.
+        input_spec (Optional[InputSpec]): Explicit source layout/range/color
+            description, especially for strict-mode conversions.
 
     Returns:
-        Union[Response, ImageData]: If return_img_data is False, returns a Response object containing the faces and their facial features. If return_img_data is True, returns the entire ImageData object.
+        AnalysisResult: Stable result for the one source image.
 
     &#34;&#34;&#34;
+
+    compatibility_warnings = []
+
+    if face_batch_size is not None and batch_size is not None:
+        raise ConfigurationError(
+            &#34;Specify only face_batch_size; batch_size is its deprecated alias.&#34;
+        )
+    if batch_size is not None:
+        message = (
+            &#34;batch_size is deprecated and will be removed after v1.x; &#34;
+            &#34;use face_batch_size.&#34;
+        )
+        warnings.warn(message, DeprecationWarning, stacklevel=2)
+        compatibility_warnings.append(message)
+        effective_face_batch_size = batch_size
+    elif face_batch_size is None:
+        effective_face_batch_size = 8
+    else:
+        effective_face_batch_size = face_batch_size
+
+    if (
+        isinstance(effective_face_batch_size, bool)
+        or not isinstance(effective_face_batch_size, int)
+        or effective_face_batch_size &lt; 1
+    ):
+        raise ConfigurationError(
+            &#34;face_batch_size must be an integer greater than or equal to 1, &#34;
+            f&#34;got {effective_face_batch_size!r}.&#34;
+        )
+
+    if return_img_data is not None:
+        message = (
+            &#34;return_img_data no longer changes FaceAnalyzer.run&#39;s return type; &#34;
+            &#34;use include_tensors or the explicit run_legacy adapter.&#34;
+        )
+        warnings.warn(message, DeprecationWarning, stacklevel=2)
+        compatibility_warnings.append(message)
+
+    def _run_component(label, operation):
+        try:
+            return operation()
+        except FacetorchError:
+            raise
+        except Exception as exc:
+            raise InferenceError(f&#34;{label} failed during analysis.&#34;) from exc
 
     def _predict_batch(
         data: ImageData, predictor: FacePredictor, predictor_name: str
     ) -&gt; ImageData:
         n_faces = len(data.faces)
 
-        for face_indx_start in range(0, n_faces, batch_size):
-            face_indx_end = min(face_indx_start + batch_size, n_faces)
+        for face_indx_start in range(0, n_faces, effective_face_batch_size):
+            face_indx_end = min(
+                face_indx_start + effective_face_batch_size, n_faces
+            )
 
             face_batch_tensor = torch.stack(
                 [face.tensor for face in data.faces[face_indx_start:face_indx_end]]
@@ -464,40 +1919,50 @@ def run(
         return data
 
     self.logger.info(&#34;Running FaceAnalyzer&#34;)
+    selected_predictors = self._select_predictor_names(
+        include_predictors, exclude_predictors
+    )
+    configured_predictors = set(self.configured_predictors)
 
-    if include_predictors and exclude_predictors:
-        raise ValueError(
-            &#34;Cannot specify both include_predictors and exclude_predictors. &#34;
-            &#34;Use one or the other.&#34;
+    supplied_sources = [
+        name
+        for name, value in (
+            (&#34;image_source&#34;, image_source),
+            (&#34;path_image&#34;, path_image),
+            (&#34;tensor&#34;, tensor),
         )
-
-    if batch_size &lt; 1:
-        raise ValueError(f&#34;batch_size must be &gt;= 1, got {batch_size}.&#34;)
-
-    if path_image is not None and image_source is None:
-        warnings.warn(
-            &#34;path_image is deprecated, use image_source instead.&#34;,
-            DeprecationWarning,
-            stacklevel=2,
+        if value is not None
+    ]
+    if len(supplied_sources) &gt; 1:
+        raise InputError(
+            &#34;Supply exactly one input source using image_source. Received: &#34;
+            + &#34;, &#34;.join(supplied_sources)
+            + &#34;.&#34;
         )
-        image_source = path_image
-
-    if tensor is not None and image_source is None:
-        warnings.warn(
-            &#34;tensor is deprecated, use image_source instead.&#34;,
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        image_source = tensor
-
-    if image_source is None:
-        raise ValueError(
+    if not supplied_sources:
+        raise InputError(
             &#34;image_source is required. Pass a file path, URL, tensor, numpy array, &#34;
             &#34;bytes, or PIL Image.&#34;
         )
+    if path_image is not None:
+        message = &#34;path_image is deprecated; use image_source.&#34;
+        warnings.warn(message, DeprecationWarning, stacklevel=2)
+        compatibility_warnings.append(message)
+        image_source = path_image
+    elif tensor is not None:
+        message = &#34;tensor is deprecated; use image_source.&#34;
+        warnings.warn(message, DeprecationWarning, stacklevel=2)
+        compatibility_warnings.append(message)
+        image_source = tensor
 
     self.logger.info(&#34;Reading image&#34;)
-    data = self._read_input(image_source, fix_img_size)
+    data = self._read_input(
+        image_source,
+        fix_img_size,
+        input_policy=input_policy,
+        input_spec=input_spec,
+    )
+    data.warnings.extend(compatibility_warnings)
 
     path_output = None if path_output == &#34;None&#34; else path_output
     data.path_output = path_output
@@ -525,39 +1990,47 @@ def run(
         n_faces = 1
     else:
         self.logger.info(&#34;Detecting faces&#34;)
-        data = self.detector.run(data)
+        data = _run_component(&#34;Face detector&#34;, lambda: self.detector.run(data))
         n_faces = len(data.faces)
 
     self.logger.info(f&#34;Number of faces: {n_faces}&#34;)
 
     if n_faces &gt; 0 and self.unifier is not None:
         self.logger.info(&#34;Unifying faces&#34;)
-        data = self.unifier.run(data)
+        data = _run_component(&#34;Face unifier&#34;, lambda: self.unifier.run(data))
 
         self.logger.info(&#34;Predicting facial features&#34;)
-        for predictor_name, predictor in self.predictors.items():
-            if include_predictors and predictor_name not in include_predictors:
-                continue
-            if exclude_predictors and predictor_name in exclude_predictors:
-                continue
+        for predictor_name in selected_predictors:
+            predictor = self.predictors[predictor_name]
             self.logger.info(f&#34;Running FacePredictor: {predictor_name}&#34;)
-            data = _predict_batch(data, predictor, predictor_name)
+            data = _run_component(
+                f&#34;Face predictor {predictor_name!r}&#34;,
+                lambda: _predict_batch(data, predictor, predictor_name),
+            )
 
         self.logger.info(&#34;Utilizing facial features&#34;)
         ran_predictors = (
             set(data.faces[0].preds.keys()) if data.faces else set()
         )
-        for utilizer_name, utilizer in self.utilizers.items():
-            if utilizer_name in self.predictors and utilizer_name not in ran_predictors:
+        for utilizer_name in self.utilizers:
+            if (
+                utilizer_name in configured_predictors
+                and utilizer_name not in ran_predictors
+            ):
                 self.logger.info(
                     f&#34;Skipping BaseUtilizer: {utilizer_name} (predictor not run)&#34;
                 )
                 continue
+            utilizer = self.utilizers[utilizer_name]
             self.logger.info(f&#34;Running BaseUtilizer: {utilizer_name}&#34;)
-            data = utilizer.run(data)
+            data = _run_component(
+                f&#34;Face utilizer {utilizer_name!r}&#34;, lambda: utilizer.run(data)
+            )
     else:
         if &#34;save&#34; in self.utilizers:
-            self.utilizers[&#34;save&#34;].run(data)
+            _run_component(
+                &#34;Face utilizer &#39;save&#39;&#34;, lambda: self.utilizers[&#34;save&#34;].run(data)
+            )
 
     if not include_tensors:
         self.logger.debug(
@@ -565,29 +2038,32 @@ def run(
         )
         data.reset_tensors()
 
-    response = Response(faces=data.faces, version=data.version)
-
-    if return_img_data:
-        self.logger.debug(&#34;Returning image data object&#34;, extra=data.__dict__)
-        return data
-    else:
-        self.logger.debug(&#34;Returning response with faces&#34;, extra=response.__dict__)
-        return response</code></pre>
+    result = AnalysisResult.from_image_data(data, include_tensors=include_tensors)
+    self.logger.debug(
+        &#34;Returning analysis result&#34;,
+        extra={&#34;face_count&#34;: len(result.faces), &#34;version&#34;: result.version},
+    )
+    return result</code></pre>
 </details>
-<div class="desc"><p>Reads image, detects faces, unifies the detected faces, predicts facial features
-and returns analyzed data.</p>
-<h2 id="args">Args</h2>
+<div class="desc"><p>Analyze exactly one source image and return one stable result type.</p>
 <dl>
-<dt><strong><code>image_source</code></strong> :&ensp;<code>Optional[Union[str, torch.Tensor, np.ndarray, bytes, Image.Image]]</code></dt>
-<dd>Input to be analyzed. Accepts file paths, URLs, tensors, numpy arrays, bytes, or PIL Images. Default: None.</dd>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>image_source</code></strong></dt>
+<dd>Input accepted by the configured reader. The default
+reader accepts local paths, tensors, NumPy arrays, bytes, and PIL
+images. URLs require an explicit URLReader configuration.</dd>
 <dt><strong><code>path_image</code></strong> :&ensp;<code>Optional[str]</code></dt>
 <dd>Deprecated. Use image_source instead.</dd>
-<dt><strong><code>batch_size</code></strong> :&ensp;<code>int</code></dt>
-<dd>Batch size for making predictions on the faces. Default is 8.</dd>
+<dt><strong><code>face_batch_size</code></strong> :&ensp;<code>Optional[int]</code></dt>
+<dd>Number of faces from this image sent to
+each predictor at once. Default: 8.</dd>
 <dt><strong><code>fix_img_size</code></strong> :&ensp;<code>bool</code></dt>
 <dd>If True, resizes the image to the size specified in reader. Default is False.</dd>
-<dt><strong><code>return_img_data</code></strong> :&ensp;<code>bool</code></dt>
-<dd>If True, returns all image data including tensors, otherwise only returns the faces. Default is False.</dd>
+<dt><strong><code>return_img_data</code></strong> :&ensp;<code>Optional[bool]</code></dt>
+<dd>Deprecated no-op. Use
+<code>include_tensors</code> and the fields on <code><a title="facetorch.AnalysisResult" href="#facetorch.AnalysisResult">AnalysisResult</a></code> or call
+<code>run_legacy</code> for the former flag-dependent return type.</dd>
 <dt><strong><code>include_tensors</code></strong> :&ensp;<code>bool</code></dt>
 <dd>If True, includes tensors in the returned data object. If False, tensors are removed. Default is False.</dd>
 <dt><strong><code>path_output</code></strong> :&ensp;<code>Optional[str]</code></dt>
@@ -595,19 +2071,96 @@ and returns analyzed data.</p>
 <dt><strong><code>tensor</code></strong> :&ensp;<code>Optional[torch.Tensor]</code></dt>
 <dd>Deprecated. Use image_source instead.</dd>
 <dt><strong><code>include_predictors</code></strong> :&ensp;<code>Optional[List[str]]</code></dt>
-<dd>If provided, only run these predictors. Default: None (run all).</dd>
+<dd>Names to run. None runs all
+configured predictors and an empty collection runs none.</dd>
 <dt><strong><code>exclude_predictors</code></strong> :&ensp;<code>Optional[List[str]]</code></dt>
-<dd>If provided, skip these predictors. Default: None (skip none).</dd>
+<dd>Names to omit. None and an
+empty collection omit none. Cannot be combined with an include.</dd>
 <dt><strong><code>skip_detector</code></strong> :&ensp;<code>bool</code></dt>
-<dd>If True, skip face detection and treat the input as a pre-cropped face. Default: False.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>Union[<a title="facetorch.Response" href="#facetorch.Response">Response</a>, <a title="facetorch.ImageData" href="#facetorch.ImageData">ImageData</a>]</code></dt>
-<dd>If return_img_data is False, returns a Response object containing the faces and their facial features. If return_img_data is True, returns the entire ImageData object.</dd>
+<dd>If True, skip face detection, avoid constructing
+its model, and treat the input as a pre-cropped face. Default: False.</dd>
+<dt><strong><code>batch_size</code></strong> :&ensp;<code>Optional[int]</code></dt>
+<dd>Deprecated warning alias for
+<code>face_batch_size</code> throughout v1.x.</dd>
+<dt><strong><code>input_policy</code></strong> :&ensp;<code>str</code></dt>
+<dd><code>coerce</code> (default) or <code>strict</code>.</dd>
+<dt><strong><code>input_spec</code></strong> :&ensp;<code>Optional[<a title="facetorch.InputSpec" href="#facetorch.InputSpec">InputSpec</a>]</code></dt>
+<dd>Explicit source layout/range/color
+description, especially for strict-mode conversions.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code><a title="facetorch.AnalysisResult" href="#facetorch.AnalysisResult">AnalysisResult</a></code></dt>
+<dd>Stable result for the one source image.</dd>
 </dl></div>
 </dd>
+<dt id="facetorch.FaceAnalyzer.run_legacy"><code class="name flex">
+<span>def <span class="ident">run_legacy</span></span>(<span>self, *args, return_img_data: bool = False, **kwargs) ‑> <a title="facetorch.datastruct.Response" href="datastruct.html#facetorch.datastruct.Response">Response</a> | <a title="facetorch.datastruct.ImageData" href="datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_legacy(
+    self,
+    *args,
+    return_img_data: bool = False,
+    **kwargs,
+) -&gt; Union[Response, ImageData]:
+    &#34;&#34;&#34;Run the canonical pipeline and adapt its result to the v0.x return union.&#34;&#34;&#34;
+    warnings.warn(
+        &#34;FaceAnalyzer.run_legacy is a v1.x compatibility adapter; migrate to run().&#34;,
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    result = self.run(*args, **kwargs)
+    if not return_img_data:
+        return Response(faces=result.faces, version=result.version)
+
+    return ImageData(
+        path_input=result.path_input,
+        path_output=result.path_output,
+        img=result.image if result.image is not None else torch.tensor([]),
+        tensor=result.tensor if result.tensor is not None else torch.tensor([]),
+        dims=result.dimensions,
+        det=result.detection if result.detection is not None else Detection(),
+        faces=result.faces,
+        version=result.version,
+        warnings=list(result.warnings),
+    )</code></pre>
+</details>
+<div class="desc"><p>Run the canonical pipeline and adapt its result to the v0.x return union.</p></div>
+</dd>
 </dl>
+</dd>
+<dt id="facetorch.FacetorchError"><code class="flex name class">
+<span>class <span class="ident">FacetorchError</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FacetorchError(Exception):
+    &#34;&#34;&#34;Base class for actionable facetorch errors.&#34;&#34;&#34;</code></pre>
+</details>
+<div class="desc"><p>Base class for actionable facetorch errors.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="facetorch.exceptions.ArtifactIntegrityError" href="exceptions.html#facetorch.exceptions.ArtifactIntegrityError">ArtifactIntegrityError</a></li>
+<li><a title="facetorch.exceptions.CacheLockError" href="exceptions.html#facetorch.exceptions.CacheLockError">CacheLockError</a></li>
+<li><a title="facetorch.exceptions.ConfigurationError" href="exceptions.html#facetorch.exceptions.ConfigurationError">ConfigurationError</a></li>
+<li><a title="facetorch.exceptions.InferenceError" href="exceptions.html#facetorch.exceptions.InferenceError">InferenceError</a></li>
+<li><a title="facetorch.exceptions.InputError" href="exceptions.html#facetorch.exceptions.InputError">InputError</a></li>
+<li><a title="facetorch.exceptions.ModelCompatibilityError" href="exceptions.html#facetorch.exceptions.ModelCompatibilityError">ModelCompatibilityError</a></li>
+<li><a title="facetorch.exceptions.OfflineCacheError" href="exceptions.html#facetorch.exceptions.OfflineCacheError">OfflineCacheError</a></li>
+</ul>
 </dd>
 <dt id="facetorch.Dimensions"><code class="flex name class">
 <span>class <span class="ident">Dimensions</span></span>
@@ -631,8 +2184,9 @@ class Dimensions:
     width: int = field(default=0)</code></pre>
 </details>
 <div class="desc"><p>Data class for image dimensions.</p>
-<h2 id="attributes">Attributes</h2>
 <dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
 <dt><strong><code>height</code></strong> :&ensp;<code>int</code></dt>
 <dd>Image height.</dd>
 <dt><strong><code>width</code></strong> :&ensp;<code>int</code></dt>
@@ -666,9 +2220,9 @@ class Detection:
     Attributes:
         loc (torch.Tensor): Locations of faces
         conf (torch.Tensor): Confidences of faces
-        landmarks (torch.Tensor): Landmarks of faces
-        boxes (torch.Tensor): Bounding boxes of faces
-        dets (torch.Tensor): Detections of faces
+        landmarks (torch.Tensor): Selected landmark coordinates in source-image space.
+        boxes (torch.Tensor): Selected bounding boxes in source-image space.
+        dets (torch.Tensor): Selected boxes and confidence scores.
 
     &#34;&#34;&#34;
 
@@ -679,18 +2233,19 @@ class Detection:
     dets: torch.Tensor = field(default_factory=torch.Tensor)</code></pre>
 </details>
 <div class="desc"><p>Data class for detector output.</p>
-<h2 id="attributes">Attributes</h2>
 <dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
 <dt><strong><code>loc</code></strong> :&ensp;<code>torch.Tensor</code></dt>
 <dd>Locations of faces</dd>
 <dt><strong><code>conf</code></strong> :&ensp;<code>torch.Tensor</code></dt>
 <dd>Confidences of faces</dd>
 <dt><strong><code>landmarks</code></strong> :&ensp;<code>torch.Tensor</code></dt>
-<dd>Landmarks of faces</dd>
+<dd>Selected landmark coordinates in source-image space.</dd>
 <dt><strong><code>boxes</code></strong> :&ensp;<code>torch.Tensor</code></dt>
-<dd>Bounding boxes of faces</dd>
+<dd>Selected bounding boxes in source-image space.</dd>
 <dt><strong><code>dets</code></strong> :&ensp;<code>torch.Tensor</code></dt>
-<dd>Detections of faces</dd>
+<dd>Selected boxes and confidence scores.</dd>
 </dl></div>
 <h3>Instance variables</h3>
 <dl>
@@ -746,8 +2301,9 @@ class Face:
     preds: Dict[str, Prediction] = field(default_factory=dict)</code></pre>
 </details>
 <div class="desc"><p>Data class for face attributes.</p>
-<h2 id="attributes">Attributes</h2>
 <dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
 <dt><strong><code>indx</code></strong> :&ensp;<code>int</code></dt>
 <dd>Index of the face.</dd>
 <dt><strong><code>loc</code></strong> :&ensp;<code><a title="facetorch.Location" href="#facetorch.Location">Location</a></code></dt>
@@ -791,7 +2347,7 @@ class Face:
 </dd>
 <dt id="facetorch.ImageData"><code class="flex name class">
 <span>class <span class="ident">ImageData</span></span>
-<span>(</span><span>path_input: str = &lt;factory&gt;,<br>path_output: str | None = &lt;factory&gt;,<br>img: torch.Tensor = &lt;factory&gt;,<br>tensor: torch.Tensor = &lt;factory&gt;,<br>dims: <a title="facetorch.datastruct.Dimensions" href="datastruct.html#facetorch.datastruct.Dimensions">Dimensions</a> = &lt;factory&gt;,<br>det: <a title="facetorch.datastruct.Detection" href="datastruct.html#facetorch.datastruct.Detection">Detection</a> = &lt;factory&gt;,<br>faces: List[<a title="facetorch.datastruct.Face" href="datastruct.html#facetorch.datastruct.Face">Face</a>] = &lt;factory&gt;,<br>version: str = &lt;factory&gt;)</span>
+<span>(</span><span>path_input: str = &lt;factory&gt;,<br>path_output: str | None = &lt;factory&gt;,<br>img: torch.Tensor = &lt;factory&gt;,<br>tensor: torch.Tensor = &lt;factory&gt;,<br>dims: <a title="facetorch.datastruct.Dimensions" href="datastruct.html#facetorch.datastruct.Dimensions">Dimensions</a> = &lt;factory&gt;,<br>det: <a title="facetorch.datastruct.Detection" href="datastruct.html#facetorch.datastruct.Detection">Detection</a> = &lt;factory&gt;,<br>faces: List[<a title="facetorch.datastruct.Face" href="datastruct.html#facetorch.datastruct.Face">Face</a>] = &lt;factory&gt;,<br>version: str = &lt;factory&gt;,<br>warnings: List[str] = &lt;factory&gt;)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -822,6 +2378,7 @@ class ImageData:
     det: Detection = field(default_factory=Detection)
     faces: List[Face] = field(default_factory=list)
     version: str = field(default_factory=str)
+    warnings: List[str] = field(default_factory=list)
 
     def add_preds(
         self,
@@ -904,8 +2461,9 @@ class ImageData:
         return loc_tensor</code></pre>
 </details>
 <div class="desc"><p>The main data class used for passing data between the different facetorch modules.</p>
-<h2 id="attributes">Attributes</h2>
 <dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
 <dt><strong><code>path_input</code></strong> :&ensp;<code>str</code></dt>
 <dd>Path to the input image.</dd>
 <dt><strong><code>path_output</code></strong> :&ensp;<code>str</code></dt>
@@ -957,6 +2515,10 @@ class ImageData:
 <dd>
 <div class="desc"></div>
 </dd>
+<dt id="facetorch.ImageData.warnings"><code class="name">var <span class="ident">warnings</span> : List[str]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 </dl>
 <h3>Methods</h3>
 <dl>
@@ -991,8 +2553,9 @@ class ImageData:
         j += 1</code></pre>
 </details>
 <div class="desc"><p>Adds a list of predictions to the data object.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>preds_list</code></strong> :&ensp;<code>List[<a title="facetorch.Prediction" href="#facetorch.Prediction">Prediction</a>]</code></dt>
 <dd>List of predictions.</dd>
 <dt><strong><code>predictor_name</code></strong> :&ensp;<code>str</code></dt>
@@ -1000,8 +2563,9 @@ class ImageData:
 <dt><strong><code>face_offset</code></strong> :&ensp;<code>int</code></dt>
 <dd>Offset of the face index where the predictions are added.</dd>
 </dl>
-<h2 id="returns">Returns</h2>
-<p>None</p></div>
+<p>Returns
+-----=
+None</p></div>
 </dd>
 <dt id="facetorch.ImageData.reset_img"><code class="name flex">
 <span>def <span class="ident">reset_img</span></span>(<span>self) ‑> None</span>
@@ -1140,13 +2704,176 @@ def reset_tensors(self) -&gt; None:
     return loc_tensor</code></pre>
 </details>
 <div class="desc"><p>Aggregates the location tensor from all faces.</p>
-<h2 id="returns">Returns</h2>
 <dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>torch.Tensor</code></dt>
 <dd>Aggregated location tensor for drawing purposes.</dd>
 </dl></div>
 </dd>
 </dl>
+</dd>
+<dt id="facetorch.InferenceError"><code class="flex name class">
+<span>class <span class="ident">InferenceError</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class InferenceError(FacetorchError, RuntimeError):
+    &#34;&#34;&#34;A configured model failed while executing inference.&#34;&#34;&#34;</code></pre>
+</details>
+<div class="desc"><p>A configured model failed while executing inference.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="facetorch.exceptions.FacetorchError" href="exceptions.html#facetorch.exceptions.FacetorchError">FacetorchError</a></li>
+<li>builtins.RuntimeError</li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+</dd>
+<dt id="facetorch.InputCoercionWarning"><code class="flex name class">
+<span>class <span class="ident">InputCoercionWarning</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class InputCoercionWarning(UserWarning):
+    &#34;&#34;&#34;A deterministic input conversion was performed in ``coerce`` mode.&#34;&#34;&#34;</code></pre>
+</details>
+<div class="desc"><p>A deterministic input conversion was performed in <code>coerce</code> mode.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>builtins.UserWarning</li>
+<li>builtins.Warning</li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+</dd>
+<dt id="facetorch.InputError"><code class="flex name class">
+<span>class <span class="ident">InputError</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class InputError(FacetorchError, ValueError):
+    &#34;&#34;&#34;The caller supplied an unsupported or ambiguous image input.&#34;&#34;&#34;</code></pre>
+</details>
+<div class="desc"><p>The caller supplied an unsupported or ambiguous image input.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="facetorch.exceptions.FacetorchError" href="exceptions.html#facetorch.exceptions.FacetorchError">FacetorchError</a></li>
+<li>builtins.ValueError</li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+</dd>
+<dt id="facetorch.InputSpec"><code class="flex name class">
+<span>class <span class="ident">InputSpec</span></span>
+<span>(</span><span>layout: Literal['HW', 'CHW', 'HWC', 'BCHW', 'BHWC'] | None = None,<br>value_range: Literal['0_1', '0_255'] | None = None,<br>color_space: Literal['GRAY', 'RGB', 'BGR', 'RGBA'] | None = None,<br>alpha_mode: Literal['drop'] | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass(frozen=True)
+class InputSpec:
+    &#34;&#34;&#34;Explicitly describes an array or tensor image representation.
+
+    Fields may be omitted in ``coerce`` mode. In ``strict`` mode, callers must
+    declare any representation that differs from the source-specific exact
+    defaults: uint8 RGB, CHW for Torch, and HWC for NumPy.
+    &#34;&#34;&#34;
+
+    layout: Optional[InputLayout] = None
+    value_range: Optional[InputValueRange] = None
+    color_space: Optional[InputColorSpace] = None
+    alpha_mode: Optional[AlphaMode] = None
+
+    def __post_init__(self):
+        normalized = {}
+        for field_name, value, operation in (
+            (&#34;layout&#34;, self.layout, str.upper),
+            (&#34;value_range&#34;, self.value_range, str.lower),
+            (&#34;color_space&#34;, self.color_space, str.upper),
+            (&#34;alpha_mode&#34;, self.alpha_mode, str.lower),
+        ):
+            if value is not None and not isinstance(value, str):
+                raise InputError(
+                    f&#34;InputSpec.{field_name} must be a string or None, &#34;
+                    f&#34;got {type(value).__name__}.&#34;
+                )
+            normalized[field_name] = operation(value) if value is not None else None
+        for field_name, value in normalized.items():
+            object.__setattr__(self, field_name, value)
+
+        valid_values = {
+            &#34;layout&#34;: {&#34;HW&#34;, &#34;CHW&#34;, &#34;HWC&#34;, &#34;BCHW&#34;, &#34;BHWC&#34;},
+            &#34;value_range&#34;: {&#34;0_1&#34;, &#34;0_255&#34;},
+            &#34;color_space&#34;: {&#34;GRAY&#34;, &#34;RGB&#34;, &#34;BGR&#34;, &#34;RGBA&#34;},
+            &#34;alpha_mode&#34;: {&#34;drop&#34;},
+        }
+        for field_name, allowed in valid_values.items():
+            value = getattr(self, field_name)
+            if value is not None and value not in allowed:
+                choices = &#34;, &#34;.join(sorted(allowed))
+                raise InputError(
+                    f&#34;Invalid InputSpec.{field_name}={value!r}; expected one of {choices}.&#34;
+                )</code></pre>
+</details>
+<div class="desc"><p>Explicitly describes an array or tensor image representation.</p>
+<p>Fields may be omitted in <code>coerce</code> mode. In <code>strict</code> mode, callers must
+declare any representation that differs from the source-specific exact
+defaults: uint8 RGB, CHW for Torch, and HWC for NumPy.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="facetorch.InputSpec.layout"><code class="name">var <span class="ident">layout</span> : Literal['HW', 'CHW', 'HWC', 'BCHW', 'BHWC'] | None</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.InputSpec.value_range"><code class="name">var <span class="ident">value_range</span> : Literal['0_1', '0_255'] | None</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.InputSpec.color_space"><code class="name">var <span class="ident">color_space</span> : Literal['GRAY', 'RGB', 'BGR', 'RGBA'] | None</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.InputSpec.alpha_mode"><code class="name">var <span class="ident">alpha_mode</span> : Literal['drop'] | None</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="facetorch.LegacyModelWarning"><code class="flex name class">
+<span>class <span class="ident">LegacyModelWarning</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class LegacyModelWarning(UserWarning):
+    &#34;&#34;&#34;An explicitly enabled legacy TorchScript artifact was selected.&#34;&#34;&#34;</code></pre>
+</details>
+<div class="desc"><p>An explicitly enabled legacy TorchScript artifact was selected.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>builtins.UserWarning</li>
+<li>builtins.Warning</li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
 </dd>
 <dt id="facetorch.Location"><code class="flex name class">
 <span>class <span class="ident">Location</span></span>
@@ -1203,21 +2930,43 @@ class Location:
         Returns:
             None
         &#34;&#34;&#34;
-        assert amount &gt;= 0, &#34;Amount must be greater than or equal to 0.&#34;
-        # if amount != 0:
-        #     self.x1 = self.x1 - amount
-        #     self.y1 = self.y1 - amount
-        #     self.x2 = self.x2 + amount
-        #     self.y2 = self.y2 + amount
+        if amount &lt; 0:
+            raise ValueError(&#34;amount must be greater than or equal to 0.&#34;)
         if amount != 0.0:
-            self.x1 = self.x1 - int((self.x2 - self.x1) / 2 * amount)
-            self.y1 = self.y1 - int((self.y2 - self.y1) / 2 * amount)
-            self.x2 = self.x2 + int((self.x2 - self.x1) / 2 * amount)
-            self.y2 = self.y2 + int((self.y2 - self.y1) / 2 * amount)</code></pre>
+            width = self.x2 - self.x1
+            height = self.y2 - self.y1
+            expand_x = int(round(width * amount / 2))
+            expand_y = int(round(height * amount / 2))
+            self.x1 -= expand_x
+            self.y1 -= expand_y
+            self.x2 += expand_x
+            self.y2 += expand_y
+
+    def clamp(self, width: int, height: int) -&gt; None:
+        &#34;&#34;&#34;Clamp coordinates to an image boundary.&#34;&#34;&#34;
+        self.x1 = max(0, min(int(self.x1), int(width)))
+        self.x2 = max(self.x1, min(int(self.x2), int(width)))
+        self.y1 = max(0, min(int(self.y1), int(height)))
+        self.y2 = max(self.y1, min(int(self.y2), int(height)))
+
+    def fit_square(self, width: int, height: int) -&gt; None:
+        &#34;&#34;&#34;Fit the largest possible square around this location inside an image.&#34;&#34;&#34;
+        center_x = (self.x1 + self.x2) / 2.0
+        center_y = (self.y1 + self.y2) / 2.0
+        side = min(max(self.x2 - self.x1, self.y2 - self.y1), width, height)
+        side = max(0, int(round(side)))
+
+        x1 = int(round(center_x - side / 2.0))
+        y1 = int(round(center_y - side / 2.0))
+        x1 = min(max(0, x1), max(0, width - side))
+        y1 = min(max(0, y1), max(0, height - side))
+        self.x1, self.y1 = x1, y1
+        self.x2, self.y2 = x1 + side, y1 + side</code></pre>
 </details>
 <div class="desc"><p>Data class for face location.</p>
-<h2 id="attributes">Attributes</h2>
 <dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
 <dt><strong><code>x1</code></strong> :&ensp;<code>int</code></dt>
 <dd>x1 coordinate</dd>
 <dt><strong><code>x2</code></strong> :&ensp;<code>int</code></dt>
@@ -1277,8 +3026,9 @@ class Location:
         pass</code></pre>
 </details>
 <div class="desc"><p>Form a square from the location.</p>
-<h2 id="returns">Returns</h2>
-<p>None</p></div>
+<p>Returns
+-----=
+None</p></div>
 </dd>
 <dt id="facetorch.Location.expand"><code class="name flex">
 <span>def <span class="ident">expand</span></span>(<span>self, amount: float) ‑> None</span>
@@ -1298,26 +3048,272 @@ class Location:
     Returns:
         None
     &#34;&#34;&#34;
-    assert amount &gt;= 0, &#34;Amount must be greater than or equal to 0.&#34;
-    # if amount != 0:
-    #     self.x1 = self.x1 - amount
-    #     self.y1 = self.y1 - amount
-    #     self.x2 = self.x2 + amount
-    #     self.y2 = self.y2 + amount
+    if amount &lt; 0:
+        raise ValueError(&#34;amount must be greater than or equal to 0.&#34;)
     if amount != 0.0:
-        self.x1 = self.x1 - int((self.x2 - self.x1) / 2 * amount)
-        self.y1 = self.y1 - int((self.y2 - self.y1) / 2 * amount)
-        self.x2 = self.x2 + int((self.x2 - self.x1) / 2 * amount)
-        self.y2 = self.y2 + int((self.y2 - self.y1) / 2 * amount)</code></pre>
+        width = self.x2 - self.x1
+        height = self.y2 - self.y1
+        expand_x = int(round(width * amount / 2))
+        expand_y = int(round(height * amount / 2))
+        self.x1 -= expand_x
+        self.y1 -= expand_y
+        self.x2 += expand_x
+        self.y2 += expand_y</code></pre>
 </details>
 <div class="desc"><p>Expand the location while keeping the center.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>amount</code></strong> :&ensp;<code>float</code></dt>
 <dd>Amount to expand the location by in multiples of the original size.</dd>
 </dl>
-<h2 id="returns">Returns</h2>
-<p>None</p></div>
+<p>Returns
+-----=
+None</p></div>
+</dd>
+<dt id="facetorch.Location.clamp"><code class="name flex">
+<span>def <span class="ident">clamp</span></span>(<span>self, width: int, height: int) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def clamp(self, width: int, height: int) -&gt; None:
+    &#34;&#34;&#34;Clamp coordinates to an image boundary.&#34;&#34;&#34;
+    self.x1 = max(0, min(int(self.x1), int(width)))
+    self.x2 = max(self.x1, min(int(self.x2), int(width)))
+    self.y1 = max(0, min(int(self.y1), int(height)))
+    self.y2 = max(self.y1, min(int(self.y2), int(height)))</code></pre>
+</details>
+<div class="desc"><p>Clamp coordinates to an image boundary.</p></div>
+</dd>
+<dt id="facetorch.Location.fit_square"><code class="name flex">
+<span>def <span class="ident">fit_square</span></span>(<span>self, width: int, height: int) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fit_square(self, width: int, height: int) -&gt; None:
+    &#34;&#34;&#34;Fit the largest possible square around this location inside an image.&#34;&#34;&#34;
+    center_x = (self.x1 + self.x2) / 2.0
+    center_y = (self.y1 + self.y2) / 2.0
+    side = min(max(self.x2 - self.x1, self.y2 - self.y1), width, height)
+    side = max(0, int(round(side)))
+
+    x1 = int(round(center_x - side / 2.0))
+    y1 = int(round(center_y - side / 2.0))
+    x1 = min(max(0, x1), max(0, width - side))
+    y1 = min(max(0, y1), max(0, height - side))
+    self.x1, self.y1 = x1, y1
+    self.x2, self.y2 = x1 + side, y1 + side</code></pre>
+</details>
+<div class="desc"><p>Fit the largest possible square around this location inside an image.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="facetorch.ModelCompatibilityError"><code class="flex name class">
+<span>class <span class="ident">ModelCompatibilityError</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ModelCompatibilityError(FacetorchError, RuntimeError):
+    &#34;&#34;&#34;No model artifact is compatible with the active runtime.&#34;&#34;&#34;</code></pre>
+</details>
+<div class="desc"><p>No model artifact is compatible with the active runtime.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="facetorch.exceptions.FacetorchError" href="exceptions.html#facetorch.exceptions.FacetorchError">FacetorchError</a></li>
+<li>builtins.RuntimeError</li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+</dd>
+<dt id="facetorch.OfflineCacheError"><code class="flex name class">
+<span>class <span class="ident">OfflineCacheError</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class OfflineCacheError(FacetorchError, FileNotFoundError):
+    &#34;&#34;&#34;Offline execution was requested but a required cache entry is absent.&#34;&#34;&#34;</code></pre>
+</details>
+<div class="desc"><p>Offline execution was requested but a required cache entry is absent.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="facetorch.exceptions.FacetorchError" href="exceptions.html#facetorch.exceptions.FacetorchError">FacetorchError</a></li>
+<li>builtins.FileNotFoundError</li>
+<li>builtins.OSError</li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+</dd>
+<dt id="facetorch.PrefetchItem"><code class="flex name class">
+<span>class <span class="ident">PrefetchItem</span></span>
+<span>(</span><span>component: str,<br>artifact_id: str,<br>path: Path,<br>format: str,<br>size_bytes: int,<br>sha256: str,<br>cached: bool)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass(frozen=True)
+class PrefetchItem:
+    &#34;&#34;&#34;One selected artifact and its current verified-cache state.&#34;&#34;&#34;
+
+    component: str
+    artifact_id: str
+    path: Path
+    format: str
+    size_bytes: int
+    sha256: str
+    cached: bool</code></pre>
+</details>
+<div class="desc"><p>One selected artifact and its current verified-cache state.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="facetorch.PrefetchItem.component"><code class="name">var <span class="ident">component</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.PrefetchItem.artifact_id"><code class="name">var <span class="ident">artifact_id</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.PrefetchItem.path"><code class="name">var <span class="ident">path</span> : pathlib.Path</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.PrefetchItem.format"><code class="name">var <span class="ident">format</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.PrefetchItem.size_bytes"><code class="name">var <span class="ident">size_bytes</span> : int</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.PrefetchItem.sha256"><code class="name">var <span class="ident">sha256</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.PrefetchItem.cached"><code class="name">var <span class="ident">cached</span> : bool</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="facetorch.PrefetchPlan"><code class="flex name class">
+<span>class <span class="ident">PrefetchPlan</span></span>
+<span>(</span><span>profile: str,<br>items: tuple[<a title="facetorch.PrefetchItem" href="#facetorch.PrefetchItem">PrefetchItem</a>, ...])</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass(frozen=True)
+class PrefetchPlan:
+    &#34;&#34;&#34;Download-cost estimate produced before any network request.&#34;&#34;&#34;
+
+    profile: str
+    items: tuple[PrefetchItem, ...]
+
+    @property
+    def total_bytes(self) -&gt; int:
+        return sum(item.size_bytes for item in self.items)
+
+    @property
+    def cached_bytes(self) -&gt; int:
+        return sum(item.size_bytes for item in self.items if item.cached)
+
+    @property
+    def download_bytes(self) -&gt; int:
+        return self.total_bytes - self.cached_bytes</code></pre>
+</details>
+<div class="desc"><p>Download-cost estimate produced before any network request.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="facetorch.PrefetchPlan.profile"><code class="name">var <span class="ident">profile</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.PrefetchPlan.items"><code class="name">var <span class="ident">items</span> : tuple[<a title="facetorch.model_cache.PrefetchItem" href="model_cache.html#facetorch.model_cache.PrefetchItem">PrefetchItem</a>, ...]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.PrefetchPlan.total_bytes"><code class="name">prop <span class="ident">total_bytes</span> : int</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def total_bytes(self) -&gt; int:
+    return sum(item.size_bytes for item in self.items)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.PrefetchPlan.cached_bytes"><code class="name">prop <span class="ident">cached_bytes</span> : int</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def cached_bytes(self) -&gt; int:
+    return sum(item.size_bytes for item in self.items if item.cached)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.PrefetchPlan.download_bytes"><code class="name">prop <span class="ident">download_bytes</span> : int</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def download_bytes(self) -&gt; int:
+    return self.total_bytes - self.cached_bytes</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="facetorch.PrefetchResult"><code class="flex name class">
+<span>class <span class="ident">PrefetchResult</span></span>
+<span>(</span><span>plan: <a title="facetorch.PrefetchPlan" href="#facetorch.PrefetchPlan">PrefetchPlan</a>,<br>paths: tuple[Path, ...])</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass(frozen=True)
+class PrefetchResult:
+    &#34;&#34;&#34;Completed prefetch result with authenticated local paths.&#34;&#34;&#34;
+
+    plan: PrefetchPlan
+    paths: tuple[Path, ...]</code></pre>
+</details>
+<div class="desc"><p>Completed prefetch result with authenticated local paths.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="facetorch.PrefetchResult.plan"><code class="name">var <span class="ident">plan</span> : <a title="facetorch.model_cache.PrefetchPlan" href="model_cache.html#facetorch.model_cache.PrefetchPlan">PrefetchPlan</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.PrefetchResult.paths"><code class="name">var <span class="ident">paths</span> : tuple[pathlib.Path, ...]</code></dt>
+<dd>
+<div class="desc"></div>
 </dd>
 </dl>
 </dd>
@@ -1345,8 +3341,9 @@ class Prediction:
     other: Dict = field(default_factory=dict)</code></pre>
 </details>
 <div class="desc"><p>Data class for face prediction results and derivatives.</p>
-<h2 id="attributes">Attributes</h2>
 <dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
 <dt><strong><code>label</code></strong> :&ensp;<code>str</code></dt>
 <dd>Label of the face given by predictor.</dd>
 <dt><strong><code>logits</code></strong> :&ensp;<code>torch.Tensor</code></dt>
@@ -1393,8 +3390,9 @@ class Response:
     version: str = field(default_factory=str)</code></pre>
 </details>
 <div class="desc"><p>Data class for response data, which is a subset of ImageData.</p>
-<h2 id="attributes">Attributes</h2>
 <dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
 <dt><strong><code>faces</code></strong> :&ensp;<code>List[<a title="facetorch.Face" href="#facetorch.Face">Face</a>]</code></dt>
 <dd>List of faces in the image.</dd>
 <dt><strong><code>version</code></strong> :&ensp;<code>str</code></dt>
@@ -1469,21 +3467,104 @@ setTimeout(() => input.focus(), 100);
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
 <li><code><a title="facetorch.analyzer" href="analyzer/index.html">facetorch.analyzer</a></code></li>
+<li><code><a title="facetorch.artifacts" href="artifacts.html">facetorch.artifacts</a></code></li>
 <li><code><a title="facetorch.base" href="base.html">facetorch.base</a></code></li>
+<li><code><a title="facetorch.configs" href="configs/index.html">facetorch.configs</a></code></li>
+<li><code><a title="facetorch.configuration" href="configuration.html">facetorch.configuration</a></code></li>
 <li><code><a title="facetorch.datastruct" href="datastruct.html">facetorch.datastruct</a></code></li>
 <li><code><a title="facetorch.downloader" href="downloader.html">facetorch.downloader</a></code></li>
+<li><code><a title="facetorch.exceptions" href="exceptions.html">facetorch.exceptions</a></code></li>
+<li><code><a title="facetorch.input" href="input.html">facetorch.input</a></code></li>
 <li><code><a title="facetorch.logger" href="logger.html">facetorch.logger</a></code></li>
+<li><code><a title="facetorch.model_cache" href="model_cache.html">facetorch.model_cache</a></code></li>
+<li><code><a title="facetorch.models" href="models/index.html">facetorch.models</a></code></li>
+<li><code><a title="facetorch.paths" href="paths.html">facetorch.paths</a></code></li>
 <li><code><a title="facetorch.transforms" href="transforms.html">facetorch.transforms</a></code></li>
 <li><code><a title="facetorch.utils" href="utils.html">facetorch.utils</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="facetorch.load_config" href="#facetorch.load_config">load_config</a></code></li>
+<li><code><a title="facetorch.load_config_from_path" href="#facetorch.load_config_from_path">load_config_from_path</a></code></li>
+<li><code><a title="facetorch.get_cache_dir" href="#facetorch.get_cache_dir">get_cache_dir</a></code></li>
+<li><code><a title="facetorch.get_metadata_dir" href="#facetorch.get_metadata_dir">get_metadata_dir</a></code></li>
+<li><code><a title="facetorch.get_model_dir" href="#facetorch.get_model_dir">get_model_dir</a></code></li>
+<li><code><a title="facetorch.get_offline_mode" href="#facetorch.get_offline_mode">get_offline_mode</a></code></li>
+<li><code><a title="facetorch.cleanup_quarantined_cache" href="#facetorch.cleanup_quarantined_cache">cleanup_quarantined_cache</a></code></li>
+<li><code><a title="facetorch.inspect_incompatible_cache" href="#facetorch.inspect_incompatible_cache">inspect_incompatible_cache</a></code></li>
+<li><code><a title="facetorch.inspect_legacy_cache" href="#facetorch.inspect_legacy_cache">inspect_legacy_cache</a></code></li>
+<li><code><a title="facetorch.inspect_quarantined_cache" href="#facetorch.inspect_quarantined_cache">inspect_quarantined_cache</a></code></li>
+<li><code><a title="facetorch.migrate_legacy_artifact" href="#facetorch.migrate_legacy_artifact">migrate_legacy_artifact</a></code></li>
+<li><code><a title="facetorch.plan_model_prefetch" href="#facetorch.plan_model_prefetch">plan_model_prefetch</a></code></li>
+<li><code><a title="facetorch.prefetch_models" href="#facetorch.prefetch_models">prefetch_models</a></code></li>
+<li><code><a title="facetorch.reset_incompatible_cache" href="#facetorch.reset_incompatible_cache">reset_incompatible_cache</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
+<h4><code><a title="facetorch.AnalysisResult" href="#facetorch.AnalysisResult">AnalysisResult</a></code></h4>
+<ul class="two-column">
+<li><code><a title="facetorch.AnalysisResult.from_image_data" href="#facetorch.AnalysisResult.from_image_data">from_image_data</a></code></li>
+<li><code><a title="facetorch.AnalysisResult.faces" href="#facetorch.AnalysisResult.faces">faces</a></code></li>
+<li><code><a title="facetorch.AnalysisResult.version" href="#facetorch.AnalysisResult.version">version</a></code></li>
+<li><code><a title="facetorch.AnalysisResult.dimensions" href="#facetorch.AnalysisResult.dimensions">dimensions</a></code></li>
+<li><code><a title="facetorch.AnalysisResult.warnings" href="#facetorch.AnalysisResult.warnings">warnings</a></code></li>
+<li><code><a title="facetorch.AnalysisResult.image" href="#facetorch.AnalysisResult.image">image</a></code></li>
+<li><code><a title="facetorch.AnalysisResult.tensor" href="#facetorch.AnalysisResult.tensor">tensor</a></code></li>
+<li><code><a title="facetorch.AnalysisResult.detection" href="#facetorch.AnalysisResult.detection">detection</a></code></li>
+<li><code><a title="facetorch.AnalysisResult.path_input" href="#facetorch.AnalysisResult.path_input">path_input</a></code></li>
+<li><code><a title="facetorch.AnalysisResult.path_output" href="#facetorch.AnalysisResult.path_output">path_output</a></code></li>
+<li><code><a title="facetorch.AnalysisResult.img" href="#facetorch.AnalysisResult.img">img</a></code></li>
+<li><code><a title="facetorch.AnalysisResult.det" href="#facetorch.AnalysisResult.det">det</a></code></li>
+<li><code><a title="facetorch.AnalysisResult.dims" href="#facetorch.AnalysisResult.dims">dims</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.ArtifactIntegrityError" href="#facetorch.ArtifactIntegrityError">ArtifactIntegrityError</a></code></h4>
+</li>
+<li>
+<h4><code><a title="facetorch.CacheLockError" href="#facetorch.CacheLockError">CacheLockError</a></code></h4>
+</li>
+<li>
+<h4><code><a title="facetorch.CacheCleanupReport" href="#facetorch.CacheCleanupReport">CacheCleanupReport</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.CacheCleanupReport.paths" href="#facetorch.CacheCleanupReport.paths">paths</a></code></li>
+<li><code><a title="facetorch.CacheCleanupReport.total_bytes" href="#facetorch.CacheCleanupReport.total_bytes">total_bytes</a></code></li>
+<li><code><a title="facetorch.CacheCleanupReport.deleted" href="#facetorch.CacheCleanupReport.deleted">deleted</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.CacheEntryInspection" href="#facetorch.CacheEntryInspection">CacheEntryInspection</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.CacheEntryInspection.path" href="#facetorch.CacheEntryInspection.path">path</a></code></li>
+<li><code><a title="facetorch.CacheEntryInspection.size_bytes" href="#facetorch.CacheEntryInspection.size_bytes">size_bytes</a></code></li>
+<li><code><a title="facetorch.CacheEntryInspection.sha256" href="#facetorch.CacheEntryInspection.sha256">sha256</a></code></li>
+<li><code><a title="facetorch.CacheEntryInspection.detected_format" href="#facetorch.CacheEntryInspection.detected_format">detected_format</a></code></li>
+<li><code><a title="facetorch.CacheEntryInspection.mislabeled" href="#facetorch.CacheEntryInspection.mislabeled">mislabeled</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.ConfigurationError" href="#facetorch.ConfigurationError">ConfigurationError</a></code></h4>
+</li>
+<li>
 <h4><code><a title="facetorch.FaceAnalyzer" href="#facetorch.FaceAnalyzer">FaceAnalyzer</a></code></h4>
 <ul class="">
 <li><code><a title="facetorch.FaceAnalyzer.run" href="#facetorch.FaceAnalyzer.run">run</a></code></li>
+<li><code><a title="facetorch.FaceAnalyzer.run_legacy" href="#facetorch.FaceAnalyzer.run_legacy">run_legacy</a></code></li>
+<li><code><a title="facetorch.FaceAnalyzer.detector" href="#facetorch.FaceAnalyzer.detector">detector</a></code></li>
+<li><code><a title="facetorch.FaceAnalyzer.predictors" href="#facetorch.FaceAnalyzer.predictors">predictors</a></code></li>
+<li><code><a title="facetorch.FaceAnalyzer.configured_predictors" href="#facetorch.FaceAnalyzer.configured_predictors">configured_predictors</a></code></li>
+<li><code><a title="facetorch.FaceAnalyzer.loaded_predictors" href="#facetorch.FaceAnalyzer.loaded_predictors">loaded_predictors</a></code></li>
+<li><code><a title="facetorch.FaceAnalyzer.utilizers" href="#facetorch.FaceAnalyzer.utilizers">utilizers</a></code></li>
+<li><code><a title="facetorch.FaceAnalyzer.configured_utilizers" href="#facetorch.FaceAnalyzer.configured_utilizers">configured_utilizers</a></code></li>
+<li><code><a title="facetorch.FaceAnalyzer.loaded_utilizers" href="#facetorch.FaceAnalyzer.loaded_utilizers">loaded_utilizers</a></code></li>
+<li><code><a title="facetorch.FaceAnalyzer.detector_loaded" href="#facetorch.FaceAnalyzer.detector_loaded">detector_loaded</a></code></li>
 </ul>
+</li>
+<li>
+<h4><code><a title="facetorch.FacetorchError" href="#facetorch.FacetorchError">FacetorchError</a></code></h4>
 </li>
 <li>
 <h4><code><a title="facetorch.Dimensions" href="#facetorch.Dimensions">Dimensions</a></code></h4>
@@ -1533,17 +3614,76 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="facetorch.ImageData.det" href="#facetorch.ImageData.det">det</a></code></li>
 <li><code><a title="facetorch.ImageData.faces" href="#facetorch.ImageData.faces">faces</a></code></li>
 <li><code><a title="facetorch.ImageData.version" href="#facetorch.ImageData.version">version</a></code></li>
+<li><code><a title="facetorch.ImageData.warnings" href="#facetorch.ImageData.warnings">warnings</a></code></li>
 </ul>
+</li>
+<li>
+<h4><code><a title="facetorch.InferenceError" href="#facetorch.InferenceError">InferenceError</a></code></h4>
+</li>
+<li>
+<h4><code><a title="facetorch.InputCoercionWarning" href="#facetorch.InputCoercionWarning">InputCoercionWarning</a></code></h4>
+</li>
+<li>
+<h4><code><a title="facetorch.InputError" href="#facetorch.InputError">InputError</a></code></h4>
+</li>
+<li>
+<h4><code><a title="facetorch.InputSpec" href="#facetorch.InputSpec">InputSpec</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.InputSpec.layout" href="#facetorch.InputSpec.layout">layout</a></code></li>
+<li><code><a title="facetorch.InputSpec.value_range" href="#facetorch.InputSpec.value_range">value_range</a></code></li>
+<li><code><a title="facetorch.InputSpec.color_space" href="#facetorch.InputSpec.color_space">color_space</a></code></li>
+<li><code><a title="facetorch.InputSpec.alpha_mode" href="#facetorch.InputSpec.alpha_mode">alpha_mode</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.LegacyModelWarning" href="#facetorch.LegacyModelWarning">LegacyModelWarning</a></code></h4>
 </li>
 <li>
 <h4><code><a title="facetorch.Location" href="#facetorch.Location">Location</a></code></h4>
 <ul class="two-column">
 <li><code><a title="facetorch.Location.form_square" href="#facetorch.Location.form_square">form_square</a></code></li>
 <li><code><a title="facetorch.Location.expand" href="#facetorch.Location.expand">expand</a></code></li>
+<li><code><a title="facetorch.Location.clamp" href="#facetorch.Location.clamp">clamp</a></code></li>
+<li><code><a title="facetorch.Location.fit_square" href="#facetorch.Location.fit_square">fit_square</a></code></li>
 <li><code><a title="facetorch.Location.x1" href="#facetorch.Location.x1">x1</a></code></li>
 <li><code><a title="facetorch.Location.x2" href="#facetorch.Location.x2">x2</a></code></li>
 <li><code><a title="facetorch.Location.y1" href="#facetorch.Location.y1">y1</a></code></li>
 <li><code><a title="facetorch.Location.y2" href="#facetorch.Location.y2">y2</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.ModelCompatibilityError" href="#facetorch.ModelCompatibilityError">ModelCompatibilityError</a></code></h4>
+</li>
+<li>
+<h4><code><a title="facetorch.OfflineCacheError" href="#facetorch.OfflineCacheError">OfflineCacheError</a></code></h4>
+</li>
+<li>
+<h4><code><a title="facetorch.PrefetchItem" href="#facetorch.PrefetchItem">PrefetchItem</a></code></h4>
+<ul class="two-column">
+<li><code><a title="facetorch.PrefetchItem.component" href="#facetorch.PrefetchItem.component">component</a></code></li>
+<li><code><a title="facetorch.PrefetchItem.artifact_id" href="#facetorch.PrefetchItem.artifact_id">artifact_id</a></code></li>
+<li><code><a title="facetorch.PrefetchItem.path" href="#facetorch.PrefetchItem.path">path</a></code></li>
+<li><code><a title="facetorch.PrefetchItem.format" href="#facetorch.PrefetchItem.format">format</a></code></li>
+<li><code><a title="facetorch.PrefetchItem.size_bytes" href="#facetorch.PrefetchItem.size_bytes">size_bytes</a></code></li>
+<li><code><a title="facetorch.PrefetchItem.sha256" href="#facetorch.PrefetchItem.sha256">sha256</a></code></li>
+<li><code><a title="facetorch.PrefetchItem.cached" href="#facetorch.PrefetchItem.cached">cached</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.PrefetchPlan" href="#facetorch.PrefetchPlan">PrefetchPlan</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.PrefetchPlan.profile" href="#facetorch.PrefetchPlan.profile">profile</a></code></li>
+<li><code><a title="facetorch.PrefetchPlan.items" href="#facetorch.PrefetchPlan.items">items</a></code></li>
+<li><code><a title="facetorch.PrefetchPlan.total_bytes" href="#facetorch.PrefetchPlan.total_bytes">total_bytes</a></code></li>
+<li><code><a title="facetorch.PrefetchPlan.cached_bytes" href="#facetorch.PrefetchPlan.cached_bytes">cached_bytes</a></code></li>
+<li><code><a title="facetorch.PrefetchPlan.download_bytes" href="#facetorch.PrefetchPlan.download_bytes">download_bytes</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="facetorch.PrefetchResult" href="#facetorch.PrefetchResult">PrefetchResult</a></code></h4>
+<ul class="">
+<li><code><a title="facetorch.PrefetchResult.plan" href="#facetorch.PrefetchResult.plan">plan</a></code></li>
+<li><code><a title="facetorch.PrefetchResult.paths" href="#facetorch.PrefetchResult.paths">paths</a></code></li>
 </ul>
 </li>
 <li>

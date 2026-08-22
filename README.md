@@ -27,14 +27,20 @@
 
 4. **Simple Extensibility:** Extend the library by uploading your model file to Hugging Face Hub and adding a corresponding configuration YAML file to the repository.
 
-5. **Flexible Input:** Accepts file paths, URLs, tensors, numpy arrays, PIL Images, and bytes. Grayscale and RGBA inputs are automatically converted to RGB.
+5. **Deterministic Input:** Accepts local paths, tensors, NumPy arrays, PIL images,
+   and bytes through one canonical pipeline. Remote input requires an explicit,
+   bounded `URLReader` configuration.
 
 Facetorch provides an efficient, scalable, and user-friendly solution for facial analysis tasks, catering to developers and researchers looking for flexibility and performance.
 
 ### Requirements
 
-* Python >= 3.10 and < 3.14
-* PyTorch >= 2.3 (facetorch routes exported model artifacts by torch minor version)
+* Python >= 3.10 and < 3.13
+* PyTorch 2.3.x, 2.6.x, or 2.11.x; other minors are rejected before model download
+
+The exact candidate matrix, named CUDA pairs, experimental platforms, and current
+model-rights gates are documented in
+[Model compatibility and governance](docs/model-compatibility.md).
 
 Please use this library responsibly and with caution. Adhere to the [European Commission's Ethics Guidelines for Trustworthy AI](https://ec.europa.eu/futurium/en/ai-alliance-consultation.1.html) to ensure ethical and fair usage. Keep in mind that the models may have limitations and potential biases, so it is crucial to evaluate their outputs critically and consider their impact.
 
@@ -58,8 +64,8 @@ Docker Compose provides an easy way of building a working facetorch environment 
 
 ### Run docker example
     
-* CPU: ```docker compose run facetorch python ./scripts/example.py```
-* GPU: ```docker compose run facetorch-gpu python ./scripts/example.py analyzer.device=cuda```
+* CPU: ```docker compose run --rm facetorch python ./scripts/example.py /opt/facetorch/data/input/test.jpg --output /opt/facetorch/data/output/test.jpg```
+* GPU: ```docker compose run --rm facetorch-gpu python ./scripts/example.py /opt/facetorch/data/input/test.jpg --profile gpu --output /opt/facetorch/data/output/test.jpg```
 
 Check *data/output* for resulting images with bounding boxes and facial 3D landmarks.
 
@@ -67,29 +73,174 @@ Check *data/output* for resulting images with bounding boxes and facial 3D landm
 
 ### Python API
 
-```python
-from facetorch import FaceAnalyzer
-from omegaconf import OmegaConf
+This copy-paste smoke checks an installed wheel, packaged configuration, reader,
+and result contract without downloading models or requiring a repository checkout:
 
-cfg = OmegaConf.load("conf/config.yaml")
+<!-- facetorch-readme-smoke:start -->
+```python
+import torch
+
+from facetorch import FaceAnalyzer, load_config
+
+cfg = load_config()
+analyzer = FaceAnalyzer(cfg.analyzer)
+result = analyzer.run(
+    image_source=torch.zeros((3, 32, 32), dtype=torch.uint8),
+    skip_detector=True,
+    include_predictors=[],
+    include_tensors=True,
+)
+
+assert len(result.faces) == 1
+assert result.image is not None
+assert not analyzer.detector_loaded
+assert analyzer.loaded_predictors == ()
+```
+<!-- facetorch-readme-smoke:end -->
+
+For normal analysis, provide one image. The first call downloads only the selected
+compatible model artifacts; subsequent calls reuse the local cache:
+
+```python
+from facetorch import FaceAnalyzer, InputSpec, load_config
+
+cfg = load_config()  # packaged CPU profile; independent of the working directory
 analyzer = FaceAnalyzer(cfg.analyzer)
 
-# Analyze from file path, URL, tensor, numpy array, PIL Image, or bytes
-response = analyzer.run(image_source="path/to/image.jpg")
+# Analyze one local path, tensor, NumPy array, PIL image, or bytes object
+result = analyzer.run(image_source="path/to/image.jpg")
 
 # Run only specific predictors
-response = analyzer.run(image_source="image.jpg", include_predictors=["fer", "embed"])
+result = analyzer.run(image_source="image.jpg", include_predictors=["fer", "embed"])
 
-# Skip detector for pre-cropped face inputs
-response = analyzer.run(image_source=face_tensor, skip_detector=True)
+# Inspect configured names without loading their models
+print(analyzer.configured_predictors)
+
+# Batch faces detected within this image; source-image batches are not supported
+result = analyzer.run(image_source="image.jpg", face_batch_size=8)
+
+# Strictly describe a normalized pre-cropped CHW face tensor
+result = analyzer.run(
+    image_source=face_tensor,
+    input_policy="strict",
+    input_spec=InputSpec(layout="CHW", value_range="0_1", color_space="RGB"),
+    skip_detector=True,
+    include_tensors=True,
+)
+
+print(result.faces)
+print(result.image)  # retained because include_tensors=True
 
 # FaceAnalyzer is also callable
-response = analyzer("image.jpg")
+result = analyzer("image.jpg")
 ```
+
+`input_policy="coerce"` is the default. It applies documented, deterministic
+range and channel conversions and emits `InputCoercionWarning` when a conversion
+may surprise the caller. `input_policy="strict"` accepts source-specific uint8 RGB
+conventions by default and requires `InputSpec` for declared layout, range, color,
+or alpha conversions. Torch defaults to CHW/BCHW; NumPy defaults to HWC/BHWC; a
+four-dimensional input must have `B=1`.
+
+Every successful call returns `AnalysisResult`. Set `include_tensors=True` to retain
+the optional `image`, `tensor`, and `detection` fields. The v0.x `batch_size` name is
+a warning alias for `face_batch_size` throughout v1.x; supplying both is an error.
+Code that temporarily needs the old `Response`/`ImageData` union can call the
+explicit, warning-emitting `analyzer.run_legacy(...)` adapter.
+
+Detector and predictor models are loaded only when execution requests them, then
+cached for the lifetime of that `FaceAnalyzer`. Selection-linked utilizers are lazy
+too, so excluding their predictor cannot trigger a metadata download.
+`include_predictors=None` runs every configured predictor, while
+`include_predictors=[]` runs none. Exclusions follow the same configured ordering.
+Unknown or duplicate names and any simultaneous use of `include_predictors` and
+`exclude_predictors` are rejected before the image is read or a model is loaded.
+`skip_detector=True` never constructs the detector.
+
+Use `configured_predictors` to inspect names without loading models;
+`loaded_predictors`, `loaded_utilizers`, and `detector_loaded` expose current cache
+state. Accessing `analyzer.detector` or a value in `analyzer.predictors` or
+`analyzer.utilizers` explicitly loads and caches that component. Lazy initialization
+is protected against concurrent construction, but concurrent `run()` calls are not
+guaranteed safe because configured custom readers and processors may be stateful.
+Use one analyzer per worker or synchronize calls externally.
+
+Detector and predictor configs may set `compile_model: true` and a
+`compile_options` mapping; the options are passed unchanged to `torch.compile` when
+that selected component is first loaded. Model wrapper constructors accept only
+declared options now—custom extensions should expose their own constructor
+parameters instead of relying on arbitrary attributes.
+
+Network access is never inferred from a string. To accept a remote image, configure
+`facetorch.analyzer.reader.URLReader` explicitly with allowed HTTP schemes, a
+timeout, maximum redirects, and a maximum response size. The reader resolves and
+rejects loopback, private, link-local, and other non-public targets before every
+request and redirect; it is not a general-purpose internal-network fetcher.
 
 ### Configure
 
-The project is configured by files located in *conf* with the main file: *conf/config.yaml*. One can easily add or remove modules from the configuration.
+`load_config()` composes configuration resources installed inside the `facetorch`
+package. It is the supported default for library users and works without a cloned
+repository:
+
+```python
+from facetorch import load_config, load_config_from_path
+
+cpu_cfg = load_config()
+gpu_cfg = load_config("gpu")
+customized = load_config(
+    overrides=[
+        "analyzer.optimize_transforms=false",
+        "analyzer/predictor/fer=efficientnet_b0_7",
+    ]
+)
+
+# Advanced deployments may compose an explicit external Hydra tree.
+external = load_config_from_path(
+    "/srv/my-app/conf/config.yaml",
+    overrides=["analyzer.device=cpu"],
+)
+```
+
+The no-argument loader deliberately selects CPU because it is the portable,
+device-independent baseline. GPU support has not been removed: use
+`load_config("gpu")`, the `--profile gpu` script option, or the GPU container to
+select CUDA explicitly. Release validation covers both devices, and predictor
+batches remain multiple faces detected within one source image—not multiple
+source images.
+
+Overrides use standard Hydra override strings and are applied after the selected
+CPU/GPU profile. `load_config_from_path()` resolves a relative path against the
+caller's working directory and composes the file's `defaults` list using its parent
+directory as the Hydra configuration root.
+
+The old source-checkout pattern `OmegaConf.load("conf/config.yaml")` remains a
+low-level OmegaConf operation, but it does not compose Hydra defaults and is not the
+installed-library configuration API. Source and managed deployments that maintain
+an external Hydra tree should migrate to `load_config_from_path()` during v1.x.
+
+### Runtime paths
+
+Models and generated model metadata use a versioned, OS-appropriate user cache.
+Configuration loading does not create it; directories are created only when a
+selected artifact is first needed. The following environment variables provide
+explicit deployment overrides:
+
+- `FACETORCH_CACHE_DIR`: root for all facetorch caches.
+- `FACETORCH_MODEL_DIR`: optional model-only override.
+- `FACETORCH_METADATA_DIR`: optional metadata-only override.
+- `FACETORCH_OFFLINE`: `1`, `true`, `yes`, or `on` forbids every model and
+  metadata network request; invalid values fail configuration loading.
+
+Linux follows `XDG_CACHE_HOME` and otherwise uses `~/.cache/facetorch`; macOS uses
+`~/Library/Caches/facetorch`; Windows uses the local application-data cache.
+File logging and image output are disabled by default. Enable them only with an
+explicit writable `analyzer.logger.path_file` override or `path_output` argument.
+
+For containers, mount a persistent volume and set the same cache root explicitly,
+for example `FACETORCH_CACHE_DIR=/var/cache/facetorch` with a volume mounted at
+`/var/cache/facetorch`. A cache populated by an online run can be mounted at that
+same location for later no-network execution; keep its directory layout intact.
 
 ## Components
 FaceAnalyzer is the main class of facetorch as it is the orchestrator responsible for initializing and running the following components:
@@ -124,9 +275,14 @@ analyzer
 
 ## Models
 
+The license labels below describe cited upstream **code** only. They do not assert
+that hosted checkpoints may be redistributed. Every v1 weight remains pending the
+source/rights review recorded in
+[`facetorch/models/governance.json`](facetorch/models/governance.json).
+
 ### Detector
 
-    |     model     |   source  |   params  |   license   | version |
+    |     model     |   source  |   params  | code license | version |
     | ------------- | --------- | --------- | ----------- | ------- |
     |   RetinaFace  |  biubug6  |   27.3M   | MIT license |    1    |
 
@@ -140,7 +296,7 @@ analyzer
 
 #### Facial Representation Learning (embed)
 
-    |       model       |   source   |  params |   license   | version |  
+    |       model       |   source   |  params | code license | version |
     | ----------------- | ---------- | ------- | ----------- | ------- |
     |  ResNet-50 VGG 1M |  1adrianb  |  28.4M  | MIT license |    1    |
 
@@ -151,7 +307,7 @@ analyzer
 
 #### Face Verification (verify)
 
-    |       model      |   source    |  params  |      license       | version |  
+    |       model      |   source    |  params  |    code license    | version |
     | ---------------- | ----------- | -------- | ------------------ | ------- |
     |    MagFace+UNPG  | Jung-Jun-Uk |   65.2M  | Apache License 2.0 |    1    |
     |  AdaFaceR100W12M |  mk-minchul |    -     |     MIT License    |    2    |
@@ -168,7 +324,7 @@ analyzer
 
 #### Facial Expression Recognition (fer)
 
-    |       model       |      source    |  params  |       license      | version |  
+    |       model       |      source    |  params  |    code license    | version |
     | ----------------- | -------------- | -------- | ------------------ | ------- |
     | EfficientNet B0 7 | HSE-asavchenko |    4M    | Apache License 2.0 |    1    |
     | EfficientNet B2 8 | HSE-asavchenko |   7.7M   | Apache License 2.0 |    2    |
@@ -179,18 +335,18 @@ analyzer
 
 #### Facial Action Unit Detection (au)
 
-    |        model        |   source  |  params |       license      | version |  
+    |        model        |   source  |  params |    code license    | version |
     | ------------------- | --------- | ------- | ------------------ | ------- |
     | OpenGraph Swin Base |  CVI-SZU  |   94M   |     MIT License    |    1    |
 
 1. CVI-SZU
     * code: [ME-GraphAU](https://github.com/CVI-SZU/ME-GraphAU)
     * paper: [Luo et al. - Learning Multi-dimensional Edge Feature-based AU Relation Graph for Facial Action Unit Recognition](https://arxiv.org/abs/2205.01782)
-    * Note: As of v1.0.0, the AU model uses torch.export format with torch-versioned cohort artifacts validated on CPU and CUDA (torch 2.3 / 2.6 / 2.11)
+    * Note: The v1 candidate uses torch.export artifacts for the explicit Torch 2.3 / 2.6 / 2.11 cohorts; release CPU/CUDA evidence is tracked separately.
 
 #### Facial Valence Arousal (va)
 
-    |       model       |   source   |  params |   license   | version |
+    |       model       |   source   |  params | code license | version |
     | ----------------- | ---------- | ------- | ----------- | ------- |
     |  ELIM AL AlexNet  | kdhht2334  |  2.3M   | MIT license |    1    |
 
@@ -201,7 +357,7 @@ for Identity-invariant Facial Expression Recognition](https://arxiv.org/abs/2209
 
 #### Deepfake Detection (deepfake)
 
-    |         model        |      source      |  params  |   license   | version |
+    |         model        |      source      |  params  | code license | version |
     | -------------------- | ---------------- | -------- | ----------- | ------- |
     |    EfficientNet B7   |     selimsef     |   66.4M  | MIT license |    1    |
 
@@ -211,7 +367,7 @@ for Identity-invariant Facial Expression Recognition](https://arxiv.org/abs/2209
 
 #### Face Alignment (align)
 
-    |       model       |      source      |  params  |   license   | version |
+    |       model       |      source      |  params  | code license | version |
     | ----------------- | ---------------- | -------- | ----------- | ------- |
     |    MobileNet v2   |     choyingw     |   4.1M   | MIT license |    1    |
 
@@ -224,21 +380,130 @@ for Identity-invariant Facial Expression Recognition](https://arxiv.org/abs/2209
 
 ### Model download
 
-Models are downloaded during runtime automatically to the *models* directory using Hugging Face Hub.
-Models are available on the [Hugging Face Hub](https://huggingface.co/tomas-gajarsky). The legacy [Google Drive folder](https://drive.google.com/drive/folders/19qlklR18wYfFsCChQ78it10XciuTzbDM?usp=sharing) is retained for backward compatibility only and is effectively deprecated for v1+ workflows.
-For exported `.pt2` models, facetorch can fall back across versioned artifacts when present (e.g. `model-torch2.3.pt2`, `model-torch2.6.pt2`, `model-torch2.11.pt2`).
-Built-in v1 model configs explicitly prefer the best compatible versioned cohort first, then fall back to generic `model.pt2`, and finally `model.pt` as a legacy fallback where available.
+Models are downloaded on first selected use into facetorch's versioned user cache
+using Hugging Face Hub. Each request is pinned to an immutable repository commit.
+The packaged manifest selects one artifact for the active PyTorch/device pair, and
+records its real format, byte size, SHA-256 digest, schema cohort, and validation
+metadata. Downloads are staged beside the destination, verified without executing
+them, and atomically promoted under a process-safe cache lock. Existing files are
+verified again before load; corrupt entries are quarantined rather than executed.
+
+Full verification on use is the secure default. A deployment with a separately
+protected, read-only cache may add `verify_on_use: false` to selected downloader
+configs to skip the repeat digest pass; release validation must keep it enabled.
+
+Set `FACETORCH_CACHE_DIR` before configuration loading to choose an explicit
+writable or persistent location. The current default model selection occupies
+approximately **1.2 GB**; allow at least **2 GB** of free cache space for download
+staging and metadata. Selecting fewer predictors reduces the download.
+
+Plan first, then explicitly confirm a multi-artifact prefetch:
+
+```python
+from facetorch import plan_model_prefetch, prefetch_models
+
+plan = plan_model_prefetch(
+    "cpu",
+    include_predictors=["fer", "embed"],
+    skip_detector=False,
+)
+print(plan.download_bytes, plan.items)
+
+prefetch_models(
+    "cpu",
+    include_predictors=["fer", "embed"],
+    skip_detector=False,
+    confirm=True,
+)
+```
+
+`include_predictors=[]` and `skip_detector=True` produce an empty plan and make no
+model-network request. Alignment metadata is included only when the `align`
+predictor is selected. Bulk prefetch refuses to start before `confirm=True` and
+reports the estimated missing bytes first.
+
+For deployment, populate the same cache online and then compose with
+`load_config(offline=True)` or set `FACETORCH_OFFLINE=1`. Offline mode verifies and
+uses the cache, or raises `OfflineCacheError` before inference; it never attempts a
+network fallback.
+
+Legacy TorchScript is disabled by default. An eligible, manifest-pinned legacy
+artifact may be selected only with `load_config(allow_legacy_models=True)`, emits
+`LegacyModelWarning`, retains its real `.pt` extension, and is never selected for
+CUDA. A missing or incompatible `.pt2` does not trigger a filename/download
+cascade. The Google Drive model configs are deprecated and fail closed unless an
+operator supplies immutable size and digest metadata; the verified 3D alignment
+metadata remains supported.
+
+Inspect and recover old caches without executing them:
+
+```python
+from facetorch import (
+    cleanup_quarantined_cache,
+    inspect_incompatible_cache,
+    inspect_legacy_cache,
+    inspect_quarantined_cache,
+    migrate_legacy_artifact,
+    reset_incompatible_cache,
+)
+
+entries = inspect_legacy_cache("/path/to/v0-cache")
+print(entries)  # includes mislabeled TorchScript stored as .pt2
+
+migrate_legacy_artifact(
+    "/path/to/v0-cache/model.pt2",
+    "detector-retinaface-legacy",
+    "/path/to/v1-cache/model.pt",
+)
+
+print(inspect_quarantined_cache())
+cleanup_quarantined_cache(confirm=True)  # explicit, versioned-cache files only
+print(inspect_incompatible_cache())
+reset_incompatible_cache(confirm=True)  # after runtime/artifact remediation
+```
+
+Migration succeeds only for an exact manifest hash/format match and copies rather
+than changes the old file. Facetorch never automatically rewrites or deletes a v0.x
+cache. For rollback, keep v0.6.x and v1 model roots separate (for example with
+different `FACETORCH_MODEL_DIR` values); do not point v0.6.x at the v1 manifest
+layout. Quarantine inspection is non-destructive, and cleanup is restricted to the
+versioned facetorch model/metadata roots.
+
+Models are available on the [Hugging Face Hub](https://huggingface.co/tomas-gajarsky).
+The legacy [Google Drive folder](https://drive.google.com/drive/folders/19qlklR18wYfFsCChQ78it10XciuTzbDM?usp=sharing)
+is retained for manual backward compatibility only. The packaged manifest remains
+provisional. A full uncommitted-tree candidate matrix has passed all ten models on
+CPU and a local RTX 3090 for Torch 2.3/CUDA 12.1, 2.6/CUDA 12.4, and 2.11/CUDA
+13.0, but it must be repeated from the exact clean candidate and does not resolve
+provenance or weight-redistribution rights. Per-model gaps are recorded in the
+governance manifest rather than inferred from a model card's code-license label.
+
+Maintainers export and validate every requested model locally before any remote
+write. Inline `--upload` is disabled. Publication requires a deterministic plan,
+an approval bound to that plan's digest, immutable parent revisions, and a
+resumable receipt. Each model's artifact and metadata are committed together to a
+candidate branch; the immutable manifest commit is created only after every model
+repository succeeds. See [the model publication runbook](docs/model-publication.md).
 
 #### Why exported models?
 
 Facetorch v1 moved default model artifacts from TorchScript (`.pt`) to `torch.export` (`.pt2`) so inference no longer depends on bundled model source code, custom class definitions, or TorchScript-specific runtime behavior. This makes the hosted models easier to validate, redistribute, and load across normal Python package installations. TorchScript artifacts are still useful as legacy fallbacks, but v1 workflows should prefer Hugging Face `.pt2` artifacts.
 
-`torch.export` serialization is tied to PyTorch's exported-program schema, so one `.pt2` file is not guaranteed to load across every future or older PyTorch minor version. To avoid pinning users to one narrow torch version, facetorch publishes and validates cohort artifacts for representative supported runtimes: `torch 2.3`, `torch 2.6`, and `torch 2.11`. Runtime support starts at `PyTorch >= 2.3`; when an explicit cohort map is configured, the downloader selects the best compatible artifact first and falls back to the next candidate if the current runtime cannot load it.
+`torch.export` serialization is tied to PyTorch's exported-program schema, so one
+`.pt2` file is not guaranteed to load across future or older PyTorch minors. The
+candidate manifest has exact cohorts for Torch 2.3, 2.6, and 2.11. Package metadata
+uses the same bounded, disjoint set. Torch 2.4, 2.5, and 2.7-2.10 are unsupported
+and fail before download; no schema-major or numeric fallback is attempted.
+Validation uses immutable CPU golden references for both CPU and CUDA artifacts,
+with TensorFloat-32 disabled and the numeric policy recorded. Predictor batch
+sizes refer only to faces from one input image; multi-image batching is not
+supported in v1. See [model compatibility and governance](docs/model-compatibility.md)
+for the exact candidate evidence and remaining blockers.
 
 
 ### Execution time
 
-Reference GPU benchmark (AU included, batch_size=8, utilizers disabled, default runtime):
+Reference GPU benchmark (AU included, face_batch_size=8, utilizers disabled, default runtime):
 - `test.jpg` (4 faces): pass1 `688 ms`, pass2 `216 ms`, pass3 `311 ms`, warm avg (pass2+pass3) `263 ms`
 - `test3.jpg` (25 faces): pass1 `904 ms`, pass2 `745 ms`, pass3 `728 ms`, warm avg (pass2+pass3) `737 ms`
 
@@ -302,17 +567,14 @@ For broader PyTorch compatibility, publish recommended version cohorts in the sa
 - `model-torch2.3.pt2`
 - `model-torch2.6.pt2`
 - `model-torch2.11.pt2`
-- (optional compatibility fallback) `model.pt2`
 
-From a source checkout, export, validate, and upload all facetorch model cohorts for the current torch runtime with:
+From a source checkout, stage and validate the current runtime cohort locally:
 
 ```bash
 PYTHONPATH=. python scripts/export_model_cohorts_hf.py export \
   --repo-root . \
   --out-root /tmp/model-cohort-exports \
-  --validate-devices cpu,cuda \
-  --upload \
-  --hf-token-env HF_TOKEN
+  --validate-devices cpu,cuda
 ```
 
 To re-validate existing artifacts against reference models on multiple inputs and batch sizes:
@@ -329,7 +591,11 @@ PYTHONPATH=. python scripts/export_model_cohorts_hf.py validate \
 ```
 
 Use `--model-ids` (for example `--model-ids verify-magface`) to process only a subset.
-The script writes a `.meta.json` file next to each artifact and fails the run if validated outputs exceed the configured numerical tolerances.
+The script writes canonical `.meta.json` evidence next to each artifact and fails
+on drift, non-finite output, schema/invariant violations, an incomplete batch or
+shape matrix, or any requested device that is not `ok`. It never uploads. Follow
+the [model publication runbook](docs/model-publication.md) only after all required
+cohorts are staged and reviewed.
 Export-only architecture definitions live in `model_defs/`; they are included for reproducible re-exporting, but they are not required for normal `.pt2` inference.
 
 #### Configuration
@@ -343,8 +609,8 @@ Export-only architecture definitions live in `model_defs/`; they are included fo
 
 ##### Edit yaml file
 1. Set up the downloader configuration:
-   - For Hugging Face Hub (recommended): specify the `repo_id` and `filename` parameters
-   - For exported `.pt2` models, specify `export_filenames_by_torch_minor` when publishing versioned cohorts so the best compatible artifact is tried before generic `model.pt2`
+   - For Hugging Face Hub (recommended): specify the `repo_id` and packaged `manifest_id`
+   - For exported `.pt2` models, add immutable revision, size, SHA-256, schema, runtime range, validation metadata, and provenance references to the packaged artifact manifest; filenames are never synthesized
    - For legacy Google Drive (deprecated): specify the Google Drive file ID
 2. Select the preprocessor (or implement a new one based on BasePredPreProcessor) and specify its parameters e.g. image size and normalization in the yaml file 
 to match the requirements of the new model.
@@ -370,15 +636,18 @@ the requirements of the new model.
 * `pyproject.toml` is the packaging source of truth for PyPI releases and pip/uv installs (including Docker build paths using uv).
 * Conda package publishing (`conda-forge/facetorch`) is maintained outside this repository in conda-forge feedstock workflows.
 * `environment.yml` and `gpu.environment.yml` are conda environment baselines for conda users.
-* The GPU conda baseline uses conda-forge `cuda-version=12.4` instead of `cudatoolkit`; pass `--with-cuda` when regenerating the GPU lock so conda-lock can resolve CUDA virtual packages without requiring a local GPU.
-* uv uses PyPI for normal packages and an explicit named PyTorch CPU index only for `torch` and `torchvision`, avoiding global extra-index resolution drift.
+* `environments/` contains six exact release profiles: Torch 2.3/2.6/2.11 on CPU and Torch 2.3/CUDA 12.1, 2.6/CUDA 12.4, and 2.11/CUDA 13.0. Each profile has its own `pyproject.toml`, `uv.lock`, and explicit official PyTorch index.
+* The production CPU image uses the exact Torch 2.6 CPU profile. The production GPU image uses the exact Torch 2.6/CUDA 12.4 profile; neither image upgrades Torch after resolution.
+* The GPU conda baseline is deliberately only a Python 3.12/CUDA 12.4 system layer. Its Python packages come from `environments/torch-2.6-cu124/uv.lock`, because conda-forge's current Torch 2.6 GPU solve requires a newer CUDA line than the validated v1 pair.
+* uv uses PyPI for normal packages and explicit named PyTorch indexes only for `torch` and `torchvision`, avoiding global extra-index resolution drift.
 * Overlapping dependencies between pyproject and conda env files are intentionally kept aligned.
-* CI enforces this with: `python scripts/check_dependency_sync.py`.
+* CI enforces alignment with `python scripts/check_dependency_sync.py`, audits every exact profile with `python scripts/audit_dependencies.py`, and emits hashed requirements plus CycloneDX SBOMs. Advisory exceptions must be approved, justified, and no longer than 90 days.
 
 #### uv (used by Docker dev/test images)
 * Add packages with corresponding versions to ```pyproject.toml``` dependencies
 * Lock the environment: ```uv lock```
 * Sync the environment: ```uv sync --extra dev```
+* Check every exact profile: ```for profile in environments/*; do uv lock --check --project "$profile"; done```
 
 #### conda (for conda-forge users)
 CPU:
@@ -389,7 +658,8 @@ CPU:
 
 GPU:
 * Add packages with corresponding versions to ```gpu.environment.yml``` file
-* Lock the environment: ```conda-lock --with-cuda 12.4 -p linux-64 -f gpu.environment.yml --lockfile gpu.conda-lock.yml```
+* Lock the system layer: ```conda-lock --with-cuda 12.4 -p linux-64 -f gpu.environment.yml --lockfile gpu.conda-lock.yml```
+* Sync the Python layer: ```uv sync --project environments/torch-2.6-cu124 --frozen```
 * (Alternative Docker) Lock the environment: ```docker compose -f docker-compose.dev.yml run facetorch-lock-gpu```
 * Install the locked environment: ```conda-lock install --name env gpu.conda-lock.yml```
 

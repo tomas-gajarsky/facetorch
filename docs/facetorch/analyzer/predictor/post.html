@@ -128,8 +128,9 @@ All subclass should overwrite:</p>
 <ul>
 <li>Methods:<code>run</code>, used for running the processing</li>
 </ul>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
 <dd>Torch device cpu or cuda.</dd>
 <dt><strong><code>transform</code></strong> :&ensp;<code>transforms.Compose</code></dt>
@@ -187,15 +188,15 @@ All subclass should overwrite:</p>
     return pred_list</code></pre>
 </details>
 <div class="desc"><p>Create a list of predictions.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>preds</code></strong> :&ensp;<code>torch.Tensor</code></dt>
 <dd>Tensor of predictions, shape (batch, _).</dd>
 <dt><strong><code>indices</code></strong> :&ensp;<code>List[int]</code></dt>
 <dd>List of label indices, one for each sample.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>List[Prediction]</code></dt>
 <dd>List of predictions.</dd>
 </dl></div>
@@ -221,13 +222,13 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
     &#34;&#34;&#34;</code></pre>
 </details>
 <div class="desc"><p>Abstract method that runs the predictor post processing functionality and returns a list of prediction data structures, one for each face in the batch.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>preds</code></strong> :&ensp;<code>Union[torch.Tensor, Tuple[torch.Tensor]]</code></dt>
 <dd>Output of the predictor model.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>List[Prediction]</code></dt>
 <dd>List of predictions.</dd>
 </dl></div>
@@ -292,8 +293,9 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
         return pred_list</code></pre>
 </details>
 <div class="desc"><p>Initialize the predictor postprocessor that runs argmax on the prediction tensor and returns a list of prediction data structures.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>transform</code></strong> :&ensp;<code>Compose</code></dt>
 <dd>Composed Torch transform object.</dd>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
@@ -339,13 +341,13 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
     return pred_list</code></pre>
 </details>
 <div class="desc"><p>Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>preds</code></strong> :&ensp;<code>Union[torch.Tensor, Tuple[torch.Tensor]]</code></dt>
 <dd>Batch prediction tensor.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>List[Prediction]</code></dt>
 <dd>List of prediction data structures containing the predicted labels and confidence scores for each face in the batch.</dd>
 </dl></div>
@@ -420,8 +422,9 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
         return pred_list</code></pre>
 </details>
 <div class="desc"><p>Initialize the predictor postprocessor that runs sigmoid on the prediction tensor and returns a list of prediction data structures.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>transform</code></strong> :&ensp;<code>Compose</code></dt>
 <dd>Composed Torch transform object.</dd>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
@@ -472,13 +475,13 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
     return pred_list</code></pre>
 </details>
 <div class="desc"><p>Post-processes the prediction tensor using sigmoid and returns a list of prediction data structures, one for each face.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>preds</code></strong> :&ensp;<code>Union[torch.Tensor, Tuple[torch.Tensor]]</code></dt>
 <dd>Batch prediction tensor.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>List[Prediction]</code></dt>
 <dd>List of prediction data structures containing the predicted labels and confidence scores for each face in the batch.</dd>
 </dl></div>
@@ -540,8 +543,9 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
         return pred_list</code></pre>
 </details>
 <div class="desc"><p>Initialize the predictor postprocessor that extracts the embedding from the prediction tensor and returns a list of prediction data structures.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>transform</code></strong> :&ensp;<code>Compose</code></dt>
 <dd>Composed Torch transform object.</dd>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
@@ -585,13 +589,13 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
     return pred_list</code></pre>
 </details>
 <div class="desc"><p>Extracts the embedding from the prediction tensor and returns a list of prediction data structures, one for each face.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>preds</code></strong> :&ensp;<code>torch.Tensor</code></dt>
 <dd>Batch prediction tensor.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>List[Prediction]</code></dt>
 <dd>List of prediction data structures containing the predicted embeddings.</dd>
 </dl></div>
@@ -670,8 +674,9 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         return pred_list</code></pre>
 </details>
 <div class="desc"><p>Initialize the predictor postprocessor that extracts multiple labels from the confidence scores.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>transform</code></strong> :&ensp;<code>Compose</code></dt>
 <dd>Composed Torch transform object.</dd>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
@@ -730,13 +735,13 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
     return pred_list</code></pre>
 </details>
 <div class="desc"><p>Extracts multiple labels and puts them in other[multi] predictions. The most likely label is put in the label field. Confidence scores are returned in the logits field.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>preds</code></strong> :&ensp;<code>torch.Tensor</code></dt>
 <dd>Batch prediction tensor.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>List[Prediction]</code></dt>
 <dd>List of prediction data structures containing the most prevailing label, confidence scores, and multiple labels for each face.</dd>
 </dl></div>
@@ -820,8 +825,9 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         return pred_list</code></pre>
 </details>
 <div class="desc"><p>Initialize the predictor postprocessor that zips the confidence scores with the labels.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>transform</code></strong> :&ensp;<code>Compose</code></dt>
 <dd>Composed Torch transform object.</dd>
 <dt><strong><code>device</code></strong> :&ensp;<code>torch.device</code></dt>
@@ -883,13 +889,13 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
     return pred_list</code></pre>
 </details>
 <div class="desc"><p>Extracts the confidence scores and puts them in other[label] predictions.</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>preds</code></strong> :&ensp;<code>torch.Tensor</code></dt>
 <dd>Batch prediction tensor.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>List[Prediction]</code></dt>
 <dd>List of prediction data structures containing the logits and label logit pairs.</dd>
 </dl></div>
