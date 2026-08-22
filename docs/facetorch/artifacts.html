@@ -686,7 +686,7 @@ class ArtifactDescriptor:
             )
         except ConfigurationError:
             raise
-        except (KeyError, TypeError, ValueError) as exc:
+        except (AttributeError, KeyError, TypeError, ValueError) as exc:
             raise ConfigurationError(&#34;Invalid model manifest structure.&#34;) from exc
 
     @classmethod
