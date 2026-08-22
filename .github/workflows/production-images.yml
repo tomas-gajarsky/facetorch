@@ -1,0 +1,53 @@
+name: production-images
+
+on:
+  push:
+    branches: ["main", "release/v1.0.0"]
+  pull_request:
+    branches: ["main", "release/v1.0.0"]
+  schedule:
+    - cron: "41 3 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-images-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cpu-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      - name: Build frozen CPU image
+        run: |
+          source_date_epoch="$(git show -s --format=%ct)"
+          docker buildx build --load --file docker/Dockerfile \
+            --build-arg "SOURCE_DATE_EPOCH=$source_date_epoch" \
+            --tag facetorch:cpu-candidate .
+      - name: Smoke installed wheel as non-root with no network
+        run: |
+          docker run --rm --network none --entrypoint python facetorch:cpu-candidate -c \
+            "import facetorch, os, torch; assert os.getuid() != 0; assert facetorch.load_config(offline=True).analyzer.device == 'cpu'; assert torch.__version__.split('+', 1)[0] == '2.6.0'"
+
+  gpu-image-build:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      - name: Build frozen CUDA 12.4 image without requiring a GPU
+        run: |
+          source_date_epoch="$(git show -s --format=%ct)"
+          docker buildx build --load --file docker/Dockerfile.gpu \
+            --build-arg "SOURCE_DATE_EPOCH=$source_date_epoch" \
+            --tag facetorch:gpu-candidate .
+      - name: Verify CUDA wheel and GPU profile without device execution
+        run: |
+          docker run --rm --network none --entrypoint python facetorch:gpu-candidate -c \
+            "import facetorch, os, torch; assert os.getuid() != 0; assert facetorch.load_config('gpu', offline=True).analyzer.device == 'cuda'; assert torch.version.cuda == '12.4'"

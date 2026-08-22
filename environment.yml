@@ -2,7 +2,7 @@ name: env
 channels:
   - conda-forge
 dependencies:
-  - python>=3.10,<3.14
+  - python>=3.12,<3.13
   - codetiming>=1.2.0
   - googleapis-common-protos>=1.56.3
   - gdown>=3.11.0
@@ -10,8 +10,8 @@ dependencies:
   - numpy>=1.18.2
   - pip>=20.0.2
   - python-json-logger>=2.0.0
-  - pytorch-cpu>=2.3.0
+  - pytorch-cpu=2.6.0
   - requests>=2.20.0
   - timm>=0.6.0
-  - torchvision>=0.15.0
+  - torchvision=0.21.0
   - huggingface_hub>=0.16.0

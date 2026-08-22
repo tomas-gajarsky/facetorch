@@ -1,13 +1,32 @@
-FROM python:3.12-slim
+ARG SOURCE_DATE_EPOCH=315532800
 
-# Set working directory
-ENV WORKDIR=/opt/facetorch
-WORKDIR $WORKDIR
+FROM python:3.12-slim@sha256:876416ecde9aca2bcc90e1fb0c7a9500bbf749f5788b70f82d4c5a5c2357f8b4 AS builder
+ARG SOURCE_DATE_EPOCH
 
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.9.14@sha256:ad3f022815822ee5124d1e3d77169ba4420ed8906815ecb486164a48fdba360b /uv /uvx /bin/
+WORKDIR /src
+COPY pyproject.toml README.md LICENSE MODEL_NOTICE.md ./
+COPY facetorch/ facetorch/
+RUN uv build --wheel --out-dir /dist
 
-COPY . .
+FROM python:3.12-slim@sha256:876416ecde9aca2bcc90e1fb0c7a9500bbf749f5788b70f82d4c5a5c2357f8b4
+ARG SOURCE_DATE_EPOCH
 
-# Install facetorch from this checkout so release images match the built commit.
-RUN uv pip install --system .
+ENV FACETORCH_CACHE_DIR=/var/cache/facetorch
+ENV PATH="/opt/facetorch-profile/.venv/bin:$PATH"
+COPY --from=ghcr.io/astral-sh/uv:0.9.14@sha256:ad3f022815822ee5124d1e3d77169ba4420ed8906815ecb486164a48fdba360b /uv /uvx /bin/
+COPY environments/torch-2.6-cpu/pyproject.toml /opt/facetorch-profile/pyproject.toml
+COPY environments/torch-2.6-cpu/uv.lock /opt/facetorch-profile/uv.lock
+COPY --from=builder /dist/*.whl /tmp/
+RUN uv sync --project /opt/facetorch-profile --frozen --no-dev && \
+    uv pip install --python /opt/facetorch-profile/.venv/bin/python \
+        --no-deps /tmp/facetorch-*.whl && \
+    useradd --create-home --uid 10001 facetorch && \
+    mkdir -p /var/cache/facetorch /workspace && \
+    chown -R facetorch:facetorch /var/cache/facetorch /workspace
+RUN cd /tmp && python -c \
+    "import facetorch; cfg=facetorch.load_config(offline=True); assert cfg.analyzer.device == 'cpu'"
+
+USER facetorch
+WORKDIR /workspace
+ENTRYPOINT ["/bin/bash"]

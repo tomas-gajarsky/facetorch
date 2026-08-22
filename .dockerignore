@@ -1,6 +1,7 @@
 # Cache
 .cache
 __pycache__/
+**/__pycache__/
 *.py[cod]
 =*
 
@@ -68,6 +69,8 @@ cover/
 # Environments
 .env
 .venv
+**/.venv/
+environments/*/.venv/
 env/
 venv/
 ENV/

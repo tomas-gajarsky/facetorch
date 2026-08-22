@@ -1,16 +1,23 @@
-name: build
+name: source-tests
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main", "release/v1.0.0"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main", "release/v1.0.0"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-tests-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
-    timeout-minutes: 30
+  source-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
-      - name: Docker compose build and run tests
-        run: docker compose -f docker-compose.dev.yml run facetorch-tests
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Test the source checkout in the frozen container
+        run: docker compose -f docker-compose.dev.yml run --build --rm facetorch-tests

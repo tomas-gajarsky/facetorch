@@ -19,25 +19,19 @@ RUN apt-get update && apt-get install -y \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.9.14 /uv /uvx /bin/
 
 ENV UV_PYTHON=python3.12
 # Place venv outside WORKDIR so volume mounts don't hide it
-ENV UV_PROJECT_ENVIRONMENT=/opt/venv
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONPYCACHEPREFIX=/tmp/facetorch_pycache
 ENV FACETORCH_TEST_MODEL_ROOT=/tmp/facetorch_models
 ENV COVERAGE_FILE=/tmp/facetorch_coverage
 
-# Copy project files for dependency resolution
-COPY pyproject.toml uv.lock README.md ./
-COPY facetorch/ facetorch/
+# Install the exact CUDA 12.4 profile. Source is provided by the compose mount.
+COPY environments/torch-2.6-cu124/pyproject.toml /opt/facetorch-profile/pyproject.toml
+COPY environments/torch-2.6-cu124/uv.lock /opt/facetorch-profile/uv.lock
+RUN uv sync --project /opt/facetorch-profile --frozen --extra test --python python3.12
 
-# Install locked dependencies, then replace CPU torch wheels with CUDA 12.4 wheels.
-RUN uv sync --frozen --extra dev && \
-    uv pip install --python /opt/venv/bin/python \
-        --torch-backend cu124 \
-        --upgrade torch torchvision
-
-ENV PATH="/opt/venv/bin:$PATH"
+ENV PATH="/opt/facetorch-profile/.venv/bin:$PATH"
 ENV PYTHONPATH="$WORKDIR/"
