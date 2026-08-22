@@ -295,6 +295,11 @@ All subclass should overwrite:</p>
                 expected_format=self.expected_format,
                 device=self.device,
             )
+            if descriptor.format == &#34;torchscript&#34; and not self.allow_legacy_models:
+                raise ModelCompatibilityError(
+                    &#34;Direct Hugging Face TorchScript models require &#34;
+                    &#34;allow_legacy_models=True.&#34;
+                )
             candidates = (descriptor,)
         else:
             candidates = self.manifest.candidates(
