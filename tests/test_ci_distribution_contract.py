@@ -73,6 +73,8 @@ def test_conda_ci_validates_the_local_candidate_not_public_facetorch():
     assert "activate-environment: base" in workflow_text
     assert "auto-activate-base" not in workflow_text
     assert commands.count("conda run --name base conda-lock install") == 2
+    assert "conda-lock install --name facetorch-ci --force" not in commands
+    assert "conda-lock install --name facetorch-gpu-ci --force" not in commands
 
 
 @pytest.mark.release_blocker
@@ -93,6 +95,37 @@ def test_distribution_docs_use_the_reviewed_build_python():
     assert setup_steps[0]["with"]["python-version"] == release_inputs["tools"][
         "build_python"
     ]
+    commands = _workflow_commands(WORKFLOW_ROOT / "python-package.yml")
+    assert "scripts/check_pdoc_search_index.py" in commands
+
+
+@pytest.mark.release_blocker
+def test_pdoc_search_index_check_ignores_only_generated_float_scores(tmp_path):
+    from scripts.check_pdoc_search_index import compare_indexes
+
+    def write_index(path, *, score, token="face", doc="Face docs"):
+        index = {
+            "version": "2.3.9",
+            "fields": ["doc"],
+            "fieldVectors": [["doc/0", [0, score]]],
+            "invertedIndex": [[token, [0, score]]],
+        }
+        payload = json.dumps([index, [{"ref": "Face", "doc": doc}]])
+        path.write_text(f"let [INDEX, DOCS] = {payload}; let URLS=[\"face.html\"]", encoding="utf-8")
+
+    committed = tmp_path / "committed.js"
+    generated = tmp_path / "generated.js"
+    write_index(committed, score=1.0)
+    write_index(generated, score=1.0000000001)
+    compare_indexes(generated, committed)
+
+    write_index(generated, score=1.0, doc="Changed docs")
+    with pytest.raises(ValueError, match="document corpus"):
+        compare_indexes(generated, committed)
+
+    write_index(generated, score=1.0, token="changed")
+    with pytest.raises(ValueError, match="index structure"):
+        compare_indexes(generated, committed)
 
 
 @pytest.mark.release_blocker

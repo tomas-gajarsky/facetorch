@@ -31,7 +31,7 @@ jobs:
       - name: Install the exact CPU conda lock and branch wheel
         run: |
           conda install --name base --channel conda-forge "conda-lock=4.0.2"
-          conda run --name base conda-lock install --name facetorch-ci --force conda-lock.yml
+          conda run --name base conda-lock install --name facetorch-ci conda-lock.yml
           conda run --name facetorch-ci python -m pip install --no-deps dist/*.whl
           conda run --name facetorch-ci python -m pip check
       - name: Smoke candidate rather than the public package
@@ -65,7 +65,7 @@ jobs:
         run: |
           python -m pip install "uv==0.9.14"
           conda install --name base --channel conda-forge "conda-lock=4.0.2"
-          conda run --name base conda-lock install --name facetorch-gpu-ci --force gpu.conda-lock.yml
+          conda run --name base conda-lock install --name facetorch-gpu-ci gpu.conda-lock.yml
           uv sync --project environments/torch-2.6-cu124 --frozen --python 3.12
           uv build --wheel --out-dir "$RUNNER_TEMP/gpu-dist"
           uv pip install \
