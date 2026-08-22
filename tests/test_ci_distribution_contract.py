@@ -100,23 +100,40 @@ def test_distribution_docs_use_the_reviewed_build_python():
 
 
 @pytest.mark.release_blocker
-def test_pdoc_search_index_check_ignores_only_generated_float_scores(tmp_path):
+def test_pdoc_search_index_check_normalizes_scores_and_traversal_order(tmp_path):
     from scripts.check_pdoc_search_index import compare_indexes
 
-    def write_index(path, *, score, token="face", doc="Face docs"):
+    def write_index(
+        path, *, score, token="face", doc="Face docs", reverse=False
+    ):
         index = {
             "version": "2.3.9",
             "fields": ["doc"],
             "fieldVectors": [["doc/0", [0, score]]],
             "invertedIndex": [[token, [0, score]]],
         }
-        payload = json.dumps([index, [{"ref": "Face", "doc": doc}]])
-        path.write_text(f"let [INDEX, DOCS] = {payload}; let URLS=[\"face.html\"]", encoding="utf-8")
+        documents = [
+            {"ref": "Face", "doc": doc, "url": 0},
+            {"ref": "Other", "doc": "Other docs", "url": 1},
+        ]
+        urls = ["face.html", "other.html"]
+        if reverse:
+            documents.reverse()
+            urls.reverse()
+            for document in documents:
+                document["url"] = 0 if document["ref"] == "Other" else 1
+        for position, document in enumerate(documents):
+            document["i"] = position
+        payload = json.dumps([index, documents])
+        path.write_text(
+            f"let [INDEX, DOCS] = {payload}; let URLS={json.dumps(urls)}",
+            encoding="utf-8",
+        )
 
     committed = tmp_path / "committed.js"
     generated = tmp_path / "generated.js"
     write_index(committed, score=1.0)
-    write_index(generated, score=1.0000000001)
+    write_index(generated, score=1.0000000001, reverse=True)
     compare_indexes(generated, committed)
 
     write_index(generated, score=1.0, doc="Changed docs")
