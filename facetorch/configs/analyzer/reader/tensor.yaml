@@ -1,0 +1,12 @@
+_target_: facetorch.analyzer.reader.TensorReader
+device:
+  _target_: torch.device
+  type: ${analyzer.device} # str
+optimize_transform: ${analyzer.optimize_transforms} # bool
+transform:
+  _target_: torchvision.transforms.Compose
+  transforms:
+    - _target_: facetorch.transforms.SquarePad
+    - _target_: torchvision.transforms.Resize
+      size: [1080] # List[int]
+      antialias: True # bool

@@ -4,6 +4,17 @@ import pytest
 import torch
 from PIL import Image
 
+import facetorch
+
+
+def _assert_tensor_retention(result, include_tensors):
+    if include_tensors:
+        assert result.tensor.shape[1:] == result.image.shape
+        assert result.tensor.dtype == torch.float32
+    else:
+        assert result.tensor is None
+        assert result.image is None
+
 
 @pytest.mark.integration
 def test_analyzer_image_source(cfg, analyzer):
@@ -13,15 +24,13 @@ def test_analyzer_image_source(cfg, analyzer):
         pytest.skip("Only test.jpg is used for this test.")
     response = analyzer.run(
         image_source=cfg.path_image,
-        batch_size=cfg.batch_size,
+        face_batch_size=cfg.batch_size,
         fix_img_size=cfg.fix_img_size,
-        return_img_data=cfg.return_img_data,
         include_tensors=cfg.include_tensors,
         path_output=cfg.path_output,
     )
 
-    assert response.tensor.shape[1:] == response.img.shape
-    assert response.tensor.dtype == torch.float32
+    _assert_tensor_retention(response, cfg.include_tensors)
     assert len(response.faces[0].preds.keys()) > 0
 
 
@@ -31,17 +40,16 @@ def test_analyzer_path_image(cfg, analyzer):
         pytest.skip("This test is only for path_image.")
     if "test.jpg" not in cfg.path_image:
         pytest.skip("Only test.jpg is used for this test.")
-    response = analyzer.run(
-        path_image=cfg.path_image,
-        batch_size=cfg.batch_size,
-        fix_img_size=cfg.fix_img_size,
-        return_img_data=cfg.return_img_data,
-        include_tensors=cfg.include_tensors,
-        path_output=cfg.path_output,
-    )
+    with pytest.warns(DeprecationWarning, match="path_image"):
+        response = analyzer.run(
+            path_image=cfg.path_image,
+            face_batch_size=cfg.batch_size,
+            fix_img_size=cfg.fix_img_size,
+            include_tensors=cfg.include_tensors,
+            path_output=cfg.path_output,
+        )
 
-    assert response.tensor.shape[1:] == response.img.shape
-    assert response.tensor.dtype == torch.float32
+    _assert_tensor_retention(response, cfg.include_tensors)
     assert len(response.faces[0].preds.keys()) > 0
 
 
@@ -53,16 +61,16 @@ def test_analyzer_tensor(cfg, analyzer):
         cfg.path_tensor,
         map_location=torch.device(cfg.analyzer.device)
     )
-    response = analyzer.run(
-        tensor=tensor,
-        batch_size=cfg.batch_size,
-        fix_img_size=cfg.fix_img_size,
-        return_img_data=cfg.return_img_data,
-        include_tensors=cfg.include_tensors,
-        path_output=cfg.path_output,
-    )
+    with pytest.warns(DeprecationWarning, match="tensor"):
+        response = analyzer.run(
+            tensor=tensor,
+            face_batch_size=cfg.batch_size,
+            fix_img_size=cfg.fix_img_size,
+            include_tensors=cfg.include_tensors,
+            path_output=cfg.path_output,
+        )
 
-    assert response.tensor.shape[1:] == response.img.shape
+    assert response.tensor.shape[1:] == response.image.shape
     assert response.tensor.shape == (1, 3, 1080, 1080)
     assert response.tensor.dtype == torch.float32
     assert response.tensor.device == torch.device(cfg.analyzer.device)
@@ -80,13 +88,12 @@ def test_analyzer_tensor_via_image_source(cfg, analyzer):
     tensor_input = torch.from_numpy(np.array(pil_image)).permute(2, 0, 1).contiguous()
     response = analyzer.run(
         image_source=tensor_input,
-        batch_size=cfg.batch_size,
+        face_batch_size=cfg.batch_size,
         fix_img_size=cfg.fix_img_size,
-        return_img_data=cfg.return_img_data,
         include_tensors=cfg.include_tensors,
     )
 
-    assert response.tensor.dtype == torch.float32
+    _assert_tensor_retention(response, cfg.include_tensors)
     assert len(response.faces) > 0
 
 
@@ -101,13 +108,12 @@ def test_analyzer_numpy_via_image_source(cfg, analyzer):
     array_input = np.array(pil_image)
     response = analyzer.run(
         image_source=array_input,
-        batch_size=cfg.batch_size,
+        face_batch_size=cfg.batch_size,
         fix_img_size=cfg.fix_img_size,
-        return_img_data=cfg.return_img_data,
         include_tensors=cfg.include_tensors,
     )
 
-    assert response.tensor.dtype == torch.float32
+    _assert_tensor_retention(response, cfg.include_tensors)
     assert len(response.faces) > 0
 
 
@@ -121,13 +127,12 @@ def test_analyzer_pil_via_image_source(cfg, analyzer):
     pil_image = Image.open(cfg.path_image).convert("RGB")
     response = analyzer.run(
         image_source=pil_image,
-        batch_size=cfg.batch_size,
+        face_batch_size=cfg.batch_size,
         fix_img_size=cfg.fix_img_size,
-        return_img_data=cfg.return_img_data,
         include_tensors=cfg.include_tensors,
     )
 
-    assert response.tensor.dtype == torch.float32
+    _assert_tensor_retention(response, cfg.include_tensors)
     assert len(response.faces) > 0
 
 
@@ -145,14 +150,14 @@ def test_analyzer_invalid_batch_size_raises(cfg, analyzer):
         pytest.skip("This test is only for path_image.")
     if "test.jpg" not in cfg.path_image:
         pytest.skip("Only test.jpg is used for this test.")
-    with pytest.raises(ValueError, match="batch_size must be >= 1"):
-        analyzer.run(image_source=cfg.path_image, batch_size=0)
+    with pytest.raises(ValueError, match="face_batch_size"):
+        analyzer.run(image_source=cfg.path_image, face_batch_size=0)
 
 
 @pytest.mark.unit
 @pytest.mark.analyzer
 def test_analyzer_unsupported_type_raises(analyzer):
-    with pytest.raises(TypeError, match="Unsupported image_source type"):
+    with pytest.raises(facetorch.InputError, match="Unsupported|accepts only"):
         analyzer.run(image_source=12345)
 
 
@@ -170,7 +175,6 @@ def test_analyzer_include_predictors(cfg, analyzer):
     response = analyzer.run(
         image_source=cfg.path_image,
         include_predictors=selected,
-        return_img_data=True,
         include_tensors=True,
     )
     if len(response.faces) > 0:
@@ -191,7 +195,6 @@ def test_analyzer_exclude_predictors(cfg, analyzer):
     response = analyzer.run(
         image_source=cfg.path_image,
         exclude_predictors=excluded,
-        return_img_data=True,
         include_tensors=True,
     )
     if len(response.faces) > 0:
@@ -209,7 +212,6 @@ def test_analyzer_skip_detector(cfg, analyzer):
     response = analyzer.run(
         image_source=cfg.path_image,
         skip_detector=True,
-        return_img_data=True,
         include_tensors=True,
     )
     assert len(response.faces) == 1
@@ -243,12 +245,11 @@ def test_analyzer_bytes_via_image_source(cfg, analyzer):
     pil_image.save(buf, format="JPEG")
     response = analyzer.run(
         image_source=buf.getvalue(),
-        batch_size=cfg.batch_size,
+        face_batch_size=cfg.batch_size,
         fix_img_size=cfg.fix_img_size,
-        return_img_data=cfg.return_img_data,
         include_tensors=cfg.include_tensors,
     )
-    assert response.tensor.dtype == torch.float32
+    _assert_tensor_retention(response, cfg.include_tensors)
     assert len(response.faces) > 0
 
 
@@ -262,12 +263,14 @@ def test_analyzer_grayscale_pil_via_image_source(cfg, analyzer):
     pil_image = Image.open(cfg.path_image).convert("L")
     response = analyzer.run(
         image_source=pil_image,
-        batch_size=cfg.batch_size,
+        face_batch_size=cfg.batch_size,
         fix_img_size=cfg.fix_img_size,
-        return_img_data=cfg.return_img_data,
         include_tensors=cfg.include_tensors,
     )
-    assert response.tensor.shape[1] == 3
+    if cfg.include_tensors:
+        assert response.tensor.shape[1] == 3
+    else:
+        assert response.tensor is None
 
 
 @pytest.mark.endtoend
@@ -279,7 +282,6 @@ def test_analyzer_callable(cfg, analyzer):
         pytest.skip("Only test.jpg is used for this test.")
     response = analyzer(
         image_source=cfg.path_image,
-        return_img_data=True,
         include_tensors=True,
     )
     assert len(response.faces) > 0

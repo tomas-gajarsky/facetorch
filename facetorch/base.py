@@ -1,7 +1,6 @@
 import os
-import copy
 from abc import ABCMeta, abstractmethod
-from typing import Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 import torch
 from codetiming import Timer
@@ -9,6 +8,8 @@ from torchvision import transforms
 
 from facetorch import utils
 from facetorch.datastruct import ImageData
+from facetorch.exceptions import ConfigurationError, ModelCompatibilityError
+from facetorch.input import InputSpec, canonicalize_image_tensor
 from facetorch.logger import LoggerJsonFile
 from facetorch.transforms import script_transform
 
@@ -90,85 +91,75 @@ class BaseReader(BaseProcessor):
         self.optimize_transform = optimize_transform
 
     @abstractmethod
-    def run(self, path: str) -> ImageData:
-        """Abstract method that reads an image from a path and returns a data object containing
-        a tensor of the image with
-         shape (batch, channels, height, width).
+    def run(self, image_source: Any, fix_img_size: bool = False, **kwargs) -> ImageData:
+        """Read one configured source and return canonical image data.
 
         Args:
-            path (str): Path to the image.
+            image_source (Any): Source accepted by the concrete reader.
+            fix_img_size (bool): Apply the configured size transform.
 
         Returns:
             ImageData: ImageData object with the image tensor.
         """
         pass
 
-    def process_tensor(self, tensor: torch.Tensor, fix_img_size: bool) -> ImageData:
-        """Read an input tensor and normalize it to shape (B, C, H, W).
+    def process_tensor(
+        self,
+        tensor: torch.Tensor,
+        fix_img_size: bool,
+        *,
+        input_policy: str = "coerce",
+        input_spec: Optional[InputSpec] = None,
+        source_kind: str = "torch",
+        path_input: Optional[str] = None,
+    ) -> ImageData:
+        """Canonicalize one image tensor to RGB float32 ``BCHW`` in ``0..255``.
 
         Args:
-            tensor (torch.Tensor): Image tensor with values between 0-255. Accepted
-                shapes are (H, W), (C, H, W), (H, W, C), or (B, C, H, W), where
-                C is in {1, 3, 4}. Unambiguous HWC tensors are converted to CHW.
-                Batched tensors currently support only B=1.
+            tensor (torch.Tensor): Source tensor. Torch inputs default to CHW/BCHW;
+                NumPy and decoded inputs default to HWC/BHWC. Use ``InputSpec`` to
+                declare another supported layout.
             fix_img_size (bool): Whether to resize the image to a fixed size. If
                 False, size_portrait and size_landscape are ignored.
+            input_policy (str): ``coerce`` or ``strict``.
+            input_spec (Optional[InputSpec]): Explicit source representation.
+            source_kind (str): Source convention used for deterministic defaults.
+            path_input (Optional[str]): Local source path retained as metadata.
         """
 
-        data = ImageData(path_input=None)
-        data.tensor = copy.deepcopy(tensor)
-
-        if data.tensor.dim() == 2:
-            data.tensor = data.tensor.unsqueeze(0)
-
-        if data.tensor.dim() == 3:
-            c0 = data.tensor.shape[0]
-            c2 = data.tensor.shape[2]
-            chw_like = c0 in (1, 3, 4)
-            hwc_like = c2 in (1, 3, 4)
-            if hwc_like and not chw_like:
-                data.tensor = data.tensor.permute(2, 0, 1)
-            elif not chw_like and not hwc_like:
-                raise ValueError(
-                    "Invalid 3D tensor shape. Expected CHW with C in {1,3,4} or "
-                    "HWC with channels in the last dimension."
-                )
-            elif chw_like and hwc_like:
-                raise ValueError(
-                    "Ambiguous 3D tensor layout: both first and last dimensions "
-                    "look like channel dimensions. Please pass CHW explicitly."
-                )
-            data.tensor = data.tensor.unsqueeze(0)
-
-        if data.tensor.dim() != 4:
-            raise ValueError(
-                f"Unsupported tensor rank {data.tensor.dim()}. Expected 2D, 3D, or 4D input."
-            )
-
-        if data.tensor.shape[0] != 1:
-            raise ValueError(
-                f"Batched tensor input is not supported yet. Expected B=1, got B={data.tensor.shape[0]}."
-            )
-
-        channels = data.tensor.shape[1]
-        if channels not in (1, 3, 4):
-            raise ValueError(
-                f"Unsupported channel count: {channels}. Expected channels in {{1,3,4}}."
-            )
-
-        if channels == 1:
-            data.tensor = data.tensor.repeat(1, 3, 1, 1)
-        elif channels == 4:
-            data.tensor = data.tensor[:, :3, :, :]
-
-        data.tensor = data.tensor.to(self.device)
+        canonical = canonicalize_image_tensor(
+            tensor,
+            source_kind=source_kind,
+            input_policy=input_policy,
+            input_spec=input_spec,
+        )
+        data = ImageData(path_input=path_input, warnings=canonical.warnings)
+        data.tensor = canonical.tensor.to(self.device)
 
         if fix_img_size:
+            if self.transform is None:
+                raise ConfigurationError(
+                    "fix_img_size=True requires a configured reader transform."
+                )
             data.tensor = self.transform(data.tensor)
 
-        data.img = data.tensor.squeeze(0).cpu()
-        data.tensor = data.tensor.type(torch.float32)
+        data.tensor = data.tensor.to(dtype=torch.float32)
+        if data.tensor.ndim != 4 or data.tensor.shape[:2] != (1, 3):
+            raise ConfigurationError(
+                "Reader transform must preserve the canonical B=1, RGB BCHW layout."
+            )
+        if fix_img_size:
+            if not torch.isfinite(data.tensor).all():
+                raise ConfigurationError("Reader transform produced NaN or Inf values.")
+            if data.tensor.numel() and (
+                float(data.tensor.min()) < 0.0 or float(data.tensor.max()) > 255.0
+            ):
+                raise ConfigurationError(
+                    "Reader transform must preserve canonical values within 0..255."
+                )
+        data.img = data.tensor[0].round().clamp(0, 255).to(torch.uint8).cpu()
         data.set_dims()
+        data._facetorch_canonical = True
 
         return data
 
@@ -197,12 +188,13 @@ class BaseDownloader(object, metaclass=ABCMeta):
         super().__init__()
         self.file_id = file_id
         self.path_local = path_local
+        self.verify_on_use = False
 
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
 
     @abstractmethod
-    def run(self) -> None:
+    def run(self) -> Optional[str]:
         """Abstract method that should implement the download functionality"""
 
 
@@ -250,6 +242,9 @@ class BaseModel(object, metaclass=ABCMeta):
         super().__init__()
         self.downloader = downloader
         self.path_local = self.downloader.path_local
+        self._verify_artifacts = (
+            getattr(self.downloader, "verify_on_use", False) is True
+        )
         self.device = device
         self.native_model_class = native_model_class
         self.compile_model = compile_model
@@ -272,14 +267,35 @@ class BaseModel(object, metaclass=ABCMeta):
         Returns:
             torch.nn.Module: Loaded model in eval mode.
         """
-        if not os.path.exists(self.path_local):
+        should_verify = self._verify_artifacts
+        if should_verify or not os.path.exists(self.path_local):
             dir_local = os.path.dirname(self.path_local)
             if dir_local:
-                os.makedirs(dir_local, exist_ok=True)
-            self.downloader.run()
+                try:
+                    os.makedirs(dir_local, exist_ok=True)
+                except OSError as exc:
+                    raise ConfigurationError(
+                        f"Cannot create model cache directory {dir_local!r}. "
+                        "Set FACETORCH_CACHE_DIR to a writable directory or "
+                        "override downloader.path_local."
+                    ) from exc
+            resolved_path = self.downloader.run()
+            if resolved_path is not None:
+                self.path_local = os.fspath(resolved_path)
+            else:
+                self.path_local = self.downloader.path_local
 
-        if self.path_local.endswith(".pt2"):
+        active_format = getattr(self.downloader, "active_format", None)
+        if active_format not in {"pt2", "torchscript", "torch_data"}:
+            active_format = None
+        if active_format == "pt2" or (
+            active_format is None and self.path_local.endswith(".pt2")
+        ):
             model = self._load_exported_model_with_fallback()
+        elif active_format == "torch_data":
+            raise ConfigurationError(
+                f"Artifact {self.path_local} contains data, not an executable model."
+            )
         elif self.native_model_class is not None:
             model = self._load_native_model()
             model.eval()
@@ -304,7 +320,8 @@ class BaseModel(object, metaclass=ABCMeta):
         )
 
     def _build_export_schema_mismatch_message(self) -> str:
-        active_filename = getattr(self.downloader, "_active_filename", None)
+        descriptor = getattr(self.downloader, "active_descriptor", None)
+        active_filename = getattr(descriptor, "filename", None)
         tried = getattr(self.downloader, "_last_candidates", None)
         tried_msg = ""
         if isinstance(tried, list) and tried:
@@ -324,13 +341,21 @@ class BaseModel(object, metaclass=ABCMeta):
         )
 
     def _load_exported_model_with_fallback(self) -> torch.nn.Module:
-        """Loads .pt2 and retries with downloader fallback artifacts on schema mismatch."""
+        """Load .pt2 and use only the next explicit manifest candidate on mismatch."""
         while True:
             try:
                 return self._load_exported_model()
             except (RuntimeError, AssertionError, KeyError) as e:
                 if not self._is_export_schema_mismatch_error(e):
                     raise
+
+                mark_incompatible = (
+                    getattr(self.downloader, "mark_incompatible", None)
+                    if self._verify_artifacts
+                    else None
+                )
+                if callable(mark_incompatible):
+                    mark_incompatible()
 
                 try_next = getattr(self.downloader, "try_next", None)
                 if callable(try_next):
@@ -339,20 +364,26 @@ class BaseModel(object, metaclass=ABCMeta):
                         f"torch={torch.__version__}. Trying next downloader candidate."
                     )
                     try:
-                        has_next = try_next(force_download=True)
+                        has_next = try_next(force_download=False)
                     except TypeError:
-                        has_next = try_next()
+                        try:
+                            has_next = try_next()
+                        except ModelCompatibilityError:
+                            has_next = False
+                    except ModelCompatibilityError:
+                        has_next = False
                     if has_next:
+                        self.path_local = self.downloader.path_local
                         continue
 
-                raise RuntimeError(
+                raise ModelCompatibilityError(
                     self._build_export_schema_mismatch_message()
                 ) from e
 
     def _load_exported_model(self) -> torch.nn.Module:
         """Loads a torch.export .pt2 model or an active legacy .pt fallback."""
-        active_filename = getattr(self.downloader, "_active_filename", None)
-        if str(active_filename).endswith(".pt") and not str(active_filename).endswith(".pt2"):
+        active_format = getattr(self.downloader, "active_format", None)
+        if active_format == "torchscript":
             model = torch.jit.load(self.path_local, map_location=self.device)
             model.eval()
             return model

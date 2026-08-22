@@ -3,13 +3,16 @@ _target_: facetorch.analyzer.predictor.FacePredictor
 downloader:
   _target_: facetorch.downloader.DownloaderHuggingFace
   file_id: 1GjDTwQpvrkCjXOdiBy1oMkzm7nt-bXFg
-  path_local: /opt/facetorch/models/exported/predictor/deepfake/1/model.pt2 # str
+  path_local: ${facetorch.model_dir:}/exported/predictor/deepfake/1/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-deepfake-efficientnet-b7  # HuggingFace repo ID
   filename: model.pt2  # Filename in the HuggingFace repo
-  export_filenames_by_torch_minor:
-    "2.3": model-torch2.3.pt2
-    "2.6": model-torch2.6.pt2
-    "2.11": model-torch2.11.pt2
+  manifest_id: deepfake-efficientnet-b7
+  revision: 3ecdd5193f7e981b7f3dad2407658c5456ae671c
+  sha256: 620005edfc682011b52806f56d8fcd8200691215461b00e04de09a344e21a467
+  size_bytes: 268598190
+  offline: ${offline}
+  allow_legacy_models: ${allow_legacy_models}
+  device: ${analyzer.device}
 
 device:
   _target_: torch.device

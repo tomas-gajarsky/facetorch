@@ -1,17 +1,27 @@
 from abc import abstractmethod
 from itertools import product as product
 from math import ceil
-from typing import List, Tuple, Union
+from typing import List, Protocol, Tuple, Union, runtime_checkable
+import warnings
 
 import torch
 from codetiming import Timer
 from facetorch.base import BaseProcessor
 from facetorch.datastruct import Detection, Dimensions, Face, ImageData, Location
 from facetorch.logger import LoggerJsonFile
-from facetorch.utils import rgb2bgr
 from torchvision import transforms
 
 logger = LoggerJsonFile().logger
+
+
+@runtime_checkable
+class DetectorPostprocessorProtocol(Protocol):
+    """Small public contract for custom detector postprocessors."""
+
+    def run(
+        self, data: ImageData, logits: Union[torch.Tensor, Tuple[torch.Tensor, ...]]
+    ) -> ImageData:
+        """Return detections and optionally faces in detector-image coordinates."""
 
 
 class BaseDetPostProcessor(BaseProcessor):
@@ -118,7 +128,6 @@ class PostRetFace(BaseDetPostProcessor):
         score_threshold: float,
         prior_box: PriorBox,
         variance: List[float],
-        reverse_colors: bool = False,
         expand_box_ratio: float = 0.0,
     ):
         """Initialize the detector postprocessor. Modified from https://github.com/biubug6/Pytorch_Retinaface.
@@ -134,7 +143,6 @@ class PostRetFace(BaseDetPostProcessor):
             score_threshold (float): Score threshold for face detection.
             prior_box (PriorBox): PriorBox object.
             variance (List[float]): Prior box variance.
-            reverse_colors (bool): Whether to reverse the colors of the image tensor from RGB to BGR or vice versa. If False, the colors remain unchanged. Default: False.
             expand_box_ratio (float): Expand the box by this ratio. Default: 0.0.
         """
         super().__init__(transform, device, optimize_transform)
@@ -145,7 +153,6 @@ class PostRetFace(BaseDetPostProcessor):
         self.score_threshold = score_threshold
         self.prior_box = prior_box
         self.variance = list(variance)
-        self.reverse_colors = reverse_colors
         self.expand_box_ratio = expand_box_ratio
 
     @Timer("PostRetFace.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
@@ -164,12 +171,7 @@ class PostRetFace(BaseDetPostProcessor):
             ImageData: Image data object with detection tensors and detected Face objects.
         """
         data.det = Detection(loc=logits[0], conf=logits[1], landmarks=logits[2])
-
-        if self.reverse_colors:
-            data.tensor = rgb2bgr(data.tensor)
-
         data = self._process_dets(data)
-        data = self._extract_faces(data)
         return data
 
     def _process_dets(self, data: ImageData) -> ImageData:
@@ -196,14 +198,20 @@ class PostRetFace(BaseDetPostProcessor):
             _boxes[:, 2:] += _boxes[:, :2]
             return _boxes
 
-        def _extract_boxes(_loc: torch.Tensor) -> torch.Tensor:
-            priors = self.prior_box.forward(data.dims)
-            priors = priors.to(self.device)
-            prior_data = priors.data
-            _boxes = _decode(_loc.data.squeeze(0), prior_data, self.variance)
-            img_scale = torch.Tensor([data.dims.width, data.dims.height]).repeat(2)
-            _boxes = _boxes * img_scale.to(self.device)
-            return _boxes
+        def _decode_landmarks(
+            _landmarks: torch.Tensor,
+            _priors: torch.Tensor,
+            variances: List[float],
+        ) -> torch.Tensor:
+            decoded = []
+            for start in range(0, 10, 2):
+                decoded.append(
+                    _priors[:, :2]
+                    + _landmarks[:, start : start + 2]
+                    * variances[0]
+                    * _priors[:, 2:]
+                )
+            return torch.cat(decoded, dim=1)
 
         def _nms(dets: torch.Tensor, thresh: float) -> torch.Tensor:
             """Non-maximum suppression."""
@@ -213,7 +221,7 @@ class PostRetFace(BaseDetPostProcessor):
             y2 = dets[:, 3]
 
             areas = (x2 - x1 + 1) * (y2 - y1 + 1)
-            order = torch.arange(dets.shape[0], device=self.device)
+            order = torch.arange(dets.shape[0], device=dets.device)
 
             zero_tensor = torch.tensor(0.0).to(self.device)
             keep = []
@@ -236,19 +244,25 @@ class PostRetFace(BaseDetPostProcessor):
             if len(keep) > 0:
                 keep = torch.stack(keep)
             else:
-                keep = torch.tensor([])
+                keep = torch.empty((0,), dtype=torch.long, device=dets.device)
 
             return keep
 
-        def _extract_dets(_conf: torch.Tensor, _boxes: torch.Tensor) -> torch.Tensor:
+        def _extract_dets(
+            _conf: torch.Tensor,
+            _boxes: torch.Tensor,
+            _landmarks: torch.Tensor,
+        ) -> Tuple[torch.Tensor, torch.Tensor]:
             scores = _conf.squeeze(0).data[:, 1]
             # ignore low scores
             inds = scores > self.confidence_threshold
             _boxes = _boxes[inds]
+            _landmarks = _landmarks[inds]
             scores = scores[inds]
             # keep top-K before NMS
             order = torch.argsort(scores, descending=True)[: self.top_k]
             _boxes = _boxes[order]
+            _landmarks = _landmarks[order]
             scores = scores[order]
             # do NMS
             _dets = torch.hstack((_boxes, scores.unsqueeze(1)))
@@ -256,18 +270,40 @@ class PostRetFace(BaseDetPostProcessor):
 
             if not keep.shape[0] == 0:
                 _dets = _dets[keep, :]
+                _landmarks = _landmarks[keep, :]
                 # keep top-K after NMS
                 _dets = _dets[: self.keep_top_k, :]
+                _landmarks = _landmarks[: self.keep_top_k, :]
                 # keep dets with score > score_threshold
-                _dets = _dets[_dets[:, 4] > self.score_threshold]
+                score_mask = _dets[:, 4] > self.score_threshold
+                _dets = _dets[score_mask]
+                _landmarks = _landmarks[score_mask]
+            else:
+                _landmarks = _landmarks[:0]
 
-            return _dets
+            return _dets, _landmarks
 
-        data.det.boxes = _extract_boxes(data.det.loc)
-        data.det.dets = _extract_dets(data.det.conf, data.det.boxes)
+        priors = self.prior_box.forward(data.dims).to(self.device)
+        prior_data = priors.data
+        boxes = _decode(data.det.loc.data.squeeze(0), prior_data, self.variance)
+        box_scale = boxes.new_tensor([data.dims.width, data.dims.height]).repeat(2)
+        boxes = boxes * box_scale
+
+        landmarks = _decode_landmarks(
+            data.det.landmarks.data.squeeze(0), prior_data, self.variance
+        )
+        landmark_scale = landmarks.new_tensor(
+            [data.dims.width, data.dims.height]
+        ).repeat(5)
+        landmarks = landmarks * landmark_scale
+
+        data.det.dets, data.det.landmarks = _extract_dets(
+            data.det.conf, boxes, landmarks
+        )
+        data.det.boxes = data.det.dets[:, :4].clone()
         return data
 
-    def _extract_faces(self, data: ImageData) -> ImageData:
+    def extract_faces(self, data: ImageData) -> ImageData:
         """Extracts the faces from the original image using the detections.
 
         Args:
@@ -288,11 +324,22 @@ class PostRetFace(BaseDetPostProcessor):
             )
 
             loc.expand(amount=self.expand_box_ratio)
-            loc.form_square()
+            loc.fit_square(width=data.dims.width, height=data.dims.height)
+            loc.clamp(width=data.dims.width, height=data.dims.height)
 
             return loc
 
+        data.faces = []
         for indx, det in enumerate(data.det.dets):
+            if (
+                det[2] <= det[0]
+                or det[3] <= det[1]
+                or det[2] <= 0
+                or det[3] <= 0
+                or det[0] >= data.dims.width
+                or det[1] >= data.dims.height
+            ):
+                continue
             loc = _get_coordinates(det)
             face_tensor = data.tensor[0, :, loc.y1 : loc.y2, loc.x1 : loc.x2]
             dims = Dimensions(face_tensor.shape[-2], face_tensor.shape[-1])
@@ -306,3 +353,12 @@ class PostRetFace(BaseDetPostProcessor):
                 data.faces.append(face)
 
         return data
+
+    def _extract_faces(self, data: ImageData) -> ImageData:
+        """Deprecated private alias for the v1 public ``extract_faces`` hook."""
+        warnings.warn(
+            "PostRetFace._extract_faces is deprecated; use extract_faces.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.extract_faces(data)

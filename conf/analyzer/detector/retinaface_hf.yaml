@@ -4,19 +4,20 @@ _target_: facetorch.analyzer.detector.FaceDetector
 downloader:
   _target_: facetorch.downloader.DownloaderHuggingFace
   file_id: 1eMuOdGkiNCOUTiEbKKoPCHGCuDgiKeNC
-  path_local: /opt/facetorch/models/exported/detector/1/model.pt2 # str
+  path_local: ${facetorch.model_dir:}/exported/detector/1/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-detector-retinaface  # HuggingFace repo ID
   filename: model.pt2  # Filename in the HuggingFace repo
-  export_filenames_by_torch_minor:
-    "2.3": model-torch2.3.pt2
-    "2.6": model-torch2.6.pt2
-    "2.11": model-torch2.11.pt2
+  manifest_id: detector-retinaface
+  revision: 2e1015f21f8c743ca6a356a1cba3223232096502
+  sha256: 6588c6eaf7b0e342b72f89b5a221e7ecb8c0158e5de1b95d0111ba406decad7c
+  size_bytes: 110323020
+  offline: ${offline}
+  allow_legacy_models: ${allow_legacy_models}
+  device: ${analyzer.device}
 
 device:
   _target_: torch.device
   type: ${analyzer.device} # str
-
-reverse_colors: True # bool
 
 preprocessor:
   _target_: facetorch.analyzer.detector.pre.DetectorPreProcessor
@@ -30,7 +31,7 @@ preprocessor:
     _target_: torch.device
     type: ${analyzer.device}
   optimize_transform: ${analyzer.optimize_transforms} # bool
-  reverse_colors: ${analyzer.detector.reverse_colors} # bool
+  reverse_colors: True # model preprocessing converts RGB input to BGR
 
 postprocessor:
   _target_: facetorch.analyzer.detector.post.PostRetFace
@@ -50,5 +51,4 @@ postprocessor:
     steps: [8, 16, 32]
     clip: False
   variance: [0.1, 0.2]
-  reverse_colors: ${analyzer.detector.reverse_colors} # bool
   expand_box_ratio: 0. # float

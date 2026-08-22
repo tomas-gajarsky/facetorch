@@ -62,18 +62,12 @@ def test_output_type(cfg, analyzer, tensor):
 def test_read_image_from_url(analyzer):
     if not isinstance(analyzer.reader, UniversalReader):
         pytest.skip("Only UniversalReader is used for this test.")
-    result = analyzer.reader.run(
-        "https://github.com/tomas-gajarsky/facetorch/blob/main/data/input/test.jpg?raw=true"
-    )
-    assert isinstance(result, facetorch.datastruct.ImageData)
-    assert result.img is not None
-    assert result.tensor is not None
+    with pytest.raises(facetorch.InputError, match="URLReader"):
+        analyzer.reader.run("https://example.invalid/image.jpg")
 
 
 def test_read_image_from_path(cfg, analyzer):
-    if not isinstance(analyzer.reader, UniversalReader) or not isinstance(
-        analyzer.reader, ImageReader
-    ):
+    if not isinstance(analyzer.reader, (UniversalReader, ImageReader)):
         pytest.skip("Only UniversalReader and ImageReader are used for this test.")
     result = analyzer.reader.run(cfg.path_image)
     assert isinstance(result, facetorch.datastruct.ImageData)
@@ -82,11 +76,9 @@ def test_read_image_from_path(cfg, analyzer):
 
 
 def test_read_tensor(analyzer):
-    if not isinstance(analyzer.reader, UniversalReader) or not isinstance(
-        analyzer.reader, TensorReader
-    ):
+    if not isinstance(analyzer.reader, (UniversalReader, TensorReader)):
         pytest.skip("Only UniversalReader and TensorReader are used for this test.")
-    tensor_input = torch.randn(3, 224, 224)
+    tensor_input = torch.rand(3, 224, 224)
     result = analyzer.reader.run(tensor_input)
     assert isinstance(result, facetorch.datastruct.ImageData)
     assert result.tensor.size() == torch.Size([1, 3, 224, 224])
@@ -226,7 +218,7 @@ def test_read_numpy_array_rgba(analyzer):
 @pytest.mark.unit
 @pytest.mark.reader
 def test_process_tensor_grayscale_2d(analyzer):
-    tensor_input = torch.randn(224, 224)
+    tensor_input = torch.rand(224, 224)
     result = analyzer.reader.process_tensor(tensor_input, fix_img_size=False)
     assert result.tensor.size() == torch.Size([1, 3, 224, 224])
 
@@ -234,7 +226,7 @@ def test_process_tensor_grayscale_2d(analyzer):
 @pytest.mark.unit
 @pytest.mark.reader
 def test_process_tensor_grayscale_1chw(analyzer):
-    tensor_input = torch.randn(1, 224, 224)
+    tensor_input = torch.rand(1, 224, 224)
     result = analyzer.reader.process_tensor(tensor_input, fix_img_size=False)
     assert result.tensor.size() == torch.Size([1, 3, 224, 224])
 
@@ -242,7 +234,7 @@ def test_process_tensor_grayscale_1chw(analyzer):
 @pytest.mark.unit
 @pytest.mark.reader
 def test_process_tensor_rgba(analyzer):
-    tensor_input = torch.randn(4, 224, 224)
+    tensor_input = torch.rand(4, 224, 224)
     result = analyzer.reader.process_tensor(tensor_input, fix_img_size=False)
     assert result.tensor.size() == torch.Size([1, 3, 224, 224])
 
@@ -250,22 +242,28 @@ def test_process_tensor_rgba(analyzer):
 @pytest.mark.unit
 @pytest.mark.reader
 def test_process_tensor_hwc_rgb(analyzer):
-    tensor_input = torch.randn(224, 224, 3)
-    result = analyzer.reader.process_tensor(tensor_input, fix_img_size=False)
+    tensor_input = torch.rand(224, 224, 3)
+    result = analyzer.reader.process_tensor(
+        tensor_input,
+        fix_img_size=False,
+        input_spec=facetorch.InputSpec(layout="HWC"),
+    )
     assert result.tensor.size() == torch.Size([1, 3, 224, 224])
 
 
 @pytest.mark.unit
 @pytest.mark.reader
 def test_process_tensor_batched_not_supported(analyzer):
-    tensor_input = torch.randn(2, 3, 224, 224)
+    tensor_input = torch.rand(2, 3, 224, 224)
     with pytest.raises(ValueError, match="B=1"):
         analyzer.reader.process_tensor(tensor_input, fix_img_size=False)
 
 
 @pytest.mark.unit
 @pytest.mark.reader
-def test_process_tensor_ambiguous_3d_raises(analyzer):
-    tensor_input = torch.randn(3, 224, 3)
-    with pytest.raises(ValueError, match="Ambiguous 3D tensor layout"):
-        analyzer.reader.process_tensor(tensor_input, fix_img_size=False)
+@pytest.mark.release_blocker
+def test_process_tensor_chw_width_three_is_supported():
+    reader = TensorReader(None, torch.device("cpu"), False)
+    tensor_input = torch.rand(3, 224, 3)
+    result = reader.process_tensor(tensor_input, fix_img_size=False)
+    assert result.tensor.size() == torch.Size([1, 3, 224, 3])

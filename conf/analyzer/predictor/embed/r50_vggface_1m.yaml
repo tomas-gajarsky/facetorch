@@ -3,13 +3,16 @@ _target_: facetorch.analyzer.predictor.FacePredictor
 downloader:
   _target_: facetorch.downloader.DownloaderHuggingFace
   file_id: 19h3kqar1wlELAmM5hDyj9tlrUh8yjrCl
-  path_local: /opt/facetorch/models/exported/predictor/embed/1/model.pt2 # str
+  path_local: ${facetorch.model_dir:}/exported/predictor/embed/1/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-embed-resnet-50  # HuggingFace repo ID
   filename: model.pt2  # Filename in the HuggingFace repo
-  export_filenames_by_torch_minor:
-    "2.3": model-torch2.3.pt2
-    "2.6": model-torch2.6.pt2
-    "2.11": model-torch2.11.pt2
+  manifest_id: embed-resnet50
+  revision: e98f06a0c724e7dfd893b12d94165444978a449e
+  sha256: e09098cc36d7d03189319185f62708fa144c02cdd6e6bb5c5ab3698d1a034bc5
+  size_bytes: 114114903
+  offline: ${offline}
+  allow_legacy_models: ${allow_legacy_models}
+  device: ${analyzer.device}
 
 device:
   _target_: torch.device

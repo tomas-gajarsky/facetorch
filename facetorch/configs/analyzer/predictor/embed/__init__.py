@@ -1,0 +1,1 @@
+"""Packaged embedding predictor configurations."""

@@ -1,26 +1,51 @@
-import hydra
+#!/usr/bin/env python3
+"""Analyze one tensor file with the installed facetorch configuration API."""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+from typing import Sequence
+
 import torch
-from facetorch import FaceAnalyzer
-from omegaconf import DictConfig
+
+from facetorch import FaceAnalyzer, load_config
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="tensor.config")
-def main(cfg: DictConfig) -> None:
-
-    tensor = torch.load(cfg.path_tensor, map_location=torch.device(cfg.analyzer.device))
-    # tensor = torch.randint(0, 255, (3, 512, 512), dtype=torch.uint8).to(cfg.analyzer.device)
-
-    analyzer = FaceAnalyzer(cfg.analyzer)
-
-    response = analyzer.run(
-        tensor=tensor,
-        batch_size=cfg.batch_size,
-        fix_img_size=cfg.fix_img_size,
-        return_img_data=cfg.return_img_data,
-        include_tensors=cfg.include_tensors,
-        path_output=cfg.path_output,
+def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("tensor", type=Path, help="Path to a saved image tensor.")
+    parser.add_argument("--profile", choices=("cpu", "gpu"), default="cpu")
+    parser.add_argument("--output", type=Path, help="Optional output image path.")
+    parser.add_argument("--face-batch-size", type=int, default=8)
+    parser.add_argument("--include-tensors", action="store_true")
+    parser.add_argument("--fix-image-size", action="store_true")
+    parser.add_argument(
+        "--config-override",
+        action="append",
+        default=[],
+        help="Hydra override applied after the selected packaged profile.",
     )
-    print(response)
+    return parser.parse_args(argv)
+
+
+def main(argv: Sequence[str] | None = None) -> None:
+    args = _parse_args(argv)
+    cfg = load_config(args.profile, overrides=args.config_override)
+    tensor = torch.load(
+        args.tensor,
+        map_location=torch.device(cfg.analyzer.device),
+        weights_only=True,
+    )
+    analyzer = FaceAnalyzer(cfg.analyzer)
+    result = analyzer.run(
+        image_source=tensor,
+        face_batch_size=args.face_batch_size,
+        fix_img_size=args.fix_image_size,
+        include_tensors=args.include_tensors,
+        path_output=str(args.output) if args.output is not None else None,
+    )
+    print(result)
 
 
 if __name__ == "__main__":
