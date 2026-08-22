@@ -21,7 +21,7 @@ preprocessor:
       - _target_: torchvision.transforms.Normalize
         mean: [123., 117., 104.] # List[float]
         std: [1., 1., 1.] # List[float]
-  device: 
+  device:
     _target_: torch.device
     type: ${analyzer.device}
   optimize_transform: ${analyzer.optimize_transforms} # bool
@@ -30,7 +30,7 @@ preprocessor:
 postprocessor:
   _target_: facetorch.analyzer.detector.post.PostRetFace
   transform: None
-  device: 
+  device:
     _target_: torch.device
     type: ${analyzer.device}
   optimize_transform: ${analyzer.optimize_transforms}
