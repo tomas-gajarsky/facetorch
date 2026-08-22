@@ -174,6 +174,35 @@ def test_miniforge_input_matches_the_reviewed_installer():
 
 
 @pytest.mark.release_blocker
+def test_dependency_review_allowlist_matches_approved_advisory_exceptions():
+    policy = json.loads(
+        (REPO_ROOT / "security" / "advisory-exceptions.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    expected = {
+        alias
+        for exception in policy["exceptions"]
+        if exception["status"] == "approved"
+        for alias in exception.get("aliases", [])
+        if alias.startswith("GHSA-")
+    }
+    workflow = _workflow(REPO_ROOT / ".github" / "workflows" / "security.yml")
+    review_step = next(
+        step
+        for step in workflow["jobs"]["dependency-review"]["steps"]
+        if str(step.get("uses", "")).startswith("actions/dependency-review-action@")
+    )
+    configured = {
+        item.strip()
+        for item in str(review_step.get("with", {}).get("allow-ghsas", "")).split(",")
+        if item.strip()
+    }
+
+    assert configured == expected
+
+
+@pytest.mark.release_blocker
 def test_release_uses_trusted_publishing_attestations_and_fail_closed_governance():
     workflow = (REPO_ROOT / ".github" / "workflows" / "release.yml").read_text(
         encoding="utf-8"

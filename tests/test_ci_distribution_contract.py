@@ -62,12 +62,37 @@ def test_install_ci_smokes_the_branch_wheel_and_packaged_config():
 
 @pytest.mark.release_blocker
 def test_conda_ci_validates_the_local_candidate_not_public_facetorch():
-    commands = _workflow_commands(WORKFLOW_ROOT / "conda-env.yml")
+    workflow_path = WORKFLOW_ROOT / "conda-env.yml"
+    workflow_text = workflow_path.read_text(encoding="utf-8")
+    commands = _workflow_commands(workflow_path)
     assert not re.search(r"conda install[^\n]*\bfacetorch\b", commands)
     assert re.search(r"pip install\s+[^\n]*(?:\.whl|dist/)", commands)
     assert "gpu.conda-lock.yml" in commands
     assert "environments/torch-2.6-cu124" in commands
     assert 'torch.version.cuda == "12.4"' in commands
+    assert "activate-environment: base" in workflow_text
+    assert "auto-activate-base" not in workflow_text
+    assert commands.count("conda run --name base conda-lock install") == 2
+
+
+@pytest.mark.release_blocker
+def test_distribution_docs_use_the_reviewed_build_python():
+    workflow = yaml.safe_load(
+        (WORKFLOW_ROOT / "python-package.yml").read_text(encoding="utf-8")
+    )
+    release_inputs = json.loads(
+        (REPO_ROOT / "security" / "release-inputs.json").read_text(encoding="utf-8")
+    )
+    setup_steps = [
+        step
+        for step in workflow["jobs"]["build-distributions"]["steps"]
+        if str(step.get("uses", "")).startswith("actions/setup-python@")
+    ]
+
+    assert len(setup_steps) == 1
+    assert setup_steps[0]["with"]["python-version"] == release_inputs["tools"][
+        "build_python"
+    ]
 
 
 @pytest.mark.release_blocker
