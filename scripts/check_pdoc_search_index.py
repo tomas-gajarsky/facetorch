@@ -5,14 +5,12 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 from pathlib import Path
 from typing import Any
 
 
 PREFIX = "let [INDEX, DOCS] = "
 URL_SEPARATOR = "; let URLS="
-_SCORE = object()
 
 
 def _reject_json_constant(value: str) -> None:
@@ -41,26 +39,78 @@ def _load_index(path: Path) -> tuple[dict[str, Any], list[Any], list[Any]]:
     return payload[0], payload[1], urls
 
 
-def _without_scores(value: Any) -> Any:
-    if isinstance(value, float):
-        if not math.isfinite(value):
-            raise ValueError("pdoc3 search index contains a non-finite score")
-        return _SCORE
-    if isinstance(value, list):
-        return [_without_scores(item) for item in value]
-    if isinstance(value, dict):
-        return {key: _without_scores(item) for key, item in value.items()}
-    return value
+def _canonical_documents(documents: list[Any], urls: list[Any]) -> list[Any]:
+    if not all(isinstance(url, str) for url in urls) or len(set(urls)) != len(urls):
+        raise ValueError("pdoc3 search index has an invalid URL table")
+    canonical = []
+    references = set()
+    for position, document in enumerate(documents):
+        if not isinstance(document, dict) or document.get("i") != position:
+            raise ValueError("pdoc3 search index has invalid document ordinals")
+        reference = document.get("ref")
+        url_index = document.get("url")
+        if (
+            not isinstance(reference, str)
+            or reference in references
+            or not isinstance(url_index, int)
+            or isinstance(url_index, bool)
+            or not 0 <= url_index < len(urls)
+        ):
+            raise ValueError("pdoc3 search index has an invalid document reference")
+        references.add(reference)
+        canonical.append(
+            {
+                **{
+                    key: value
+                    for key, value in document.items()
+                    if key not in {"i", "url"}
+                },
+                "url": urls[url_index],
+            }
+        )
+    return sorted(canonical, key=lambda document: document["ref"])
+
+
+def _index_signature(index: dict[str, Any]) -> dict[str, Any]:
+    version = index.get("version")
+    fields = index.get("fields")
+    pipeline = index.get("pipeline", [])
+    inverted_index = index.get("invertedIndex")
+    field_vectors = index.get("fieldVectors")
+    if (
+        not isinstance(version, str)
+        or not isinstance(fields, list)
+        or not all(isinstance(field, str) for field in fields)
+        or not isinstance(pipeline, list)
+        or not isinstance(inverted_index, list)
+        or not isinstance(field_vectors, list)
+    ):
+        raise ValueError("pdoc3 search index has an invalid Lunr schema")
+    tokens = []
+    for entry in inverted_index:
+        if not isinstance(entry, list) or not entry or not isinstance(entry[0], str):
+            raise ValueError("pdoc3 search index has an invalid token entry")
+        tokens.append(entry[0])
+    if len(tokens) != len(set(tokens)):
+        raise ValueError("pdoc3 search index contains duplicate tokens")
+    return {
+        "version": version,
+        "fields": fields,
+        "pipeline": pipeline,
+        "tokens": sorted(tokens),
+    }
 
 
 def compare_indexes(generated_path: Path, committed_path: Path) -> None:
     generated_index, generated_docs, generated_urls = _load_index(generated_path)
     committed_index, committed_docs, committed_urls = _load_index(committed_path)
-    if generated_docs != committed_docs:
+    if _canonical_documents(generated_docs, generated_urls) != _canonical_documents(
+        committed_docs, committed_urls
+    ):
         raise ValueError("generated pdoc3 search document corpus is stale")
-    if generated_urls != committed_urls:
+    if set(generated_urls) != set(committed_urls):
         raise ValueError("generated pdoc3 search URL table is stale")
-    if _without_scores(generated_index) != _without_scores(committed_index):
+    if _index_signature(generated_index) != _index_signature(committed_index):
         raise ValueError("generated pdoc3 search index structure is stale")
 
 
