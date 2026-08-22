@@ -18,6 +18,7 @@ recursive-include docs *
 recursive-include model_defs *.py *.md
 recursive-include notebooks *.ipynb
 include scripts/check_dependency_sync.py
+include scripts/check_pdoc_search_index.py
 include scripts/audit_dependencies.py
 include scripts/execute_candidate_notebook.py
 include scripts/example.py
