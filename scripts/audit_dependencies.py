@@ -16,11 +16,9 @@ from typing import Any, Dict, Iterable
 
 PROFILE_PROJECTS = {
     "root": Path("."),
-    "torch-2.3-cpu": Path("environments/torch-2.3-cpu"),
     "torch-2.6-cpu": Path("environments/torch-2.6-cpu"),
     "torch-2.11-cpu": Path("environments/torch-2.11-cpu"),
     "torch-2.6-cu124": Path("environments/torch-2.6-cu124"),
-    "torch-2.3-cu121": Path("environments/torch-2.3-cu121"),
     "torch-2.11-cu130": Path("environments/torch-2.11-cu130"),
 }
 PIP_AUDIT_VERSION = "2.10.1"

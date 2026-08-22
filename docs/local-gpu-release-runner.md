@@ -33,7 +33,7 @@ to equal the repository owner before the local runner is selected.
 The workflow rejects reused or incorrectly provisioned execution by requiring the
 ephemeral attestation, an exact clean checkout, the expected uv version, and no
 persistent publication credential variables. It validates all ten models on CPU
-and CUDA for Torch 2.3/CUDA 12.1, Torch 2.6/CUDA 12.4, and Torch 2.11/CUDA 13.0;
+and CUDA for Torch 2.6/CUDA 12.4 and Torch 2.11/CUDA 13.0;
 runs the exact wheel and public notebook; and smokes both production images with
 networking disabled and a read-only root filesystem. The retained evidence binds
 the source SHA, dependency-lock hashes, manifest/governance hashes, GPU/runtime,

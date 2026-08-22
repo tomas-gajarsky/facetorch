@@ -35,10 +35,13 @@ def test_packaged_manifest_covers_every_model_and_real_format():
     assert manifest.manifest_version == 1
     assert manifest.status == "provisional"
     assert len(manifest.models) == 10
-    assert len(tuple(manifest.iter_descriptors())) == 40
+    descriptors_per_model = len(manifest.supported_torch_minors) + 1
+    assert len(tuple(manifest.iter_descriptors())) == (
+        len(manifest.models) * descriptors_per_model
+    )
 
     for model_id, artifacts in manifest.models.items():
-        assert len(artifacts) == 4, model_id
+        assert len(artifacts) == descriptors_per_model, model_id
         assert {item.format for item in artifacts} == {"pt2", "torchscript"}
         assert all(len(item.revision) == 40 for item in artifacts)
         assert all(item.size_bytes > 0 and len(item.sha256) == 64 for item in artifacts)

@@ -30,6 +30,63 @@
       ],
       "upstream_constraint": "torch 2.11.0 metadata requires setuptools<82",
       "removal_condition": "Remove when a validated Torch 2.11 patch no longer requires vulnerable setuptools, or drop the cohort."
+    },
+    {
+      "vulnerability_id": "CVE-2025-3730",
+      "aliases": ["GHSA-887c-mr87-cxwp"],
+      "package": "torch",
+      "versions": ["2.6.0", "2.6.0+cpu", "2.6.0+cu124"],
+      "profiles": ["torch-2.6-cpu", "torch-2.6-cu124"],
+      "status": "approved",
+      "approved_on": "2026-08-22",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "The local denial-of-service advisory affects torch.nn.functional.ctc_loss. Facetorch does not call that API; Torch 2.6 remains the validated CUDA 12.4 production cohort while newer intermediate Torch lines are unsupported.",
+      "mitigations": [
+        "Release contracts reject any Facetorch production-source use of ctc_loss while this exception exists.",
+        "Model inputs are selected from digest-pinned manifest entries and are not passed to the affected API.",
+        "The exception is restricted to the exact Torch 2.6 CPU and CUDA 12.4 release profiles."
+      ],
+      "upstream_constraint": "The first patched Torch line is 2.8, which is not a validated Facetorch cohort.",
+      "removal_condition": "Remove when Torch 2.6 is dropped, an upstream backport is validated, or a replacement CUDA 12.4-compatible cohort is released."
+    },
+    {
+      "vulnerability_id": "CVE-2025-2999",
+      "aliases": ["GHSA-vgrw-7cvw-pwgx"],
+      "package": "torch",
+      "versions": ["2.6.0", "2.6.0+cpu", "2.6.0+cu124"],
+      "profiles": ["torch-2.6-cpu", "torch-2.6-cu124"],
+      "status": "approved",
+      "approved_on": "2026-08-22",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "The local memory-corruption advisory affects torch.nn.utils.rnn.unpack_sequence. Facetorch does not call that API; Torch 2.6 remains the validated CUDA 12.4 production cohort while newer intermediate Torch lines are unsupported.",
+      "mitigations": [
+        "Release contracts reject any Facetorch production-source use of unpack_sequence while this exception exists.",
+        "Model inputs are selected from digest-pinned manifest entries and are not passed to the affected API.",
+        "The exception is restricted to the exact Torch 2.6 CPU and CUDA 12.4 release profiles."
+      ],
+      "upstream_constraint": "The first patched release is Torch 2.9.1, which is not a validated Facetorch cohort.",
+      "removal_condition": "Remove when Torch 2.6 is dropped, an upstream backport is validated, or a replacement CUDA 12.4-compatible cohort is released."
+    },
+    {
+      "vulnerability_id": "CVE-2025-2998",
+      "aliases": ["GHSA-f4hp-rmr7-r7v8"],
+      "package": "torch",
+      "versions": ["2.6.0", "2.6.0+cpu", "2.6.0+cu124"],
+      "profiles": ["torch-2.6-cpu", "torch-2.6-cu124"],
+      "status": "approved",
+      "approved_on": "2026-08-22",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "The local memory-consumption advisory affects torch.nn.utils.rnn.pad_packed_sequence. Facetorch does not call that API; Torch 2.6 remains the validated CUDA 12.4 production cohort while newer intermediate Torch lines are unsupported.",
+      "mitigations": [
+        "Release contracts reject any Facetorch production-source use of pad_packed_sequence while this exception exists.",
+        "Model inputs are selected from digest-pinned manifest entries and are not passed to the affected API.",
+        "The exception is restricted to the exact Torch 2.6 CPU and CUDA 12.4 release profiles."
+      ],
+      "upstream_constraint": "The advisory currently names no patched Torch release for this affected range.",
+      "removal_condition": "Remove when Torch 2.6 is dropped, an upstream patch is validated, or a replacement CUDA 12.4-compatible cohort is released."
     }
   ]
 }

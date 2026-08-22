@@ -18,7 +18,6 @@ class ReleaseMatrixError(RuntimeError):
 
 
 CUDA_ENVIRONMENT_LOCKS = {
-    "2.3": "environments/torch-2.3-cu121/uv.lock",
     "2.6": "environments/torch-2.6-cu124/uv.lock",
     "2.11": "environments/torch-2.11-cu130/uv.lock",
 }

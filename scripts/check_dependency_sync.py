@@ -22,11 +22,6 @@ except ModuleNotFoundError:  # pragma: no cover - Python 3.10
 REQ_RE = re.compile(r"^\s*([A-Za-z0-9_.-]+)\s*(.*)$")
 PROFILE_ROOT = Path("environments")
 PROFILE_SPECS = {
-    "torch-2.3-cpu": {
-        "torch": "2.3.1",
-        "torchvision": "0.18.1",
-        "index": "https://download.pytorch.org/whl/cpu",
-    },
     "torch-2.6-cpu": {
         "torch": "2.6.0",
         "torchvision": "0.21.0",
@@ -41,11 +36,6 @@ PROFILE_SPECS = {
         "torch": "2.6.0",
         "torchvision": "0.21.0",
         "index": "https://download.pytorch.org/whl/cu124",
-    },
-    "torch-2.3-cu121": {
-        "torch": "2.3.1",
-        "torchvision": "0.18.1",
-        "index": "https://download.pytorch.org/whl/cu121",
     },
     "torch-2.11-cu130": {
         "torch": "2.11.0",

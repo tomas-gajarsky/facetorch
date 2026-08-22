@@ -19,7 +19,6 @@ from typing import Any, Mapping
 
 UV_VERSION = "0.9.14"
 CUDA_PROFILES = {
-    "2.3": "environments/torch-2.3-cu121",
     "2.6": "environments/torch-2.6-cu124",
     "2.11": "environments/torch-2.11-cu130",
 }

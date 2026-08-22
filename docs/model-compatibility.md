@@ -7,33 +7,49 @@ proof.
 
 | Python | PyTorch line | Export schema | Artifact cohort | Candidate CUDA runtime |
 | --- | --- | --- | --- | --- |
-| 3.10-3.12 | 2.3.x | 5.1 | 2.3 | 12.1 |
 | 3.10-3.12 | 2.6.x | 8.2 | 2.6 | 12.4 |
 | 3.10-3.12 | 2.11.x | 8.17 | 2.11 | 13.0 |
 
 The dependency is deliberately expressed as
-`torch>=2.3,<2.12,!=2.4.*,!=2.5.*,!=2.7.*,!=2.8.*,!=2.9.*,!=2.10.*`.
-Torch 2.4, 2.5, and 2.7-2.10 fail before model download even when legacy models
-are explicitly enabled. In particular, Torch 2.5 uses export schema major 7 and
-has no approved facetorch cohort. New lines are added only with a complete
+`torch>=2.6,<2.12,!=2.7.*,!=2.8.*,!=2.9.*,!=2.10.*`.
+Torch 2.3-2.5 and 2.7-2.10 fail before model download even when legacy models are
+explicitly enabled. In particular, Torch 2.5 uses export schema major 7 and has no
+approved facetorch cohort. New lines are added only with a complete
 artifact and validation matrix; an upper bound prevents a future resolver choice
 from silently expanding the support claim.
 
 The candidate's official platform target is Linux x86-64 on CPU and the named
 NVIDIA CUDA pairs above. Windows, macOS, Linux ARM, and Apple MPS are experimental
 until exercised. The matrix becomes an official release claim only after the exact
-clean candidate passes every model on CPU and CUDA for all three rows. Current lane
+clean candidate passes every model on CPU and CUDA for both rows. Current lane
 status is machine-readable in `facetorch/models/compatibility.json`.
+
+## Security support boundary
+
+Torch 2.3 was removed because GHSA-53q9-r3pm-6pq6 is a critical
+remote-code-execution issue in `torch.load(weights_only=True)`, an operation used
+when Facetorch reads authenticated state dictionaries and metadata. Digest-pinned
+artifacts reduce exposure but do not justify retaining a critically affected
+runtime as a supported public cohort.
+
+Torch 2.6 remains available for the validated CUDA 12.4 production lane under
+three founder-approved moderate exceptions: GHSA-887c-mr87-cxwp,
+GHSA-vgrw-7cvw-pwgx, and GHSA-f4hp-rmr7-r7v8. They affect `ctc_loss`,
+`unpack_sequence`, and `pad_packed_sequence`, respectively; Facetorch does not call
+those APIs. The exceptions are restricted to the exact Torch 2.6 CPU/CUDA profiles
+and expire on 2026-11-20. The machine-readable policy and removal conditions are in
+`security/advisory-exceptions.json`.
 
 ## Candidate evidence
 
-On 2026-08-21, all three rows were exercised on Linux x86-64 with Python 3.10
-and an NVIDIA GeForce RTX 3090. All 30 cohort artifacts passed: 1,872 cases in
-total across every model, CPU and CUDA, face batches 1/2/4/8, two seeds, two
-input scales, and normal/uniform inputs. Detector input batch remains one image;
+On 2026-08-21, the retained two rows were exercised as part of a larger diagnostic
+on Linux x86-64 with Python 3.10 and an NVIDIA GeForce RTX 3090. Their 20 cohort
+artifacts passed 1,248 cases across every model, CPU and CUDA, face batches
+1/2/4/8, two seeds, two input scales, and normal/uniform inputs. Detector input
+batch remains one image;
 its validated spatial sizes are `480x640`, `512x512`, and `480x608`, matching the
-runtime's multiple-of-32 padding contract. The worst reference difference was
-`6.06e-5` maximum absolute and remained within the declared bounds.
+runtime's multiple-of-32 padding contract. Every retained case remained within the
+declared numeric bounds.
 
 This is candidate evidence from an uncommitted tree, not release approval. It
 must be repeated from the exact clean release commit. No artifact was uploaded,
@@ -128,7 +144,6 @@ complete candidate matrix without claiming governance approval:
 ```bash
 PYTHONPATH=. python scripts/verify_model_release_matrix.py \
   --staging-root /secure/staging \
-  --summary /secure/staging/torch-2.3/summary-torch2.3.json \
   --summary /secure/staging/torch-2.6/summary-torch2.6.json \
   --summary /secure/staging/torch-2.11/summary-torch2.11.json \
   --candidate-evidence --allow-dirty-source

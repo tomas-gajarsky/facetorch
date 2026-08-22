@@ -21,8 +21,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - torch-cohort: "2.3"
-            profile: environments/torch-2.3-cpu
           - torch-cohort: "2.6"
             profile: environments/torch-2.6-cpu
           - torch-cohort: "2.11"

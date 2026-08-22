@@ -37,10 +37,10 @@ dependencies = [
     "hydra-core>=1.0.0",
     "numpy>=1.18.2",
     "python-json-logger>=2.0.0",
-    "torch>=2.3,<2.12,!=2.4.*,!=2.5.*,!=2.7.*,!=2.8.*,!=2.9.*,!=2.10.*",
+    "torch>=2.6,<2.12,!=2.7.*,!=2.8.*,!=2.9.*,!=2.10.*",
     "requests>=2.20.0",
     "timm>=0.6.0",
-    "torchvision>=0.18,<0.27",
+    "torchvision>=0.21,<0.27",
     "huggingface_hub>=0.16.0",
 ]
 

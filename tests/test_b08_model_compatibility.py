@@ -27,10 +27,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = REPO_ROOT / "facetorch" / "models" / "manifest.json"
 COMPATIBILITY_PATH = REPO_ROOT / "facetorch" / "models" / "compatibility.json"
 GOVERNANCE_PATH = REPO_ROOT / "facetorch" / "models" / "governance.json"
-SUPPORTED_TORCH = {"2.3", "2.6", "2.11"}
-UNSUPPORTED_TORCH = {"2.4", "2.5", "2.7", "2.8", "2.9", "2.10"}
+SUPPORTED_TORCH = {"2.6", "2.11"}
+UNSUPPORTED_TORCH = {"2.3", "2.4", "2.5", "2.7", "2.8", "2.9", "2.10"}
 CUDA_ENVIRONMENT_LOCKS = {
-    "2.3": "environments/torch-2.3-cu121/uv.lock",
     "2.6": "environments/torch-2.6-cu124/uv.lock",
     "2.11": "environments/torch-2.11-cu130/uv.lock",
 }
@@ -70,10 +69,10 @@ def test_package_metadata_exactly_matches_the_candidate_torch_matrix():
 @pytest.mark.release_blocker
 def test_every_model_has_exactly_one_current_metadata_artifact_per_cohort():
     manifest = get_model_manifest()
-    assert manifest.supported_torch_minors == ("2.3", "2.6", "2.11")
+    assert manifest.supported_torch_minors == ("2.6", "2.11")
     for model_id, artifacts in manifest.models.items():
         exports = [item for item in artifacts if item.format == "pt2"]
-        assert len(exports) == 3, model_id
+        assert len(exports) == 2, model_id
         assert {
             item.torch_min for item in exports
         } == SUPPORTED_TORCH, model_id
@@ -81,6 +80,7 @@ def test_every_model_has_exactly_one_current_metadata_artifact_per_cohort():
             item.validation_metadata == f"{item.filename}.meta.json"
             for item in exports
         )
+        assert all(item.torch_min != "2.3" for item in artifacts), model_id
 
 
 @pytest.mark.release_blocker
@@ -310,7 +310,7 @@ def test_candidate_matrix_requires_every_cohort_model_and_device(tmp_path):
         require_approval=False,
     )
     assert report["status"] == "ok"
-    assert len(report["lanes"]) == 3
+    assert len(report["lanes"]) == len(SUPPORTED_TORCH)
     assert all(len(lane["artifacts"]) == 10 for lane in report["lanes"])
 
     first_summary = _json(summaries[0])

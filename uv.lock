@@ -606,8 +606,8 @@ requires-dist = [
     { name = "setuptools", marker = "extra == 'dev'", specifier = "==81.0.0" },
     { name = "snakeviz", marker = "extra == 'dev'", specifier = ">=2.1.0" },
     { name = "timm", specifier = ">=0.6.0" },
-    { name = "torch", specifier = ">=2.3,!=2.4.*,!=2.5.*,!=2.7.*,!=2.8.*,!=2.9.*,!=2.10.*,<2.12", index = "https://download.pytorch.org/whl/cpu" },
-    { name = "torchvision", specifier = ">=0.18,<0.27", index = "https://download.pytorch.org/whl/cpu" },
+    { name = "torch", specifier = ">=2.6,!=2.7.*,!=2.8.*,!=2.9.*,!=2.10.*,<2.12", index = "https://download.pytorch.org/whl/cpu" },
+    { name = "torchvision", specifier = ">=0.21,<0.27", index = "https://download.pytorch.org/whl/cpu" },
     { name = "twine", marker = "extra == 'dev'", specifier = ">=3.2.0" },
 ]
 provides-extras = ["dev", "release"]

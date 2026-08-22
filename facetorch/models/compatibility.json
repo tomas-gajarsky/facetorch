@@ -6,9 +6,9 @@
     "minor_lines": ["3.10", "3.11", "3.12"]
   },
   "torch": {
-    "specifier": ">=2.3,<2.12,!=2.4.*,!=2.5.*,!=2.7.*,!=2.8.*,!=2.9.*,!=2.10.*",
-    "supported_minor_lines": ["2.3", "2.6", "2.11"],
-    "explicitly_unsupported_minor_lines": ["2.4", "2.5", "2.7", "2.8", "2.9", "2.10"]
+    "specifier": ">=2.6,<2.12,!=2.7.*,!=2.8.*,!=2.9.*,!=2.10.*",
+    "supported_minor_lines": ["2.6", "2.11"],
+    "explicitly_unsupported_minor_lines": ["2.3", "2.4", "2.5", "2.7", "2.8", "2.9", "2.10"]
   },
   "platform_policy": {
     "official_system": "Linux",
@@ -47,10 +47,10 @@
     "date": "2026-08-21",
     "platform": {"system": "Linux", "machine": "x86_64"},
     "gpu": "NVIDIA GeForce RTX 3090",
-    "cohorts": 3,
+    "cohorts": 2,
     "models_per_cohort": 10,
-    "artifacts": 30,
-    "executed_cases": 1872,
+    "artifacts": 20,
+    "executed_cases": 1248,
     "publication_status": "not_published",
     "release_limitations": [
       "Evidence was produced from an uncommitted working tree and must be repeated from the exact clean release commit.",
@@ -59,15 +59,6 @@
     ]
   },
   "cohorts": [
-    {
-      "torch_minor": "2.3",
-      "validated_patch": "2.3.1",
-      "torchvision_patch": "0.18.1",
-      "artifact_cohort": "2.3",
-      "export_schema": {"major": 5, "minor": 1},
-      "cpu": {"runtime": "cpu", "evidence_status": "candidate_validated_uncommitted_tree"},
-      "cuda": {"runtime": "12.1", "evidence_status": "candidate_validated_local_rtx3090_uncommitted_tree"}
-    },
     {
       "torch_minor": "2.6",
       "validated_patch": "2.6.0",
