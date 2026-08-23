@@ -22,11 +22,8 @@ analyzer:
       file_id: 1eMuOdGkiNCOUTiEbKKoPCHGCuDgiKeNC
       path_local: ${facetorch.model_dir:}/exported/detector/1/model.pt2
       repo_id: tomas-gajarsky/facetorch-detector-retinaface
-      filename: model.pt2
       manifest_id: detector-retinaface
       revision: 4dfd78263b94966ef27643dcec60a800701170c7
-      sha256: 6588c6eaf7b0e342b72f89b5a221e7ecb8c0158e5de1b95d0111ba406decad7c
-      size_bytes: 110323020
       offline: ${offline}
       allow_legacy_models: ${allow_legacy_models}
       device: ${analyzer.device}
@@ -113,11 +110,8 @@ analyzer:
         file_id: 19h3kqar1wlELAmM5hDyj9tlrUh8yjrCl
         path_local: ${facetorch.model_dir:}/exported/predictor/embed/1/model.pt2
         repo_id: tomas-gajarsky/facetorch-embed-resnet-50
-        filename: model.pt2
         manifest_id: embed-resnet50
         revision: 5409f78343d372b16bff024b93a0cffbe3a61aa4
-        sha256: e09098cc36d7d03189319185f62708fa144c02cdd6e6bb5c5ab3698d1a034bc5
-        size_bytes: 114114903
         offline: ${offline}
         allow_legacy_models: ${allow_legacy_models}
         device: ${analyzer.device}
@@ -164,11 +158,8 @@ analyzer:
         file_id: 1WI-mP_0mGW31OHfriPUsuFS_usYh_W8p
         path_local: ${facetorch.model_dir:}/exported/predictor/verify/2/model.pt2
         repo_id: tomas-gajarsky/facetorch-verify-adaface
-        filename: model.pt2
         manifest_id: verify-adaface
         revision: 71d5f83de703ec4686121e70e3b7061575b9354a
-        sha256: d8e127e3f111ca73d178c1b7f0393ba4829216518f212ae2dc70c84561d80130
-        size_bytes: 261426464
         offline: ${offline}
         allow_legacy_models: ${allow_legacy_models}
         device: ${analyzer.device}
@@ -215,11 +206,8 @@ analyzer:
         file_id: 1xoB5VYOd0XLjb-rQqqHWCkQvma4NytEd
         path_local: ${facetorch.model_dir:}/exported/predictor/fer/2/model.pt2
         repo_id: tomas-gajarsky/facetorch-fer-efficientnet-b2
-        filename: model.pt2
         manifest_id: fer-efficientnet-b2
         revision: ca9a1856b1ab1269f3335ddebcebc69ef747086a
-        sha256: f9fee79f7a679427612d7818c5f0ef3edc974b6de09f58bd600ef4d9ba0df5b0
-        size_bytes: 31950057
         offline: ${offline}
         allow_legacy_models: ${allow_legacy_models}
         device: ${analyzer.device}
@@ -274,11 +262,8 @@ analyzer:
         file_id: 1uoVX9suSA5JVWTms3hEtJKzwO-CUR_jV
         path_local: ${facetorch.model_dir:}/exported/predictor/au/1/model.pt2
         repo_id: tomas-gajarsky/facetorch-au-opengraph
-        filename: model.pt2
         manifest_id: au-opengraph
         revision: 280fcd634108f43beab7dc7c2a1d2f751f462ee0
-        sha256: 8ededd74d36a0b552d4a5e48f2dd32395ec483a974944bcbae7b09d65ae6d728
-        size_bytes: 386589989
         offline: ${offline}
         allow_legacy_models: ${allow_legacy_models}
         device: ${analyzer.device}
@@ -367,11 +352,8 @@ analyzer:
         file_id: 1Xl4ilNCU_DgKNhITrXb3UyQUUdm3VTKS
         path_local: ${facetorch.model_dir:}/exported/predictor/va/1/model.pt2
         repo_id: tomas-gajarsky/facetorch-va-elim
-        filename: model.pt2
         manifest_id: va-elim
         revision: d71aafca2b4cb460147b66cc4d544feebb496df9
-        sha256: a6386185a10a5ba9e69f7fe69111edbf95bce85bad06b3f6858caf797ded4f87
-        size_bytes: 20142372
         offline: ${offline}
         allow_legacy_models: ${allow_legacy_models}
         device: ${analyzer.device}
@@ -422,11 +404,8 @@ analyzer:
         file_id: 1GjDTwQpvrkCjXOdiBy1oMkzm7nt-bXFg
         path_local: ${facetorch.model_dir:}/exported/predictor/deepfake/1/model.pt2
         repo_id: tomas-gajarsky/facetorch-deepfake-efficientnet-b7
-        filename: model.pt2
         manifest_id: deepfake-efficientnet-b7
         revision: 4acc494f37eb63d7457166eff2acb45c5b04b9a6
-        sha256: 620005edfc682011b52806f56d8fcd8200691215461b00e04de09a344e21a467
-        size_bytes: 268598190
         offline: ${offline}
         allow_legacy_models: ${allow_legacy_models}
         device: ${analyzer.device}
@@ -475,11 +454,8 @@ analyzer:
         file_id: 16gNFQdEH2nWvW3zTbdIAniKIbPAp6qBA
         path_local: ${facetorch.model_dir:}/exported/predictor/align/1/model.pt2
         repo_id: tomas-gajarsky/facetorch-align-synergynet
-        filename: model.pt2
         manifest_id: align-synergynet
         revision: 51cf3068635436edd18aedda5b8d8dd12a17473d
-        sha256: e88114af7c196d5f449b9f7f01573aaedcc476f4e9eeff0861fbd939c5a38c42
-        size_bytes: 9791668
         offline: ${offline}
         allow_legacy_models: ${allow_legacy_models}
         device: ${analyzer.device}

@@ -6,11 +6,8 @@ downloader:
   file_id: 1uoVX9suSA5JVWTms3hEtJKzwO-CUR_jV
   path_local: ${facetorch.model_dir:}/exported/predictor/au/1/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-au-opengraph  # HuggingFace repo ID
-  filename: model.pt2  # Filename in the HuggingFace repo
   manifest_id: au-opengraph
   revision: 280fcd634108f43beab7dc7c2a1d2f751f462ee0
-  sha256: 8ededd74d36a0b552d4a5e48f2dd32395ec483a974944bcbae7b09d65ae6d728
-  size_bytes: 386589989
   offline: ${offline}
   allow_legacy_models: ${allow_legacy_models}
   device: ${analyzer.device}

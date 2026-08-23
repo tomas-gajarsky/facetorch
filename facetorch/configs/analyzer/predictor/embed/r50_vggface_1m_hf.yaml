@@ -6,11 +6,8 @@ downloader:
   file_id: 19h3kqar1wlELAmM5hDyj9tlrUh8yjrCl
   path_local: ${facetorch.model_dir:}/exported/predictor/embed/1/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-embed-resnet-50  # HuggingFace repo ID
-  filename: model.pt2  # Filename in the HuggingFace repo
   manifest_id: embed-resnet50
   revision: 5409f78343d372b16bff024b93a0cffbe3a61aa4
-  sha256: e09098cc36d7d03189319185f62708fa144c02cdd6e6bb5c5ab3698d1a034bc5
-  size_bytes: 114114903
   offline: ${offline}
   allow_legacy_models: ${allow_legacy_models}
   device: ${analyzer.device}
