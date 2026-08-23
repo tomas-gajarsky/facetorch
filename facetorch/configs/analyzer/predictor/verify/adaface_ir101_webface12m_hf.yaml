@@ -8,7 +8,7 @@ downloader:
   repo_id: tomas-gajarsky/facetorch-verify-adaface  # HuggingFace repo ID
   filename: model.pt2  # Filename in the HuggingFace repo
   manifest_id: verify-adaface
-  revision: 29dddf0f7a48d788b95f0b6bfcf38eaa825bdd13
+  revision: 71d5f83de703ec4686121e70e3b7061575b9354a
   sha256: d8e127e3f111ca73d178c1b7f0393ba4829216518f212ae2dc70c84561d80130
   size_bytes: 261426464
   offline: ${offline}

@@ -9,6 +9,11 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
+if __package__:
+    from scripts.render_model_cards import render_model_documents
+else:
+    from render_model_cards import render_model_documents
+
 
 class HubManifestError(RuntimeError):
     """Raised when a remote manifest object is missing or disagrees with its pin."""
@@ -37,7 +42,7 @@ def audit_remote_manifest(
     api=None,
     download_fn=None,
 ) -> dict[str, Any]:
-    """Verify revision, LFS object ID, size, metadata, and optionally bytes."""
+    """Verify revisions, legal documents, artifacts, and validation metadata."""
     if api is None or download_fn is None:
         from huggingface_hub import HfApi, hf_hub_download
 
@@ -45,6 +50,10 @@ def audit_remote_manifest(
         download_fn = download_fn or hf_hub_download
 
     manifest = _read_json(manifest_path)
+    expected_legal_documents = render_model_documents(
+        manifest_path,
+        require_complete_contract=False,
+    )
     results = []
     failures = []
     for model_id, model in sorted(manifest.get("models", {}).items()):
@@ -61,13 +70,41 @@ def audit_remote_manifest(
                     f"{repo_id} resolved {revision} to unexpected commit {info.sha}."
                 )
             siblings = {item.rfilename: item for item in info.siblings}
-            if "README.md" not in siblings:
-                raise HubManifestError(f"{repo_id}@{revision} has no model card.")
-            for required_notice in ("LICENSE", "THIRD_PARTY_NOTICES.md"):
-                if required_notice not in siblings:
+            model_legal_documents = expected_legal_documents.get(model_id)
+            if model_legal_documents is None:
+                raise HubManifestError(f"No generated legal contract for {model_id}.")
+            legal_results = []
+            for filename, expected_bytes in sorted(model_legal_documents.items()):
+                sibling = siblings.get(filename)
+                if sibling is None:
                     raise HubManifestError(
-                        f"{repo_id}@{revision} has no {required_notice}."
+                        f"{repo_id}@{revision} has no {filename}."
                     )
+                if int(sibling.size) != len(expected_bytes):
+                    raise HubManifestError(
+                        f"{repo_id}@{revision}/{filename} has an unexpected size."
+                    )
+                remote_path = Path(
+                    download_fn(
+                        repo_id=repo_id,
+                        filename=filename,
+                        revision=revision,
+                    )
+                )
+                remote_bytes = remote_path.read_bytes()
+                if remote_bytes != expected_bytes:
+                    raise HubManifestError(
+                        f"{repo_id}@{revision}/{filename} does not match the "
+                        "generated release contract."
+                    )
+                legal_results.append(
+                    {
+                        "filename": filename,
+                        "sha256": hashlib.sha256(expected_bytes).hexdigest(),
+                        "size_bytes": len(expected_bytes),
+                        "bytes_verified": True,
+                    }
+                )
             expected_license_ref = (
                 f"https://huggingface.co/{repo_id}/blob/{revision}/LICENSE"
             )
@@ -157,6 +194,7 @@ def audit_remote_manifest(
                     "repo_id": repo_id,
                     "revision": revision,
                     "status": "ok",
+                    "legal_documents": legal_results,
                     "artifacts": artifact_results,
                 }
             )
