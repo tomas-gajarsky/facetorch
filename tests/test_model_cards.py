@@ -237,6 +237,8 @@ def test_renderer_wraps_missing_checkpoint_artifacts_as_model_card_error(
         ("rights", "weights_license"),
         ("upstream_sources",),
         ("source_checkpoint",),
+        ("intended_use",),
+        ("limitations",),
     ],
 )
 def test_renderer_rejects_missing_required_model_governance_fields(
