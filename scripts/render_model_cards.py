@@ -24,7 +24,10 @@ class ModelCardError(RuntimeError):
 
 
 def _read_json(path: Path) -> dict[str, Any]:
-    value = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ModelCardError(f"Cannot read JSON contract document: {path}") from exc
     if not isinstance(value, dict):
         raise ModelCardError(f"JSON document must contain an object: {path}")
     return value
@@ -45,10 +48,6 @@ def _source_license_bytes(source: Mapping[str, Any]) -> bytes:
         data = path.read_bytes()
     except OSError as exc:
         raise ModelCardError(f"Cannot read upstream license file: {path}") from exc
-    if source.get("license_strip_final_newline"):
-        if not data.endswith(b"\n"):
-            raise ModelCardError(f"Expected one normalized final newline in {path}")
-        data = data[:-1]
     expected_digest = str(source.get("license_sha256", ""))
     actual_digest = hashlib.sha256(data).hexdigest()
     if actual_digest != expected_digest:
@@ -116,6 +115,97 @@ def _source_notice_bytes(source: Mapping[str, Any]) -> bytes | None:
     except UnicodeDecodeError as exc:
         raise ModelCardError(f"Upstream NOTICE is not UTF-8: {path}") from exc
     return data
+
+
+def _validate_model_governance(
+    model_id: str,
+    governance: Any,
+) -> None:
+    """Validate required model-governance mappings before rendering."""
+    if not isinstance(governance, Mapping):
+        raise ModelCardError(f"Model {model_id} governance must be an object")
+    required = {
+        "status",
+        "release_eligible",
+        "hosted_model_card",
+        "upstream_sources",
+        "source_checkpoint",
+        "rights",
+        "intended_use",
+        "limitations",
+    }
+    missing = sorted(required - set(governance))
+    if missing:
+        raise ModelCardError(
+            f"Model {model_id} governance is missing required fields: "
+            + ", ".join(missing)
+        )
+
+    rights = governance["rights"]
+    required_rights = {
+        "weights_license",
+        "redistribution",
+        "attribution",
+        "owner_approval",
+    }
+    if not isinstance(rights, Mapping):
+        raise ModelCardError(f"Model {model_id} rights must be an object")
+    missing_rights = sorted(required_rights - set(rights))
+    if missing_rights:
+        raise ModelCardError(
+            f"Model {model_id} rights are missing required fields: "
+            + ", ".join(missing_rights)
+        )
+
+    sources = governance["upstream_sources"]
+    if not isinstance(sources, list) or not sources:
+        raise ModelCardError(
+            f"Model {model_id} upstream_sources must be a non-empty list"
+        )
+    required_source = {
+        "url",
+        "revision",
+        "code_license",
+        "license_url",
+        "license_role",
+        "license_file",
+        "license_sha256",
+    }
+    for index, source in enumerate(sources):
+        if not isinstance(source, Mapping):
+            raise ModelCardError(
+                f"Model {model_id} upstream source {index} must be an object"
+            )
+        missing_source = sorted(required_source - set(source))
+        if missing_source:
+            raise ModelCardError(
+                f"Model {model_id} upstream source {index} is missing required "
+                "fields: " + ", ".join(missing_source)
+            )
+
+    checkpoint = governance["source_checkpoint"]
+    required_checkpoint = {
+        "upstream_artifacts",
+        "verification_method",
+        "verification_result",
+    }
+    if not isinstance(checkpoint, Mapping):
+        raise ModelCardError(
+            f"Model {model_id} source_checkpoint must be an object"
+        )
+    missing_checkpoint = sorted(required_checkpoint - set(checkpoint))
+    if missing_checkpoint:
+        raise ModelCardError(
+            f"Model {model_id} source_checkpoint is missing required fields: "
+            + ", ".join(missing_checkpoint)
+        )
+
+    for name in ("intended_use", "limitations"):
+        values = governance[name]
+        if not isinstance(values, list) or not values:
+            raise ModelCardError(
+                f"Model {model_id} {name} must be a non-empty list"
+            )
 
 
 def _license_bytes(governance: Mapping[str, Any]) -> bytes:
@@ -394,6 +484,8 @@ def render_model_documents(
     cards = catalog.get("models", {})
     models = manifest.get("models", {})
     records = governance.get("models", {})
+    if not all(isinstance(value, Mapping) for value in (cards, models, records)):
+        raise ModelCardError("Catalog, manifest, and governance models must be objects")
     model_ids = set(models)
     complete = set(cards) == model_ids and set(records) == model_ids
     covered = model_ids <= set(cards) and model_ids <= set(records)
@@ -410,6 +502,7 @@ def render_model_documents(
     rendered: dict[str, dict[str, bytes]] = {}
     for model_id in sorted(models):
         record = records[model_id]
+        _validate_model_governance(model_id, record)
         if record.get("status") != "approved" or not record.get("release_eligible"):
             raise ModelCardError(f"Model governance is not approved: {model_id}")
         values = {
