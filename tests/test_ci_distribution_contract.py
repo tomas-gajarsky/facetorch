@@ -375,6 +375,13 @@ def test_local_cuda_release_runner_is_explicit_and_manually_gated():
 
 
 @pytest.mark.release_blocker
+@pytest.mark.parametrize("workflow_name", ["local-gpu-release.yml", "release.yml"])
+def test_local_cuda_evidence_is_traversable_by_non_root_images(workflow_name):
+    content = (WORKFLOW_ROOT / workflow_name).read_text(encoding="utf-8")
+    assert 'chmod 0711 "$facetorch_staging"' in content
+
+
+@pytest.mark.release_blocker
 def test_install_matrix_covers_every_supported_python_in_an_empty_environment():
     workflow = (WORKFLOW_ROOT / "python-package.yml").read_text(encoding="utf-8")
     for version in ("3.10", "3.11", "3.12"):
