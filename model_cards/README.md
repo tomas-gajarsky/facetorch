@@ -19,10 +19,19 @@ Each model directory contains `README.md`, `LICENSE`, and
 `THIRD_PARTY_NOTICES.md`. The renderer preserves MIT and Apache-2.0 as distinct
 licenses. It reads the verbatim license bytes verified at each pinned upstream
 revision and refuses to render when their recorded SHA-256 does not match.
-Identical upstream Apache-2.0 files reuse the repository's byte-identical
-license file; MIT files are retained under `upstream_licenses/`, including
-upstream whitespace and notices exactly as received rather than reconstructed
-or completed speculatively.
+Identical upstream Apache-2.0 files reuse a dedicated byte-identical file under
+`upstream_licenses/`; MIT files are retained there separately, including upstream
+whitespace and notices exactly as received rather than reconstructed or completed
+speculatively. Every Apache source also records either a pinned NOTICE file or an
+explicit, revision-verified absence.
+
+The offline release blockers validate source/revision URL binding and vendored
+digests. Re-fetch every pinned upstream license and recheck Apache NOTICE state
+before publication with:
+
+```bash
+FACETORCH_RUN_UPSTREAM_NETWORK=1 pytest -q -m upstream_network tests/test_model_cards.py
+```
 
 Remote publication is a guarded owner operation. Verify every model repository's
 current commit against the parent revision in the packaged manifest. For a cohort

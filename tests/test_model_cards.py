@@ -1,6 +1,9 @@
 import hashlib
 import json
+import os
 from pathlib import Path
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 import pytest
 import yaml
@@ -83,7 +86,9 @@ def test_model_cards_render_from_the_release_contract(tmp_path):
         assert sources
         for source in sources:
             assert source["license_role"] in {"weights", "notice"}
-            assert source["revision"] in source["license_url"]
+            assert source["license_url"].startswith(
+                f"{source['url']}/blob/{source['revision']}/"
+            )
             assert source["license_file"].startswith(
                 "model_cards/upstream_licenses/"
             )
@@ -100,6 +105,21 @@ def test_model_cards_render_from_the_release_contract(tmp_path):
                 assert source["code_license"] == rights["weights_license"]
             else:
                 assert source_bytes.decode("utf-8").rstrip("\n") in notices
+            if source["code_license"] == "Apache-2.0":
+                assert {"notice_url", "notice_file", "notice_sha256"} <= set(
+                    source
+                )
+                notice_values = [
+                    source["notice_url"],
+                    source["notice_file"],
+                    source["notice_sha256"],
+                ]
+                assert all(value is None for value in notice_values) or all(
+                    value is not None for value in notice_values
+                )
+                notice_bytes = model_card_renderer._source_notice_bytes(source)
+                if notice_bytes is not None:
+                    assert notice_bytes.decode("utf-8").rstrip("\n") in notices
 
     assert set(EXPECTED_UPSTREAM_LICENSE_SHA256) == {
         source["license_url"]
@@ -117,6 +137,28 @@ def test_renderer_rejects_an_upstream_license_digest_mismatch():
     source["license_sha256"] = "0" * 64
     with pytest.raises(ModelCardError, match="license digest mismatch"):
         model_card_renderer._source_license_bytes(source)
+
+
+@pytest.mark.release_blocker
+def test_renderer_rejects_an_upstream_license_url_from_another_source():
+    governance = _json(REPO_ROOT / "facetorch/models/governance.json")
+    source = dict(
+        governance["models"]["detector-retinaface"]["upstream_sources"][0]
+    )
+    source["license_url"] = source["license_url"].replace(
+        "biubug6/Pytorch_Retinaface", "someone/else"
+    )
+    with pytest.raises(ModelCardError, match="source and revision"):
+        model_card_renderer._source_license_bytes(source)
+
+
+@pytest.mark.release_blocker
+def test_renderer_requires_explicit_apache_notice_state():
+    governance = _json(REPO_ROOT / "facetorch/models/governance.json")
+    source = dict(governance["models"]["au-opengraph"]["upstream_sources"][0])
+    source.pop("notice_url")
+    with pytest.raises(ModelCardError, match="NOTICE state"):
+        model_card_renderer._source_notice_bytes(source)
 
 
 @pytest.mark.release_blocker
@@ -150,7 +192,7 @@ def test_corrected_cards_preserve_the_non_generic_model_contracts(tmp_path):
     embed = (tmp_path / "embed-resnet50/README.md").read_text(encoding="utf-8")
     assert "normalized 128-dimensional representation" in embed
     assert "3,000 projection logits" in embed
-    assert "2,048-dimensional SENet" in embed
+    assert "it is not a 2,048-dimensional SENet embedding" in embed
 
     b0 = (tmp_path / "fer-efficientnet-b0/README.md").read_text(encoding="utf-8")
     b2 = (tmp_path / "fer-efficientnet-b2/README.md").read_text(encoding="utf-8")
@@ -166,3 +208,63 @@ def test_corrected_cards_preserve_the_non_generic_model_contracts(tmp_path):
     assert "license: apache-2.0" in magface
     assert "UNPG" in magface
     assert "founder_attested_chain_of_custody" in magface
+
+
+@pytest.mark.upstream_network
+@pytest.mark.skipif(
+    os.environ.get("FACETORCH_RUN_UPSTREAM_NETWORK") != "1",
+    reason="set FACETORCH_RUN_UPSTREAM_NETWORK=1 for pinned upstream checks",
+)
+def test_pinned_upstream_license_bytes_and_apache_notice_state():
+    governance = _json(REPO_ROOT / "facetorch/models/governance.json")
+    headers = {"User-Agent": "facetorch-release-audit"}
+    if os.environ.get("GITHUB_TOKEN"):
+        headers["Authorization"] = f"Bearer {os.environ['GITHUB_TOKEN']}"
+
+    seen = set()
+    for record in governance["models"].values():
+        for source in record["upstream_sources"]:
+            identity = (source["url"], source["revision"], source["license_url"])
+            if identity in seen:
+                continue
+            seen.add(identity)
+            raw_url = source["license_url"].replace(
+                "https://github.com/", "https://raw.githubusercontent.com/", 1
+            ).replace("/blob/", "/", 1)
+            with urlopen(Request(raw_url, headers=headers), timeout=30) as response:
+                license_bytes = response.read()
+            assert hashlib.sha256(license_bytes).hexdigest() == source[
+                "license_sha256"
+            ]
+
+            if source["code_license"] != "Apache-2.0":
+                continue
+            if source["notice_url"] is not None:
+                notice_url = source["notice_url"].replace(
+                    "https://github.com/", "https://raw.githubusercontent.com/", 1
+                ).replace("/blob/", "/", 1)
+                with urlopen(
+                    Request(notice_url, headers=headers), timeout=30
+                ) as response:
+                    notice_bytes = response.read()
+                assert hashlib.sha256(notice_bytes).hexdigest() == source[
+                    "notice_sha256"
+                ]
+                continue
+
+            parsed = urlparse(source["url"])
+            owner, repo = parsed.path.strip("/").split("/", 1)
+            tree_url = (
+                f"https://api.github.com/repos/{owner}/{repo}/git/trees/"
+                f"{source['revision']}?recursive=1"
+            )
+            with urlopen(Request(tree_url, headers=headers), timeout=30) as response:
+                tree = json.load(response)
+            assert tree.get("truncated") is False
+            notice_paths = [
+                item["path"]
+                for item in tree.get("tree", [])
+                if Path(item["path"]).name.lower()
+                in {"notice", "notice.txt", "notice.md"}
+            ]
+            assert notice_paths == [], source["url"]

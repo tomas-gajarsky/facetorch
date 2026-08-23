@@ -615,8 +615,8 @@ Export-only architecture definitions live in `model_defs/`; they are included fo
 
 ##### Edit yaml file
 1. Set up the downloader configuration:
-   - For Hugging Face Hub (recommended): specify the `repo_id` and packaged `manifest_id`
-   - For exported `.pt2` models, add immutable revision, size, SHA-256, schema, runtime range, validation metadata, and provenance references to the packaged artifact manifest; filenames are never synthesized
+   - For Hugging Face Hub (recommended): specify the `repo_id`, immutable `revision`, and packaged `manifest_id`; do not duplicate a filename, size, or SHA-256 in manifest-bound downloader YAML
+   - For exported `.pt2` models, add immutable revision, size, SHA-256, schema, runtime range, validation metadata, and provenance references to the packaged artifact manifest; the runtime selects the cohort filename from that manifest and filenames are never synthesized
    - For legacy Google Drive (deprecated): specify the Google Drive file ID
 2. Select the preprocessor (or implement a new one based on BasePredPreProcessor) and specify its parameters e.g. image size and normalization in the yaml file 
 to match the requirements of the new model.

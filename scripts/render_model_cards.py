@@ -16,6 +16,7 @@ MANIFEST_PATH = REPO_ROOT / "facetorch" / "models" / "manifest.json"
 GOVERNANCE_PATH = REPO_ROOT / "facetorch" / "models" / "governance.json"
 SPDX_TAGS = {"MIT": "mit", "Apache-2.0": "apache-2.0"}
 UPSTREAM_LICENSE_ROOT = (REPO_ROOT / "model_cards" / "upstream_licenses").resolve()
+UPSTREAM_NOTICE_ROOT = (REPO_ROOT / "model_cards" / "upstream_notices").resolve()
 
 
 class ModelCardError(RuntimeError):
@@ -53,12 +54,61 @@ def _source_license_bytes(source: Mapping[str, Any]) -> bytes:
             f"expected {expected_digest}, got {actual_digest}"
         )
     revision = str(source.get("revision", ""))
-    if revision not in str(source.get("license_url", "")):
-        raise ModelCardError("Upstream license URL is not bound to its revision")
+    source_url = str(source.get("url", "")).rstrip("/")
+    expected_prefix = f"{source_url}/blob/{revision}/"
+    if not str(source.get("license_url", "")).startswith(expected_prefix):
+        raise ModelCardError(
+            "Upstream license URL is not bound to its source and revision"
+        )
     try:
         data.decode("utf-8")
     except UnicodeDecodeError as exc:
         raise ModelCardError(f"Upstream license is not UTF-8: {path}") from exc
+    return data
+
+
+def _source_notice_bytes(source: Mapping[str, Any]) -> bytes | None:
+    """Return a verified Apache NOTICE, or explicit verified absence."""
+    if source.get("code_license") != "Apache-2.0":
+        return None
+    required = {"notice_url", "notice_file", "notice_sha256"}
+    missing = sorted(required - set(source))
+    if missing:
+        raise ModelCardError(
+            "Apache-2.0 source does not record NOTICE state: " + ", ".join(missing)
+        )
+    values = [source.get(name) for name in sorted(required)]
+    if all(value is None for value in values):
+        return None
+    if any(value is None for value in values):
+        raise ModelCardError("Apache-2.0 NOTICE metadata must be complete or all null")
+
+    relative = Path(str(source["notice_file"]))
+    if not relative.parts or relative.is_absolute() or ".." in relative.parts:
+        raise ModelCardError(f"Invalid upstream NOTICE file: {relative}")
+    path = (REPO_ROOT / relative).resolve()
+    if not path.is_relative_to(UPSTREAM_NOTICE_ROOT):
+        raise ModelCardError(f"Upstream NOTICE file leaves its allowed root: {path}")
+    data = path.read_bytes()
+    expected_digest = str(source["notice_sha256"])
+    actual_digest = hashlib.sha256(data).hexdigest()
+    if actual_digest != expected_digest:
+        raise ModelCardError(
+            f"Upstream NOTICE digest mismatch for {source['notice_url']}: "
+            f"expected {expected_digest}, got {actual_digest}"
+        )
+    revision = str(source.get("revision", ""))
+    source_url = str(source.get("url", "")).rstrip("/")
+    if not str(source["notice_url"]).startswith(
+        f"{source_url}/blob/{revision}/"
+    ):
+        raise ModelCardError(
+            "Upstream NOTICE URL is not bound to its source and revision"
+        )
+    try:
+        data.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ModelCardError(f"Upstream NOTICE is not UTF-8: {path}") from exc
     return data
 
 
@@ -281,22 +331,36 @@ def _render_notices(
         *_source_table(governance),
     ]
     for source in governance["upstream_sources"]:
+        notice_bytes = _source_notice_bytes(source)
         if source.get("license_role") != "notice":
-            continue
+            if notice_bytes is None:
+                continue
         name = str(source["url"]).rstrip("/").rsplit("/", 1)[-1]
-        license_text = _source_license_bytes(source).decode("utf-8").rstrip("\n")
-        lines.extend(
-            [
-                "",
-                f"## {name} — {source['code_license']}",
-                "",
-                f"Source: {source['url']}",
-                "",
-                f"Pinned license: {source['license_url']}",
-                "",
-                license_text,
-            ]
-        )
+        if source.get("license_role") == "notice":
+            license_text = _source_license_bytes(source).decode("utf-8").rstrip("\n")
+            lines.extend(
+                [
+                    "",
+                    f"## {name} — {source['code_license']}",
+                    "",
+                    f"Source: {source['url']}",
+                    "",
+                    f"Pinned license: {source['license_url']}",
+                    "",
+                    license_text,
+                ]
+            )
+        if notice_bytes is not None:
+            lines.extend(
+                [
+                    "",
+                    f"## {name} — upstream NOTICE",
+                    "",
+                    f"Pinned NOTICE: {source['notice_url']}",
+                    "",
+                    notice_bytes.decode("utf-8").rstrip("\n"),
+                ]
+            )
     lines.append("")
     return "\n".join(lines)
 

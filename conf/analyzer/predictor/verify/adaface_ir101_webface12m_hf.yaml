@@ -6,11 +6,8 @@ downloader:
   file_id: 1WI-mP_0mGW31OHfriPUsuFS_usYh_W8p
   path_local: ${facetorch.model_dir:}/exported/predictor/verify/2/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-verify-adaface  # HuggingFace repo ID
-  filename: model.pt2  # Filename in the HuggingFace repo
   manifest_id: verify-adaface
   revision: 71d5f83de703ec4686121e70e3b7061575b9354a
-  sha256: d8e127e3f111ca73d178c1b7f0393ba4829216518f212ae2dc70c84561d80130
-  size_bytes: 261426464
   offline: ${offline}
   allow_legacy_models: ${allow_legacy_models}
   device: ${analyzer.device}

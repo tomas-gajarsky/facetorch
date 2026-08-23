@@ -1,4 +1,5 @@
 import hashlib
+import inspect
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -204,7 +205,8 @@ def test_manifest_revisions_bind_governance_export_specs_and_all_configs():
     seen = set()
     config_roots = [REPO_ROOT / "conf", REPO_ROOT / "facetorch" / "configs"]
     for root in config_roots:
-        for path in sorted(root.rglob("*.yaml")):
+        paths = set(root.rglob("*.yaml")) | set(root.rglob("*.yml"))
+        for path in sorted(paths):
             config = yaml.safe_load(path.read_text(encoding="utf-8"))
             for mapping in _nested_mappings(config):
                 model_id = mapping.get("manifest_id")
@@ -214,8 +216,24 @@ def test_manifest_revisions_bind_governance_export_specs_and_all_configs():
                 model = manifest["models"][model_id]
                 assert mapping.get("repo_id") == model["repo_id"], path
                 assert mapping.get("revision") == model["revision"], path
+                assert not {"filename", "sha256", "size_bytes"} & set(mapping), path
                 seen.add(model_id)
     assert seen == set(manifest["models"])
+
+
+@pytest.mark.release_blocker
+def test_published_model_card_usage_matches_artifact_manifest_api():
+    parameters = inspect.signature(ArtifactManifest.candidates).parameters
+    for name in ("torch_version", "device", "allow_legacy_models"):
+        assert name in parameters
+        assert parameters[name].kind is inspect.Parameter.KEYWORD_ONLY
+    assert parameters["allow_legacy_models"].default is False
+    for documents in render_model_documents().values():
+        card = documents["README.md"].decode("utf-8")
+        assert "get_model_manifest().candidates(" in card
+        assert "torch_version=torch.__version__" in card
+        assert "device=device" in card
+        assert "allow_legacy_models=False" in card
 
 
 def _stage_candidate_matrix(tmp_path):
@@ -504,6 +522,33 @@ def test_hub_inventory_uses_lfs_sha_immutable_revision_and_exact_legal_files(
         assert failed["status"] == "failed"
         assert filename in failed["failures"][0]["error"]
         path.write_bytes(original)
+
+    filename = "README.md"
+    missing_sibling = next(item for item in siblings if item.rfilename == filename)
+    siblings.remove(missing_sibling)
+    failed = audit_remote_manifest(
+        manifest_path,
+        require_current_metadata=False,
+        api=FakeApi(),
+        download_fn=fake_download,
+    )
+    assert failed["status"] == "failed"
+    assert filename in failed["failures"][0]["error"]
+    siblings.append(missing_sibling)
+
+    filename = "LICENSE"
+    wrong_size = next(item for item in siblings if item.rfilename == filename)
+    original_size = wrong_size.size
+    wrong_size.size += 1
+    failed = audit_remote_manifest(
+        manifest_path,
+        require_current_metadata=False,
+        api=FakeApi(),
+        download_fn=fake_download,
+    )
+    assert failed["status"] == "failed"
+    assert filename in failed["failures"][0]["error"]
+    wrong_size.size = original_size
 
 
 @pytest.mark.release_blocker

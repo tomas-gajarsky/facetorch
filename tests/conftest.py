@@ -151,6 +151,10 @@ def pytest_configure(config):
         "markers",
         "release_blocker: executable v1 release contract or audited-defect regression",
     )
+    config.addinivalue_line(
+        "markers",
+        "upstream_network: opt-in verification against immutable upstream sources",
+    )
 
 
 @pytest.fixture(

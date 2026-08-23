@@ -6,11 +6,8 @@ downloader:
   file_id: 1H-aPtFd9C5D7y1vzoWsObKAxeIBE9QPd
   path_local: ${facetorch.model_dir:}/exported/predictor/verify/1/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-verify-magface  # HuggingFace repo ID
-  filename: model.pt2  # Filename in the HuggingFace repo
   manifest_id: verify-magface
   revision: e7466b10dcdcfa2abaa2e4bc00cb7e8774d45017
-  sha256: c219b43378a3a6020d193bf71def35fad8db04acf696c422f7daa7514c3fa5a3
-  size_bytes: 261287852
   offline: ${offline}
   allow_legacy_models: ${allow_legacy_models}
   device: ${analyzer.device}
