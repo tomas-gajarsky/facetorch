@@ -197,6 +197,99 @@ def test_renderer_rejects_unapproved_governance(tmp_path, monkeypatch):
 
 
 @pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    ("field_path", "invalid_value", "message"),
+    [
+        (("license_policy", "status"), "pending", "approved license policy"),
+        (
+            ("models", "detector-retinaface", "status"),
+            "pending",
+            "governance status must be approved",
+        ),
+        (
+            ("models", "detector-retinaface", "release_eligible"),
+            False,
+            "release_eligible must be true",
+        ),
+        (
+            (
+                "models",
+                "detector-retinaface",
+                "rights",
+                "redistribution",
+            ),
+            "pending",
+            "rights.redistribution must be approved",
+        ),
+        (
+            ("models", "detector-retinaface", "rights", "attribution"),
+            "pending",
+            "rights.attribution must be approved",
+        ),
+        (
+            (
+                "models",
+                "detector-retinaface",
+                "rights",
+                "owner_approval",
+            ),
+            "pending",
+            "rights.owner_approval must be approved",
+        ),
+        (
+            (
+                "models",
+                "detector-retinaface",
+                "source_checkpoint",
+                "upstream_checkpoint_mapping",
+            ),
+            "unverified",
+            "checkpoint mapping must be verified",
+        ),
+        (
+            (
+                "models",
+                "detector-retinaface",
+                "source_checkpoint",
+                "hosted_sha256_verified",
+            ),
+            False,
+            "hosted SHA-256 verification must be true",
+        ),
+    ],
+)
+def test_renderer_rejects_contradictory_governance_approval_values(
+    field_path,
+    invalid_value,
+    message,
+    tmp_path,
+    monkeypatch,
+):
+    governance = _json(REPO_ROOT / "facetorch/models/governance.json")
+    target = governance
+    for name in field_path[:-1]:
+        target = target[name]
+    target[field_path[-1]] = invalid_value
+    path = tmp_path / "governance.json"
+    _write_json(path, governance)
+    monkeypatch.setattr(model_card_renderer, "GOVERNANCE_PATH", path)
+    with pytest.raises(ModelCardError, match=message):
+        render_model_documents()
+
+
+@pytest.mark.release_blocker
+def test_renderer_wraps_invalid_utf8_contract_as_model_card_error(
+    tmp_path,
+    monkeypatch,
+):
+    path = tmp_path / "governance.json"
+    path.write_bytes(b"\xff")
+    monkeypatch.setattr(model_card_renderer, "GOVERNANCE_PATH", path)
+    with pytest.raises(ModelCardError, match="Cannot read JSON contract document"):
+        render_model_documents()
+
+
+@pytest.mark.release_blocker
 def test_renderer_rejects_a_manifest_model_missing_from_the_catalog(
     tmp_path,
     monkeypatch,
