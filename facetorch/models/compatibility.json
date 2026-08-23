@@ -54,8 +54,8 @@
     "publication_status": "not_published",
     "release_limitations": [
       "Evidence was produced from an uncommitted working tree and must be repeated from the exact clean release commit.",
-      "The model manifest and governance records remain unapproved.",
-      "The AU cohorts preserve digest-pinned published programs because the original native checkpoint mapping is incomplete."
+      "Model governance was approved after this evidence run, so the clean-commit matrix must bind the approved records before compatibility and the manifest can be approved.",
+      "The AU cohorts preserve digest-pinned published programs because the current native forward definition does not reproduce the legacy reference, even though the upstream checkpoint tensors are mapped."
     ]
   },
   "cohorts": [

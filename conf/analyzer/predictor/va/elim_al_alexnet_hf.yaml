@@ -8,7 +8,7 @@ downloader:
   repo_id: tomas-gajarsky/facetorch-va-elim  # HuggingFace repo ID
   filename: model.pt2  # Filename in the HuggingFace repo
   manifest_id: va-elim
-  revision: 62590460b05d96fb0aafbf71b0462b8b42901f6e
+  revision: d71aafca2b4cb460147b66cc4d544feebb496df9
   sha256: a6386185a10a5ba9e69f7fe69111edbf95bce85bad06b3f6858caf797ded4f87
   size_bytes: 20142372
   offline: ${offline}

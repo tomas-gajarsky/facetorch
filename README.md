@@ -275,14 +275,16 @@ analyzer
 
 ## Models
 
-The license labels below describe cited upstream **code** only. They do not assert
-that hosted checkpoints may be redistributed. Every v1 weight remains pending the
-source/rights review recorded in
-[`facetorch/models/governance.json`](facetorch/models/governance.json).
+The source links below are the original repositories already used by Facetorch.
+The weight-license column reflects the artifact-specific review approved on
+2026-08-23 and recorded, with checkpoint hashes and mapping methods, in
+[`facetorch/models/governance.json`](facetorch/models/governance.json). MIT and
+Apache-2.0 are preserved as received; neither license was converted into the
+other. These licenses do not grant rights to upstream training datasets.
 
 ### Detector
 
-    |     model     |   source  |   params  | code license | version |
+    |     model     |   source  |   params  | weight license | version |
     | ------------- | --------- | --------- | ----------- | ------- |
     |   RetinaFace  |  biubug6  |   27.3M   | MIT license |    1    |
 
@@ -296,7 +298,7 @@ source/rights review recorded in
 
 #### Facial Representation Learning (embed)
 
-    |       model       |   source   |  params | code license | version |
+    |       model       |   source   |  params | weight license | version |
     | ----------------- | ---------- | ------- | ----------- | ------- |
     |  ResNet-50 VGG 1M |  1adrianb  |  28.4M  | MIT license |    1    |
 
@@ -307,13 +309,13 @@ source/rights review recorded in
 
 #### Face Verification (verify)
 
-    |       model      |   source    |  params  |    code license    | version |
+    |       model      |   source    |  params  |   weight license   | version |
     | ---------------- | ----------- | -------- | ------------------ | ------- |
     |    MagFace+UNPG  | Jung-Jun-Uk |   65.2M  | Apache License 2.0 |    1    |
     |  AdaFaceR100W12M |  mk-minchul |    -     |     MIT License    |    2    |
 
 1. Jung-Jun-Uk
-    * code: [UNPG](https://github.com/jung-jun-uk/unpg)
+    * code: [UNPG](https://github.com/junuke/UNPG) and [MagFace](https://github.com/IrvingMeng/MagFace)
     * paper: [Jung et al. - Unified Negative Pair Generation toward Well-discriminative Feature Space for Face Recognition](https://arxiv.org/abs/2203.11593)
     * Note: ```include_tensors``` needs to be True in order to include the model prediction in Prediction.logits
 2. mk-minchul
@@ -324,31 +326,32 @@ source/rights review recorded in
 
 #### Facial Expression Recognition (fer)
 
-    |       model       |      source    |  params  |    code license    | version |
+    |       model       |      source    |  params  |   weight license   | version |
     | ----------------- | -------------- | -------- | ------------------ | ------- |
-    | EfficientNet B0 7 | HSE-asavchenko |    4M    | Apache License 2.0 |    1    |
-    | EfficientNet B2 8 | HSE-asavchenko |   7.7M   | Apache License 2.0 |    2    |
+    | EfficientNet B0 7 |   sb-ai-lab    |    4M    | Apache License 2.0 |    1    |
+    | EfficientNet B2 8 |   sb-ai-lab    |   7.7M   | Apache License 2.0 |    2    |
 
-1. HSE-asavchenko
-    * code: [face-emotion-recognition](https://github.com/HSE-asavchenko/face-emotion-recognition)
-    * paper: [Savchenko - Facial expression and attributes recognition based on multi-task learning of lightweight neural networks](https://ieeexplore.ieee.org/abstract/document/9582508)
+1. sb-ai-lab
+    * code and checkpoints: [EmotiEffLib](https://github.com/sb-ai-lab/EmotiEffLib)
+    * paper: [Savchenko et al. - Classifying Emotions and Engagement in Online Learning Based on a Single Facial Expression Recognition Neural Network](https://arxiv.org/abs/2203.13436)
 
 #### Facial Action Unit Detection (au)
 
-    |        model        |   source  |  params |    code license    | version |
+    |        model        |   source   |  params |   weight license   | version |
     | ------------------- | --------- | ------- | ------------------ | ------- |
-    | OpenGraph Swin Base |  CVI-SZU  |   94M   |     MIT License    |    1    |
+    | OpenGraph Swin Base | lingjivoo  |   94M   | Apache License 2.0 |    1    |
 
-1. CVI-SZU
-    * code: [ME-GraphAU](https://github.com/CVI-SZU/ME-GraphAU)
+1. lingjivoo
+    * checkpoint and primary code: [OpenGraphAU](https://github.com/lingjivoo/OpenGraphAU)
+    * related code with preserved MIT attribution: [ME-GraphAU](https://github.com/CVI-SZU/ME-GraphAU)
     * paper: [Luo et al. - Learning Multi-dimensional Edge Feature-based AU Relation Graph for Facial Action Unit Recognition](https://arxiv.org/abs/2205.01782)
     * Note: The v1 candidate uses torch.export artifacts for the explicit Torch 2.6 / 2.11 cohorts; release CPU/CUDA evidence is tracked separately.
 
 #### Facial Valence Arousal (va)
 
-    |       model       |   source   |  params | code license | version |
+    |       model       |   source   |  params | weight license | version |
     | ----------------- | ---------- | ------- | ----------- | ------- |
-    |  ELIM AL AlexNet  | kdhht2334  |  2.3M   | MIT license |    1    |
+    |   ELIM AlexNet    | kdhht2334  |  2.3M   | MIT license |    1    |
 
 1. kdhht2334
     * code: [ELIM](https://github.com/kdhht2334/ELIM_FER)
@@ -357,7 +360,7 @@ for Identity-invariant Facial Expression Recognition](https://arxiv.org/abs/2209
 
 #### Deepfake Detection (deepfake)
 
-    |         model        |      source      |  params  | code license | version |
+    |         model        |      source      |  params  | weight license | version |
     | -------------------- | ---------------- | -------- | ----------- | ------- |
     |    EfficientNet B7   |     selimsef     |   66.4M  | MIT license |    1    |
 
@@ -367,7 +370,7 @@ for Identity-invariant Facial Expression Recognition](https://arxiv.org/abs/2209
 
 #### Face Alignment (align)
 
-    |       model       |      source      |  params  | code license | version |
+    |       model       |      source      |  params  | weight license | version |
     | ----------------- | ---------------- | -------- | ----------- | ------- |
     |    MobileNet v2   |     choyingw     |   4.1M   | MIT license |    1    |
 

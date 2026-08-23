@@ -1156,16 +1156,16 @@ def _model_specs(torch_minor: str) -> List[Dict[str, Any]]:
     ]
 
     source_revisions = {
-        "detector-retinaface": "2e1015f21f8c743ca6a356a1cba3223232096502",
-        "align-synergynet": "f90c6d92f0ac022660b80079210d3cdeb46bb1e6",
-        "au-opengraph": "3284478cd26b09de911783df1d8fdbb01e037eb3",
-        "deepfake-efficientnet-b7": "3ecdd5193f7e981b7f3dad2407658c5456ae671c",
-        "embed-resnet50": "e98f06a0c724e7dfd893b12d94165444978a449e",
-        "fer-efficientnet-b0": "3ddf81c0c80964e830ff0b0031b4eddd8d454cf7",
-        "fer-efficientnet-b2": "2c9829a28c014e2f9b7a8ed683d1c7fd1631b18c",
-        "va-elim": "62590460b05d96fb0aafbf71b0462b8b42901f6e",
-        "verify-adaface": "348ecc75d4624edc60a809ef3867f6a6537c7f2d",
-        "verify-magface": "f0f8b2f12f61a6ba4471d3823a8fad403c4a75f9",
+        "detector-retinaface": "d54b36dcece4d778d1b6d09875ab1d60efe42cef",
+        "align-synergynet": "51cf3068635436edd18aedda5b8d8dd12a17473d",
+        "au-opengraph": "c5abf03a4ef39453c90540255ba8a73764c4948c",
+        "deepfake-efficientnet-b7": "4acc494f37eb63d7457166eff2acb45c5b04b9a6",
+        "embed-resnet50": "bc34670af5891331ad005c2030800d3be9d563a3",
+        "fer-efficientnet-b0": "4eed534b4f90f20a8dd5919de8d8636cdbb6abde",
+        "fer-efficientnet-b2": "ca9a1856b1ab1269f3335ddebcebc69ef747086a",
+        "va-elim": "d71aafca2b4cb460147b66cc4d544feebb496df9",
+        "verify-adaface": "29dddf0f7a48d788b95f0b6bfcf38eaa825bdd13",
+        "verify-magface": "e7466b10dcdcfa2abaa2e4bc00cb7e8774d45017",
     }
     for spec in specs:
         reference = spec["validation_reference"]

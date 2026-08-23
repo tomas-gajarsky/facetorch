@@ -1,7 +1,15 @@
 {
   "schema_version": 1,
-  "status": "incomplete",
+  "status": "approved",
   "provenance_owner": "founder",
+  "approved_on": "2026-08-23",
+  "license_policy": {
+    "status": "approved",
+    "decision": "An author-published checkpoint distributed from the same permissively licensed repository, with no separate checkpoint terms, is governed by that repository license.",
+    "no_license_conversion": "MIT and Apache-2.0 are preserved as received and are not treated as interchangeable.",
+    "notice_policy": "Preserve the applicable license text, copyright notices, upstream attribution, checkpoint identity, and additional third-party notices.",
+    "scope": "This approval covers the ten immutable hosted model repositories in manifest.json; it does not grant rights to upstream training datasets or unlisted artifacts."
+  },
   "review_policy": "Code license, weight rights, source checkpoint mapping, redistribution, attribution, provenance, intended use, and limitations must all be approved before release eligibility can become true.",
   "responsible_use": [
     "Do not use facetorch outputs as the sole basis for consequential decisions about a person.",
@@ -11,113 +19,180 @@
   ],
   "models": {
     "detector-retinaface": {
-      "status": "incomplete",
-      "release_eligible": false,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-detector-retinaface/blob/2e1015f21f8c743ca6a356a1cba3223232096502/README.md",
-      "upstream_sources": [{"url": "https://github.com/biubug6/Pytorch_Retinaface", "revision": "b984b4b775b2c4dced95c1eadd195a5c7d32a60b", "code_license": "MIT"}],
-      "source_checkpoint": {"hosted_sha256_verified": true, "upstream_checkpoint_mapping": "unverified", "export_reconstruction": "verified_hosted_torchscript_state_plus_exact_tensor_attributes"},
-      "rights": {"weights_license": "unverified", "redistribution": "unverified", "attribution": "draft", "owner_approval": "pending"},
+      "status": "approved",
+      "release_eligible": true,
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-detector-retinaface/blob/d54b36dcece4d778d1b6d09875ab1d60efe42cef/README.md",
+      "upstream_sources": [{"url": "https://github.com/biubug6/Pytorch_Retinaface", "revision": "b984b4b775b2c4dced95c1eadd195a5c7d32a60b", "code_license": "MIT", "license_url": "https://github.com/biubug6/Pytorch_Retinaface/blob/b984b4b775b2c4dced95c1eadd195a5c7d32a60b/LICENSE.MIT", "role": "checkpoint publisher and architecture source"}],
+      "source_checkpoint": {
+        "hosted_sha256_verified": true,
+        "upstream_checkpoint_mapping": "verified",
+        "upstream_artifacts": [{"filename": "Resnet50_Final.pth", "sha256": "6d1de9c2944f2ccddca5f5e010ea5ae64a39845a86311af6fdf30841b0a5a16d", "source_url": "https://drive.google.com/open?id=1oZRSG0ZegbVkVwUd8wUIQx8W7yfZ_ki1", "verification_mirror": "https://huggingface.co/towzeur/deepfake_data_weights/blob/72f123d5c2976c539efa5a5c5ca57cf5918c1bca/detectors/Pytorch_Retinaface/Resnet50_Final.pth"}],
+        "verification_method": "exact_tensor_equality_after_module_prefix_removal_and_torchscript_attribute_recovery",
+        "verification_result": "456 of 456 tensors matched exactly; 219 legacy TorchScript state attributes were recovered without substitution.",
+        "export_reconstruction": "verified_hosted_torchscript_state_plus_exact_tensor_attributes"
+      },
+      "rights": {"weights_license": "MIT", "redistribution": "approved", "attribution": "approved", "owner_approval": "approved", "approval_basis": "founder-approved author-repository checkpoint policy"},
       "intended_use": ["Research and assisted face localization with application-specific evaluation."],
-      "limitations": ["May miss, duplicate, or mislocalize faces under occlusion, extreme pose, small scale, or domain shift.", "Detection performance is not evidence of equitable performance across populations or capture conditions.", "The hosted TorchScript source is reproducible for export only by recovering verified tensor attributes omitted from its legacy state_dict; upstream checkpoint mapping remains unverified."]
+      "limitations": ["May miss, duplicate, or mislocalize faces under occlusion, extreme pose, small scale, or domain shift.", "Detection performance is not evidence of equitable performance across populations or capture conditions.", "The checkpoint license does not grant rights to upstream training datasets."]
     },
     "align-synergynet": {
-      "status": "incomplete",
-      "release_eligible": false,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-align-synergynet/blob/f90c6d92f0ac022660b80079210d3cdeb46bb1e6/README.md",
-      "upstream_sources": [{"url": "https://github.com/choyingw/SynergyNet", "revision": "9de11e2831b85254d776ca748fa2ffd68aedf4ba", "code_license": "MIT"}],
-      "source_checkpoint": {"hosted_sha256_verified": true, "upstream_checkpoint_mapping": "unverified"},
-      "rights": {"weights_license": "unverified", "redistribution": "unverified", "attribution": "draft", "owner_approval": "pending"},
+      "status": "approved",
+      "release_eligible": true,
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-align-synergynet/blob/51cf3068635436edd18aedda5b8d8dd12a17473d/README.md",
+      "upstream_sources": [{"url": "https://github.com/choyingw/SynergyNet", "revision": "9de11e2831b85254d776ca748fa2ffd68aedf4ba", "code_license": "MIT", "license_url": "https://github.com/choyingw/SynergyNet/blob/9de11e2831b85254d776ca748fa2ffd68aedf4ba/LICENSE", "role": "checkpoint publisher and architecture source"}],
+      "source_checkpoint": {
+        "hosted_sha256_verified": true,
+        "upstream_checkpoint_mapping": "verified",
+        "upstream_artifacts": [{"filename": "pretrained/best.pth.tar", "sha256": "128471cf9920833c2ef2e2868a6f6ae2f680acb1ac77274bffcf2c638053f42b", "source_url": "https://drive.google.com/file/d/1RUOOWT1oSLOJYFpkWF_st2ZrVs8dpEcg/view"}],
+        "verification_method": "exact_tensor_equality",
+        "verification_result": "445 of 445 model tensors matched exactly; upstream-only 3DMM texture tensors u_tex and w_tex are not model parameters."
+      },
+      "rights": {"weights_license": "MIT", "redistribution": "approved", "attribution": "approved", "owner_approval": "approved", "approval_basis": "founder-approved author-repository checkpoint policy"},
       "intended_use": ["Research and visualization of approximate 3D facial alignment."],
-      "limitations": ["Landmarks and pose are estimates and degrade with occlusion, extreme pose, and out-of-domain imagery.", "Do not interpret geometry estimates as medical or identity evidence."]
+      "limitations": ["Landmarks and pose are estimates and degrade with occlusion, extreme pose, and out-of-domain imagery.", "Do not interpret geometry estimates as medical or identity evidence.", "The checkpoint license does not grant rights to upstream training datasets."]
     },
     "au-opengraph": {
-      "status": "incomplete",
-      "release_eligible": false,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-au-opengraph/blob/3284478cd26b09de911783df1d8fdbb01e037eb3/README.md",
+      "status": "approved",
+      "release_eligible": true,
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-au-opengraph/blob/c5abf03a4ef39453c90540255ba8a73764c4948c/README.md",
       "upstream_sources": [
-        {"url": "https://github.com/lingjivoo/OpenGraphAU", "revision": "a0ad10d516ed121f476cbc6d66a84ebfc033a53f", "code_license": "Apache-2.0"},
-        {"url": "https://github.com/CVI-SZU/ME-GraphAU", "revision": "dda53cba00c427a0494468c549e464a96ba7b2fa", "code_license": "MIT"}
+        {"url": "https://github.com/lingjivoo/OpenGraphAU", "revision": "a0ad10d516ed121f476cbc6d66a84ebfc033a53f", "code_license": "Apache-2.0", "license_url": "https://github.com/lingjivoo/OpenGraphAU/blob/a0ad10d516ed121f476cbc6d66a84ebfc033a53f/LICENSE", "role": "checkpoint publisher and primary architecture source"},
+        {"url": "https://github.com/CVI-SZU/ME-GraphAU", "revision": "dda53cba00c427a0494468c549e464a96ba7b2fa", "code_license": "MIT", "license_url": "https://github.com/CVI-SZU/ME-GraphAU/blob/dda53cba00c427a0494468c549e464a96ba7b2fa/LICENSE", "role": "related graph-AU implementation requiring preserved attribution"}
       ],
-      "source_checkpoint": {"hosted_sha256_verified": true, "upstream_checkpoint_mapping": "unverified", "export_reconstruction": "controlled_digest_pinned_program_reuse_pending_native_checkpoint_recovery"},
-      "rights": {"weights_license": "unverified", "redistribution": "unverified", "attribution": "draft", "owner_approval": "pending"},
+      "source_checkpoint": {
+        "hosted_sha256_verified": true,
+        "upstream_checkpoint_mapping": "verified",
+        "upstream_artifacts": [{"filename": "OpenGraphAU Swin-Base stage-one checkpoint", "sha256": "18f197f4f28b17820a2f1d707b2992c92678c8395da1453d6f993b6f7d8bc6f4", "source_url": "https://drive.google.com/file/d/1nWwowmq4pQn1ACnSOOeyBy6-n0rmqTQ9/view"}],
+        "verification_method": "exact_tensor_equality_after_module_prefix_removal",
+        "verification_result": "569 of 569 tensors matched exactly.",
+        "export_reconstruction": "controlled_digest_pinned_program_reuse_due_to_current_native_forward_mismatch"
+      },
+      "rights": {"weights_license": "Apache-2.0", "redistribution": "approved", "attribution": "approved", "owner_approval": "approved", "approval_basis": "founder-approved author-repository checkpoint policy with ME-GraphAU MIT notice preserved"},
       "intended_use": ["Research on visible facial action-unit patterns with domain-specific validation."],
-      "limitations": ["Action-unit scores describe model-visible patterns, not emotion, intent, diagnosis, or truthfulness.", "Training-data rights and demographic/domain performance remain unverified.", "Cohort programs are preserved from digest-pinned published artifacts because the hosted TorchScript state cannot reproduce the current native architecture; original checkpoint recovery remains a release-governance requirement."]
+      "limitations": ["Action-unit scores describe model-visible patterns, not emotion, intent, diagnosis, or truthfulness.", "Training-data rights and demographic or domain performance are not established by the checkpoint license.", "The Torch 2.6 and 2.11 cohorts preserve digest-pinned, independently validated exported programs because the current native forward path does not reproduce the legacy reference."]
     },
     "deepfake-efficientnet-b7": {
-      "status": "incomplete",
-      "release_eligible": false,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-deepfake-efficientnet-b7/blob/3ecdd5193f7e981b7f3dad2407658c5456ae671c/README.md",
-      "upstream_sources": [{"url": "https://github.com/selimsef/dfdc_deepfake_challenge", "revision": "89c6290490bac96b29193a4061b3db9dd3933e36", "code_license": "MIT"}],
-      "source_checkpoint": {"hosted_sha256_verified": true, "upstream_checkpoint_mapping": "unverified"},
-      "rights": {"weights_license": "unverified", "redistribution": "unverified", "attribution": "draft", "owner_approval": "pending"},
+      "status": "approved",
+      "release_eligible": true,
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-deepfake-efficientnet-b7/blob/4acc494f37eb63d7457166eff2acb45c5b04b9a6/README.md",
+      "upstream_sources": [{"url": "https://github.com/selimsef/dfdc_deepfake_challenge", "revision": "89c6290490bac96b29193a4061b3db9dd3933e36", "code_license": "MIT", "license_url": "https://github.com/selimsef/dfdc_deepfake_challenge/blob/89c6290490bac96b29193a4061b3db9dd3933e36/LICENSE", "role": "checkpoint publisher and architecture source"}],
+      "source_checkpoint": {
+        "hosted_sha256_verified": true,
+        "upstream_checkpoint_mapping": "verified",
+        "upstream_artifacts": [{"filename": "final_777_DeepFakeClassifier_tf_efficientnet_b7_ns_0_31", "sha256": "00dd6cd9466cddfd7da7c333d8fecae81593307827093deaf4d7cdf704bc8bfa", "source_url": "https://github.com/selimsef/dfdc_deepfake_challenge/releases/download/0.0.1/final_777_DeepFakeClassifier_tf_efficientnet_b7_ns_0_31"}],
+        "verification_method": "exact_tensor_equality_against_all_seven_author_release_checkpoints",
+        "verification_result": "The named checkpoint uniquely matched all 1,202 model tensors exactly."
+      },
+      "rights": {"weights_license": "MIT", "redistribution": "approved", "attribution": "approved", "owner_approval": "approved", "approval_basis": "founder-approved author-repository checkpoint policy"},
       "intended_use": ["Research and human-assisted screening for manipulated imagery."],
-      "limitations": ["The score is not proof that media is authentic or manipulated and is vulnerable to domain shift and new generation methods.", "Use corroborating forensic evidence and human review."]
+      "limitations": ["The score is not proof that media is authentic or manipulated and is vulnerable to domain shift and new generation methods.", "Use corroborating forensic evidence and human review.", "The checkpoint license does not grant rights to the DFDC or other training datasets."]
     },
     "embed-resnet50": {
-      "status": "incomplete",
-      "release_eligible": false,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-embed-resnet-50/blob/e98f06a0c724e7dfd893b12d94165444978a449e/README.md",
+      "status": "approved",
+      "release_eligible": true,
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-embed-resnet-50/blob/bc34670af5891331ad005c2030800d3be9d563a3/README.md",
       "upstream_sources": [
-        {"url": "https://github.com/1adrianb/unsupervised-face-representation", "revision": "8bdb3cc7fddbee147d7188c0bda103272238d1bb", "code_license": "MIT"},
-        {"url": "https://github.com/cydonia999/VGGFace2-pytorch", "revision": "c6e10f277b31b972c78fac68a40464a36a46a10d", "code_license": "MIT"}
+        {"url": "https://github.com/1adrianb/unsupervised-face-representation", "revision": "8bdb3cc7fddbee147d7188c0bda103272238d1bb", "code_license": "MIT", "license_url": "https://github.com/1adrianb/unsupervised-face-representation/blob/8bdb3cc7fddbee147d7188c0bda103272238d1bb/LICENSE", "role": "checkpoint publisher and primary model source"},
+        {"url": "https://github.com/cydonia999/VGGFace2-pytorch", "revision": "c6e10f277b31b972c78fac68a40464a36a46a10d", "code_license": "MIT", "license_url": "https://github.com/cydonia999/VGGFace2-pytorch/blob/c6e10f277b31b972c78fac68a40464a36a46a10d/LICENSE", "role": "Facetorch native architecture attribution"}
       ],
-      "source_checkpoint": {"hosted_sha256_verified": true, "upstream_checkpoint_mapping": "unverified"},
-      "rights": {"weights_license": "unverified", "redistribution": "unverified", "attribution": "draft", "owner_approval": "pending"},
+      "source_checkpoint": {
+        "hosted_sha256_verified": true,
+        "upstream_checkpoint_mapping": "verified",
+        "upstream_artifacts": [{"filename": "flr_r50_vgg_face_1m.pth", "sha256": "ee6757ae2d135d4b81c0c03f4cc9d28fb96f6444b4214a4e9d5726839674ae49", "source_url": "https://www.adrianbulat.com/downloads/ECCV2022/pretrained_models/unsupervised/flr_r50_vgg_face_1m.pth"}],
+        "verification_method": "exact_tensor_equality_after_module_prefix_removal",
+        "verification_result": "328 of 328 tensors matched exactly."
+      },
+      "rights": {"weights_license": "MIT", "redistribution": "approved", "attribution": "approved", "owner_approval": "approved", "approval_basis": "founder-approved author-repository checkpoint policy"},
       "intended_use": ["Research feature extraction after consent, privacy, and task-specific review."],
-      "limitations": ["Embedding distance is not calibrated identity evidence and may encode demographic or dataset biases.", "The README and hosted model card cite different upstream sources, and the hosted output description requires correction before release."]
+      "limitations": ["Embedding distance is not calibrated identity evidence and may encode demographic or dataset biases.", "The model returns a normalized 128-dimensional representation plus 3,000 projection logits; it is not a 2,048-dimensional SENet embedding.", "The checkpoint license does not grant rights to VGGFace2 or other training datasets."]
     },
     "fer-efficientnet-b0": {
-      "status": "incomplete",
-      "release_eligible": false,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-fer-efficientnet-b0/blob/3ddf81c0c80964e830ff0b0031b4eddd8d454cf7/README.md",
-      "upstream_sources": [{"url": "https://github.com/sb-ai-lab/EmotiEffLib", "revision": "520a051c64cd191521e5934655314e769a319684", "code_license": "Apache-2.0"}],
-      "source_checkpoint": {"hosted_sha256_verified": true, "upstream_checkpoint_mapping": "unverified"},
-      "rights": {"weights_license": "unverified", "redistribution": "unverified", "attribution": "draft", "owner_approval": "pending"},
+      "status": "approved",
+      "release_eligible": true,
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-fer-efficientnet-b0/blob/4eed534b4f90f20a8dd5919de8d8636cdbb6abde/README.md",
+      "upstream_sources": [{"url": "https://github.com/sb-ai-lab/EmotiEffLib", "revision": "520a051c64cd191521e5934655314e769a319684", "code_license": "Apache-2.0", "license_url": "https://github.com/sb-ai-lab/EmotiEffLib/blob/520a051c64cd191521e5934655314e769a319684/LICENSE", "role": "checkpoint publisher and architecture source"}],
+      "source_checkpoint": {
+        "hosted_sha256_verified": true,
+        "upstream_checkpoint_mapping": "verified",
+        "upstream_artifacts": [{"filename": "models/affectnet_emotions/enet_b0_7.pt", "sha256": "772abad3fc90333ca3f5d454d20857900cad0a8988d1564d3ec6215673624010", "source_url": "https://github.com/sb-ai-lab/EmotiEffLib/blob/37585655a7d021fa1f29351775294c76039ef946/models/affectnet_emotions/enet_b0_7.pt", "historical_revision": "37585655a7d021fa1f29351775294c76039ef946"}],
+        "verification_method": "exact_tensor_equality_against_historical_author_repository_checkpoint",
+        "verification_result": "360 of 360 tensors matched exactly."
+      },
+      "rights": {"weights_license": "Apache-2.0", "redistribution": "approved", "attribution": "approved", "owner_approval": "approved", "approval_basis": "founder-approved author-repository checkpoint policy"},
       "intended_use": ["Research classification of visible facial-expression categories."],
-      "limitations": ["Expression labels do not establish emotion, intent, mental state, or truthfulness.", "Performance varies with culture, context, demographic representation, pose, and image quality."]
+      "limitations": ["Expression labels do not establish emotion, intent, mental state, or truthfulness.", "Performance varies with culture, context, demographic representation, pose, and image quality.", "The checkpoint license does not grant rights to AffectNet or other training datasets."]
     },
     "fer-efficientnet-b2": {
-      "status": "incomplete",
-      "release_eligible": false,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-fer-efficientnet-b2/blob/2c9829a28c014e2f9b7a8ed683d1c7fd1631b18c/README.md",
-      "upstream_sources": [{"url": "https://github.com/sb-ai-lab/EmotiEffLib", "revision": "520a051c64cd191521e5934655314e769a319684", "code_license": "Apache-2.0"}],
-      "source_checkpoint": {"hosted_sha256_verified": true, "upstream_checkpoint_mapping": "unverified"},
-      "rights": {"weights_license": "unverified", "redistribution": "unverified", "attribution": "draft", "owner_approval": "pending"},
+      "status": "approved",
+      "release_eligible": true,
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-fer-efficientnet-b2/blob/ca9a1856b1ab1269f3335ddebcebc69ef747086a/README.md",
+      "upstream_sources": [{"url": "https://github.com/sb-ai-lab/EmotiEffLib", "revision": "520a051c64cd191521e5934655314e769a319684", "code_license": "Apache-2.0", "license_url": "https://github.com/sb-ai-lab/EmotiEffLib/blob/520a051c64cd191521e5934655314e769a319684/LICENSE", "role": "checkpoint publisher and architecture source"}],
+      "source_checkpoint": {
+        "hosted_sha256_verified": true,
+        "upstream_checkpoint_mapping": "verified",
+        "upstream_artifacts": [{"filename": "models/affectnet_emotions/enet_b2_8.pt", "sha256": "20c8bb3ae6dace81b2ac51c8418bee508d86f14006566ecdfafdfd6d6acba14d", "source_url": "https://github.com/sb-ai-lab/EmotiEffLib/blob/520a051c64cd191521e5934655314e769a319684/models/affectnet_emotions/enet_b2_8.pt"}],
+        "verification_method": "exact_tensor_equality",
+        "verification_result": "508 of 508 tensors matched exactly."
+      },
+      "rights": {"weights_license": "Apache-2.0", "redistribution": "approved", "attribution": "approved", "owner_approval": "approved", "approval_basis": "founder-approved author-repository checkpoint policy"},
       "intended_use": ["Research classification of visible facial-expression categories."],
-      "limitations": ["Expression labels do not establish emotion, intent, mental state, or truthfulness.", "Performance varies with culture, context, demographic representation, pose, and image quality."]
+      "limitations": ["Expression labels do not establish emotion, intent, mental state, or truthfulness.", "Performance varies with culture, context, demographic representation, pose, and image quality.", "The checkpoint license does not grant rights to AffectNet or other training datasets."]
     },
     "va-elim": {
-      "status": "incomplete",
-      "release_eligible": false,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-va-elim/blob/62590460b05d96fb0aafbf71b0462b8b42901f6e/README.md",
-      "upstream_sources": [{"url": "https://github.com/kdhht2334/ELIM_FER", "revision": "fb1aa0d495ffcf38494c487135390ba1a5521fc4", "code_license": "MIT"}],
-      "source_checkpoint": {"hosted_sha256_verified": true, "upstream_checkpoint_mapping": "unverified"},
-      "rights": {"weights_license": "unverified", "redistribution": "unverified", "attribution": "draft", "owner_approval": "pending"},
-      "intended_use": ["Research estimation of model-defined valence/arousal signals."],
-      "limitations": ["Outputs do not establish emotion, intent, health, or internal state.", "The hosted model card cites an unavailable upstream path that differs from the README source; checkpoint mapping and rights remain incomplete."]
+      "status": "approved",
+      "release_eligible": true,
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-va-elim/blob/d71aafca2b4cb460147b66cc4d544feebb496df9/README.md",
+      "upstream_sources": [{"url": "https://github.com/kdhht2334/ELIM_FER", "revision": "fb1aa0d495ffcf38494c487135390ba1a5521fc4", "code_license": "MIT", "license_url": "https://github.com/kdhht2334/ELIM_FER/blob/fb1aa0d495ffcf38494c487135390ba1a5521fc4/LICENSE", "role": "checkpoint publisher and architecture source"}],
+      "source_checkpoint": {
+        "hosted_sha256_verified": true,
+        "upstream_checkpoint_mapping": "verified",
+        "upstream_artifacts": [
+          {"filename": "demo/weights/enc2.t7", "sha256": "59fb5fe4896f2f8695fdbf9cce0704398c9e6cac550dfb259a75f43917dbce93", "source_url": "https://github.com/kdhht2334/ELIM_FER/blob/fb1aa0d495ffcf38494c487135390ba1a5521fc4/demo/weights/enc2.t7"},
+          {"filename": "demo/weights/reg2.t7", "sha256": "69ebf7b69f15aea319727c0f304dc804419cbbbae349972aa241bb6c0102a7e4", "source_url": "https://github.com/kdhht2334/ELIM_FER/blob/fb1aa0d495ffcf38494c487135390ba1a5521fc4/demo/weights/reg2.t7"},
+          {"filename": "demo/weights/header2.t7", "sha256": "cf8ef9112a39cd2b8cc9653e421a8900add63f8fa5496b8bce7b83d1ae4465c1", "source_url": "https://github.com/kdhht2334/ELIM_FER/blob/fb1aa0d495ffcf38494c487135390ba1a5521fc4/demo/weights/header2.t7"}
+        ],
+        "verification_method": "exact_tensor_equality_across_encoder_regressor_and_task_header",
+        "verification_result": "32 of 32 tensors matched exactly; the first demo weight set did not match."
+      },
+      "rights": {"weights_license": "MIT", "redistribution": "approved", "attribution": "approved", "owner_approval": "approved", "approval_basis": "founder-approved author-repository checkpoint policy"},
+      "intended_use": ["Research estimation of model-defined valence and arousal signals."],
+      "limitations": ["Outputs do not establish emotion, intent, health, or internal state.", "Performance depends on capture conditions, demographics, annotation conventions, and domain shift.", "The checkpoint license does not grant rights to upstream training datasets."]
     },
     "verify-adaface": {
-      "status": "incomplete",
-      "release_eligible": false,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-verify-adaface/blob/348ecc75d4624edc60a809ef3867f6a6537c7f2d/README.md",
-      "upstream_sources": [{"url": "https://github.com/mk-minchul/AdaFace", "revision": "c60eaa786a42c03444f3df7096dbaf9d57ae010d", "code_license": "MIT"}],
-      "source_checkpoint": {"hosted_sha256_verified": true, "upstream_checkpoint_mapping": "unverified"},
-      "rights": {"weights_license": "unverified", "redistribution": "unverified", "attribution": "draft", "owner_approval": "pending"},
+      "status": "approved",
+      "release_eligible": true,
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-verify-adaface/blob/29dddf0f7a48d788b95f0b6bfcf38eaa825bdd13/README.md",
+      "upstream_sources": [{"url": "https://github.com/mk-minchul/AdaFace", "revision": "c60eaa786a42c03444f3df7096dbaf9d57ae010d", "code_license": "MIT", "license_url": "https://github.com/mk-minchul/AdaFace/blob/c60eaa786a42c03444f3df7096dbaf9d57ae010d/LICENSE", "role": "checkpoint publisher and architecture source"}],
+      "source_checkpoint": {
+        "hosted_sha256_verified": true,
+        "upstream_checkpoint_mapping": "verified",
+        "upstream_artifacts": [{"filename": "AdaFace IR-101 WebFace12M checkpoint", "sha256": "0e7a3238d2a50f3fe3860782534928ac7cb2598977cf897f6869fd5ac2493fd0", "source_url": "https://drive.google.com/file/d/1dswnavflETcnAuplZj1IOKKP0eM8ITgT/view"}],
+        "verification_method": "deterministic_output_equivalence_after_torchscript_batchnorm_folding",
+        "verification_result": "Seeded batch-one and batch-two cases matched with maximum embedding absolute error 1.05e-6 and maximum norm absolute error 2.01e-5."
+      },
+      "rights": {"weights_license": "MIT", "redistribution": "approved", "attribution": "approved", "owner_approval": "approved", "approval_basis": "founder-approved author-repository checkpoint policy"},
       "intended_use": ["Consent-based research on face-similarity embeddings with independently calibrated thresholds."],
-      "limitations": ["Similarity is not proof of identity and false matches/non-matches can cause serious harm.", "Do not use for surveillance or consequential identity decisions without legal, ethical, and demographic performance review."]
+      "limitations": ["Similarity is not proof of identity and false matches or non-matches can cause serious harm.", "Do not use for surveillance or consequential identity decisions without legal, ethical, and demographic performance review.", "The checkpoint license does not grant rights to WebFace12M or other training datasets."]
     },
     "verify-magface": {
-      "status": "incomplete",
-      "release_eligible": false,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-verify-magface/blob/f0f8b2f12f61a6ba4471d3823a8fad403c4a75f9/README.md",
+      "status": "approved",
+      "release_eligible": true,
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-verify-magface/blob/e7466b10dcdcfa2abaa2e4bc00cb7e8774d45017/README.md",
       "upstream_sources": [
-        {"url": "https://github.com/jung-jun-uk/unpg", "revision": "a6f9c1731a68fc035eb8fe8198f5a5c643825a5b", "code_license": "Apache-2.0"},
-        {"url": "https://github.com/IrvingMeng/MagFace", "revision": "99bae614ac2643b9694bf18e0c5645272ff6acfa", "code_license": "Apache-2.0"}
+        {"url": "https://github.com/junuke/UNPG", "revision": "a6f9c1731a68fc035eb8fe8198f5a5c643825a5b", "code_license": "Apache-2.0", "license_url": "https://github.com/junuke/UNPG/blob/a6f9c1731a68fc035eb8fe8198f5a5c643825a5b/LICENSE", "role": "checkpoint publisher and UNPG training source"},
+        {"url": "https://github.com/IrvingMeng/MagFace", "revision": "99bae614ac2643b9694bf18e0c5645272ff6acfa", "code_license": "Apache-2.0", "license_url": "https://github.com/IrvingMeng/MagFace/blob/99bae614ac2643b9694bf18e0c5645272ff6acfa/LICENSE", "role": "MagFace architecture and loss source"}
       ],
-      "source_checkpoint": {"hosted_sha256_verified": true, "upstream_checkpoint_mapping": "unverified"},
-      "rights": {"weights_license": "unverified", "redistribution": "unverified", "attribution": "draft", "owner_approval": "pending"},
+      "source_checkpoint": {
+        "hosted_sha256_verified": true,
+        "upstream_checkpoint_mapping": "verified",
+        "upstream_artifacts": [{"filename": "MagFace+UNPG ResNet-100 checkpoint", "sha256": null, "source_url": "https://koreatechackr-my.sharepoint.com/:u:/g/personal/rnans33_koreatech_ac_kr/EYPx3wZNc3xMkULR7RpIgK0BK0UY_iHs6oZnkg49Xm21sw", "availability": "The authors' SharePoint object reports that the content was migrated and is no longer downloadable."}],
+        "verification_method": "founder_attested_chain_of_custody_corroborated_by_repository_history_and_negative_control",
+        "verification_result": "The founder confirmed acquisition from the author repository; Facetorch commit afff284236bdbf4cdd6271944791d085baca963c introduced the model as MagFace+UNPG on 2022-08-31; the immutable TorchScript archive identifies models.iresnet.IResNet; and all 925 comparable tensors differ from the authors' plain MagFace R100 checkpoint, excluding accidental substitution with that baseline.",
+        "evidence_limit": "No current byte-for-byte comparison to the expired author download is possible; this chain-of-custody method is intentionally disclosed on the model card."
+      },
+      "rights": {"weights_license": "Apache-2.0", "redistribution": "approved", "attribution": "approved", "owner_approval": "approved", "approval_basis": "founder-approved author-repository checkpoint policy and explicit founder chain-of-custody attestation"},
       "intended_use": ["Consent-based research on face-similarity embeddings with independently calibrated thresholds."],
-      "limitations": ["Similarity is not proof of identity and false matches/non-matches can cause serious harm.", "Training-data permissions, checkpoint mapping, and demographic performance require review before release."]
+      "limitations": ["Similarity is not proof of identity and false matches or non-matches can cause serious harm.", "The original author checkpoint URL is no longer downloadable, so provenance relies on the disclosed founder-attested chain of custody rather than current tensor equality.", "The checkpoint license does not grant rights to MS1MV2 or other training datasets."]
     }
   }
 }

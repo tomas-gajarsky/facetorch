@@ -7,7 +7,7 @@ downloader:
   repo_id: tomas-gajarsky/facetorch-verify-magface  # HuggingFace repo ID
   filename: model.pt2  # Filename in the HuggingFace repo
   manifest_id: verify-magface
-  revision: f0f8b2f12f61a6ba4471d3823a8fad403c4a75f9
+  revision: e7466b10dcdcfa2abaa2e4bc00cb7e8774d45017
   sha256: c219b43378a3a6020d193bf71def35fad8db04acf696c422f7daa7514c3fa5a3
   size_bytes: 261287852
   offline: ${offline}
