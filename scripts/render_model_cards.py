@@ -26,7 +26,7 @@ class ModelCardError(RuntimeError):
 def _read_json(path: Path) -> dict[str, Any]:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise ModelCardError(f"Cannot read JSON contract document: {path}") from exc
     if not isinstance(value, dict):
         raise ModelCardError(f"JSON document must contain an object: {path}")
@@ -140,6 +140,10 @@ def _validate_model_governance(
             f"Model {model_id} governance is missing required fields: "
             + ", ".join(missing)
         )
+    if governance["status"] != "approved":
+        raise ModelCardError(f"Model {model_id} governance status must be approved")
+    if governance["release_eligible"] is not True:
+        raise ModelCardError(f"Model {model_id} release_eligible must be true")
 
     rights = governance["rights"]
     required_rights = {
@@ -156,6 +160,11 @@ def _validate_model_governance(
             f"Model {model_id} rights are missing required fields: "
             + ", ".join(missing_rights)
         )
+    for name in ("redistribution", "attribution", "owner_approval"):
+        if rights[name] != "approved":
+            raise ModelCardError(
+                f"Model {model_id} rights.{name} must be approved"
+            )
 
     sources = governance["upstream_sources"]
     if not isinstance(sources, list) or not sources:
@@ -185,6 +194,8 @@ def _validate_model_governance(
 
     checkpoint = governance["source_checkpoint"]
     required_checkpoint = {
+        "hosted_sha256_verified",
+        "upstream_checkpoint_mapping",
         "upstream_artifacts",
         "verification_method",
         "verification_result",
@@ -198,6 +209,14 @@ def _validate_model_governance(
         raise ModelCardError(
             f"Model {model_id} source_checkpoint is missing required fields: "
             + ", ".join(missing_checkpoint)
+        )
+    if checkpoint["upstream_checkpoint_mapping"] != "verified":
+        raise ModelCardError(
+            f"Model {model_id} upstream checkpoint mapping must be verified"
+        )
+    if checkpoint["hosted_sha256_verified"] is not True:
+        raise ModelCardError(
+            f"Model {model_id} hosted SHA-256 verification must be true"
         )
 
     for name in ("intended_use", "limitations"):
@@ -495,6 +514,14 @@ def render_model_documents(
         )
     if governance.get("status") != "approved":
         raise ModelCardError("Model cards may be published only from approved governance")
+    license_policy = governance.get("license_policy")
+    if (
+        not isinstance(license_policy, Mapping)
+        or license_policy.get("status") != "approved"
+    ):
+        raise ModelCardError(
+            "Model cards may be published only from an approved license policy"
+        )
     approved_on = str(governance.get("approved_on", "")).strip()
     if not approved_on:
         raise ModelCardError("Approved governance must record approved_on")
@@ -503,8 +530,6 @@ def render_model_documents(
     for model_id in sorted(models):
         record = records[model_id]
         _validate_model_governance(model_id, record)
-        if record.get("status") != "approved" or not record.get("release_eligible"):
-            raise ModelCardError(f"Model governance is not approved: {model_id}")
         values = {
             "README.md": _render_card(
                 model_id,
