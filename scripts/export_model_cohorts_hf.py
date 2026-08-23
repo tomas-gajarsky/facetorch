@@ -95,6 +95,12 @@ def _write_json_atomic(path: Path, value: Any) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def _ensure_runtime_directory(path: Path) -> None:
+    """Create an exported-artifact directory readable by non-owner runtimes."""
+    path.mkdir(parents=True, exist_ok=True)
+    path.chmod(0o755)
+
+
 def _module_version(module_name: str) -> str | None:
     try:
         module = importlib.import_module(module_name)
@@ -1958,7 +1964,7 @@ def _run_for_specs(
 
             if mode == "export":
                 out_dir = out_root / spec["id"]
-                out_dir.mkdir(parents=True, exist_ok=True)
+                _ensure_runtime_directory(out_dir)
                 artifact_path = out_dir / f"model-torch{cohort}.pt2"
                 if spec.get("strategy") == "reuse_existing_exported_program":
                     source_path = Path(spec["source_path"])
@@ -2185,7 +2191,7 @@ def main():
 
     if args.command == "export":
         out_root = Path(args.out_root).resolve()
-        out_root.mkdir(parents=True, exist_ok=True)
+        _ensure_runtime_directory(out_root)
         summary, failures = _run_for_specs(
             specs=specs,
             mode="export",

@@ -118,7 +118,7 @@ jobs:
             --tag "facetorch:gpu-${SOURCE_SHA}" .
       - name: Run full default analyzer in both production images
         run: |
-          install -d -m 0777 "$FACETORCH_STAGING/container-reports"
+          install -d -m 1777 "$FACETORCH_STAGING/container-reports"
           docker run --rm --network none --read-only \
             --tmpfs /tmp:rw,noexec,nosuid,size=4g \
             --volume "$GITHUB_WORKSPACE:/release-source:ro" \

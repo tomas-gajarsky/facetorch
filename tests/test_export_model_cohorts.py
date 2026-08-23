@@ -1,4 +1,5 @@
 import hashlib
+import os
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -364,6 +365,37 @@ def _patch_export_pipeline(monkeypatch, validation_status="ok"):
         "_validate_exported_module",
         lambda *_args, **_kwargs: _validation_result(validation_status),
     )
+
+
+@pytest.mark.release_blocker
+def test_export_directories_are_traversable_with_restrictive_umask(
+    tmp_path, monkeypatch
+):
+    _patch_export_pipeline(monkeypatch, validation_status="ok")
+    out_root = tmp_path / "out"
+    previous_umask = os.umask(0o077)
+    try:
+        exporter._ensure_runtime_directory(out_root)
+        _summary, failures = _run_for_specs(
+            specs=[{"id": "model-a", "repo_id": "owner/model-a"}],
+            mode="export",
+            repo_root=Path.cwd(),
+            cohort="2.6",
+            out_root=out_root,
+            artifacts_root=tmp_path / "artifacts",
+            upload=False,
+            hf_token_env="B01_UNUSED_TOKEN",
+            batch_sizes=[1],
+            seeds=[0],
+            scales=[1.0],
+            validate_devices=["cpu", "cuda"],
+        )
+    finally:
+        os.umask(previous_umask)
+
+    assert failures == []
+    assert out_root.stat().st_mode & 0o777 == 0o755
+    assert (out_root / "model-a").stat().st_mode & 0o777 == 0o755
 
 
 @pytest.mark.release_blocker
