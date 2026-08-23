@@ -212,6 +212,11 @@ def test_renderer_rejects_unapproved_governance(tmp_path, monkeypatch):
             "release_eligible must be true",
         ),
         (
+            ("models", "detector-retinaface", "release_eligible"),
+            1,
+            "release_eligible must be true",
+        ),
+        (
             (
                 "models",
                 "detector-retinaface",
@@ -254,6 +259,16 @@ def test_renderer_rejects_unapproved_governance(tmp_path, monkeypatch):
                 "hosted_sha256_verified",
             ),
             False,
+            "hosted SHA-256 verification must be true",
+        ),
+        (
+            (
+                "models",
+                "detector-retinaface",
+                "source_checkpoint",
+                "hosted_sha256_verified",
+            ),
+            "true",
             "hosted SHA-256 verification must be true",
         ),
     ],
