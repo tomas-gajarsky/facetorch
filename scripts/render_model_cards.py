@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 from typing import Any, Mapping
@@ -14,6 +15,7 @@ CATALOG_PATH = REPO_ROOT / "model_cards" / "catalog.json"
 MANIFEST_PATH = REPO_ROOT / "facetorch" / "models" / "manifest.json"
 GOVERNANCE_PATH = REPO_ROOT / "facetorch" / "models" / "governance.json"
 SPDX_TAGS = {"MIT": "mit", "Apache-2.0": "apache-2.0"}
+UPSTREAM_LICENSE_ROOT = (REPO_ROOT / "model_cards" / "upstream_licenses").resolve()
 
 
 class ModelCardError(RuntimeError):
@@ -31,41 +33,55 @@ def _markdown(value: Any) -> str:
     return str(value).replace("|", "\\|").replace("\n", " ")
 
 
-def _mit_license(copyright_notice: str) -> str:
-    return f"""MIT License
+def _source_license_bytes(source: Mapping[str, Any]) -> bytes:
+    relative = Path(str(source.get("license_file", "")))
+    if not relative.parts or relative.is_absolute() or ".." in relative.parts:
+        raise ModelCardError(f"Invalid upstream license file: {relative}")
+    path = (REPO_ROOT / relative).resolve()
+    project_license = (REPO_ROOT / "LICENSE").resolve()
+    if path != project_license and not path.is_relative_to(UPSTREAM_LICENSE_ROOT):
+        raise ModelCardError(f"Upstream license file leaves its allowed roots: {path}")
+    data = path.read_bytes()
+    if source.get("license_strip_final_newline"):
+        if not data.endswith(b"\n"):
+            raise ModelCardError(f"Expected one normalized final newline in {path}")
+        data = data[:-1]
+    expected_digest = str(source.get("license_sha256", ""))
+    actual_digest = hashlib.sha256(data).hexdigest()
+    if actual_digest != expected_digest:
+        raise ModelCardError(
+            f"Upstream license digest mismatch for {source.get('license_url')}: "
+            f"expected {expected_digest}, got {actual_digest}"
+        )
+    revision = str(source.get("revision", ""))
+    if revision not in str(source.get("license_url", "")):
+        raise ModelCardError("Upstream license URL is not bound to its revision")
+    try:
+        data.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ModelCardError(f"Upstream license is not UTF-8: {path}") from exc
+    return data
 
-{copyright_notice}
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the \"Software\"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
-
-
-def _license_text(model: Mapping[str, Any], rights: Mapping[str, Any]) -> str:
-    license_id = rights["weights_license"]
-    if license_id == "Apache-2.0":
-        return (REPO_ROOT / "LICENSE").read_text(encoding="utf-8")
-    if license_id == "MIT":
-        notice = str(model.get("license_copyright", "")).strip()
-        if not notice:
-            raise ModelCardError("MIT model is missing its copyright notice")
-        return _mit_license(notice)
-    raise ModelCardError(f"Unsupported weights license: {license_id!r}")
+def _license_bytes(governance: Mapping[str, Any]) -> bytes:
+    license_id = governance["rights"]["weights_license"]
+    sources = [
+        source
+        for source in governance["upstream_sources"]
+        if source.get("license_role") == "weights"
+    ]
+    if not sources:
+        raise ModelCardError("Model has no weights-license source")
+    texts = []
+    for source in sources:
+        if source.get("code_license") != license_id:
+            raise ModelCardError(
+                f"Weights license {license_id} disagrees with {source.get('url')}"
+            )
+        texts.append(_source_license_bytes(source))
+    if any(text != texts[0] for text in texts[1:]):
+        raise ModelCardError("Weights-license sources do not contain identical text")
+    return texts[0]
 
 
 def _artifact_table(model: Mapping[str, Any]) -> list[str]:
@@ -253,7 +269,6 @@ def _render_card(
 
 def _render_notices(
     model_id: str,
-    card: Mapping[str, Any],
     governance: Mapping[str, Any],
 ) -> str:
     lines = [
@@ -265,53 +280,75 @@ def _render_notices(
         "",
         *_source_table(governance),
     ]
-    for notice in card.get("additional_mit_notices", []):
+    for source in governance["upstream_sources"]:
+        if source.get("license_role") != "notice":
+            continue
+        name = str(source["url"]).rstrip("/").rsplit("/", 1)[-1]
+        license_text = _source_license_bytes(source).decode("utf-8").rstrip("\n")
         lines.extend(
             [
                 "",
-                f"## {notice['name']} — MIT",
+                f"## {name} — {source['code_license']}",
                 "",
-                f"Source: {notice['url']}",
+                f"Source: {source['url']}",
                 "",
-                _mit_license(str(notice["copyright"])).rstrip(),
+                f"Pinned license: {source['license_url']}",
+                "",
+                license_text,
             ]
         )
     lines.append("")
     return "\n".join(lines)
 
 
-def render_model_cards(output_root: Path) -> dict[str, list[str]]:
+def render_model_documents(
+    manifest_path: Path = MANIFEST_PATH,
+    *,
+    require_complete_contract: bool = True,
+) -> dict[str, dict[str, bytes]]:
+    """Return release-bound Hub documents without touching the filesystem."""
     catalog = _read_json(CATALOG_PATH)
-    manifest = _read_json(MANIFEST_PATH)
+    manifest = _read_json(manifest_path)
     governance = _read_json(GOVERNANCE_PATH)
     cards = catalog.get("models", {})
     models = manifest.get("models", {})
     records = governance.get("models", {})
-    if not cards or set(cards) != set(models) or set(records) != set(models):
+    model_ids = set(models)
+    complete = set(cards) == model_ids and set(records) == model_ids
+    covered = model_ids <= set(cards) and model_ids <= set(records)
+    if not model_ids or (require_complete_contract and not complete) or not covered:
         raise ModelCardError(
-            "Catalog, manifest, and governance must cover exactly the same models"
+            "Catalog and governance do not cover the requested manifest models"
         )
     if governance.get("status") != "approved":
         raise ModelCardError("Model cards may be published only from approved governance")
 
-    rendered: dict[str, list[str]] = {}
+    rendered: dict[str, dict[str, bytes]] = {}
     for model_id in sorted(models):
         record = records[model_id]
         if record.get("status") != "approved" or not record.get("release_eligible"):
             raise ModelCardError(f"Model governance is not approved: {model_id}")
-        model_root = output_root / model_id
-        model_root.mkdir(parents=True, exist_ok=True)
         values = {
             "README.md": _render_card(
                 model_id, cards[model_id], models[model_id], record
-            ),
-            "LICENSE": _license_text(cards[model_id], record["rights"]),
+            ).encode("utf-8"),
+            "LICENSE": _license_bytes(record),
             "THIRD_PARTY_NOTICES.md": _render_notices(
-                model_id, cards[model_id], record
-            ),
+                model_id, record
+            ).encode("utf-8"),
         }
+        rendered[model_id] = values
+    return rendered
+
+
+def render_model_cards(output_root: Path) -> dict[str, list[str]]:
+    documents = render_model_documents()
+    rendered: dict[str, list[str]] = {}
+    for model_id, values in documents.items():
+        model_root = output_root / model_id
+        model_root.mkdir(parents=True, exist_ok=True)
         for filename, value in values.items():
-            (model_root / filename).write_text(value, encoding="utf-8")
+            (model_root / filename).write_bytes(value)
         rendered[model_id] = sorted(values)
     return rendered
 

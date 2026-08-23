@@ -10,7 +10,6 @@
       "preprocessing": "Convert RGB to BGR and subtract channel means [123, 117, 104]. Facetorch performs this preprocessing.",
       "output": "Sequence of bounding-box regressions [batch, anchors, 4], class probabilities [batch, anchors, 2], and five-point landmark regressions [batch, anchors, 10].",
       "dynamic_shapes": "Batch 1 for the release contract; height and width are dynamic multiples of 32.",
-      "license_copyright": "Copyright (c) 2019",
       "papers": [{"title": "RetinaFace: Single-Shot Multi-Level Face Localisation in the Wild", "url": "https://arxiv.org/abs/1905.00641"}]
     },
     "align-synergynet": {
@@ -22,7 +21,6 @@
       "preprocessing": "Resize the Facetorch face crop to 120 by 120; no additional normalization is configured.",
       "output": "62 values per face: 12 pose, 40 shape, and 10 expression coefficients.",
       "dynamic_shapes": "Batch dimension 1 through 64.",
-      "license_copyright": "Copyright (c) 2021 Cho Ying Wu",
       "papers": [{"title": "Synergy between 3DMM and 3D Landmarks for Accurate 3D Facial Geometry", "url": "https://arxiv.org/abs/2110.09772"}]
     },
     "au-opengraph": {
@@ -34,8 +32,7 @@
       "preprocessing": "Resize to 224 by 224 and apply ImageNet mean [0.485, 0.456, 0.406] and standard deviation [0.229, 0.224, 0.225].",
       "output": "41 scores in [0, 1]: 27 primary and 14 side-specific facial action units.",
       "dynamic_shapes": "Batch dimension 1 through 64; Facetorch validates the legacy reference per face before batching.",
-      "papers": [{"title": "Learning Multi-dimensional Edge Feature-based AU Relation Graph for Facial Action Unit Recognition", "url": "https://arxiv.org/abs/2205.01782"}],
-      "additional_mit_notices": [{"name": "ME-GraphAU", "copyright": "Copyright (c) 2022 lingjivoo", "url": "https://github.com/CVI-SZU/ME-GraphAU"}]
+      "papers": [{"title": "Learning Multi-dimensional Edge Feature-based AU Relation Graph for Facial Action Unit Recognition", "url": "https://arxiv.org/abs/2205.01782"}]
     },
     "deepfake-efficientnet-b7": {
       "title": "EfficientNet-B7 deepfake detector",
@@ -46,7 +43,6 @@
       "preprocessing": "Resize to 380 by 380 and apply ImageNet mean [0.485, 0.456, 0.406] and standard deviation [0.229, 0.224, 0.225].",
       "output": "One binary logit per face; Facetorch applies sigmoid and a configurable decision threshold.",
       "dynamic_shapes": "Batch dimension 1 through 64.",
-      "license_copyright": "Copyright (c) 2020 Selim Seferbekov",
       "papers": []
     },
     "embed-resnet50": {
@@ -58,9 +54,7 @@
       "preprocessing": "Resize to 244 by 244 and apply mean [0.485, 0.456, 0.406] and standard deviation [0.228, 0.224, 0.225], matching the Facetorch contract.",
       "output": "A normalized 128-dimensional representation and 3,000 projection logits.",
       "dynamic_shapes": "Batch dimension 1 through 64.",
-      "license_copyright": "Copyright (c) 2022",
-      "papers": [{"title": "Pre-training strategies and datasets for facial representation learning", "url": "http://www.adrianbulat.com/downloads/ECCV2022/face_representation_learning.pdf"}],
-      "additional_mit_notices": [{"name": "VGGFace2-pytorch architecture reference", "copyright": "Copyright (c) 2018 cydonia", "url": "https://github.com/cydonia999/VGGFace2-pytorch"}]
+      "papers": [{"title": "Pre-training strategies and datasets for facial representation learning", "url": "http://www.adrianbulat.com/downloads/ECCV2022/face_representation_learning.pdf"}]
     },
     "fer-efficientnet-b0": {
       "title": "EfficientNet-B0 facial-expression classifier",
@@ -93,7 +87,6 @@
       "preprocessing": "Resize to 224 by 224 and apply ImageNet mean [0.485, 0.456, 0.406] and standard deviation [0.229, 0.224, 0.225].",
       "output": "Two values ordered as valence and arousal.",
       "dynamic_shapes": "Batch dimension 1 through 64.",
-      "license_copyright": "Copyright (c) 2023 Daeha Kim",
       "papers": [{"title": "Optimal Transport-based Identity Matching for Identity-invariant Facial Expression Recognition", "url": "https://arxiv.org/abs/2209.12172"}]
     },
     "verify-adaface": {
@@ -105,7 +98,6 @@
       "preprocessing": "Resize to 112 by 112, convert RGB to BGR, then normalize with mean and standard deviation [0.5, 0.5, 0.5].",
       "output": "A normalized 512-dimensional embedding and one pre-normalization feature norm per face.",
       "dynamic_shapes": "Batch dimension 1 through 64.",
-      "license_copyright": "Copyright (c) 2022 Minchul Kim",
       "papers": [{"title": "AdaFace: Quality Adaptive Margin for Face Recognition", "url": "https://arxiv.org/abs/2204.00964"}]
     },
     "verify-magface": {

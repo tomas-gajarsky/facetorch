@@ -8,7 +8,7 @@ downloader:
   repo_id: tomas-gajarsky/facetorch-detector-retinaface  # HuggingFace repo ID
   filename: model.pt2  # Filename in the HuggingFace repo
   manifest_id: detector-retinaface
-  revision: d54b36dcece4d778d1b6d09875ab1d60efe42cef
+  revision: 4dfd78263b94966ef27643dcec60a800701170c7
   sha256: 6588c6eaf7b0e342b72f89b5a221e7ecb8c0158e5de1b95d0111ba406decad7c
   size_bytes: 110323020
   offline: ${offline}

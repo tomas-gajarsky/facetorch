@@ -12,6 +12,7 @@ from facetorch.artifacts import ArtifactManifest, get_model_manifest
 from facetorch.exceptions import ConfigurationError, ModelCompatibilityError
 from scripts.audit_model_manifest_hf import audit_remote_manifest
 from scripts.export_model_cohorts_hf import _environment_metadata, _model_specs
+from scripts.render_model_cards import render_model_documents
 from scripts.verify_model_release_matrix import (
     ReleaseMatrixError,
     verify_release_matrix,
@@ -376,7 +377,9 @@ def test_environment_metadata_records_schema_lock_source_and_cuda():
     assert environment["platform"]["system"]
 
 
-def test_hub_inventory_uses_lfs_sha_and_immutable_revision(tmp_path):
+def test_hub_inventory_uses_lfs_sha_immutable_revision_and_exact_legal_files(
+    tmp_path,
+):
     manifest = _json(MANIFEST_PATH)
     model_id, model = next(iter(manifest["models"].items()))
     one_model_manifest = dict(manifest)
@@ -384,12 +387,16 @@ def test_hub_inventory_uses_lfs_sha_and_immutable_revision(tmp_path):
     manifest_path = tmp_path / "manifest.json"
     manifest_path.write_text(json.dumps(one_model_manifest), encoding="utf-8")
 
-    metadata_files = {}
-    siblings = [
-        SimpleNamespace(rfilename="README.md", size=1, lfs=None),
-        SimpleNamespace(rfilename="LICENSE", size=1, lfs=None),
-        SimpleNamespace(rfilename="THIRD_PARTY_NOTICES.md", size=1, lfs=None),
-    ]
+    download_files = {}
+    siblings = []
+    legal_documents = render_model_documents()[model_id]
+    for filename, contents in legal_documents.items():
+        path = tmp_path / f"legal-{filename}"
+        path.write_bytes(contents)
+        download_files[filename] = path
+        siblings.append(
+            SimpleNamespace(rfilename=filename, size=len(contents), lfs=None)
+        )
     for artifact in model["artifacts"]:
         siblings.append(
             SimpleNamespace(
@@ -403,7 +410,7 @@ def test_hub_inventory_uses_lfs_sha_and_immutable_revision(tmp_path):
             siblings.append(SimpleNamespace(rfilename=filename, size=1, lfs=None))
             path = tmp_path / filename
             path.write_text(json.dumps({"legacy": True}), encoding="utf-8")
-            metadata_files[filename] = path
+            download_files[filename] = path
 
     class FakeApi:
         def model_info(self, repo_id, revision, files_metadata):
@@ -413,7 +420,9 @@ def test_hub_inventory_uses_lfs_sha_and_immutable_revision(tmp_path):
             return SimpleNamespace(sha=revision, siblings=siblings)
 
     def fake_download(*, repo_id, filename, revision):
-        return str(metadata_files[filename])
+        assert repo_id == model["repo_id"]
+        assert revision == model["revision"]
+        return str(download_files[filename])
 
     report = audit_remote_manifest(
         manifest_path,
@@ -426,3 +435,27 @@ def test_hub_inventory_uses_lfs_sha_and_immutable_revision(tmp_path):
         artifact["lfs_oid_verified"]
         for artifact in report["results"][0]["artifacts"]
     )
+    assert all(
+        document["bytes_verified"]
+        for document in report["results"][0]["legal_documents"]
+    )
+
+    mutations = {
+        "README.md": b"x" * len(legal_documents["README.md"]),
+        "LICENSE": b"",
+        "THIRD_PARTY_NOTICES.md": b"?"
+        * len(legal_documents["THIRD_PARTY_NOTICES.md"]),
+    }
+    for filename, mutation in mutations.items():
+        path = download_files[filename]
+        original = path.read_bytes()
+        path.write_bytes(mutation)
+        failed = audit_remote_manifest(
+            manifest_path,
+            require_current_metadata=False,
+            api=FakeApi(),
+            download_fn=fake_download,
+        )
+        assert failed["status"] == "failed"
+        assert filename in failed["failures"][0]["error"]
+        path.write_bytes(original)

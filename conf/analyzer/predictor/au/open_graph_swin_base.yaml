@@ -7,7 +7,7 @@ downloader:
   repo_id: tomas-gajarsky/facetorch-au-opengraph  # HuggingFace repo ID
   filename: model.pt2  # Filename in the HuggingFace repo
   manifest_id: au-opengraph
-  revision: c5abf03a4ef39453c90540255ba8a73764c4948c
+  revision: 280fcd634108f43beab7dc7c2a1d2f751f462ee0
   sha256: 8ededd74d36a0b552d4a5e48f2dd32395ec483a974944bcbae7b09d65ae6d728
   size_bytes: 386589989
   offline: ${offline}
