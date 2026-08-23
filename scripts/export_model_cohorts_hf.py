@@ -1155,23 +1155,23 @@ def _model_specs(torch_minor: str) -> List[Dict[str, Any]]:
         },
     ]
 
-    source_revisions = {
-        "detector-retinaface": "4dfd78263b94966ef27643dcec60a800701170c7",
-        "align-synergynet": "51cf3068635436edd18aedda5b8d8dd12a17473d",
-        "au-opengraph": "280fcd634108f43beab7dc7c2a1d2f751f462ee0",
-        "deepfake-efficientnet-b7": "4acc494f37eb63d7457166eff2acb45c5b04b9a6",
-        "embed-resnet50": "5409f78343d372b16bff024b93a0cffbe3a61aa4",
-        "fer-efficientnet-b0": "4eed534b4f90f20a8dd5919de8d8636cdbb6abde",
-        "fer-efficientnet-b2": "ca9a1856b1ab1269f3335ddebcebc69ef747086a",
-        "va-elim": "d71aafca2b4cb460147b66cc4d544feebb496df9",
-        "verify-adaface": "71d5f83de703ec4686121e70e3b7061575b9354a",
-        "verify-magface": "e7466b10dcdcfa2abaa2e4bc00cb7e8774d45017",
-    }
+    manifest_path = (
+        Path(__file__).resolve().parents[1]
+        / "facetorch"
+        / "models"
+        / "manifest.json"
+    )
+    manifest_models = json.loads(manifest_path.read_text(encoding="utf-8"))["models"]
     for spec in specs:
         reference = spec["validation_reference"]
+        manifest_model = manifest_models[spec["id"]]
+        if spec["repo_id"] != manifest_model["repo_id"]:
+            raise RuntimeError(
+                f"Exporter repo ID disagrees with manifest for {spec['id']}"
+            )
         spec["source_artifact"] = {
             "repo_id": spec["repo_id"],
-            "revision": source_revisions[spec["id"]],
+            "revision": manifest_model["revision"],
             "filename": "model.pt",
             "sha256": reference["sha256"],
         }

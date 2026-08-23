@@ -50,10 +50,28 @@ def audit_remote_manifest(
         download_fn = download_fn or hf_hub_download
 
     manifest = _read_json(manifest_path)
-    expected_legal_documents = render_model_documents(
-        manifest_path,
-        require_complete_contract=False,
-    )
+    try:
+        expected_legal_documents = render_model_documents(
+            manifest_path,
+            require_complete_contract=False,
+        )
+    except Exception as exc:
+        return {
+            "schema_version": 1,
+            "status": "failed",
+            "manifest_revision": manifest.get("manifest_revision"),
+            "download_artifacts": download_artifacts,
+            "require_current_metadata": require_current_metadata,
+            "results": [],
+            "failures": [
+                {
+                    "model_id": "model-card-contract",
+                    "repo_id": None,
+                    "error_type": type(exc).__name__,
+                    "error": str(exc),
+                }
+            ],
+        }
     results = []
     failures = []
     for model_id, model in sorted(manifest.get("models", {}).items()):

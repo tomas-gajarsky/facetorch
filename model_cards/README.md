@@ -25,10 +25,12 @@ upstream whitespace and notices exactly as received rather than reconstructed
 or completed speculatively.
 
 Remote publication is a guarded owner operation. Verify every model repository's
-current commit against the parent revision in the packaged manifest, commit the
-three rendered files together, and then replace every packaged/configured source
-revision with the resulting immutable commit. The Hub audit downloads all three
-files at that revision and rejects missing, empty, stale, or byte-different
+current commit against the parent revision in the packaged manifest. For a cohort
+update, publish model artifacts first, update their filenames, sizes, and digests
+in `manifest.json`, and only then render the cards. Commit the three rendered files
+together, replace every packaged/configured source revision and `license_ref` with
+the resulting immutable commit, and run the Hub audit. The audit downloads all
+three files at that revision and rejects missing, empty, stale, or byte-different
 content.
 
 Model-card publication does not publish or approve cohort validation metadata.
