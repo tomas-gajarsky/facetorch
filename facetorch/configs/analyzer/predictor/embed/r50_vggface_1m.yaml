@@ -7,7 +7,7 @@ downloader:
   repo_id: tomas-gajarsky/facetorch-embed-resnet-50  # HuggingFace repo ID
   filename: model.pt2  # Filename in the HuggingFace repo
   manifest_id: embed-resnet50
-  revision: e98f06a0c724e7dfd893b12d94165444978a449e
+  revision: bc34670af5891331ad005c2030800d3be9d563a3
   sha256: e09098cc36d7d03189319185f62708fa144c02cdd6e6bb5c5ab3698d1a034bc5
   size_bytes: 114114903
   offline: ${offline}

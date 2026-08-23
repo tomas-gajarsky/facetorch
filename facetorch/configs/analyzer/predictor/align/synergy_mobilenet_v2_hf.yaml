@@ -7,7 +7,7 @@ downloader:
   repo_id: tomas-gajarsky/facetorch-align-synergynet  # HuggingFace repo ID
   filename: model.pt2  # Filename in the HuggingFace repo
   manifest_id: align-synergynet
-  revision: f90c6d92f0ac022660b80079210d3cdeb46bb1e6
+  revision: 51cf3068635436edd18aedda5b8d8dd12a17473d
   sha256: e88114af7c196d5f449b9f7f01573aaedcc476f4e9eeff0861fbd939c5a38c42
   size_bytes: 9791668
   offline: ${offline}

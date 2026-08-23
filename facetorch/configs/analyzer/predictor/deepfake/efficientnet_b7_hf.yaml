@@ -7,7 +7,7 @@ downloader:
   repo_id: tomas-gajarsky/facetorch-deepfake-efficientnet-b7  # HuggingFace repo ID
   filename: model.pt2  # Filename in the HuggingFace repo
   manifest_id: deepfake-efficientnet-b7
-  revision: 3ecdd5193f7e981b7f3dad2407658c5456ae671c
+  revision: 4acc494f37eb63d7457166eff2acb45c5b04b9a6
   sha256: 620005edfc682011b52806f56d8fcd8200691215461b00e04de09a344e21a467
   size_bytes: 268598190
   offline: ${offline}

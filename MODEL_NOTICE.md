@@ -15,12 +15,21 @@ The authoritative, release-bound records are:
 - `facetorch/models/compatibility.json` for the tested runtime and device
   matrix.
 
-Do not infer a weight license from an upstream code-repository license or a
-model-card label. A model is eligible for a Facetorch release only when all of
-its rights and provenance fields are verified, redistribution and attribution
-are approved, and the release manifest binds the exact reviewed bytes. The
-current v1 working-tree records are deliberately marked incomplete and therefore
-fail the publication gate until that review is finished.
+On 2026-08-23, the repository owner approved the following policy for the ten
+manifested models: when the original authors published a checkpoint from the
+same permissively licensed repository and supplied no separate checkpoint
+terms, that checkpoint uses the repository license. This is an artifact-specific
+rights determination backed by the recorded source mapping; it is not a general
+instruction to infer weight rights from any code license. MIT and Apache-2.0 are
+preserved as received and are not converted or treated as interchangeable.
+
+The approved per-model rights and evidence are recorded in governance and in
+the generated Hugging Face cards. A model remains eligible only while its exact
+checkpoint mapping, redistribution, attribution, owner approval, license text,
+and immutable hosted bytes all remain bound. This approval does not license an
+upstream training dataset. The separate compatibility matrix and release
+manifest remain candidate records until a clean release commit passes the full
+CPU/CUDA release matrix and is published through the release transaction.
 
 Face-analysis outputs are probabilistic model signals. They are not proof of
 identity, authenticity, emotion, intent, health, or protected characteristics,

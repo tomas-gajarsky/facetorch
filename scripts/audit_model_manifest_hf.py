@@ -63,6 +63,18 @@ def audit_remote_manifest(
             siblings = {item.rfilename: item for item in info.siblings}
             if "README.md" not in siblings:
                 raise HubManifestError(f"{repo_id}@{revision} has no model card.")
+            for required_notice in ("LICENSE", "THIRD_PARTY_NOTICES.md"):
+                if required_notice not in siblings:
+                    raise HubManifestError(
+                        f"{repo_id}@{revision} has no {required_notice}."
+                    )
+            expected_license_ref = (
+                f"https://huggingface.co/{repo_id}/blob/{revision}/LICENSE"
+            )
+            if model.get("license_ref") != expected_license_ref:
+                raise HubManifestError(
+                    f"{repo_id}@{revision} has an unbound license reference."
+                )
 
             artifact_results = []
             for artifact in model["artifacts"]:

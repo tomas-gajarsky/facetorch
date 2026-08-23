@@ -24,7 +24,7 @@ analyzer:
       repo_id: tomas-gajarsky/facetorch-detector-retinaface
       filename: model.pt2
       manifest_id: detector-retinaface
-      revision: 2e1015f21f8c743ca6a356a1cba3223232096502
+      revision: d54b36dcece4d778d1b6d09875ab1d60efe42cef
       sha256: 6588c6eaf7b0e342b72f89b5a221e7ecb8c0158e5de1b95d0111ba406decad7c
       size_bytes: 110323020
       offline: ${offline}
@@ -115,7 +115,7 @@ analyzer:
         repo_id: tomas-gajarsky/facetorch-embed-resnet-50
         filename: model.pt2
         manifest_id: embed-resnet50
-        revision: e98f06a0c724e7dfd893b12d94165444978a449e
+        revision: bc34670af5891331ad005c2030800d3be9d563a3
         sha256: e09098cc36d7d03189319185f62708fa144c02cdd6e6bb5c5ab3698d1a034bc5
         size_bytes: 114114903
         offline: ${offline}
@@ -166,7 +166,7 @@ analyzer:
         repo_id: tomas-gajarsky/facetorch-verify-adaface
         filename: model.pt2
         manifest_id: verify-adaface
-        revision: 348ecc75d4624edc60a809ef3867f6a6537c7f2d
+        revision: 29dddf0f7a48d788b95f0b6bfcf38eaa825bdd13
         sha256: d8e127e3f111ca73d178c1b7f0393ba4829216518f212ae2dc70c84561d80130
         size_bytes: 261426464
         offline: ${offline}
@@ -217,7 +217,7 @@ analyzer:
         repo_id: tomas-gajarsky/facetorch-fer-efficientnet-b2
         filename: model.pt2
         manifest_id: fer-efficientnet-b2
-        revision: 2c9829a28c014e2f9b7a8ed683d1c7fd1631b18c
+        revision: ca9a1856b1ab1269f3335ddebcebc69ef747086a
         sha256: f9fee79f7a679427612d7818c5f0ef3edc974b6de09f58bd600ef4d9ba0df5b0
         size_bytes: 31950057
         offline: ${offline}
@@ -276,7 +276,7 @@ analyzer:
         repo_id: tomas-gajarsky/facetorch-au-opengraph
         filename: model.pt2
         manifest_id: au-opengraph
-        revision: 3284478cd26b09de911783df1d8fdbb01e037eb3
+        revision: c5abf03a4ef39453c90540255ba8a73764c4948c
         sha256: 8ededd74d36a0b552d4a5e48f2dd32395ec483a974944bcbae7b09d65ae6d728
         size_bytes: 386589989
         offline: ${offline}
@@ -369,7 +369,7 @@ analyzer:
         repo_id: tomas-gajarsky/facetorch-va-elim
         filename: model.pt2
         manifest_id: va-elim
-        revision: 62590460b05d96fb0aafbf71b0462b8b42901f6e
+        revision: d71aafca2b4cb460147b66cc4d544feebb496df9
         sha256: a6386185a10a5ba9e69f7fe69111edbf95bce85bad06b3f6858caf797ded4f87
         size_bytes: 20142372
         offline: ${offline}
@@ -424,7 +424,7 @@ analyzer:
         repo_id: tomas-gajarsky/facetorch-deepfake-efficientnet-b7
         filename: model.pt2
         manifest_id: deepfake-efficientnet-b7
-        revision: 3ecdd5193f7e981b7f3dad2407658c5456ae671c
+        revision: 4acc494f37eb63d7457166eff2acb45c5b04b9a6
         sha256: 620005edfc682011b52806f56d8fcd8200691215461b00e04de09a344e21a467
         size_bytes: 268598190
         offline: ${offline}
@@ -477,7 +477,7 @@ analyzer:
         repo_id: tomas-gajarsky/facetorch-align-synergynet
         filename: model.pt2
         manifest_id: align-synergynet
-        revision: f90c6d92f0ac022660b80079210d3cdeb46bb1e6
+        revision: 51cf3068635436edd18aedda5b8d8dd12a17473d
         sha256: e88114af7c196d5f449b9f7f01573aaedcc476f4e9eeff0861fbd939c5a38c42
         size_bytes: 9791668
         offline: ${offline}

@@ -97,15 +97,29 @@ def test_unsupported_torch_fails_before_even_explicit_legacy_fallback():
 
 
 @pytest.mark.release_blocker
-def test_provenance_records_cover_every_model_but_block_premature_approval():
+def test_provenance_records_approve_every_model_but_not_the_candidate_matrix():
     manifest_raw = _json(MANIFEST_PATH)
     compatibility = _json(COMPATIBILITY_PATH)
     governance = _json(GOVERNANCE_PATH)
     assert set(governance["models"]) == set(manifest_raw["models"])
-    assert governance["status"] == "incomplete"
+    assert governance["status"] == "approved"
+    assert governance["license_policy"]["status"] == "approved"
+    assert "not treated as interchangeable" in governance["license_policy"][
+        "no_license_conversion"
+    ]
     for model_id, record in governance["models"].items():
-        assert record["release_eligible"] is False, model_id
-        assert record["rights"]["weights_license"] == "unverified", model_id
+        assert record["status"] == "approved", model_id
+        assert record["release_eligible"] is True, model_id
+        assert record["source_checkpoint"]["upstream_checkpoint_mapping"] == (
+            "verified"
+        ), model_id
+        assert record["rights"]["weights_license"] in {
+            "MIT",
+            "Apache-2.0",
+        }, model_id
+        assert record["rights"]["redistribution"] == "approved", model_id
+        assert record["rights"]["attribution"] == "approved", model_id
+        assert record["rights"]["owner_approval"] == "approved", model_id
         assert record["limitations"], model_id
         assert record["intended_use"], model_id
 
@@ -371,7 +385,11 @@ def test_hub_inventory_uses_lfs_sha_and_immutable_revision(tmp_path):
     manifest_path.write_text(json.dumps(one_model_manifest), encoding="utf-8")
 
     metadata_files = {}
-    siblings = [SimpleNamespace(rfilename="README.md", size=1, lfs=None)]
+    siblings = [
+        SimpleNamespace(rfilename="README.md", size=1, lfs=None),
+        SimpleNamespace(rfilename="LICENSE", size=1, lfs=None),
+        SimpleNamespace(rfilename="THIRD_PARTY_NOTICES.md", size=1, lfs=None),
+    ]
     for artifact in model["artifacts"]:
         siblings.append(
             SimpleNamespace(

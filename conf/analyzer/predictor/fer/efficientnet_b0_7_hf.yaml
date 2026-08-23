@@ -8,7 +8,7 @@ downloader:
   repo_id: tomas-gajarsky/facetorch-fer-efficientnet-b0  # HuggingFace repo ID
   filename: model.pt2  # Filename in the HuggingFace repo
   manifest_id: fer-efficientnet-b0
-  revision: 3ddf81c0c80964e830ff0b0031b4eddd8d454cf7
+  revision: 4eed534b4f90f20a8dd5919de8d8636cdbb6abde
   sha256: de08f748aec83e4ba33e1b0cad01f89e71d313b6fd04a783870663e32f42caf7
   size_bytes: 17100729
   offline: ${offline}

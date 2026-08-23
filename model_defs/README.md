@@ -16,10 +16,10 @@ and can be loaded directly with `torch.export.load()`. They are kept here for:
 | `au_model.py` | `OpenGraphAU` | [lingjivoo/OpenGraphAU](https://github.com/lingjivoo/OpenGraphAU) | Action unit detection |
 | `deepfake_model.py` | `DeepfakeEfficientNetB7` | [selimsef/dfdc_deepfake_challenge](https://github.com/selimsef/dfdc_deepfake_challenge) | Deepfake detection |
 | `detector_model.py` | `RetinaFaceResNet50` | [biubug6/Pytorch_Retinaface](https://github.com/biubug6/Pytorch_Retinaface) | Face detection |
-| `embed_model.py` | `EmbedResNet50` | [cydonia999/VGGFace2-pytorch](https://github.com/cydonia999/VGGFace2-pytorch) | Face embeddings |
-| `fer_model.py` | `EfficientNetB2FER`, `EfficientNetB0FER` | [HSE-asavchenko/face-emotion-recognition](https://github.com/HSE-asavchenko/face-emotion-recognition) | Facial expression recognition |
-| `va_model.py` | `ELIMALAlexNet` | [kdhht2334/ELIM-AL](https://github.com/kdhht2334/ELIM-AL) | Valence-arousal prediction |
-| `verify_model.py` | `MagFaceIResNet100`, `VerifyIResNet100` | [IrvingMeng/MagFace](https://github.com/IrvingMeng/MagFace), [mk-minchul/AdaFace](https://github.com/mk-minchul/AdaFace) | Face verification |
+| `embed_model.py` | `EmbedResNet50` | [1adrianb/unsupervised-face-representation](https://github.com/1adrianb/unsupervised-face-representation), [cydonia999/VGGFace2-pytorch](https://github.com/cydonia999/VGGFace2-pytorch) | Face embeddings |
+| `fer_model.py` | `EfficientNetB2FER`, `EfficientNetB0FER` | [sb-ai-lab/EmotiEffLib](https://github.com/sb-ai-lab/EmotiEffLib) | Facial expression recognition |
+| `va_model.py` | `ELIMALAlexNet` | [kdhht2334/ELIM_FER](https://github.com/kdhht2334/ELIM_FER) | Valence-arousal prediction |
+| `verify_model.py` | `MagFaceIResNet100`, `VerifyIResNet100` | [junuke/UNPG](https://github.com/junuke/UNPG), [IrvingMeng/MagFace](https://github.com/IrvingMeng/MagFace), [mk-minchul/AdaFace](https://github.com/mk-minchul/AdaFace) | Face verification |
 
 ## Re-exporting
 
@@ -53,9 +53,9 @@ those exact tensors, checks shape and dtype, and then performs a strict native
 load; it never substitutes initialized values. Detector height and width are
 dynamic multiples of 32, matching runtime preprocessing.
 
-The hosted AU TorchScript state does not reproduce the legacy model's one-face
-behavior when loaded into the current timm definition. Until the original native
-checkpoint mapping is recovered, release tooling preserves each immutable,
-digest-verified published AU program and validates batched face outputs against
-concatenated one-face golden calls. The generic snippet above applies only when a
-verified native checkpoint is available.
+The original OpenGraphAU Swin-Base checkpoint mapping is verified by exact tensor
+equality. Its state still does not reproduce the legacy model's one-face behavior
+when loaded into the current timm forward definition, so release tooling preserves
+each immutable, digest-verified published AU program and validates batched face
+outputs against concatenated one-face golden calls. The generic snippet above does
+not apply to this controlled program-reuse path.
