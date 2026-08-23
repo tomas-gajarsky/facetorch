@@ -368,11 +368,12 @@ def _patch_export_pipeline(monkeypatch, validation_status="ok"):
 
 
 @pytest.mark.release_blocker
-def test_export_directories_are_traversable_with_restrictive_umask(
+def test_new_export_directories_are_traversable_with_restrictive_umask(
     tmp_path, monkeypatch
 ):
     _patch_export_pipeline(monkeypatch, validation_status="ok")
-    out_root = tmp_path / "out"
+    intermediate = tmp_path / "nested"
+    out_root = intermediate / "out"
     previous_umask = os.umask(0o077)
     try:
         exporter._ensure_runtime_directory(out_root)
@@ -394,8 +395,20 @@ def test_export_directories_are_traversable_with_restrictive_umask(
         os.umask(previous_umask)
 
     assert failures == []
+    assert intermediate.stat().st_mode & 0o777 == 0o755
     assert out_root.stat().st_mode & 0o777 == 0o755
     assert (out_root / "model-a").stat().st_mode & 0o777 == 0o755
+
+
+@pytest.mark.release_blocker
+def test_existing_export_directory_permissions_are_preserved(tmp_path):
+    out_root = tmp_path / "operator-managed"
+    out_root.mkdir()
+    out_root.chmod(0o700)
+
+    exporter._ensure_runtime_directory(out_root)
+
+    assert out_root.stat().st_mode & 0o777 == 0o700
 
 
 @pytest.mark.release_blocker
