@@ -96,9 +96,7 @@ def test_model_cards_render_from_the_release_contract(tmp_path):
                 source["license_url"]
             ]
             source_bytes = (REPO_ROOT / source["license_file"]).read_bytes()
-            if source.get("license_strip_final_newline"):
-                assert source_bytes.endswith(b"\n")
-                source_bytes = source_bytes[:-1]
+            assert "license_strip_final_newline" not in source
             assert hashlib.sha256(source_bytes).hexdigest() == source["license_sha256"]
             if source["license_role"] == "weights":
                 assert license_bytes == source_bytes
@@ -224,7 +222,37 @@ def test_renderer_wraps_missing_checkpoint_artifacts_as_model_card_error(
     path = tmp_path / "governance.json"
     _write_json(path, governance)
     monkeypatch.setattr(model_card_renderer, "GOVERNANCE_PATH", path)
-    with pytest.raises(ModelCardError, match="invalid upstream checkpoint artifacts"):
+    with pytest.raises(
+        ModelCardError,
+        match="source_checkpoint.*upstream_artifacts",
+    ):
+        render_model_documents()
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    "field_path",
+    [
+        ("rights",),
+        ("rights", "weights_license"),
+        ("upstream_sources",),
+        ("source_checkpoint",),
+    ],
+)
+def test_renderer_rejects_missing_required_model_governance_fields(
+    field_path,
+    tmp_path,
+    monkeypatch,
+):
+    governance = _json(REPO_ROOT / "facetorch/models/governance.json")
+    target = governance["models"]["detector-retinaface"]
+    for name in field_path[:-1]:
+        target = target[name]
+    target.pop(field_path[-1])
+    path = tmp_path / "governance.json"
+    _write_json(path, governance)
+    monkeypatch.setattr(model_card_renderer, "GOVERNANCE_PATH", path)
+    with pytest.raises(ModelCardError, match="detector-retinaface"):
         render_model_documents()
 
 

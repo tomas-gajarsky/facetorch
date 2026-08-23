@@ -162,7 +162,7 @@
       "status": "approved",
       "release_eligible": true,
       "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-verify-adaface/blob/71d5f83de703ec4686121e70e3b7061575b9354a/README.md",
-      "upstream_sources": [{"url": "https://github.com/mk-minchul/AdaFace", "revision": "c60eaa786a42c03444f3df7096dbaf9d57ae010d", "code_license": "MIT", "license_url": "https://github.com/mk-minchul/AdaFace/blob/c60eaa786a42c03444f3df7096dbaf9d57ae010d/LICENSE", "license_role": "weights", "license_file": "model_cards/upstream_licenses/adaface-LICENSE", "license_strip_final_newline": true, "license_sha256": "95b6e493eb9dba27f2150304e790ae254bab18d1611f4d6e2ade28fa3a271583", "role": "checkpoint publisher and architecture source"}],
+      "upstream_sources": [{"url": "https://github.com/mk-minchul/AdaFace", "revision": "c60eaa786a42c03444f3df7096dbaf9d57ae010d", "code_license": "MIT", "license_url": "https://github.com/mk-minchul/AdaFace/blob/c60eaa786a42c03444f3df7096dbaf9d57ae010d/LICENSE", "license_role": "weights", "license_file": "model_cards/upstream_licenses/adaface-LICENSE", "license_sha256": "95b6e493eb9dba27f2150304e790ae254bab18d1611f4d6e2ade28fa3a271583", "role": "checkpoint publisher and architecture source"}],
       "source_checkpoint": {
         "hosted_sha256_verified": true,
         "upstream_checkpoint_mapping": "verified",

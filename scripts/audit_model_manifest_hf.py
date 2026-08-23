@@ -63,13 +63,30 @@ def audit_remote_manifest(
     download_fn=None,
 ) -> dict[str, Any]:
     """Verify revisions, legal documents, artifacts, and validation metadata."""
+    try:
+        manifest = _read_json(manifest_path)
+    except Exception as exc:
+        return _audit_report(
+            {},
+            download_artifacts=download_artifacts,
+            require_current_metadata=require_current_metadata,
+            results=[],
+            failures=[
+                {
+                    "model_id": "manifest-contract",
+                    "repo_id": None,
+                    "error_type": type(exc).__name__,
+                    "error": str(exc),
+                }
+            ],
+        )
+
     if api is None or download_fn is None:
         from huggingface_hub import HfApi, hf_hub_download
 
         api = api or HfApi()
         download_fn = download_fn or hf_hub_download
 
-    manifest = _read_json(manifest_path)
     try:
         expected_legal_documents = render_model_documents(
             manifest_path,

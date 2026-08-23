@@ -589,3 +589,32 @@ def test_hub_audit_reports_a_schema_stable_local_contract_failure(
             "error": "deliberate local contract failure",
         }
     ]
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize("contents", [None, "{", "[]"])
+def test_hub_audit_reports_manifest_read_failures_with_the_stable_schema(
+    contents,
+    tmp_path,
+):
+    manifest_path = tmp_path / "manifest.json"
+    if contents is not None:
+        manifest_path.write_text(contents, encoding="utf-8")
+    report = hub_audit.audit_remote_manifest(
+        manifest_path,
+        api=object(),
+        download_fn=lambda **_kwargs: "unused",
+    )
+    assert set(report) == {
+        "schema_version",
+        "status",
+        "manifest_revision",
+        "download_artifacts",
+        "require_current_metadata",
+        "results",
+        "failures",
+    }
+    assert report["status"] == "failed"
+    assert report["manifest_revision"] is None
+    assert report["results"] == []
+    assert report["failures"][0]["model_id"] == "manifest-contract"
