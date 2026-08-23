@@ -377,6 +377,7 @@ jobs:
       - name: Allocate isolated evidence root
         run: |
           facetorch_staging="$(mktemp -d "$RUNNER_TEMP/facetorch-release-${SOURCE_SHA}.XXXXXX")"
+          chmod 0711 "$facetorch_staging"
           echo "FACETORCH_STAGING=$facetorch_staging" >> "$GITHUB_ENV"
       - name: Verify the CUDA lock and dependency advisories
         run: |
