@@ -7,12 +7,14 @@ from packaging.requirements import Requirement
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 import pytest
+import yaml
 
 from facetorch.artifacts import ArtifactManifest, get_model_manifest
 from facetorch.exceptions import ConfigurationError, ModelCompatibilityError
+from scripts import audit_model_manifest_hf as hub_audit
 from scripts.audit_model_manifest_hf import audit_remote_manifest
 from scripts.export_model_cohorts_hf import _environment_metadata, _model_specs
-from scripts.render_model_cards import render_model_documents
+from scripts.render_model_cards import ModelCardError, render_model_documents
 from scripts.verify_model_release_matrix import (
     ReleaseMatrixError,
     verify_release_matrix,
@@ -38,6 +40,16 @@ CUDA_ENVIRONMENT_LOCKS = {
 
 def _json(path):
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _nested_mappings(value):
+    if isinstance(value, dict):
+        yield value
+        for child in value.values():
+            yield from _nested_mappings(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from _nested_mappings(child)
 
 
 def _torch_requirement():
@@ -171,6 +183,39 @@ def test_export_specs_match_manifest_ids_and_pin_every_source():
     assert au["reuse_reason"]
     exporter = (REPO_ROOT / "scripts" / "export_model_cohorts_hf.py").read_text()
     assert "class _MagFaceIResNet100" not in exporter
+
+
+@pytest.mark.release_blocker
+def test_manifest_revisions_bind_governance_export_specs_and_all_configs():
+    manifest = _json(MANIFEST_PATH)
+    governance = _json(GOVERNANCE_PATH)
+    specs = {spec["id"]: spec for spec in _model_specs("2.11")}
+    for model_id, model in manifest["models"].items():
+        revision = model["revision"]
+        repo_id = model["repo_id"]
+        assert model["license_ref"] == (
+            f"https://huggingface.co/{repo_id}/blob/{revision}/LICENSE"
+        )
+        assert governance["models"][model_id]["hosted_model_card"] == (
+            f"https://huggingface.co/{repo_id}/blob/{revision}/README.md"
+        )
+        assert specs[model_id]["source_artifact"]["revision"] == revision
+
+    seen = set()
+    config_roots = [REPO_ROOT / "conf", REPO_ROOT / "facetorch" / "configs"]
+    for root in config_roots:
+        for path in sorted(root.rglob("*.yaml")):
+            config = yaml.safe_load(path.read_text(encoding="utf-8"))
+            for mapping in _nested_mappings(config):
+                model_id = mapping.get("manifest_id")
+                if not model_id:
+                    continue
+                assert model_id in manifest["models"], path
+                model = manifest["models"][model_id]
+                assert mapping.get("repo_id") == model["repo_id"], path
+                assert mapping.get("revision") == model["revision"], path
+                seen.add(model_id)
+    assert seen == set(manifest["models"])
 
 
 def _stage_candidate_matrix(tmp_path):
@@ -459,3 +504,26 @@ def test_hub_inventory_uses_lfs_sha_immutable_revision_and_exact_legal_files(
         assert failed["status"] == "failed"
         assert filename in failed["failures"][0]["error"]
         path.write_bytes(original)
+
+
+@pytest.mark.release_blocker
+def test_hub_audit_reports_a_local_model_card_contract_failure(monkeypatch):
+    def fail_render(*_args, **_kwargs):
+        raise ModelCardError("deliberate local contract failure")
+
+    monkeypatch.setattr(hub_audit, "render_model_documents", fail_render)
+    report = hub_audit.audit_remote_manifest(
+        MANIFEST_PATH,
+        api=object(),
+        download_fn=lambda **_kwargs: "unused",
+    )
+    assert report["status"] == "failed"
+    assert report["results"] == []
+    assert report["failures"] == [
+        {
+            "model_id": "model-card-contract",
+            "repo_id": None,
+            "error_type": "ModelCardError",
+            "error": "deliberate local contract failure",
+        }
+    ]

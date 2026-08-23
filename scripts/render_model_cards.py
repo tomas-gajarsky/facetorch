@@ -38,8 +38,7 @@ def _source_license_bytes(source: Mapping[str, Any]) -> bytes:
     if not relative.parts or relative.is_absolute() or ".." in relative.parts:
         raise ModelCardError(f"Invalid upstream license file: {relative}")
     path = (REPO_ROOT / relative).resolve()
-    project_license = (REPO_ROOT / "LICENSE").resolve()
-    if path != project_license and not path.is_relative_to(UPSTREAM_LICENSE_ROOT):
+    if not path.is_relative_to(UPSTREAM_LICENSE_ROOT):
         raise ModelCardError(f"Upstream license file leaves its allowed roots: {path}")
     data = path.read_bytes()
     if source.get("license_strip_final_newline"):
@@ -142,6 +141,7 @@ def _render_card(
     card: Mapping[str, Any],
     manifest_model: Mapping[str, Any],
     governance: Mapping[str, Any],
+    approved_on: str,
 ) -> str:
     rights = governance["rights"]
     checkpoint = governance["source_checkpoint"]
@@ -237,7 +237,7 @@ def _render_card(
         [
             "",
             "The repository owner approved the mapping and redistribution record "
-            "on 2026-08-23. Under the recorded policy, an author-published "
+            f"on {approved_on}. Under the recorded policy, an author-published "
             "checkpoint in a permissively licensed repository with no separate "
             "checkpoint terms uses that repository license. MIT and Apache-2.0 "
             "have not been converted or treated as interchangeable. See "
@@ -322,6 +322,9 @@ def render_model_documents(
         )
     if governance.get("status") != "approved":
         raise ModelCardError("Model cards may be published only from approved governance")
+    approved_on = str(governance.get("approved_on", "")).strip()
+    if not approved_on:
+        raise ModelCardError("Approved governance must record approved_on")
 
     rendered: dict[str, dict[str, bytes]] = {}
     for model_id in sorted(models):
@@ -330,7 +333,11 @@ def render_model_documents(
             raise ModelCardError(f"Model governance is not approved: {model_id}")
         values = {
             "README.md": _render_card(
-                model_id, cards[model_id], models[model_id], record
+                model_id,
+                cards[model_id],
+                models[model_id],
+                record,
+                approved_on,
             ).encode("utf-8"),
             "LICENSE": _license_bytes(record),
             "THIRD_PARTY_NOTICES.md": _render_notices(

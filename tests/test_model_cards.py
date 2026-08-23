@@ -5,7 +5,12 @@ from pathlib import Path
 import pytest
 import yaml
 
-from scripts.render_model_cards import render_model_cards, render_model_documents
+from scripts import render_model_cards as model_card_renderer
+from scripts.render_model_cards import (
+    ModelCardError,
+    render_model_cards,
+    render_model_documents,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +32,10 @@ EXPECTED_UPSTREAM_LICENSE_SHA256 = {
 
 def _json(path):
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _write_json(path, value):
+    path.write_text(json.dumps(value), encoding="utf-8")
 
 
 @pytest.mark.release_blocker
@@ -63,6 +72,7 @@ def test_model_cards_render_from_the_release_contract(tmp_path):
         assert governance["models"][model_id]["source_checkpoint"][
             "verification_result"
         ] in card
+        assert f"on {governance['approved_on']}." in card
         assert all(artifact["filename"] in card for artifact in model["artifacts"])
         assert "license_copyright" not in catalog["models"][model_id]
         assert "additional_mit_notices" not in catalog["models"][model_id]
@@ -74,6 +84,9 @@ def test_model_cards_render_from_the_release_contract(tmp_path):
         for source in sources:
             assert source["license_role"] in {"weights", "notice"}
             assert source["revision"] in source["license_url"]
+            assert source["license_file"].startswith(
+                "model_cards/upstream_licenses/"
+            )
             assert source["license_sha256"] == EXPECTED_UPSTREAM_LICENSE_SHA256[
                 source["license_url"]
             ]
@@ -93,6 +106,42 @@ def test_model_cards_render_from_the_release_contract(tmp_path):
         for record in governance["models"].values()
         for source in record["upstream_sources"]
     }
+
+
+@pytest.mark.release_blocker
+def test_renderer_rejects_an_upstream_license_digest_mismatch():
+    governance = _json(REPO_ROOT / "facetorch/models/governance.json")
+    source = dict(
+        governance["models"]["detector-retinaface"]["upstream_sources"][0]
+    )
+    source["license_sha256"] = "0" * 64
+    with pytest.raises(ModelCardError, match="license digest mismatch"):
+        model_card_renderer._source_license_bytes(source)
+
+
+@pytest.mark.release_blocker
+def test_renderer_rejects_unapproved_governance(tmp_path, monkeypatch):
+    governance = _json(REPO_ROOT / "facetorch/models/governance.json")
+    governance["status"] = "pending"
+    path = tmp_path / "governance.json"
+    _write_json(path, governance)
+    monkeypatch.setattr(model_card_renderer, "GOVERNANCE_PATH", path)
+    with pytest.raises(ModelCardError, match="approved governance"):
+        render_model_documents()
+
+
+@pytest.mark.release_blocker
+def test_renderer_rejects_a_manifest_model_missing_from_the_catalog(
+    tmp_path,
+    monkeypatch,
+):
+    catalog = _json(REPO_ROOT / "model_cards/catalog.json")
+    catalog["models"].pop("detector-retinaface")
+    path = tmp_path / "catalog.json"
+    _write_json(path, catalog)
+    monkeypatch.setattr(model_card_renderer, "CATALOG_PATH", path)
+    with pytest.raises(ModelCardError, match="do not cover"):
+        render_model_documents()
 
 
 @pytest.mark.release_blocker
