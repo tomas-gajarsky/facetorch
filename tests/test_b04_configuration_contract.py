@@ -8,14 +8,16 @@ from zipfile import ZIP_DEFLATED, ZipFile
 import pytest
 import torch
 import yaml
+from hydra.utils import instantiate
 from omegaconf import OmegaConf
 
 import facetorch
 from facetorch.analyzer.core import FaceAnalyzer
 from facetorch.analyzer.utilizer.save import ImageSaver
+from facetorch.artifacts import get_model_manifest
 from facetorch.datastruct import ImageData
 from facetorch.downloader import DownloaderGDrive
-from facetorch.exceptions import ConfigurationError
+from facetorch.exceptions import ConfigurationError, OfflineCacheError
 from facetorch.logger import LoggerJsonFile
 from facetorch.paths import _default_cache_dir
 
@@ -176,6 +178,41 @@ def test_default_detector_is_a_nonduplicating_hugging_face_alias():
     detector = facetorch.load_config(offline=True).analyzer.detector
     assert detector._target_ == "facetorch.analyzer.detector.FaceDetector"
     assert detector.downloader.manifest_id == "detector-retinaface"
+
+
+@pytest.mark.release_blocker
+def test_manifest_bound_packaged_config_instantiates_and_checks_offline_cache(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setenv("FACETORCH_MODEL_DIR", str(tmp_path / "models"))
+    config = facetorch.load_config(offline=True)
+    downloader = instantiate(
+        config.analyzer.detector.downloader,
+        torch_version="2.11.0",
+    )
+    expected = get_model_manifest().candidates(
+        "detector-retinaface",
+        torch_version="2.11.0",
+        device="cpu",
+        allow_legacy_models=False,
+    )[0]
+    resolved = downloader._resolve_candidates()[0]
+
+    assert downloader.filename.endswith("model.pt2")
+    assert downloader.sha256 is None
+    assert downloader.size_bytes is None
+    assert resolved == expected
+    assert resolved.sha256 == expected.sha256
+    assert resolved.size_bytes == expected.size_bytes
+
+    target = resolved.cache_path(downloader.path_local)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(b"tampered cache entry")
+    with pytest.raises(OfflineCacheError, match="verified artifact"):
+        downloader.run()
+    assert not target.exists()
+    assert len(list(target.parent.glob(f"{target.name}.quarantine.*"))) == 1
 
 
 @pytest.mark.release_blocker

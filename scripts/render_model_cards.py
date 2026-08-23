@@ -41,7 +41,10 @@ def _source_license_bytes(source: Mapping[str, Any]) -> bytes:
     path = (REPO_ROOT / relative).resolve()
     if not path.is_relative_to(UPSTREAM_LICENSE_ROOT):
         raise ModelCardError(f"Upstream license file leaves its allowed roots: {path}")
-    data = path.read_bytes()
+    try:
+        data = path.read_bytes()
+    except OSError as exc:
+        raise ModelCardError(f"Cannot read upstream license file: {path}") from exc
     if source.get("license_strip_final_newline"):
         if not data.endswith(b"\n"):
             raise ModelCardError(f"Expected one normalized final newline in {path}")
@@ -89,7 +92,10 @@ def _source_notice_bytes(source: Mapping[str, Any]) -> bytes | None:
     path = (REPO_ROOT / relative).resolve()
     if not path.is_relative_to(UPSTREAM_NOTICE_ROOT):
         raise ModelCardError(f"Upstream NOTICE file leaves its allowed root: {path}")
-    data = path.read_bytes()
+    try:
+        data = path.read_bytes()
+    except OSError as exc:
+        raise ModelCardError(f"Cannot read upstream NOTICE file: {path}") from exc
     expected_digest = str(source["notice_sha256"])
     actual_digest = hashlib.sha256(data).hexdigest()
     if actual_digest != expected_digest:
@@ -172,17 +178,28 @@ def _source_table(governance: Mapping[str, Any]) -> list[str]:
     return lines
 
 
-def _checkpoint_table(checkpoint: Mapping[str, Any]) -> list[str]:
+def _checkpoint_table(
+    model_id: str,
+    checkpoint: Mapping[str, Any],
+) -> list[str]:
     lines = [
         "| Upstream checkpoint | SHA-256 | Source |",
         "|---|---|---|",
     ]
-    for artifact in checkpoint["upstream_artifacts"]:
-        digest = artifact.get("sha256") or "Unavailable from expired source"
-        lines.append(
-            f"| `{_markdown(artifact['filename'])}` | `{_markdown(digest)}` | "
-            f"[publisher location]({artifact['source_url']}) |"
-        )
+    try:
+        artifacts = checkpoint["upstream_artifacts"]
+        if not isinstance(artifacts, list) or not artifacts:
+            raise TypeError("upstream_artifacts must be a non-empty list")
+        for artifact in artifacts:
+            digest = artifact.get("sha256") or "Unavailable from expired source"
+            lines.append(
+                f"| `{_markdown(artifact['filename'])}` | `{_markdown(digest)}` | "
+                f"[publisher location]({artifact['source_url']}) |"
+            )
+    except (AttributeError, KeyError, TypeError) as exc:
+        raise ModelCardError(
+            f"Model {model_id} has invalid upstream checkpoint artifacts"
+        ) from exc
     return lines
 
 
@@ -275,7 +292,7 @@ def _render_card(
         "",
         *_source_table(governance),
         "",
-        *_checkpoint_table(checkpoint),
+        *_checkpoint_table(model_id, checkpoint),
         "",
         f"Mapping method: `{checkpoint['verification_method']}`.",
         "",
