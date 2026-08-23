@@ -377,8 +377,33 @@ def test_local_cuda_release_runner_is_explicit_and_manually_gated():
 @pytest.mark.release_blocker
 @pytest.mark.parametrize("workflow_name", ["local-gpu-release.yml", "release.yml"])
 def test_local_cuda_evidence_is_traversable_by_non_root_images(workflow_name):
-    content = (WORKFLOW_ROOT / workflow_name).read_text(encoding="utf-8")
-    assert 'chmod 0711 "$facetorch_staging"' in content
+    workflow = yaml.safe_load(
+        (WORKFLOW_ROOT / workflow_name).read_text(encoding="utf-8")
+    )
+    runs = [
+        str(step.get("run", ""))
+        for job in workflow["jobs"].values()
+        for step in job.get("steps", [])
+        if isinstance(step, dict)
+    ]
+    allocation_runs = [
+        run
+        for run in runs
+        if 'mktemp -d "$RUNNER_TEMP/facetorch-release-' in run
+    ]
+    assert len(allocation_runs) == 1
+    assert 'chmod 0711 "$facetorch_staging"' in allocation_runs[0]
+
+    container_runs = [
+        run
+        for run in runs
+        if "docker run" in run and "$FACETORCH_STAGING/container-reports" in run
+    ]
+    assert len(container_runs) == 1
+    assert (
+        'install -d -m 1777 "$FACETORCH_STAGING/container-reports"'
+        in container_runs[0]
+    )
 
 
 @pytest.mark.release_blocker
