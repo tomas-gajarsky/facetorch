@@ -552,17 +552,34 @@ def test_hub_inventory_uses_lfs_sha_immutable_revision_and_exact_legal_files(
 
 
 @pytest.mark.release_blocker
-def test_hub_audit_reports_a_local_model_card_contract_failure(monkeypatch):
+def test_hub_audit_reports_a_schema_stable_local_contract_failure(
+    tmp_path,
+    monkeypatch,
+):
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(
+        json.dumps({"manifest_revision": "schema-test", "models": {}}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(hub_audit, "render_model_documents", lambda *_a, **_k: {})
+    ok = hub_audit.audit_remote_manifest(
+        manifest_path,
+        api=object(),
+        download_fn=lambda **_kwargs: "unused",
+    )
+    assert ok["status"] == "ok"
+
     def fail_render(*_args, **_kwargs):
         raise ModelCardError("deliberate local contract failure")
 
     monkeypatch.setattr(hub_audit, "render_model_documents", fail_render)
     report = hub_audit.audit_remote_manifest(
-        MANIFEST_PATH,
+        manifest_path,
         api=object(),
         download_fn=lambda **_kwargs: "unused",
     )
     assert report["status"] == "failed"
+    assert set(report) == set(ok)
     assert report["results"] == []
     assert report["failures"] == [
         {

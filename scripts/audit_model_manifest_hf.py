@@ -34,6 +34,26 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _audit_report(
+    manifest: Mapping[str, Any],
+    *,
+    download_artifacts: bool,
+    require_current_metadata: bool,
+    results: list[dict[str, Any]],
+    failures: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Build the single stable result schema for every audit outcome."""
+    return {
+        "schema_version": 1,
+        "status": "failed" if failures else "ok",
+        "manifest_revision": manifest.get("manifest_revision"),
+        "download_artifacts": download_artifacts,
+        "require_current_metadata": require_current_metadata,
+        "results": results,
+        "failures": failures,
+    }
+
+
 def audit_remote_manifest(
     manifest_path: Path,
     *,
@@ -56,14 +76,12 @@ def audit_remote_manifest(
             require_complete_contract=False,
         )
     except Exception as exc:
-        return {
-            "schema_version": 1,
-            "status": "failed",
-            "manifest_revision": manifest.get("manifest_revision"),
-            "download_artifacts": download_artifacts,
-            "require_current_metadata": require_current_metadata,
-            "results": [],
-            "failures": [
+        return _audit_report(
+            manifest,
+            download_artifacts=download_artifacts,
+            require_current_metadata=require_current_metadata,
+            results=[],
+            failures=[
                 {
                     "model_id": "model-card-contract",
                     "repo_id": None,
@@ -71,7 +89,7 @@ def audit_remote_manifest(
                     "error": str(exc),
                 }
             ],
-        }
+        )
     results = []
     failures = []
     for model_id, model in sorted(manifest.get("models", {}).items()):
@@ -226,15 +244,13 @@ def audit_remote_manifest(
                 }
             )
 
-    return {
-        "schema_version": 1,
-        "status": "failed" if failures else "ok",
-        "manifest_revision": manifest.get("manifest_revision"),
-        "download_artifacts": download_artifacts,
-        "require_current_metadata": require_current_metadata,
-        "results": results,
-        "failures": failures,
-    }
+    return _audit_report(
+        manifest,
+        download_artifacts=download_artifacts,
+        require_current_metadata=require_current_metadata,
+        results=results,
+        failures=failures,
+    )
 
 
 def main() -> int:

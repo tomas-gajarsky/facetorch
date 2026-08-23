@@ -140,6 +140,17 @@ def test_renderer_rejects_an_upstream_license_digest_mismatch():
 
 
 @pytest.mark.release_blocker
+def test_renderer_wraps_a_missing_upstream_license_as_model_card_error():
+    governance = _json(REPO_ROOT / "facetorch/models/governance.json")
+    source = dict(
+        governance["models"]["detector-retinaface"]["upstream_sources"][0]
+    )
+    source["license_file"] = "model_cards/upstream_licenses/missing-LICENSE"
+    with pytest.raises(ModelCardError, match="Cannot read upstream license file"):
+        model_card_renderer._source_license_bytes(source)
+
+
+@pytest.mark.release_blocker
 def test_renderer_rejects_an_upstream_license_url_from_another_source():
     governance = _json(REPO_ROOT / "facetorch/models/governance.json")
     source = dict(
@@ -158,6 +169,21 @@ def test_renderer_requires_explicit_apache_notice_state():
     source = dict(governance["models"]["au-opengraph"]["upstream_sources"][0])
     source.pop("notice_url")
     with pytest.raises(ModelCardError, match="NOTICE state"):
+        model_card_renderer._source_notice_bytes(source)
+
+
+@pytest.mark.release_blocker
+def test_renderer_wraps_a_missing_upstream_notice_as_model_card_error():
+    governance = _json(REPO_ROOT / "facetorch/models/governance.json")
+    source = dict(governance["models"]["au-opengraph"]["upstream_sources"][0])
+    source.update(
+        notice_url=(
+            f"{source['url']}/blob/{source['revision']}/NOTICE"
+        ),
+        notice_file="model_cards/upstream_notices/missing-NOTICE",
+        notice_sha256="0" * 64,
+    )
+    with pytest.raises(ModelCardError, match="Cannot read upstream NOTICE file"):
         model_card_renderer._source_notice_bytes(source)
 
 
@@ -183,6 +209,22 @@ def test_renderer_rejects_a_manifest_model_missing_from_the_catalog(
     _write_json(path, catalog)
     monkeypatch.setattr(model_card_renderer, "CATALOG_PATH", path)
     with pytest.raises(ModelCardError, match="do not cover"):
+        render_model_documents()
+
+
+@pytest.mark.release_blocker
+def test_renderer_wraps_missing_checkpoint_artifacts_as_model_card_error(
+    tmp_path,
+    monkeypatch,
+):
+    governance = _json(REPO_ROOT / "facetorch/models/governance.json")
+    governance["models"]["detector-retinaface"]["source_checkpoint"].pop(
+        "upstream_artifacts"
+    )
+    path = tmp_path / "governance.json"
+    _write_json(path, governance)
+    monkeypatch.setattr(model_card_renderer, "GOVERNANCE_PATH", path)
+    with pytest.raises(ModelCardError, match="invalid upstream checkpoint artifacts"):
         render_model_documents()
 
 
