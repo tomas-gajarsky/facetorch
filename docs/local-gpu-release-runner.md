@@ -24,6 +24,17 @@ matrix, and every model-governance record to be approved before it performs the
 expensive export. The script offers `--candidate-evidence` only for an explicitly
 non-release technical run; the protected GitHub workflow never uses that bypass.
 
+Use a fresh staging root for every protected or diagnostic run. When
+`run_local_cuda_release_matrix.py` creates the root, it sets mode `0711`; an
+existing root must already have that exact mode or the script fails before the
+expensive matrix begins. The root mode lets the production image's non-root UID
+10001 traverse known evidence paths without listing the evidence directory.
+Newly created cohort, intermediate, and model directories use `0755`; existing
+operator-managed export directories keep their original permissions. Before the
+container smokes, create `container-reports` with mode `1777`, whose sticky bit
+allows the two non-root images to write reports without allowing another local
+user to replace them. Never reuse reports from an earlier staging root.
+
 Before dispatch, place the exact candidate at the tip of a protected ref and
 configure the `local-gpu-release` GitHub environment to allow only that protected
 ref. Dispatch the workflow from that ref, paste its full 40-character SHA, and

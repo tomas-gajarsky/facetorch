@@ -80,6 +80,28 @@ def _write_json_atomic(path: Path, value: Mapping[str, Any]) -> None:
             temporary.unlink(missing_ok=True)
 
 
+def _ensure_evidence_root(path: Path) -> None:
+    """Create a private-but-traversable root or validate an existing one."""
+    created = False
+    try:
+        path.mkdir(parents=True)
+    except FileExistsError:
+        if not path.is_dir():
+            raise RuntimeError(f"Staging root is not a directory: {path}") from None
+    else:
+        created = True
+
+    if created:
+        path.chmod(0o711)
+
+    mode = path.stat().st_mode & 0o777
+    if mode != 0o711:
+        raise RuntimeError(
+            "Staging root must have mode 0711 so non-root production images can "
+            f"traverse it without listing evidence; got {mode:04o}: {path}"
+        )
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path, default=Path("."))
@@ -152,7 +174,7 @@ def main() -> int:
     if not gpu_query:
         raise RuntimeError("No NVIDIA GPU attestation was returned")
 
-    staging_root.mkdir(parents=True, exist_ok=True)
+    _ensure_evidence_root(staging_root)
     summaries = []
     commands = []
     source_environment = os.environ.copy()

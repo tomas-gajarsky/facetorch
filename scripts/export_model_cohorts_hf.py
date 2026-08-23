@@ -96,9 +96,24 @@ def _write_json_atomic(path: Path, value: Any) -> None:
 
 
 def _ensure_runtime_directory(path: Path) -> None:
-    """Create an exported-artifact directory readable by non-owner runtimes."""
-    path.mkdir(parents=True, exist_ok=True)
-    path.chmod(0o755)
+    """Make each newly created component readable by non-owner runtimes."""
+    missing = []
+    cursor = path
+    while not cursor.exists():
+        missing.append(cursor)
+        cursor = cursor.parent
+
+    if not cursor.is_dir():
+        raise NotADirectoryError(f"Export path parent is not a directory: {cursor}")
+
+    for directory in reversed(missing):
+        try:
+            directory.mkdir()
+        except FileExistsError:
+            if not directory.is_dir():
+                raise
+        else:
+            directory.chmod(0o755)
 
 
 def _module_version(module_name: str) -> str | None:
