@@ -16,23 +16,42 @@ a source inventory:
 
 ```bash
 PYTHONPATH=. python scripts/export_model_cohorts_hf.py prepare-sources \
-  --repo-root . --cohort 2.11
+  --repo-root . --cohort 2.6
 ```
+
+```bash
+PYTHONPATH=. python scripts/export_model_cohorts_hf.py export \
+  --repo-root . \
+  --out-root /secure/staging/torch-2.6 \
+  --validate-devices cpu,cuda \
+  --batch-sizes 1,2,4,8 \
+  --golden-reference-root /secure/staging/golden-references \
+  --golden-reference-mode record \
+  --golden-reference-cohort 2.6
+```
+
+Every other cohort must reuse those exact golden bytes:
 
 ```bash
 PYTHONPATH=. python scripts/export_model_cohorts_hf.py export \
   --repo-root . \
   --out-root /secure/staging/torch-2.11 \
   --validate-devices cpu,cuda \
-  --batch-sizes 1,2,4,8
+  --batch-sizes 1,2,4,8 \
+  --golden-reference-root /secure/staging/golden-references \
+  --golden-reference-mode reuse \
+  --golden-reference-cohort 2.6
 ```
 
 The validator rejects empty matrices; recursively rejects NaN and Inf in both the
 independent reference and exported output; enforces output schemas and task
 invariants; and requires every requested device status to be `ok`. Predictor cases
 cover face batches 1, 2, 4, and 8. The detector remains single-image and covers its
-declared standard and nonstandard multiple-of-32 spatial shapes. All immutable
-references execute on CPU so CPU and CUDA artifacts share identical golden output.
+declared standard and nonstandard multiple-of-32 spatial shapes. The declared
+golden cohort executes every immutable reference once on CPU and records a
+digest-bound tensor bundle. Every CPU/CUDA lane and later Torch cohort must reuse
+that same bundle, so runtime-specific reference drift cannot be mistaken for
+artifact agreement.
 The validator disables TensorFloat-32, uses highest float32 precision and
 deterministic cuDNN settings, records that policy, and restores the caller's
 settings afterward. AU reference batches are concatenated from independent
@@ -79,11 +98,12 @@ PYTHONPATH=. python scripts/model_cohort_publication.py prepare \
   --approval-template /secure/review/publication-approval.json
 ```
 
-Preparation re-verifies every artifact, metadata file, size, digest, model, cohort,
-case count, and device status. The canonical plan ID determines a unique candidate
-branch. For repeated model/device/case identities across cohorts, it also requires
-the same immutable reference-output fingerprint and records either exact exported
-agreement or the mathematically guaranteed drift bound through that reference.
+Preparation re-verifies every artifact, metadata file, golden-reference bundle,
+size, digest, model, cohort, case count, and device status. The canonical plan ID
+determines a unique candidate branch. For repeated model/device/case identities
+across cohorts, it also requires the same immutable reference-output fingerprint
+and records either exact exported agreement or the mathematically guaranteed drift
+bound through that reference.
 Re-running preparation over unchanged inputs produces identical plan bytes.
 
 ## 3. Review and approve

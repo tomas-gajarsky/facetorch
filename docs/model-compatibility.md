@@ -58,11 +58,14 @@ still incomplete.
 
 ## Validation semantics
 
-Every immutable TorchScript reference is kept on CPU and acts as one golden
-implementation for both exported CPU and CUDA execution. Validation disables
+Every immutable TorchScript reference is kept on CPU. Torch 2.6 is the declared
+golden-reference cohort: it records one digest-bound output bundle for the full
+case matrix, and every CPU/CUDA lane and later Torch cohort must reuse those exact
+outputs. Validation disables
 TensorFloat-32, selects highest float32 matmul precision, and enables deterministic
 cuDNN behavior while restoring the caller's backend settings afterward. This
-avoids treating TorchScript's own backend-dependent drift as artifact drift.
+avoids treating TorchScript's runtime-dependent drift as artifact drift and gives
+cross-cohort triangle-inequality bounds one immutable reference.
 
 Predictor batches contain independent faces from one source image; multi-image
 batching is not a v1 API. The legacy AU trace has batch-coupled behavior, so AU's

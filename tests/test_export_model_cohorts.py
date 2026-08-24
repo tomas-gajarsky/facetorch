@@ -50,6 +50,12 @@ def _reference(x):
     return x
 
 
+def _unexpected_reference(_x):
+    raise AssertionError(
+        "reused golden references must not execute the runtime reference"
+    )
+
+
 def _spec():
     return {
         "id": "test-model",
@@ -136,6 +142,162 @@ def test_validation_numeric_policy_restores_caller_settings():
         torch.backends.cudnn.deterministic = original["deterministic"]
         torch.backends.cuda.matmul.allow_tf32 = original["matmul_tf32"]
         torch.set_float32_matmul_precision(original["precision"])
+
+
+@pytest.mark.release_blocker
+def test_persistent_golden_reference_is_shared_across_runtime_cohorts(tmp_path):
+    spec = {
+        **_spec(),
+        "validation_reference": {
+            "kind": "fixture",
+            "source": "immutable-reference.pt",
+            "sha256": "a" * 64,
+            "device": "cpu",
+            "batch_mode": "native",
+        },
+    }
+    golden = tmp_path / "golden-reference.pt"
+    recorded = _validate_exported_module(
+        spec,
+        ref_fn=_reference,
+        exported_module=_Identity(),
+        batch_sizes=[1],
+        seeds=[0],
+        scales=[1.0],
+        devices=["cpu"],
+        golden_reference_path=golden,
+        golden_reference_mode="record",
+        cohort="2.6",
+        golden_reference_cohort="2.6",
+    )
+    recorded_bytes = golden.read_bytes()
+
+    # Recording is deterministic and retry-safe when the bytes are unchanged.
+    repeated = _validate_exported_module(
+        spec,
+        ref_fn=_reference,
+        exported_module=_Identity(),
+        batch_sizes=[1],
+        seeds=[0],
+        scales=[1.0],
+        devices=["cpu"],
+        golden_reference_path=golden,
+        golden_reference_mode="record",
+        cohort="2.6",
+        golden_reference_cohort="2.6",
+    )
+    reused = _validate_exported_module(
+        spec,
+        ref_fn=_unexpected_reference,
+        exported_module=_Identity(),
+        batch_sizes=[1],
+        seeds=[0],
+        scales=[1.0],
+        devices=["cpu"],
+        golden_reference_path=golden,
+        golden_reference_mode="reuse",
+        cohort="2.11",
+        golden_reference_cohort="2.6",
+    )
+
+    assert golden.read_bytes() == recorded_bytes
+    assert recorded["status"] == repeated["status"] == reused["status"] == "ok"
+    assert recorded["golden_reference"]["status"] == "recorded"
+    assert reused["golden_reference"]["status"] == "reused"
+    assert (
+        recorded["golden_reference"]["sha256"] == reused["golden_reference"]["sha256"]
+    )
+    assert (
+        recorded["devices"][0]["cases"][0]["reference_output_sha256"]
+        == reused["devices"][0]["cases"][0]["reference_output_sha256"]
+    )
+
+
+@pytest.mark.release_blocker
+def test_reused_golden_reference_rejects_changed_matrix(tmp_path):
+    spec = {
+        **_spec(),
+        "validation_reference": {
+            "kind": "fixture",
+            "source": "immutable-reference.pt",
+            "sha256": "a" * 64,
+            "device": "cpu",
+            "batch_mode": "native",
+        },
+    }
+    golden = tmp_path / "golden-reference.pt"
+    _validate_exported_module(
+        spec,
+        ref_fn=_reference,
+        exported_module=_Identity(),
+        batch_sizes=[1],
+        seeds=[0],
+        scales=[1.0],
+        devices=["cpu"],
+        golden_reference_path=golden,
+        golden_reference_mode="record",
+        cohort="2.6",
+        golden_reference_cohort="2.6",
+    )
+
+    with pytest.raises(RuntimeError, match="mismatched matrix"):
+        _validate_exported_module(
+            spec,
+            ref_fn=_unexpected_reference,
+            exported_module=_Identity(),
+            batch_sizes=[1],
+            seeds=[0],
+            scales=[0.25],
+            devices=["cpu"],
+            golden_reference_path=golden,
+            golden_reference_mode="reuse",
+            cohort="2.11",
+            golden_reference_cohort="2.6",
+        )
+
+
+@pytest.mark.release_blocker
+def test_reused_golden_reference_rejects_corrupt_bundle(tmp_path):
+    spec = {
+        **_spec(),
+        "validation_reference": {
+            "kind": "fixture",
+            "source": "immutable-reference.pt",
+            "sha256": "a" * 64,
+            "device": "cpu",
+            "batch_mode": "native",
+        },
+    }
+    golden = tmp_path / "golden-reference.pt"
+    _validate_exported_module(
+        spec,
+        ref_fn=_reference,
+        exported_module=_Identity(),
+        batch_sizes=[1],
+        seeds=[0],
+        scales=[1.0],
+        devices=["cpu"],
+        golden_reference_path=golden,
+        golden_reference_mode="record",
+        cohort="2.6",
+        golden_reference_cohort="2.6",
+    )
+    golden.write_bytes(b"not-a-safe-tensor-bundle")
+
+    with pytest.raises(RuntimeError, match="Cannot load golden reference bundle"):
+        _validate_exported_module(
+            spec,
+            ref_fn=_unexpected_reference,
+            exported_module=_Identity(),
+            batch_sizes=[1],
+            seeds=[0],
+            scales=[1.0],
+            devices=["cpu"],
+            golden_reference_path=golden,
+            golden_reference_mode="reuse",
+            cohort="2.11",
+            golden_reference_cohort="2.6",
+        )
 
 
 def test_per_sample_reference_mode_defines_batch_as_independent_faces(tmp_path):
@@ -309,10 +471,13 @@ def test_old_torchscript_tensor_attributes_complete_strict_state():
     scripted = SimpleNamespace(
         state_dict=lambda: scripted_state,
         named_modules=lambda: [
-            ("0", SimpleNamespace(
-                running_mean=expected["0.running_mean"].clone(),
-                running_var=expected["0.running_var"].clone(),
-            ))
+            (
+                "0",
+                SimpleNamespace(
+                    running_mean=expected["0.running_mean"].clone(),
+                    running_var=expected["0.running_var"].clone(),
+                ),
+            )
         ],
     )
 

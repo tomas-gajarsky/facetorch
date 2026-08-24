@@ -21,8 +21,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Sequence
 
-
-PLAN_SCHEMA_VERSION = 1
+PLAN_SCHEMA_VERSION = 2
 APPROVAL_SCHEMA_VERSION = 1
 RECEIPT_SCHEMA_VERSION = 1
 _COMMIT_PATTERN = re.compile(r"[0-9a-f]{40}")
@@ -99,7 +98,9 @@ def _safe_staged_file(staging_root: Path, value: Any, label: str) -> Path:
     except (OSError, ValueError) as exc:
         raise PublicationError(f"{label} is outside staging root: {candidate}") from exc
     if candidate.is_symlink() or not resolved.is_file():
-        raise PublicationError(f"{label} must be a regular, non-symlink file: {candidate}")
+        raise PublicationError(
+            f"{label} must be a regular, non-symlink file: {candidate}"
+        )
     return resolved
 
 
@@ -128,7 +129,9 @@ def _validated_model_record(
     repo_id = str(result.get("repo_id", ""))
     cohort = str(summary.get("torch_minor", ""))
     if not model_id or not repo_id or not cohort:
-        raise PublicationError("Staging result lacks model, repository, or cohort identity")
+        raise PublicationError(
+            "Staging result lacks model, repository, or cohort identity"
+        )
     if result.get("status") != "ok" or result.get("validation_status") != "ok":
         raise PublicationError(f"Model {model_id} does not have an ok staging result")
     if int(result.get("num_cases", 0)) < 1:
@@ -145,13 +148,25 @@ def _validated_model_record(
     if artifact.stat().st_size != int(result.get("size_bytes", -1)):
         raise PublicationError(f"Staged artifact size changed for {model_id}")
 
+    golden_reference = _safe_staged_file(
+        staging_root, result.get("golden_reference"), "golden reference"
+    )
+    observed_golden_sha = _sha256(golden_reference)
+    observed_golden_size = golden_reference.stat().st_size
+    if observed_golden_sha != str(result.get("golden_reference_sha256", "")):
+        raise PublicationError(f"Golden reference digest changed for {model_id}")
+    if observed_golden_size != int(result.get("golden_reference_size_bytes", -1)):
+        raise PublicationError(f"Golden reference size changed for {model_id}")
+
     metadata_value = _read_json(metadata)
     validation = metadata_value.get("validation")
     if not isinstance(validation, dict) or validation.get("status") != "ok":
         raise PublicationError(f"Metadata validation is not ok for {model_id}")
     requested_devices = [
         str(device).strip().lower()
-        for device in validation.get("requested_devices", summary.get("validate_devices", []))
+        for device in validation.get(
+            "requested_devices", summary.get("validate_devices", [])
+        )
     ]
     device_results = validation.get("devices", [])
     device_status = {
@@ -161,7 +176,9 @@ def _validated_model_record(
     }
     if not requested_devices or set(device_status) != set(requested_devices):
         raise PublicationError(f"Validation device matrix is incomplete for {model_id}")
-    non_ok = [device for device in requested_devices if device_status.get(device) != "ok"]
+    non_ok = [
+        device for device in requested_devices if device_status.get(device) != "ok"
+    ]
     if non_ok:
         raise PublicationError(
             f"Required validation devices are not ok for {model_id}: {non_ok}"
@@ -170,6 +187,28 @@ def _validated_model_record(
         raise PublicationError(f"Metadata artifact digest disagrees for {model_id}")
     if int(metadata_value.get("artifact_size_bytes", -1)) != artifact.stat().st_size:
         raise PublicationError(f"Metadata artifact size disagrees for {model_id}")
+    golden_metadata = validation.get("golden_reference")
+    if not isinstance(golden_metadata, dict) or golden_metadata.get("status") not in {
+        "recorded",
+        "reused",
+    }:
+        raise PublicationError(f"Persistent golden reference is missing for {model_id}")
+    if (
+        golden_metadata.get("sha256") != observed_golden_sha
+        or int(golden_metadata.get("size_bytes", -1)) != observed_golden_size
+        or int(golden_metadata.get("case_count", 0)) < 1
+        or not str(golden_metadata.get("source_cohort", ""))
+    ):
+        raise PublicationError(f"Golden reference metadata disagrees for {model_id}")
+    golden_source_cohort = str(golden_metadata["source_cohort"])
+    expected_golden_status = "recorded" if cohort == golden_source_cohort else "reused"
+    if golden_metadata["status"] != expected_golden_status:
+        raise PublicationError(
+            f"Golden reference status disagrees with its source cohort for {model_id}"
+        )
+    reference_device = str(validation.get("fixed_reference_device", "")).strip().lower()
+    if not reference_device or reference_device not in requested_devices:
+        raise PublicationError(f"Golden reference device is invalid for {model_id}")
 
     validation_cases: Dict[str, Dict[str, Any]] = {}
     for device in device_results:
@@ -188,10 +227,12 @@ def _validated_model_record(
                     f"Validation case is not ok for {model_id} on {device_name}"
                 )
             case_id = str(case.get("case_id", ""))
+            input_sha = str(case.get("input_sha256", ""))
             reference_sha = str(case.get("reference_output_sha256", ""))
             exported_sha = str(case.get("exported_output_sha256", ""))
             if (
                 not case_id
+                or re.fullmatch(r"[0-9a-f]{64}", input_sha) is None
                 or re.fullmatch(r"[0-9a-f]{64}", reference_sha) is None
                 or re.fullmatch(r"[0-9a-f]{64}", exported_sha) is None
             ):
@@ -203,6 +244,7 @@ def _validated_model_record(
                     f"Validation case {case_id} is duplicated for {model_id}"
                 )
             fingerprints[case_id] = {
+                "input_sha256": input_sha,
                 "reference_output_sha256": reference_sha,
                 "exported_output_sha256": exported_sha,
                 "max_abs_diff_vs_reference": float(
@@ -223,6 +265,12 @@ def _validated_model_record(
         "metadata_path": _relative_path(staging_root, metadata),
         "metadata_filename": metadata.name,
         "metadata_sha256": observed_metadata_sha,
+        "golden_reference_path": _relative_path(staging_root, golden_reference),
+        "golden_reference_sha256": observed_golden_sha,
+        "golden_reference_size_bytes": observed_golden_size,
+        "golden_reference_source_cohort": golden_source_cohort,
+        "golden_reference_status": str(golden_metadata["status"]),
+        "reference_device": reference_device,
         "required_devices": requested_devices,
         "num_validation_cases": int(result["num_cases"]),
         "max_abs_tolerance": float(validation.get("max_abs_tolerance", 0.0)),
@@ -246,6 +294,14 @@ def _cross_cohort_comparisons(records: Sequence[Mapping[str, Any]]):
         for left, right in itertools.combinations(
             sorted(model_records, key=lambda item: _cohort_key(item["cohort"])), 2
         ):
+            if (
+                left["golden_reference_sha256"] != right["golden_reference_sha256"]
+                or left["golden_reference_source_cohort"]
+                != right["golden_reference_source_cohort"]
+            ):
+                raise PublicationError(
+                    f"Cohorts do not share one golden reference for {model_id}"
+                )
             if set(left["required_devices"]) != set(right["required_devices"]):
                 raise PublicationError(
                     f"Cross-cohort device matrices differ for {model_id}: "
@@ -260,9 +316,15 @@ def _cross_cohort_comparisons(records: Sequence[Mapping[str, Any]]):
                     )
                 exact_exports = 0
                 worst_guaranteed_max_abs = 0.0
+                guaranteed_max_abs_limit = None
                 for case_id in sorted(left_cases):
                     left_case = left_cases[case_id]
                     right_case = right_cases[case_id]
+                    if left_case["input_sha256"] != right_case["input_sha256"]:
+                        raise PublicationError(
+                            "Validation input differs across cohorts for "
+                            f"{model_id}/{device}/{case_id}"
+                        )
                     if (
                         left_case["reference_output_sha256"]
                         != right_case["reference_output_sha256"]
@@ -281,9 +343,28 @@ def _cross_cohort_comparisons(records: Sequence[Mapping[str, Any]]):
                         left_case["max_abs_diff_vs_reference"]
                         + right_case["max_abs_diff_vs_reference"]
                     )
-                    worst_guaranteed_max_abs = max(
-                        worst_guaranteed_max_abs, guaranteed
+                    left_limit = (
+                        left["max_abs_tolerance"]
+                        if device == left["reference_device"]
+                        else left["cross_device_max_abs_tolerance"]
                     )
+                    right_limit = (
+                        right["max_abs_tolerance"]
+                        if device == right["reference_device"]
+                        else right["cross_device_max_abs_tolerance"]
+                    )
+                    allowed = left_limit + right_limit
+                    if guaranteed > allowed:
+                        raise PublicationError(
+                            "Cross-cohort drift exceeds the combined tolerance for "
+                            f"{model_id}/{device}/{case_id}"
+                        )
+                    if (
+                        guaranteed_max_abs_limit is None
+                        or guaranteed > worst_guaranteed_max_abs
+                    ):
+                        worst_guaranteed_max_abs = guaranteed
+                        guaranteed_max_abs_limit = allowed
                 comparisons.append(
                     {
                         "model_id": model_id,
@@ -293,10 +374,7 @@ def _cross_cohort_comparisons(records: Sequence[Mapping[str, Any]]):
                         "num_cases": len(left_cases),
                         "exact_export_cases": exact_exports,
                         "worst_guaranteed_max_abs": worst_guaranteed_max_abs,
-                        "guaranteed_max_abs_limit": (
-                            left["max_abs_tolerance"]
-                            + right["max_abs_tolerance"]
-                        ),
+                        "guaranteed_max_abs_limit": guaranteed_max_abs_limit,
                     }
                 )
     return comparisons
@@ -343,7 +421,9 @@ def prepare_publication_plan(
         requested_ids = [str(value) for value in summary.get("requested_model_ids", [])]
         results = summary.get("results", [])
         if not requested_ids or not isinstance(results, list):
-            raise PublicationError(f"Staging summary has no requested matrix: {summary_path}")
+            raise PublicationError(
+                f"Staging summary has no requested matrix: {summary_path}"
+            )
         result_ids = [
             str(result.get("model_id", ""))
             for result in results
@@ -352,7 +432,9 @@ def prepare_publication_plan(
         if sorted(result_ids) != sorted(requested_ids) or len(result_ids) != len(
             set(result_ids)
         ):
-            raise PublicationError(f"Staging summary model matrix is incomplete: {summary_path}")
+            raise PublicationError(
+                f"Staging summary model matrix is incomplete: {summary_path}"
+            )
 
         cohort = str(summary.get("torch_minor", ""))
         cohorts.add(cohort)
@@ -434,21 +516,34 @@ def verify_publication_plan(plan_path: Path) -> Dict[str, Any]:
         _require_commit(model.get("parent_revision"), f"Parent revision for {identity}")
         artifact = _safe_staged_file(root, model.get("artifact_path"), "artifact")
         metadata = _safe_staged_file(root, model.get("metadata_path"), "metadata")
+        golden_reference = _safe_staged_file(
+            root, model.get("golden_reference_path"), "golden reference"
+        )
         if _sha256(artifact) != model.get("artifact_sha256"):
             raise PublicationError(f"Artifact changed after planning: {identity}")
         if artifact.stat().st_size != int(model.get("artifact_size_bytes", -1)):
             raise PublicationError(f"Artifact size changed after planning: {identity}")
         if _sha256(metadata) != model.get("metadata_sha256"):
             raise PublicationError(f"Metadata changed after planning: {identity}")
+        if _sha256(golden_reference) != model.get("golden_reference_sha256"):
+            raise PublicationError(
+                f"Golden reference changed after planning: {identity}"
+            )
+        if golden_reference.stat().st_size != int(
+            model.get("golden_reference_size_bytes", -1)
+        ):
+            raise PublicationError(
+                f"Golden reference size changed after planning: {identity}"
+            )
 
     manifest_target = plan.get("manifest_target")
     if not isinstance(manifest_target, dict):
         raise PublicationError("Publication plan lacks a manifest target")
-    _require_commit(
-        manifest_target.get("parent_revision"), "Manifest parent revision"
-    )
+    _require_commit(manifest_target.get("parent_revision"), "Manifest parent revision")
     if manifest_target.get("repo_id") in {model["repo_id"] for model in models}:
-        raise PublicationError("Manifest repository must be separate from model repositories")
+        raise PublicationError(
+            "Manifest repository must be separate from model repositories"
+        )
     return plan
 
 
@@ -538,9 +633,10 @@ def _group_models(plan: Mapping[str, Any]) -> Sequence[Dict[str, Any]]:
                 "artifacts": [],
             },
         )
-        if group["repo_id"] != model["repo_id"] or group["parent_revision"] != model[
-            "parent_revision"
-        ]:
+        if (
+            group["repo_id"] != model["repo_id"]
+            or group["parent_revision"] != model["parent_revision"]
+        ):
             raise PublicationError(
                 f"Model {model_id} has inconsistent repository or parent revisions"
             )
@@ -586,6 +682,11 @@ def _manifest_payload(
                 "artifact_size_bytes": model["artifact_size_bytes"],
                 "metadata_filename": model["metadata_filename"],
                 "metadata_sha256": model["metadata_sha256"],
+                "golden_reference_sha256": model["golden_reference_sha256"],
+                "golden_reference_size_bytes": model["golden_reference_size_bytes"],
+                "golden_reference_source_cohort": model[
+                    "golden_reference_source_cohort"
+                ],
                 "required_devices": model["required_devices"],
             }
         )
@@ -616,8 +717,12 @@ def publish_publication_plan(
             raise PublicationError("A Hugging Face token is required for publication")
         try:
             from huggingface_hub import HfApi
-        except ImportError as exc:  # pragma: no cover - dependency is required by project
-            raise PublicationError("huggingface_hub is required for publication") from exc
+        except (
+            ImportError
+        ) as exc:  # pragma: no cover - dependency is required by project
+            raise PublicationError(
+                "huggingface_hub is required for publication"
+            ) from exc
         api = HfApi(token=token)
 
     try:
