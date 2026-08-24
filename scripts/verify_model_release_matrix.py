@@ -108,9 +108,7 @@ def verify_release_matrix(
     staging_root = staging_root.resolve()
     manifest_path = manifest_path.resolve()
     manifest = _read_json(manifest_path)
-    compatibility = _referenced_json(
-        manifest_path, manifest, "compatibility_ref"
-    )
+    compatibility = _referenced_json(manifest_path, manifest, "compatibility_ref")
     governance = _referenced_json(manifest_path, manifest, "governance_ref")
     if require_approval:
         _require_approved_governance(manifest, compatibility, governance)
@@ -133,6 +131,7 @@ def verify_release_matrix(
     if not required_devices:
         raise ReleaseMatrixError("Compatibility matrix declares no required devices.")
     validation_policy = compatibility.get("validation_policy", {})
+    golden_reference_cohort = str(validation_policy.get("golden_reference_cohort", ""))
     expected_batches = list(validation_policy.get("predictor_batch_sizes", []))
     expected_seeds = list(validation_policy.get("seeds", []))
     expected_scales = list(validation_policy.get("scales", []))
@@ -145,9 +144,7 @@ def verify_release_matrix(
     ]
     expected_numeric_policy = validation_policy.get("numeric", {})
     reference_batching = validation_policy.get("reference_batching", {})
-    per_sample_reference_models = set(
-        reference_batching.get("per_sample_models", [])
-    )
+    per_sample_reference_models = set(reference_batching.get("per_sample_models", []))
     if not (
         expected_batches
         and expected_seeds
@@ -157,6 +154,7 @@ def verify_release_matrix(
         and expected_detector_shapes
         and expected_numeric_policy
         and validation_policy.get("reference_device")
+        and golden_reference_cohort in expected_cohorts
     ):
         raise ReleaseMatrixError("Compatibility validation policy is incomplete.")
 
@@ -177,7 +175,10 @@ def verify_release_matrix(
         )
 
     lanes = []
-    for cohort in sorted(expected_cohorts, key=lambda item: tuple(map(int, item.split(".")))):
+    golden_references: dict[str, tuple[str, int, Path]] = {}
+    for cohort in sorted(
+        expected_cohorts, key=lambda item: tuple(map(int, item.split(".")))
+    ):
         _summary_path, summary = summaries[cohort]
         record = cohort_records[cohort]
         if summary.get("status") != "ok":
@@ -209,12 +210,16 @@ def verify_release_matrix(
             )
         source_tree = environment.get("source_tree", {})
         if not re.fullmatch(r"[0-9a-f]{40}", str(source_tree.get("commit", ""))):
-            raise ReleaseMatrixError(f"Torch {cohort} lacks an immutable source commit.")
+            raise ReleaseMatrixError(
+                f"Torch {cohort} lacks an immutable source commit."
+            )
         if not allow_dirty_source and source_tree.get("clean") is not True:
             raise ReleaseMatrixError(f"Torch {cohort} was produced from a dirty tree.")
         lock = environment.get("environment_lock") or {}
         if not re.fullmatch(r"[0-9a-f]{64}", str(lock.get("sha256", ""))):
-            raise ReleaseMatrixError(f"Torch {cohort} lacks an environment-lock digest.")
+            raise ReleaseMatrixError(
+                f"Torch {cohort} lacks an environment-lock digest."
+            )
         expected_lock_relative = CUDA_ENVIRONMENT_LOCKS.get(cohort)
         if lock.get("path") != expected_lock_relative:
             raise ReleaseMatrixError(
@@ -227,9 +232,10 @@ def verify_release_matrix(
             raise ReleaseMatrixError(
                 f"Torch {cohort} environment-lock digest does not match the source tree."
             )
-        if environment.get("platform", {}).get("system") != "Linux" or environment.get(
-            "platform", {}
-        ).get("machine") != "x86_64":
+        if (
+            environment.get("platform", {}).get("system") != "Linux"
+            or environment.get("platform", {}).get("machine") != "x86_64"
+        ):
             raise ReleaseMatrixError(f"Torch {cohort} used an undeclared platform.")
         if not environment.get("cuda_devices"):
             raise ReleaseMatrixError(f"Torch {cohort} has no CUDA device attestation.")
@@ -242,7 +248,9 @@ def verify_release_matrix(
             for item in results
             if isinstance(item, Mapping)
         }
-        if set(result_by_model) != expected_models or len(results) != len(expected_models):
+        if set(result_by_model) != expected_models or len(results) != len(
+            expected_models
+        ):
             raise ReleaseMatrixError(
                 f"Torch {cohort} model coverage differs from the manifest."
             )
@@ -267,22 +275,55 @@ def verify_release_matrix(
             metadata = _read_json(metadata_path)
             if (
                 metadata.get("artifact_sha256") != result.get("sha256")
-                or int(metadata.get("artifact_size_bytes", -1)) != artifact.stat().st_size
+                or int(metadata.get("artifact_size_bytes", -1))
+                != artifact.stat().st_size
             ):
                 raise ReleaseMatrixError(
                     f"Torch {cohort} model {model_id} metadata does not bind its artifact."
                 )
             source_artifact = metadata.get("source_artifact", {})
             model_record = models[model_id]
-            if (
-                source_artifact.get("revision") != model_record.get("revision")
-                or source_artifact.get("sha256")
-                != model_record.get("source_weight_sha256")
+            if source_artifact.get("revision") != model_record.get(
+                "revision"
+            ) or source_artifact.get("sha256") != model_record.get(
+                "source_weight_sha256"
             ):
                 raise ReleaseMatrixError(
                     f"Torch {cohort} model {model_id} source provenance disagrees."
                 )
             validation = metadata.get("validation", {})
+            golden_path = _staged_path(
+                staging_root, result.get("golden_reference"), "Golden reference"
+            )
+            golden_sha = str(result.get("golden_reference_sha256", ""))
+            golden_size = int(result.get("golden_reference_size_bytes", -1))
+            if (
+                not re.fullmatch(r"[0-9a-f]{64}", golden_sha)
+                or _sha256(golden_path) != golden_sha
+                or golden_path.stat().st_size != golden_size
+            ):
+                raise ReleaseMatrixError(
+                    f"Torch {cohort} model {model_id} has unbound golden evidence."
+                )
+            golden_metadata = validation.get("golden_reference", {})
+            expected_golden_status = (
+                "recorded" if cohort == golden_reference_cohort else "reused"
+            )
+            if (
+                golden_metadata.get("status") != expected_golden_status
+                or golden_metadata.get("source_cohort") != golden_reference_cohort
+                or golden_metadata.get("sha256") != golden_sha
+                or int(golden_metadata.get("size_bytes", -1)) != golden_size
+            ):
+                raise ReleaseMatrixError(
+                    f"Torch {cohort} model {model_id} used the wrong golden bundle."
+                )
+            golden_identity = (golden_sha, golden_size, golden_path)
+            previous_golden = golden_references.setdefault(model_id, golden_identity)
+            if previous_golden != golden_identity:
+                raise ReleaseMatrixError(
+                    f"Torch cohorts do not share one golden bundle for {model_id}."
+                )
             if validation.get("fixed_reference_device") != validation_policy.get(
                 "reference_device"
             ):
@@ -352,6 +393,8 @@ def verify_release_matrix(
             if (
                 int(validation.get("num_cases", -1)) != expected_total_cases
                 or int(result.get("num_cases", -1)) != expected_total_cases
+                or int(golden_metadata.get("case_count", -1))
+                != expected_cases_per_device
             ):
                 raise ReleaseMatrixError(
                     f"Torch {cohort} model {model_id} has the wrong case count."
@@ -361,10 +404,14 @@ def verify_release_matrix(
                 device_record = device_records[device]
                 cases = device_record.get("cases", [])
                 if (
-                    int(device_record.get("num_cases", -1))
-                    != expected_cases_per_device
+                    int(device_record.get("num_cases", -1)) != expected_cases_per_device
                     or len(cases) != expected_cases_per_device
                     or any(case.get("status") != "ok" for case in cases)
+                    or any(
+                        re.fullmatch(r"[0-9a-f]{64}", str(case.get("input_sha256", "")))
+                        is None
+                        for case in cases
+                    )
                 ):
                     raise ReleaseMatrixError(
                         f"Torch {cohort} model {model_id} has incomplete {device} cases."
@@ -397,10 +444,7 @@ def verify_release_matrix(
                 observed_identities = {
                     (
                         int(case.get("batch", -1)),
-                        tuple(
-                            int(value)
-                            for value in case.get("input_shape", [])[-2:]
-                        ),
+                        tuple(int(value) for value in case.get("input_shape", [])[-2:]),
                         int(case.get("seed", -1)),
                         float(case.get("scale", -1)),
                         str(case.get("variant", "")),
@@ -418,6 +462,8 @@ def verify_release_matrix(
                     "sha256": result["sha256"],
                     "size_bytes": artifact.stat().st_size,
                     "num_cases": int(result["num_cases"]),
+                    "golden_reference_sha256": golden_sha,
+                    "golden_reference_size_bytes": golden_size,
                 }
             )
 
@@ -460,9 +506,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--staging-root", required=True)
     parser.add_argument("--summary", action="append", required=True)
-    parser.add_argument(
-        "--manifest", default="facetorch/models/manifest.json"
-    )
+    parser.add_argument("--manifest", default="facetorch/models/manifest.json")
     parser.add_argument(
         "--candidate-evidence",
         action="store_true",

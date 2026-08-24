@@ -18,6 +18,7 @@
   },
   "validation_policy": {
     "reference_device": "cpu",
+    "golden_reference_cohort": "2.6",
     "numeric": {
       "dtype": "float32",
       "cudnn_allow_tf32": false,

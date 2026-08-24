@@ -45,10 +45,12 @@ The workflow rejects reused or incorrectly provisioned execution by requiring th
 ephemeral attestation, an exact clean checkout, the expected uv version, and no
 persistent publication credential variables. It validates all ten models on CPU
 and CUDA for Torch 2.6/CUDA 12.4 and Torch 2.11/CUDA 13.0;
+runs every cohort against the single Torch 2.6 CPU golden-reference bundle;
 runs the exact wheel and public notebook; and smokes both production images with
 networking disabled and a read-only root filesystem. The retained evidence binds
 the source SHA, dependency-lock hashes, manifest/governance hashes, GPU/runtime,
-model summaries, candidate wheel, notebook, and local Docker image IDs.
+model summaries, golden-reference digests, candidate wheel, notebook, and local
+Docker image IDs.
 
 After the one-shot runner exits, remove its working directory and registration if
 the runner service did not do so automatically. Never attach this label to a

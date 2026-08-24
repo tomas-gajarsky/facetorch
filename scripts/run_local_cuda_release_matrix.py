@@ -16,7 +16,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
-
 UV_VERSION = "0.9.14"
 CUDA_PROFILES = {
     "2.6": "environments/torch-2.6-cu124",
@@ -52,14 +51,14 @@ def _run(
         if capture:
             sys.stderr.write(result.stdout)
             sys.stderr.write(result.stderr)
-        raise RuntimeError(f"Command failed with exit {result.returncode}: {command[0]}")
+        raise RuntimeError(
+            f"Command failed with exit {result.returncode}: {command[0]}"
+        )
     return result
 
 
 def _git(repo_root: Path, *arguments: str) -> str:
-    return _run(
-        ["git", *arguments], cwd=repo_root, capture=True
-    ).stdout.strip()
+    return _run(["git", *arguments], cwd=repo_root, capture=True).stdout.strip()
 
 
 def _write_json_atomic(path: Path, value: Mapping[str, Any]) -> None:
@@ -177,6 +176,8 @@ def main() -> int:
     _ensure_evidence_root(staging_root)
     summaries = []
     commands = []
+    golden_reference_cohort = "2.6"
+    golden_reference_root = staging_root / "golden-references"
     source_environment = os.environ.copy()
     source_environment["PYTHONPATH"] = str(repo_root)
     for cohort, profile_relative in CUDA_PROFILES.items():
@@ -225,6 +226,12 @@ def main() -> int:
             lock_relative,
             "--validate-devices",
             "cpu,cuda",
+            "--golden-reference-root",
+            str(golden_reference_root),
+            "--golden-reference-mode",
+            "record" if cohort == golden_reference_cohort else "reuse",
+            "--golden-reference-cohort",
+            golden_reference_cohort,
         ]
         _run(export_command, cwd=repo_root, environment=source_environment)
         commands.append(export_command)
@@ -336,7 +343,9 @@ def main() -> int:
 
     if _git(repo_root, "status", "--porcelain=v1", "--untracked-files=all"):
         raise RuntimeError("Release runner changed the exact source checkout")
-    report_path = (args.report or staging_root / "local-cuda-runner-report.json").resolve()
+    report_path = (
+        args.report or staging_root / "local-cuda-runner-report.json"
+    ).resolve()
     report = {
         "schema_version": 1,
         "status": "ok",

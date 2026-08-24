@@ -90,9 +90,10 @@ def test_distribution_docs_use_the_reviewed_build_python():
     ]
 
     assert len(setup_steps) == 1
-    assert setup_steps[0]["with"]["python-version"] == release_inputs["tools"][
-        "build_python"
-    ]
+    assert (
+        setup_steps[0]["with"]["python-version"]
+        == release_inputs["tools"]["build_python"]
+    )
     commands = _workflow_commands(WORKFLOW_ROOT / "python-package.yml")
     assert "scripts/check_pdoc_search_index.py" in commands
 
@@ -101,9 +102,7 @@ def test_distribution_docs_use_the_reviewed_build_python():
 def test_pdoc_search_index_check_normalizes_scores_and_traversal_order(tmp_path):
     from scripts.check_pdoc_search_index import compare_indexes
 
-    def write_index(
-        path, *, score, token="face", doc="Face docs", reverse=False
-    ):
+    def write_index(path, *, score, token="face", doc="Face docs", reverse=False):
         index = {
             "version": "2.3.9",
             "fields": ["doc"],
@@ -170,22 +169,26 @@ def test_every_supported_torch_device_pair_has_an_exact_uv_lock():
         DEPENDENCY_PROFILES
     )
     public = _project_metadata()
-    for name, (torch_version, vision_version, index_suffix) in DEPENDENCY_PROFILES.items():
+    for name, (
+        torch_version,
+        vision_version,
+        index_suffix,
+    ) in DEPENDENCY_PROFILES.items():
         root = profile_root / name
         with (root / "pyproject.toml").open("rb") as project_file:
             project = tomllib.load(project_file)["project"]
         with (root / "uv.lock").open("rb") as lock_file:
             lock = tomllib.load(lock_file)
         requirements = {
-            Requirement(raw).name: Requirement(raw)
-            for raw in project["dependencies"]
+            Requirement(raw).name: Requirement(raw) for raw in project["dependencies"]
         }
         assert str(requirements["torch"].specifier) == f"=={torch_version}"
         assert str(requirements["torchvision"].specifier) == f"=={vision_version}"
         assert project["requires-python"] == public["requires-python"]
-        assert project["optional-dependencies"]["release"] == public[
-            "optional-dependencies"
-        ]["release"]
+        assert (
+            project["optional-dependencies"]["release"]
+            == public["optional-dependencies"]["release"]
+        )
         packages = lock["package"]
         locked_torch = next(item for item in packages if item["name"] == "torch")
         locked_vision = next(item for item in packages if item["name"] == "torchvision")
@@ -211,8 +214,7 @@ def test_python_313_claim_has_a_frozen_resolution_and_smoke_lane():
 @pytest.mark.release_blocker
 def test_ci_runs_a_dependency_advisory_gate():
     workflows = "\n".join(
-        path.read_text(encoding="utf-8")
-        for path in sorted(WORKFLOW_ROOT.glob("*.yml"))
+        path.read_text(encoding="utf-8") for path in sorted(WORKFLOW_ROOT.glob("*.yml"))
     )
     assert re.search(r"pip-audit|osv-scanner|dependency-review-action", workflows)
 
@@ -306,18 +308,16 @@ def test_advisory_exceptions_reject_invalid_approval_windows():
     }
 
     assert _exception_for([approved], **arguments) == approved
-    assert _exception_for(
-        [approved], **{**arguments, "version": "1.0.1"}
-    ) is None
-    assert _exception_for(
-        [{**approved, "approved_on": "2026-08-23"}], **arguments
-    ) is None
-    assert _exception_for(
-        [{**approved, "approved_on": "2026-11-21"}], **arguments
-    ) is None
-    assert _exception_for(
-        [{**approved, "expires_on": "2026-11-21"}], **arguments
-    ) is None
+    assert _exception_for([approved], **{**arguments, "version": "1.0.1"}) is None
+    assert (
+        _exception_for([{**approved, "approved_on": "2026-08-23"}], **arguments) is None
+    )
+    assert (
+        _exception_for([{**approved, "approved_on": "2026-11-21"}], **arguments) is None
+    )
+    assert (
+        _exception_for([{**approved, "expires_on": "2026-11-21"}], **arguments) is None
+    )
 
 
 @pytest.mark.release_blocker
@@ -360,7 +360,7 @@ def test_local_cuda_release_runner_is_explicit_and_manually_gated():
     assert "[self-hosted, linux, x64, facetorch-ephemeral-gpu]" in content
     assert "github.ref_protected" in content
     assert "github.repository_owner" in content
-    assert "source != os.environ[\"WORKFLOW_SOURCE_SHA\"]" in content
+    assert 'source != os.environ["WORKFLOW_SOURCE_SHA"]' in content
     assert "FACETORCH_RUNNER_EPHEMERAL" in content
     assert "persist-credentials: false" in content
     assert "Persistent publication credential is forbidden" in content
@@ -369,6 +369,12 @@ def test_local_cuda_release_runner_is_explicit_and_manually_gated():
     assert "execute_candidate_notebook.py" in (
         REPO_ROOT / "scripts" / "run_local_cuda_release_matrix.py"
     ).read_text(encoding="utf-8")
+    runner = (REPO_ROOT / "scripts" / "run_local_cuda_release_matrix.py").read_text(
+        encoding="utf-8"
+    )
+    assert "--golden-reference-root" in runner
+    assert 'golden_reference_cohort = "2.6"' in runner
+    assert '"record" if cohort == golden_reference_cohort else "reuse"' in runner
     assert "--network none --read-only" in content
     assert "--gpus all" in content
     assert "record_container_evidence.py" in content
@@ -387,9 +393,7 @@ def test_local_cuda_evidence_is_traversable_by_non_root_images(workflow_name):
         if isinstance(step, dict)
     ]
     allocation_runs = [
-        run
-        for run in runs
-        if 'mktemp -d "$RUNNER_TEMP/facetorch-release-' in run
+        run for run in runs if 'mktemp -d "$RUNNER_TEMP/facetorch-release-' in run
     ]
     assert len(allocation_runs) == 1
     assert 'chmod 0711 "$facetorch_staging"' in allocation_runs[0]
@@ -401,8 +405,7 @@ def test_local_cuda_evidence_is_traversable_by_non_root_images(workflow_name):
     ]
     assert len(container_runs) == 1
     assert (
-        'install -d -m 1777 "$FACETORCH_STAGING/container-reports"'
-        in container_runs[0]
+        'install -d -m 1777 "$FACETORCH_STAGING/container-reports"' in container_runs[0]
     )
 
 
@@ -416,7 +419,7 @@ def test_install_matrix_covers_every_supported_python_in_an_empty_environment():
     assert "--active --frozen --no-dev --no-install-project" in workflow
     assert "uv export" not in workflow
     assert "uv pip install" in workflow and "--no-deps dist/*.whl" in workflow
-    assert "cd \"$RUNNER_TEMP/empty\"" in workflow
+    assert 'cd "$RUNNER_TEMP/empty"' in workflow
 
 
 @pytest.mark.release_blocker
@@ -427,9 +430,7 @@ def test_install_matrix_covers_every_supported_python_in_an_empty_environment():
         ("Dockerfile.gpu", "environments/torch-2.6-cu124"),
     ],
 )
-def test_production_images_install_the_candidate_wheel_as_non_root(
-    dockerfile, profile
-):
+def test_production_images_install_the_candidate_wheel_as_non_root(dockerfile, profile):
     content = (REPO_ROOT / "docker" / dockerfile).read_text(encoding="utf-8")
     final_stage = "FROM " + content.rsplit("\nFROM ", 1)[-1]
     assert profile in final_stage
@@ -442,7 +443,9 @@ def test_production_images_install_the_candidate_wheel_as_non_root(
 def test_docker_context_excludes_nested_profile_virtual_environments():
     patterns = {
         line.strip()
-        for line in (REPO_ROOT / ".dockerignore").read_text(encoding="utf-8").splitlines()
+        for line in (REPO_ROOT / ".dockerignore")
+        .read_text(encoding="utf-8")
+        .splitlines()
         if line.strip() and not line.lstrip().startswith("#")
     }
     assert "**/.venv/" in patterns
@@ -450,9 +453,7 @@ def test_docker_context_excludes_nested_profile_virtual_environments():
 
 @pytest.mark.release_blocker
 def test_source_test_container_trusts_only_its_mount_and_keeps_coverage_gate():
-    dockerfile = (REPO_ROOT / "docker" / "Dockerfile.tests").read_text(
-        encoding="utf-8"
-    )
+    dockerfile = (REPO_ROOT / "docker" / "Dockerfile.tests").read_text(encoding="utf-8")
     compose = (REPO_ROOT / "docker-compose.dev.yml").read_text(encoding="utf-8")
 
     assert 'git config --system --add safe.directory "$WORKDIR"' in dockerfile
@@ -466,7 +467,11 @@ def test_local_release_runner_rejects_ignored_packaging_residue():
     content = (REPO_ROOT / "scripts" / "run_local_cuda_release_matrix.py").read_text(
         encoding="utf-8"
     )
-    for residue in ('repo_root / "build"', 'repo_root / "dist"', 'repo_root / "facetorch.egg-info"'):
+    for residue in (
+        'repo_root / "build"',
+        'repo_root / "dist"',
+        'repo_root / "facetorch.egg-info"',
+    ):
         assert residue in content
     assert "Refusing to build with ignored packaging residue" in content
 
@@ -530,12 +535,12 @@ def test_container_evidence_requires_linux_amd64_non_root_image(monkeypatch):
     with pytest.raises(RuntimeError, match="not configured as facetorch"):
         inspect_with("")
 
-    recorder_source = (REPO_ROOT / "scripts" / "record_container_evidence.py").read_text(
-        encoding="utf-8"
-    )
-    smoke_source = (REPO_ROOT / "scripts" / "smoke_staged_default_analyzer.py").read_text(
-        encoding="utf-8"
-    )
+    recorder_source = (
+        REPO_ROOT / "scripts" / "record_container_evidence.py"
+    ).read_text(encoding="utf-8")
+    smoke_source = (
+        REPO_ROOT / "scripts" / "smoke_staged_default_analyzer.py"
+    ).read_text(encoding="utf-8")
     assert 'report.get("uid") != 10001' in recorder_source
     assert '"uid": os.getuid()' in smoke_source
 

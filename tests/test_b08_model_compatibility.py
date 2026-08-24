@@ -87,12 +87,9 @@ def test_every_model_has_exactly_one_current_metadata_artifact_per_cohort():
     for model_id, artifacts in manifest.models.items():
         exports = [item for item in artifacts if item.format == "pt2"]
         assert len(exports) == 2, model_id
-        assert {
-            item.torch_min for item in exports
-        } == SUPPORTED_TORCH, model_id
+        assert {item.torch_min for item in exports} == SUPPORTED_TORCH, model_id
         assert all(
-            item.validation_metadata == f"{item.filename}.meta.json"
-            for item in exports
+            item.validation_metadata == f"{item.filename}.meta.json" for item in exports
         )
         assert all(item.torch_min != "2.3" for item in artifacts), model_id
 
@@ -118,9 +115,10 @@ def test_provenance_records_approve_every_model_but_not_the_candidate_matrix():
     assert set(governance["models"]) == set(manifest_raw["models"])
     assert governance["status"] == "approved"
     assert governance["license_policy"]["status"] == "approved"
-    assert "not treated as interchangeable" in governance["license_policy"][
-        "no_license_conversion"
-    ]
+    assert (
+        "not treated as interchangeable"
+        in governance["license_policy"]["no_license_conversion"]
+    )
     for model_id, record in governance["models"].items():
         assert record["status"] == "approved", model_id
         assert record["release_eligible"] is True, model_id
@@ -149,17 +147,16 @@ def test_provenance_records_approve_every_model_but_not_the_candidate_matrix():
 @pytest.mark.release_blocker
 def test_export_specs_match_manifest_ids_and_pin_every_source():
     manifest = _json(MANIFEST_PATH)
+    compatibility = _json(COMPATIBILITY_PATH)
+    assert compatibility["validation_policy"]["golden_reference_cohort"] == "2.6"
     specs = _model_specs("2.11")
     assert {item["id"] for item in specs} == set(manifest["models"])
     assert all(item["strict"] is True for item in specs)
     assert all(
-        item["cross_device_tolerances"]["max_abs"]
-        > item["tolerances"]["max_abs"]
+        item["cross_device_tolerances"]["max_abs"] > item["tolerances"]["max_abs"]
         for item in specs
     )
-    assert all(
-        item["validation_reference"]["device"] == "cpu" for item in specs
-    )
+    assert all(item["validation_reference"]["device"] == "cpu" for item in specs)
     for spec in specs:
         source = spec["source_artifact"]
         model = manifest["models"][spec["id"]]
@@ -246,6 +243,13 @@ def _stage_candidate_matrix(tmp_path):
         cohort_root = tmp_path / f"torch-{cohort}"
         results = []
         for model_id, model in manifest["models"].items():
+            golden_reference = (
+                tmp_path / "golden-references" / model_id / "golden-reference.pt"
+            )
+            golden_reference.parent.mkdir(parents=True, exist_ok=True)
+            if not golden_reference.exists():
+                golden_reference.write_bytes(f"golden:{model_id}".encode())
+            golden_sha = hashlib.sha256(golden_reference.read_bytes()).hexdigest()
             model_root = cohort_root / model_id
             model_root.mkdir(parents=True)
             artifact = model_root / f"model-torch{cohort}.pt2"
@@ -257,11 +261,7 @@ def _stage_candidate_matrix(tmp_path):
                 if is_detector
                 else policy["predictor_batch_sizes"]
             )
-            shapes = (
-                policy["detector"]["spatial_shapes"]
-                if is_detector
-                else [[8, 8]]
-            )
+            shapes = policy["detector"]["spatial_shapes"] if is_detector else [[8, 8]]
             cases = [
                 {
                     "case_id": (
@@ -269,6 +269,12 @@ def _stage_candidate_matrix(tmp_path):
                         f"scale{scale}_{variant}"
                     ),
                     "status": "ok",
+                    "input_sha256": hashlib.sha256(
+                        (
+                            f"b{batch}_h{height}_w{width}_seed{seed}_"
+                            f"scale{scale}_{variant}"
+                        ).encode()
+                    ).hexdigest(),
                     "batch": batch,
                     "seed": seed,
                     "scale": scale,
@@ -315,21 +321,29 @@ def _stage_candidate_matrix(tmp_path):
                     "status": "ok",
                     "num_cases": total_cases,
                     "fixed_reference_device": policy["reference_device"],
-                    "max_abs_tolerance": policy["same_device_tolerances"][
+                    "max_abs_tolerance": policy["same_device_tolerances"]["max_abs"],
+                    "mean_abs_tolerance": policy["same_device_tolerances"]["mean_abs"],
+                    "cross_device_max_abs_tolerance": policy["cross_device_tolerances"][
                         "max_abs"
                     ],
-                    "mean_abs_tolerance": policy["same_device_tolerances"][
-                        "mean_abs"
-                    ],
-                    "cross_device_max_abs_tolerance": policy[
-                        "cross_device_tolerances"
-                    ]["max_abs"],
                     "cross_device_mean_abs_tolerance": policy[
                         "cross_device_tolerances"
                     ]["mean_abs"],
                     "numeric_policy": {
                         **policy["numeric"],
                         "restores_caller_settings": True,
+                    },
+                    "golden_reference": {
+                        "schema_version": 1,
+                        "status": (
+                            "recorded"
+                            if cohort == policy["golden_reference_cohort"]
+                            else "reused"
+                        ),
+                        "source_cohort": policy["golden_reference_cohort"],
+                        "sha256": golden_sha,
+                        "size_bytes": golden_reference.stat().st_size,
+                        "case_count": len(cases),
                     },
                     "devices": devices,
                 },
@@ -345,6 +359,9 @@ def _stage_candidate_matrix(tmp_path):
                     "artifact": str(artifact),
                     "meta": str(meta),
                     "sha256": digest,
+                    "golden_reference": str(golden_reference),
+                    "golden_reference_sha256": golden_sha,
+                    "golden_reference_size_bytes": golden_reference.stat().st_size,
                 }
             )
         summary = {
@@ -433,7 +450,9 @@ def test_environment_metadata_records_schema_lock_source_and_cuda():
     environment = _environment_metadata(REPO_ROOT)
     assert environment["torch_version"]
     assert set(environment["export_schema"]) == {"major", "minor"}
-    assert all(isinstance(value, int) for value in environment["export_schema"].values())
+    assert all(
+        isinstance(value, int) for value in environment["export_schema"].values()
+    )
     assert len(environment["source_tree"]["commit"]) == 40
     assert environment["environment_lock"]["path"] == "uv.lock"
     assert len(environment["environment_lock"]["sha256"]) == 64
@@ -495,8 +514,7 @@ def test_hub_inventory_uses_lfs_sha_immutable_revision_and_exact_legal_files(
     )
     assert report["status"] == "ok"
     assert all(
-        artifact["lfs_oid_verified"]
-        for artifact in report["results"][0]["artifacts"]
+        artifact["lfs_oid_verified"] for artifact in report["results"][0]["artifacts"]
     )
     assert all(
         document["bytes_verified"]
@@ -506,8 +524,7 @@ def test_hub_inventory_uses_lfs_sha_immutable_revision_and_exact_legal_files(
     mutations = {
         "README.md": b"x" * len(legal_documents["README.md"]),
         "LICENSE": b"",
-        "THIRD_PARTY_NOTICES.md": b"?"
-        * len(legal_documents["THIRD_PARTY_NOTICES.md"]),
+        "THIRD_PARTY_NOTICES.md": b"?" * len(legal_documents["THIRD_PARTY_NOTICES.md"]),
     }
     for filename, mutation in mutations.items():
         path = download_files[filename]
