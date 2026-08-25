@@ -50,8 +50,9 @@ def _rewrite_default_root_paths(node) -> None:
             elif isinstance(value, str) and _is_default_container_path(value):
                 node[key] = _rewrite_default_root_path(value)
             elif key == "path_local" and isinstance(value, str):
-                # Freeze portable resolver values while the isolated test cache
-                # environment is active; do not leak into a user's normal cache.
+                # Reading node[key] above resolves the interpolation; assigning
+                # that string back replaces the resolver node with the isolated
+                # test-cache path so later environment changes cannot leak it.
                 node[key] = value
         return
 

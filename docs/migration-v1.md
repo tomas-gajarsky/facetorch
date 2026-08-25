@@ -38,6 +38,10 @@ It does not batch multiple images. The old `batch_size` spelling is a
 Predictors, the detector, and selection-linked utilizers are lazy. Empty
 selection and `skip_detector=True` are supported, and unknown or duplicate
 selection names fail before reading the image or downloading a model.
+Utilizer dependencies are explicit in `analyzer.utilizer_dependencies`; a
+dependent utilizer runs only after all of its declared predictors succeed. A
+selected predictor requires a configured face unifier, including with
+`skip_detector=True`; use `include_predictors=[]` for predictor-free processing.
 
 ## Models, cache, and offline deployment
 

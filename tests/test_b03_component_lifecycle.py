@@ -84,7 +84,7 @@ def _component_graph(*, unavailable=()):
         "first": _RecordingPredictor("first"),
         "second": _RecordingPredictor("second"),
     }
-    utilizers = {"second": _RecordingUtilizer()}
+    utilizers = {"consumer": _RecordingUtilizer()}
     cfg = OmegaConf.create(
         {
             "reader": {"component": "reader"},
@@ -96,6 +96,7 @@ def _component_graph(*, unavailable=()):
             "utilizer": {
                 name: {"component": f"utilizer:{name}"} for name in utilizers
             },
+            "utilizer_dependencies": {"consumer": ["second"]},
         }
     )
     constructed = []
@@ -192,12 +193,13 @@ def test_shipped_component_graph_initializes_without_artifact_components():
     assert analyzer.loaded_predictors == ()
     assert analyzer.loaded_utilizers == ()
     assert analyzer.detector_loaded is False
+    assert analyzer.utilizer_dependencies == {"align": ("align",)}
 
 
 @pytest.mark.release_blocker
 def test_selection_constructs_only_requested_components_and_caches_them():
     graph = _component_graph(
-        unavailable={"predictor:second", "utilizer:second"}
+        unavailable={"predictor:second", "utilizer:consumer"}
     )
 
     with patch(
@@ -219,11 +221,54 @@ def test_selection_constructs_only_requested_components_and_caches_them():
 
     assert graph.constructed.count("predictor:first") == 1
     assert "predictor:second" not in graph.constructed
-    assert "utilizer:second" not in graph.constructed
+    assert "utilizer:consumer" not in graph.constructed
     assert "detector" not in graph.constructed
     assert analyzer.loaded_predictors == ("first",)
     assert analyzer.loaded_utilizers == ()
     assert analyzer.detector_loaded is False
+
+
+@pytest.mark.release_blocker
+def test_utilizer_dependency_does_not_depend_on_matching_component_names():
+    graph = _component_graph()
+
+    with patch(
+        "facetorch.analyzer.core.instantiate", side_effect=graph.instantiate
+    ):
+        analyzer = FaceAnalyzer(graph.cfg)
+        analyzer.run(
+            image_source=torch.zeros((3, 4, 5), dtype=torch.uint8),
+            skip_detector=True,
+            include_predictors=["second"],
+        )
+
+    assert graph.utilizers["consumer"].calls == 1
+    assert analyzer.loaded_predictors == ("second",)
+    assert analyzer.loaded_utilizers == ("consumer",)
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    ("dependencies", "message"),
+    [
+        ({"missing": ["first"]}, "Unknown utilizer"),
+        ({"consumer": ["missing"]}, "unknown predictor"),
+        ({"consumer": "second"}, "collection"),
+    ],
+)
+def test_invalid_utilizer_dependency_graph_fails_during_construction(
+    dependencies, message
+):
+    graph = _component_graph()
+    graph.cfg.utilizer_dependencies = dependencies
+
+    with patch(
+        "facetorch.analyzer.core.instantiate", side_effect=graph.instantiate
+    ):
+        with pytest.raises(ConfigurationError, match=message):
+            FaceAnalyzer(graph.cfg)
+
+    assert graph.constructed == ["reader", "unifier"]
 
 
 @pytest.mark.release_blocker

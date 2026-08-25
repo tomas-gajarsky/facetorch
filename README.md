@@ -150,12 +150,16 @@ explicit, warning-emitting `analyzer.run_legacy(...)` adapter.
 
 Detector and predictor models are loaded only when execution requests them, then
 cached for the lifetime of that `FaceAnalyzer`. Selection-linked utilizers are lazy
-too, so excluding their predictor cannot trigger a metadata download.
+too. Their predictor requirements are declared explicitly by
+`analyzer.utilizer_dependencies`, so component names do not have to match and
+excluding a required predictor cannot trigger a utilizer metadata download.
 `include_predictors=None` runs every configured predictor, while
 `include_predictors=[]` runs none. Exclusions follow the same configured ordering.
 Unknown or duplicate names and any simultaneous use of `include_predictors` and
 `exclude_predictors` are rejected before the image is read or a model is loaded.
-`skip_detector=True` never constructs the detector.
+`skip_detector=True` never constructs the detector. Selected predictors still
+require a configured face unifier; use `include_predictors=[]` when no unifier is
+configured and predictor-free processing is intended.
 
 Use `configured_predictors` to inspect names without loading models;
 `loaded_predictors`, `loaded_utilizers`, and `detector_loaded` expose current cache

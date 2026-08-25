@@ -59,7 +59,10 @@ class FaceDetector(BaseModel):
         Returns:
             ImageData: Image data object with Detection tensors and detected Face objects.
         """
-        raw_tensor = data.tensor.clone()
+        preserves_input = (
+            getattr(self.preprocessor, "preserves_input_tensor", False) is True
+        )
+        raw_tensor = data.tensor if preserves_input else data.tensor.clone()
         img_h, img_w = raw_tensor.shape[-2:]
         data = self.preprocessor.run(data)
         logits = self.inference(data.tensor)

@@ -360,6 +360,11 @@ class DownloaderGDrive(_VerifiedDownloader):
                     url, output=os.fspath(temporary_path), quiet=False
                 )
                 candidate = Path(downloaded) if downloaded else temporary_path
+                if not candidate.is_file():
+                    raise ArtifactIntegrityError(
+                        "Google Drive download did not produce an artifact for "
+                        f"file_id {self.file_id!r}."
+                    )
                 _atomic_promote(candidate, target, descriptor)
         return self._activate(descriptor, target)
 
