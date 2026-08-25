@@ -36,11 +36,14 @@ FACETORCH_RUN_UPSTREAM_NETWORK=1 pytest -q -m upstream_network tests/test_model_
 Remote publication is a guarded owner operation. Verify every model repository's
 current commit against the parent revision in the packaged manifest. For a cohort
 update, publish model artifacts first, update their filenames, sizes, and digests
-in `manifest.json`, and only then render the cards. Commit the three rendered files
-together, replace every packaged/configured source revision and `license_ref` with
-the resulting immutable commit, and run the Hub audit. The audit downloads all
-three files at that revision and rejects missing, empty, stale, or byte-different
-content.
+in a candidate `manifest.json`, and only then render the cards. Commit the three
+rendered files together, create a final remote manifest that binds the resulting
+immutable model commits, and replace every packaged/configured source revision,
+`license_ref`, and hosted-card reference with those same commits. The packaged
+`manifest_revision` must bind the final remote manifest commit, not the earlier
+artifact-only candidate manifest. Finally run the strict Hub audit. It downloads
+all three legal files at each final revision and rejects missing, empty, stale, or
+byte-different content.
 
 Model-card publication does not publish or approve cohort validation metadata.
 Current metadata is produced by the clean CPU/CUDA release matrix and published

@@ -1,7 +1,7 @@
 {
   "manifest_version": 1,
-  "manifest_revision": "facetorch-1.0.0rc1-torch26-candidate",
-  "status": "provisional",
+  "manifest_revision": "f40a1f4cc5ea9006d88296e9db74dc3756ff89b5",
+  "status": "approved",
   "compatibility_ref": "compatibility.json",
   "governance_ref": "governance.json",
   "models": {
@@ -9,13 +9,13 @@
       "task": "detector",
       "source": "huggingface",
       "repo_id": "tomas-gajarsky/facetorch-detector-retinaface",
-      "revision": "4dfd78263b94966ef27643dcec60a800701170c7",
+      "revision": "61ddd31cd4c3de8489c896122bf11e9bd9aad93b",
       "source_weight_sha256": "05e524af9b55bbf92b752b064c298f170ae763eb0ac0a4162a92e39fff007def",
-      "export_commit": null,
-      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-detector-retinaface/blob/4dfd78263b94966ef27643dcec60a800701170c7/LICENSE",
+      "export_commit": "4aac25033cbafd836d32351e8fe9bc6c0e088ed5",
+      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-detector-retinaface/blob/61ddd31cd4c3de8489c896122bf11e9bd9aad93b/LICENSE",
       "artifacts": [
-        {"id": "detector-retinaface-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "36ae7d95c4ae0f4faebc87d42ea9dbc55c9a030808c75725cb567d886cd09a11", "size_bytes": 117809806, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
-        {"id": "detector-retinaface-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "9541805b9b11d1fc6e329e365f010c310f5c3509b7d5e4236eb0797dfed66d01", "size_bytes": 118082375, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
+        {"id": "detector-retinaface-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "fafa283e8f3d4e696a04cb05d375abe8c9e1a599c51c039957fcde643b4bbfd2", "size_bytes": 114025654, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
+        {"id": "detector-retinaface-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "ed4b6377d6c0ad147b00b533a24cb6fb2fb300a99e076d43407c1bc421435d8c", "size_bytes": 114189063, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
         {"id": "detector-retinaface-legacy", "filename": "model.pt", "format": "torchscript", "sha256": "05e524af9b55bbf92b752b064c298f170ae763eb0ac0a4162a92e39fff007def", "size_bytes": 109910962, "torch_min": "2.6", "torch_max_exclusive": "2.12", "devices": ["cpu"], "schema_major": null, "schema_minor": null, "validation_metadata": null, "priority": 1000}
       ]
     },
@@ -23,13 +23,13 @@
       "task": "align",
       "source": "huggingface",
       "repo_id": "tomas-gajarsky/facetorch-align-synergynet",
-      "revision": "51cf3068635436edd18aedda5b8d8dd12a17473d",
+      "revision": "364645b1201b0a418a91d52cf420c33a29cb2f17",
       "source_weight_sha256": "09220491e3a0c11eb1c076b9c6551e214a078b54b86acb6f0e94165e00785df4",
-      "export_commit": null,
-      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-align-synergynet/blob/51cf3068635436edd18aedda5b8d8dd12a17473d/LICENSE",
+      "export_commit": "4aac25033cbafd836d32351e8fe9bc6c0e088ed5",
+      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-align-synergynet/blob/364645b1201b0a418a91d52cf420c33a29cb2f17/LICENSE",
       "artifacts": [
-        {"id": "align-synergynet-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "64cca00d6baa6d6ac37acb060a8e03bd5c5cab6467b9f1819e02a7ccb4a6b4b5", "size_bytes": 10220274, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
-        {"id": "align-synergynet-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "ebaec95ba16cfee44277b32c34017ad751387fc115bf5da0ac458fa59027c21c", "size_bytes": 10349621, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
+        {"id": "align-synergynet-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "72865fa2e88245ea239e32fd518503e69c75e8b7f35678e2d6e49d67ccd5229f", "size_bytes": 10226425, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
+        {"id": "align-synergynet-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "7f1a98ca1a480ae19d6bfddb87a4ec58bdd77180d8508340a41ed7c9afb2dec4", "size_bytes": 10378677, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
         {"id": "align-synergynet-legacy", "filename": "model.pt", "format": "torchscript", "sha256": "09220491e3a0c11eb1c076b9c6551e214a078b54b86acb6f0e94165e00785df4", "size_bytes": 49613514, "torch_min": "2.6", "torch_max_exclusive": "2.12", "devices": ["cpu"], "schema_major": null, "schema_minor": null, "validation_metadata": null, "priority": 1000}
       ]
     },
@@ -37,10 +37,10 @@
       "task": "au",
       "source": "huggingface",
       "repo_id": "tomas-gajarsky/facetorch-au-opengraph",
-      "revision": "280fcd634108f43beab7dc7c2a1d2f751f462ee0",
+      "revision": "3eecab6fd3b32a9441d23967901cb68b3e891145",
       "source_weight_sha256": "bb437cd01d069e82a448f83e8f2391718a71ac45068435bf276428e15cc1bad8",
-      "export_commit": null,
-      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-au-opengraph/blob/280fcd634108f43beab7dc7c2a1d2f751f462ee0/LICENSE",
+      "export_commit": "4aac25033cbafd836d32351e8fe9bc6c0e088ed5",
+      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-au-opengraph/blob/3eecab6fd3b32a9441d23967901cb68b3e891145/LICENSE",
       "artifacts": [
         {"id": "au-opengraph-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "f1ee082bf865593aa4ff0302e10f47fd00f52ac53de8c9081e3f595af6dcace1", "size_bytes": 386670161, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
         {"id": "au-opengraph-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "8ededd74d36a0b552d4a5e48f2dd32395ec483a974944bcbae7b09d65ae6d728", "size_bytes": 386589989, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
@@ -51,13 +51,13 @@
       "task": "deepfake",
       "source": "huggingface",
       "repo_id": "tomas-gajarsky/facetorch-deepfake-efficientnet-b7",
-      "revision": "4acc494f37eb63d7457166eff2acb45c5b04b9a6",
+      "revision": "365026f938d07523f1cb9c503edab789c094d5c6",
       "source_weight_sha256": "e36197ae83fa7c050e8ceba267a1f028f2d74d8ad805bf5d5037a26e8ca96c13",
-      "export_commit": null,
-      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-deepfake-efficientnet-b7/blob/4acc494f37eb63d7457166eff2acb45c5b04b9a6/LICENSE",
+      "export_commit": "4aac25033cbafd836d32351e8fe9bc6c0e088ed5",
+      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-deepfake-efficientnet-b7/blob/365026f938d07523f1cb9c503edab789c094d5c6/LICENSE",
       "artifacts": [
-        {"id": "deepfake-efficientnet-b7-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "4520da731410d4a4a7917d4d1dc91e367e82a890a213e0f6318296b0e16974d1", "size_bytes": 272574553, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
-        {"id": "deepfake-efficientnet-b7-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "97b49a70174c0d4f72d9d510d817bdc49a907af9af0242a6a1ba934a7cc9e4b7", "size_bytes": 273085635, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
+        {"id": "deepfake-efficientnet-b7-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "366fac40be1fc5f2a9250d0925edf391ed673b7933a88500afe48215a0d1f415", "size_bytes": 272636518, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
+        {"id": "deepfake-efficientnet-b7-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "9173ff7b4b3448b24379b187e45f8198b7a5200c4aaf0391410f96afe3040195", "size_bytes": 273237443, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
         {"id": "deepfake-efficientnet-b7-legacy", "filename": "model.pt", "format": "torchscript", "sha256": "e36197ae83fa7c050e8ceba267a1f028f2d74d8ad805bf5d5037a26e8ca96c13", "size_bytes": 268291915, "torch_min": "2.6", "torch_max_exclusive": "2.12", "devices": ["cpu"], "schema_major": null, "schema_minor": null, "validation_metadata": null, "priority": 1000}
       ]
     },
@@ -65,13 +65,13 @@
       "task": "embed",
       "source": "huggingface",
       "repo_id": "tomas-gajarsky/facetorch-embed-resnet-50",
-      "revision": "5409f78343d372b16bff024b93a0cffbe3a61aa4",
+      "revision": "dc1f35b007801030606393dc24145f6246abbcab",
       "source_weight_sha256": "3911c73efe902ca0810bf5ced0b8a9bbaa84356860131ec3cb61eb1493e43807",
-      "export_commit": null,
-      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-embed-resnet-50/blob/5409f78343d372b16bff024b93a0cffbe3a61aa4/LICENSE",
+      "export_commit": "4aac25033cbafd836d32351e8fe9bc6c0e088ed5",
+      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-embed-resnet-50/blob/dc1f35b007801030606393dc24145f6246abbcab/LICENSE",
       "artifacts": [
-        {"id": "embed-resnet50-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "46031346afc7a4455ed028b869ab7d023d7221b2dd0225158b6682b1ac55aac9", "size_bytes": 115652633, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
-        {"id": "embed-resnet50-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "926b3f0a86b27a74a885c7fa47dbe7ca0837c1030181cc13f25ade5b48268e81", "size_bytes": 115755655, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
+        {"id": "embed-resnet50-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "6fe0cb024468c20eb863d326a1a80ffbf89b28d982afd4961fdba4eb3f9ef906", "size_bytes": 115659859, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
+        {"id": "embed-resnet50-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "709a55482b6a1f33d308487f5ddfd6c99d99f75ff15f97131e249cda2b1226d6", "size_bytes": 115777607, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
         {"id": "embed-resnet50-legacy", "filename": "model.pt", "format": "torchscript", "sha256": "3911c73efe902ca0810bf5ced0b8a9bbaa84356860131ec3cb61eb1493e43807", "size_bytes": 113981262, "torch_min": "2.6", "torch_max_exclusive": "2.12", "devices": ["cpu"], "schema_major": null, "schema_minor": null, "validation_metadata": null, "priority": 1000}
       ]
     },
@@ -79,13 +79,13 @@
       "task": "fer",
       "source": "huggingface",
       "repo_id": "tomas-gajarsky/facetorch-fer-efficientnet-b0",
-      "revision": "4eed534b4f90f20a8dd5919de8d8636cdbb6abde",
+      "revision": "5ccd9ec97c4f8a432864891d5a78927089d60cdd",
       "source_weight_sha256": "39d8046b1fe3eb06d5edb094307f0cd465a40b7f8886d4b477ca4bbaf7cbb62e",
-      "export_commit": null,
-      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-fer-efficientnet-b0/blob/4eed534b4f90f20a8dd5919de8d8636cdbb6abde/LICENSE",
+      "export_commit": "4aac25033cbafd836d32351e8fe9bc6c0e088ed5",
+      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-fer-efficientnet-b0/blob/5ccd9ec97c4f8a432864891d5a78927089d60cdd/LICENSE",
       "artifacts": [
-        {"id": "fer-efficientnet-b0-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "10937b9a9cc544cac440f938e7d706e9ef0321cdc9fc345d61f7b70e6efa27c9", "size_bytes": 18469155, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
-        {"id": "fer-efficientnet-b0-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "eddeb006828d128c2817bad74a6d5ee85775863c8bbff472e03e1bfb14a59dc0", "size_bytes": 18583911, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
+        {"id": "fer-efficientnet-b0-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "21085ae819e25c41b19fabc518ae2df4ecda47798032f7929e50607e709a8706", "size_bytes": 18509233, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
+        {"id": "fer-efficientnet-b0-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "f8299072dfa79e555f1458df55a4afae11a3cc8b364a05576c64e71cffe5f840", "size_bytes": 18638951, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
         {"id": "fer-efficientnet-b0-legacy", "filename": "model.pt", "format": "torchscript", "sha256": "39d8046b1fe3eb06d5edb094307f0cd465a40b7f8886d4b477ca4bbaf7cbb62e", "size_bytes": 16739001, "torch_min": "2.6", "torch_max_exclusive": "2.12", "devices": ["cpu"], "schema_major": null, "schema_minor": null, "validation_metadata": null, "priority": 1000}
       ]
     },
@@ -93,13 +93,13 @@
       "task": "fer",
       "source": "huggingface",
       "repo_id": "tomas-gajarsky/facetorch-fer-efficientnet-b2",
-      "revision": "ca9a1856b1ab1269f3335ddebcebc69ef747086a",
+      "revision": "817a7d47a1cd0365b827d0f140c45e5c63f2f69b",
       "source_weight_sha256": "91672ff45602901b1631db910ec2e65db21def35bda550c5f4e30a75361c9bdd",
-      "export_commit": null,
-      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-fer-efficientnet-b2/blob/ca9a1856b1ab1269f3335ddebcebc69ef747086a/LICENSE",
+      "export_commit": "4aac25033cbafd836d32351e8fe9bc6c0e088ed5",
+      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-fer-efficientnet-b2/blob/817a7d47a1cd0365b827d0f140c45e5c63f2f69b/LICENSE",
       "artifacts": [
-        {"id": "fer-efficientnet-b2-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "faf0adb86eaf6f45e0511f41a4f0f41df2069da0216371132101b28e017a8320", "size_bytes": 33881512, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
-        {"id": "fer-efficientnet-b2-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "5247f93acebf092290ec56e48bebf4220b58f07d3bd4d9907f07b532c42d09bc", "size_bytes": 34045387, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
+        {"id": "fer-efficientnet-b2-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "8efe66ef13cb46b7e5d3fc6e0d8c5b9f215261ce96922979c28ddfa4d0cd1109", "size_bytes": 33937973, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
+        {"id": "fer-efficientnet-b2-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "d319e478ace14e8ac2b4b4fabec3851ed91de0196a52289bc83be436dfee323c", "size_bytes": 34123787, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
         {"id": "fer-efficientnet-b2-legacy", "filename": "model.pt", "format": "torchscript", "sha256": "91672ff45602901b1631db910ec2e65db21def35bda550c5f4e30a75361c9bdd", "size_bytes": 31730387, "torch_min": "2.6", "torch_max_exclusive": "2.12", "devices": ["cpu"], "schema_major": null, "schema_minor": null, "validation_metadata": null, "priority": 1000}
       ]
     },
@@ -107,13 +107,13 @@
       "task": "va",
       "source": "huggingface",
       "repo_id": "tomas-gajarsky/facetorch-va-elim",
-      "revision": "d71aafca2b4cb460147b66cc4d544feebb496df9",
+      "revision": "ff74558b4dbd972bd94cf6cc1eccb6f3601f2799",
       "source_weight_sha256": "8f6a9a127e93343e75edf7311f631fbab7fc37b1e0c9af82103c31daf99ec64a",
-      "export_commit": null,
-      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-va-elim/blob/d71aafca2b4cb460147b66cc4d544feebb496df9/LICENSE",
+      "export_commit": "4aac25033cbafd836d32351e8fe9bc6c0e088ed5",
+      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-va-elim/blob/ff74558b4dbd972bd94cf6cc1eccb6f3601f2799/LICENSE",
       "artifacts": [
-        {"id": "va-elim-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "0e38413c4d4c43ad1362ade44c464c30273ac435c7ad373ceb3ff1c0a6a32473", "size_bytes": 21350491, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
-        {"id": "va-elim-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "ae2eedbfe61dba0383ef248bec63fcd5f13d3e3915f06fee9927185bbc52eab4", "size_bytes": 21369347, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
+        {"id": "va-elim-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "2e07b91fa8cad7aaa28b7b6656fc66d4f8b8d154df1b3c8a00ecd604e8cdd624", "size_bytes": 21350493, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
+        {"id": "va-elim-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "0c55f59a573bb5d56e068eee8a840eef9e57b74d008c22147a9bdc23ec20ba56", "size_bytes": 21371075, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
         {"id": "va-elim-legacy", "filename": "model.pt", "format": "torchscript", "sha256": "8f6a9a127e93343e75edf7311f631fbab7fc37b1e0c9af82103c31daf99ec64a", "size_bytes": 19801840, "torch_min": "2.6", "torch_max_exclusive": "2.12", "devices": ["cpu"], "schema_major": null, "schema_minor": null, "validation_metadata": null, "priority": 1000}
       ]
     },
@@ -121,13 +121,13 @@
       "task": "verify",
       "source": "huggingface",
       "repo_id": "tomas-gajarsky/facetorch-verify-adaface",
-      "revision": "71d5f83de703ec4686121e70e3b7061575b9354a",
+      "revision": "3445b8fdc75502c62d2c45b6e1dde59774f7fcff",
       "source_weight_sha256": "edc3639bd4affeeaebe0bf01bacbcdf109c5a29713278080955d362191d1aa0a",
-      "export_commit": null,
-      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-verify-adaface/blob/71d5f83de703ec4686121e70e3b7061575b9354a/LICENSE",
+      "export_commit": "4aac25033cbafd836d32351e8fe9bc6c0e088ed5",
+      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-verify-adaface/blob/3445b8fdc75502c62d2c45b6e1dde59774f7fcff/LICENSE",
       "artifacts": [
-        {"id": "verify-adaface-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "e1f33250e8aa71e14655fc05b07cc347eff03987cb0c34c5608c1540dbfd4b4b", "size_bytes": 261670465, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
-        {"id": "verify-adaface-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "3bae5e0e1c24814c4f2d74ecc352a0be1e43c7c8ba10e516a3c000e656d10e72", "size_bytes": 261820576, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
+        {"id": "verify-adaface-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "99a07809423a075991cb32c0df5475ed0e01617ac75fb7cb11beab894d0646c4", "size_bytes": 261670973, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
+        {"id": "verify-adaface-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "c87f48c48859a05207de63702d1fe0f491a63677a4b0304d49a527fe3507426f", "size_bytes": 261840608, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
         {"id": "verify-adaface-legacy", "filename": "model.pt", "format": "torchscript", "sha256": "edc3639bd4affeeaebe0bf01bacbcdf109c5a29713278080955d362191d1aa0a", "size_bytes": 260746217, "torch_min": "2.6", "torch_max_exclusive": "2.12", "devices": ["cpu"], "schema_major": null, "schema_minor": null, "validation_metadata": null, "priority": 1000}
       ]
     },
@@ -135,13 +135,13 @@
       "task": "verify",
       "source": "huggingface",
       "repo_id": "tomas-gajarsky/facetorch-verify-magface",
-      "revision": "e7466b10dcdcfa2abaa2e4bc00cb7e8774d45017",
+      "revision": "12ca8db36561bb0db08366025e979844ced5e79d",
       "source_weight_sha256": "0c54aab654369235b25c4df96214cf9fda23c8535a48eb5c9a0c8a03c79601dc",
-      "export_commit": null,
-      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-verify-magface/blob/e7466b10dcdcfa2abaa2e4bc00cb7e8774d45017/LICENSE",
+      "export_commit": "4aac25033cbafd836d32351e8fe9bc6c0e088ed5",
+      "license_ref": "https://huggingface.co/tomas-gajarsky/facetorch-verify-magface/blob/12ca8db36561bb0db08366025e979844ced5e79d/LICENSE",
       "artifacts": [
-        {"id": "verify-magface-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "d6977f226493a55f72a54c57906998b8b814721a7560030e07c216fb9c9a6de1", "size_bytes": 262463778, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
-        {"id": "verify-magface-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "3298c38e5cb26aa00bac8128627f365dd47f57345a034e8b33f3742cde63f6eb", "size_bytes": 262707136, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
+        {"id": "verify-magface-torch2.6", "filename": "model-torch2.6.pt2", "format": "pt2", "sha256": "b96f0dcfb5a9009ce352a2c215c7874802361f09de41d5d0040f83e647c95339", "size_bytes": 262467679, "torch_min": "2.6", "torch_max_exclusive": "2.7", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 2, "validation_metadata": "model-torch2.6.pt2.meta.json", "priority": 26},
+        {"id": "verify-magface-torch2.11", "filename": "model-torch2.11.pt2", "format": "pt2", "sha256": "d7c153debab6cb61327b684fc66132f71f4960b9c7779e1b282eba2c4e0d05e3", "size_bytes": 262739712, "torch_min": "2.11", "torch_max_exclusive": "2.12", "devices": ["cpu", "cuda"], "schema_major": 8, "schema_minor": 17, "validation_metadata": "model-torch2.11.pt2.meta.json", "priority": 211},
         {"id": "verify-magface-legacy", "filename": "model.pt", "format": "torchscript", "sha256": "0c54aab654369235b25c4df96214cf9fda23c8535a48eb5c9a0c8a03c79601dc", "size_bytes": 261641692, "torch_min": "2.6", "torch_max_exclusive": "2.12", "devices": ["cpu"], "schema_major": null, "schema_minor": null, "validation_metadata": null, "priority": 1000}
       ]
     }

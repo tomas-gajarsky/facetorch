@@ -7,7 +7,7 @@ downloader:
   path_local: ${facetorch.model_dir:}/exported/predictor/embed/1/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-embed-resnet-50  # HuggingFace repo ID
   manifest_id: embed-resnet50
-  revision: 5409f78343d372b16bff024b93a0cffbe3a61aa4
+  revision: dc1f35b007801030606393dc24145f6246abbcab
   offline: ${offline}
   allow_legacy_models: ${allow_legacy_models}
   device: ${analyzer.device}

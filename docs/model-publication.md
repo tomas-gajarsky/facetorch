@@ -143,3 +143,31 @@ Only after every model commit succeeds is a candidate manifest committed to the
 separate manifest repository. The receipt records its immutable revision. This tool
 does not update a stable alias, default branch, package manifest, or public release;
 those later promotion steps must consume the reviewed immutable revision.
+
+## 5. Finalize legal contracts and package pins
+
+The artifact-only commits are not the final model revisions. Derive a candidate
+package manifest from the completed receipt, render `README.md`, `LICENSE`, and
+`THIRD_PARTY_NOTICES.md`, and commit those three deterministic files together on
+each plan-specific candidate branch. Use the artifact commit as `parent_commit` and
+record every resulting immutable revision in a resumable finalization receipt.
+
+After all model legal commits succeed, update the remote manifest records to those
+final model revisions and commit that manifest last. Bind the packaged
+`manifest_revision` to this final remote-manifest commit, update every model/config
+revision plus `license_ref` and `hosted_model_card`, and retain the clean export
+commit in each model's `export_commit`. Rendering is non-circular: cards contain
+the artifact contract but do not embed Hub revision fields.
+
+Run the strict audit without `--allow-legacy-metadata`; for the release evidence
+run, also use `--download-artifacts` so the downloaded bytes are checked in
+addition to LFS object IDs:
+
+```bash
+PYTHONPATH=. python scripts/audit_model_manifest_hf.py --download-artifacts
+```
+
+Only a zero-exit audit may supply the manifest repository, final revision,
+filename, and SHA-256 to the coordinated release workflow. Candidate branches and
+immutable commits remain review objects; this process does not move a default Hub
+branch or stable alias.

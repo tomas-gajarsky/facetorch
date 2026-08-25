@@ -474,21 +474,24 @@ versioned facetorch model/metadata roots.
 
 Models are available on the [Hugging Face Hub](https://huggingface.co/tomas-gajarsky).
 The legacy [Google Drive folder](https://drive.google.com/drive/folders/19qlklR18wYfFsCChQ78it10XciuTzbDM?usp=sharing)
-is retained for manual backward compatibility only. The packaged manifest remains
-provisional until its digest-bound validation metadata is published and the full
-matrix is repeated from the exact clean RC1 commit. Model governance is approved:
-all ten records are release-eligible under their pinned upstream licenses, verified
-checkpoint mappings, preserved attribution, and owner-approved redistribution
-policy. That approval does not grant rights to upstream training datasets or remove
-the deployment-specific consent, privacy, performance, and legal obligations listed
-in each model record.
+is retained for manual backward compatibility only. The packaged manifest is
+approved and pins the published, digest-bound validation metadata and legal
+documents produced by the clean RC1 model-export commit. Model governance is also
+approved: all ten records are release-eligible under their pinned upstream
+licenses, verified checkpoint mappings, preserved attribution, and owner-approved
+redistribution policy. That approval does not grant rights to upstream training
+datasets or remove the deployment-specific consent, privacy, performance, and
+legal obligations listed in each model record. The coordinated RC1 release retains
+its separate exact-final-commit dry-run and protected-environment gates.
 
 Maintainers export and validate every requested model locally before any remote
 write. Inline `--upload` is disabled. Publication requires a deterministic plan,
 an approval bound to that plan's digest, immutable parent revisions, and a
 resumable receipt. Each model's artifact and metadata are committed together to a
-candidate branch; the immutable manifest commit is created only after every model
-repository succeeds. See [the model publication runbook](docs/model-publication.md).
+candidate branch; the initial immutable manifest commit is created only after every
+model repository succeeds. Deterministically rendered legal documents are then
+committed and a final manifest binds those resulting immutable revisions. See
+[the model publication runbook](docs/model-publication.md).
 
 #### Why exported models?
 
@@ -496,7 +499,7 @@ Facetorch v1 moved default model artifacts from TorchScript (`.pt`) to `torch.ex
 
 `torch.export` serialization is tied to PyTorch's exported-program schema, so one
 `.pt2` file is not guaranteed to load across future or older PyTorch minors. The
-candidate manifest has exact cohorts for Torch 2.6 and 2.11. Package metadata uses
+approved manifest has exact cohorts for Torch 2.6 and 2.11. Package metadata uses
 the same bounded, disjoint set. Torch 2.3-2.5 and 2.7-2.10 are unsupported and fail
 before download; no schema-major or numeric fallback is attempted. Torch 2.3 was
 dropped because its affected `torch.load(weights_only=True)` path has a critical
