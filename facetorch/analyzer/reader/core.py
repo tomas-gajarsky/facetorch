@@ -1,16 +1,17 @@
 """Public image readers feeding facetorch's canonical input pipeline."""
 
+import http.client
 import io
 import ipaddress
 import os
 import socket
+import ssl
 import warnings
 from pathlib import Path
 from typing import Optional, Protocol, Sequence, Union, runtime_checkable
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
 import numpy as np
-import requests
 import torch
 import torchvision
 from codetiming import Timer
@@ -47,14 +48,15 @@ def _is_remote_reference(value: str) -> bool:
     return "://" in value
 
 
-def _validate_public_url_target(parsed) -> None:
-    """Reject credentials and non-public resolved addresses before each request."""
+def _validate_public_url_target(parsed) -> tuple[str, ...]:
+    """Resolve one URL once and return only validated public numeric addresses."""
     if parsed.username is not None or parsed.password is not None:
         raise InputError("Remote image URLs must not contain credentials.")
     hostname = parsed.hostname
     if not hostname:
         raise InputError("Remote image URL has no hostname.")
     try:
+        hostname = hostname.encode("idna").decode("ascii")
         port = parsed.port or (443 if parsed.scheme.lower() == "https" else 80)
         addresses = socket.getaddrinfo(
             hostname,
@@ -65,6 +67,7 @@ def _validate_public_url_target(parsed) -> None:
         raise InputError("Remote image hostname could not be resolved safely.") from exc
     if not addresses:
         raise InputError("Remote image hostname did not resolve to an address.")
+    validated = []
     for address in addresses:
         raw_address = str(address[4][0]).split("%", 1)[0]
         try:
@@ -75,6 +78,98 @@ def _validate_public_url_target(parsed) -> None:
             raise InputError(
                 "Remote image URLs must resolve only to public network addresses."
             )
+        normalized = str(resolved)
+        if normalized not in validated:
+            validated.append(normalized)
+    return tuple(validated)
+
+
+class _PinnedHTTPConnection(http.client.HTTPConnection):
+    """HTTP connection whose socket target is an already validated numeric IP."""
+
+    def __init__(
+        self,
+        hostname: str,
+        address: str,
+        port: int,
+        timeout: float,
+    ) -> None:
+        super().__init__(hostname, port=port, timeout=timeout)
+        self._validated_address = address
+
+    def connect(self) -> None:
+        self.sock = socket.create_connection(
+            (self._validated_address, self.port),
+            self.timeout,
+            self.source_address,
+        )
+
+
+class _PinnedHTTPSConnection(http.client.HTTPSConnection):
+    """HTTPS connection pinned to an IP while retaining hostname TLS checks."""
+
+    def __init__(
+        self,
+        hostname: str,
+        address: str,
+        port: int,
+        timeout: float,
+    ) -> None:
+        super().__init__(
+            hostname,
+            port=port,
+            timeout=timeout,
+            context=ssl.create_default_context(),
+        )
+        self._validated_address = address
+
+    def connect(self) -> None:
+        raw_socket = socket.create_connection(
+            (self._validated_address, self.port),
+            self.timeout,
+            self.source_address,
+        )
+        try:
+            self.sock = self._context.wrap_socket(
+                raw_socket,
+                server_hostname=self.host,
+            )
+        except Exception:
+            raw_socket.close()
+            raise
+
+
+def _open_pinned_response(parsed, address: str, timeout: float):
+    """Open one proxy-free request to a validated IP with the original Host/SNI."""
+    scheme = parsed.scheme.lower()
+    hostname = (parsed.hostname or "").encode("idna").decode("ascii")
+    default_port = 443 if scheme == "https" else 80
+    port = parsed.port or default_port
+    connection_type = (
+        _PinnedHTTPSConnection if scheme == "https" else _PinnedHTTPConnection
+    )
+    connection = connection_type(hostname, address, port, timeout)
+    display_hostname = f"[{hostname}]" if ":" in hostname else hostname
+    host_header = (
+        display_hostname if port == default_port else f"{display_hostname}:{port}"
+    )
+    target = parsed.path or "/"
+    if parsed.query:
+        target = f"{target}?{parsed.query}"
+    try:
+        connection.request(
+            "GET",
+            target,
+            headers={
+                "Accept": "image/*",
+                "Host": host_header,
+                "User-Agent": "facetorch-url-reader/1",
+            },
+        )
+        return connection, connection.getresponse()
+    except Exception:
+        connection.close()
+        raise
 
 
 def _array_to_tensor(array: np.ndarray) -> torch.Tensor:
@@ -265,12 +360,21 @@ class UniversalReader(BaseReader):
                     input_spec=input_spec,
                     path_input=str(Path(path_image)),
                 )
-        except (FileNotFoundError, PermissionError, UnidentifiedImageError, OSError) as exc:
-            raise InputError(f"Could not read local image path {path_image!r}.") from exc
+        except (
+            FileNotFoundError,
+            PermissionError,
+            UnidentifiedImageError,
+            OSError,
+        ) as exc:
+            raise InputError(
+                f"Could not read local image path {path_image!r}."
+            ) from exc
 
     def read_image_from_url(self, *_args, **_kwargs) -> ImageData:
         """Compatibility guard for callers that previously used implicit networking."""
-        raise InputError("Remote image input requires an explicit URLReader configuration.")
+        raise InputError(
+            "Remote image input requires an explicit URLReader configuration."
+        )
 
 
 class ImageReader(BaseReader):
@@ -302,7 +406,9 @@ class ImageReader(BaseReader):
             )
         path = os.fspath(image_source)
         if _is_remote_reference(path):
-            raise InputError("ImageReader does not permit remote URLs; configure URLReader.")
+            raise InputError(
+                "ImageReader does not permit remote URLs; configure URLReader."
+            )
         return self.read_image_from_path(
             path,
             fix_img_size,
@@ -399,19 +505,27 @@ class URLReader(UniversalReader):
             parsed = urlsplit(current_url)
             if parsed.scheme.lower() not in self.allowed_schemes or not parsed.netloc:
                 raise InputError("URL scheme is not allowed or the URL has no host.")
-            _validate_public_url_target(parsed)
-            try:
-                response = requests.get(
-                    current_url,
-                    timeout=self.timeout,
-                    allow_redirects=False,
-                    stream=True,
-                )
-            except requests.RequestException as exc:
-                raise InputError("Remote image request failed or timed out.") from exc
+            addresses = _validate_public_url_target(parsed)
+            connection = None
+            response = None
+            last_error = None
+            for address in addresses:
+                try:
+                    connection, response = _open_pinned_response(
+                        parsed,
+                        address,
+                        self.timeout,
+                    )
+                    break
+                except (OSError, ValueError, http.client.HTTPException) as exc:
+                    last_error = exc
+            if connection is None or response is None:
+                raise InputError(
+                    "Remote image request failed or timed out."
+                ) from last_error
 
             try:
-                if response.status_code in self._REDIRECT_STATUSES:
+                if response.status in self._REDIRECT_STATUSES:
                     location = response.headers.get("Location")
                     if location is None:
                         raise InputError("Remote image redirect omitted its target.")
@@ -420,7 +534,8 @@ class URLReader(UniversalReader):
                     current_url = urljoin(current_url, location)
                     continue
 
-                response.raise_for_status()
+                if response.status < 200 or response.status >= 300:
+                    raise InputError("Remote image returned an unsuccessful response.")
                 content_length = response.headers.get("Content-Length")
                 if content_length is not None:
                     try:
@@ -430,21 +545,31 @@ class URLReader(UniversalReader):
                             "Remote image returned an invalid Content-Length header."
                         ) from exc
                     if declared_size > self.max_bytes:
-                        raise InputError("Remote image exceeds the configured size limit.")
+                        raise InputError(
+                            "Remote image exceeds the configured size limit."
+                        )
 
                 chunks = []
                 received = 0
-                for chunk in response.iter_content(chunk_size=64 * 1024):
+                while True:
+                    chunk = response.read(64 * 1024)
                     if not chunk:
-                        continue
+                        break
                     received += len(chunk)
                     if received > self.max_bytes:
-                        raise InputError("Remote image exceeds the configured size limit.")
+                        raise InputError(
+                            "Remote image exceeds the configured size limit."
+                        )
                     chunks.append(chunk)
-            except requests.RequestException as exc:
-                raise InputError("Remote image returned an unsuccessful response.") from exc
+            except InputError:
+                raise
+            except (OSError, ValueError, http.client.HTTPException) as exc:
+                raise InputError(
+                    "Remote image returned an unsuccessful response."
+                ) from exc
             finally:
                 response.close()
+                connection.close()
 
             hostname = parsed.hostname or ""
             if ":" in hostname:

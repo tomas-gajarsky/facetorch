@@ -5,7 +5,6 @@ import re
 
 import pytest
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -23,12 +22,8 @@ def test_all_readme_python_blocks_are_valid_source():
 def test_notebook_is_clean_and_uses_candidate_public_contract():
     notebook_path = REPO_ROOT / "notebooks" / "facetorch_notebook_demo.ipynb"
     notebook = json.loads(notebook_path.read_text(encoding="utf-8"))
-    code_cells = [
-        cell for cell in notebook["cells"] if cell.get("cell_type") == "code"
-    ]
-    combined = "\n".join(
-        "".join(cell.get("source", [])) for cell in notebook["cells"]
-    )
+    code_cells = [cell for cell in notebook["cells"] if cell.get("cell_type") == "code"]
+    combined = "\n".join("".join(cell.get("source", [])) for cell in notebook["cells"])
 
     assert notebook["nbformat"] == 4
     assert code_cells
@@ -38,7 +33,8 @@ def test_notebook_is_clean_and_uses_candidate_public_contract():
         ast.parse("".join(cell.get("source", [])))
 
     assert "facetorch==1.0.0rc1" in combined
-    assert "v1.0.0rc1" in combined
+    assert "v1.0.0-rc.1" in combined
+    assert "v1.0.0rc1" not in combined
     assert "/main/" not in combined
     assert "load_config(" in combined
     assert "include_tensors=True" in combined

@@ -1,9 +1,9 @@
 # Change Log
 
-## 1.0.0 (Unreleased)
+## 1.0.0rc1 (Unreleased)
 
 This is the v1 release candidate change set. The section becomes released only
-when the immutable v1.0.0 tag and all publication receipts have been verified.
+when the immutable v1.0.0-rc.1 tag and all publication receipts have been verified.
 
 ### Breaking Changes
 * Minimum Python version raised from 3.8 to 3.10

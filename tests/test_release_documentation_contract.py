@@ -3,7 +3,6 @@ import subprocess
 
 import pytest
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -27,6 +26,23 @@ def test_unpublished_v1_changelog_is_not_marked_as_released():
     v1_section = changelog.split("## 0.6.2", 1)[0]
     assert "Released on" not in v1_section
     assert "Unreleased" in v1_section or "release candidate" in v1_section.lower()
+
+
+@pytest.mark.release_blocker
+def test_rc1_identity_and_model_governance_prose_are_consistent():
+    project = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    changelog = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    compatibility = (REPO_ROOT / "docs/model-compatibility.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'version = "1.0.0rc1"' in project
+    assert "v1.0.0-rc.1" in changelog
+    assert "release_eligible: false" not in compatibility
+    assert "governance is still incomplete" not in compatibility
+    assert "all ten records are release-eligible" in readme.lower()
+    assert "release_eligible: true" in compatibility
 
 
 @pytest.mark.release_blocker
@@ -123,9 +139,9 @@ def test_generated_api_docs_cover_the_public_top_level_modules():
 
 @pytest.mark.release_blocker
 def test_generated_analyzer_docs_describe_the_v1_result_contract():
-    content = (
-        REPO_ROOT / "docs" / "facetorch" / "analyzer" / "core.html"
-    ).read_text(encoding="utf-8")
+    content = (REPO_ROOT / "docs" / "facetorch" / "analyzer" / "core.html").read_text(
+        encoding="utf-8"
+    )
     assert "AnalysisResult" in content
     assert "face_batch_size" in content
     assert "If return_img_data is False" not in content
