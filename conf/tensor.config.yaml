@@ -14,6 +14,7 @@ defaults:
   - analyzer/utilizer/draw_boxes: torchvision_boxes.yaml
   - analyzer/utilizer/draw_landmarks: torchvision_keypoints.yaml
   - analyzer/utilizer/save: image_saver.yaml
+  - analyzer/utilizer_dependencies: default.yaml
   - analyzer/logger: json_format.yaml
   - _self_
 

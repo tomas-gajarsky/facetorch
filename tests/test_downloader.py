@@ -185,6 +185,26 @@ def test_gdrive_download_is_verified_and_cached(tmp_path):
 
 @pytest.mark.unit
 @pytest.mark.downloader
+def test_gdrive_missing_download_has_an_actionable_integrity_error(tmp_path):
+    target = tmp_path / "cache" / "meta.pt"
+    downloader = DownloaderGDrive(
+        file_id="missing-file-id",
+        path_local=str(target),
+        revision="gdrive-object-v1",
+        sha256="0" * 64,
+        size_bytes=1,
+        expected_format="torch_data",
+    )
+
+    with patch("facetorch.downloader.gdown.download", return_value=None):
+        with pytest.raises(ArtifactIntegrityError, match="did not produce an artifact"):
+            downloader.run()
+
+    assert not target.exists()
+
+
+@pytest.mark.unit
+@pytest.mark.downloader
 def test_external_remote_without_integrity_metadata_fails_closed(tmp_path):
     downloader = DownloaderHuggingFace(
         file_id="owner/toy",

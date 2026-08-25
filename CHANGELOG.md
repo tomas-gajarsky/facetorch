@@ -87,6 +87,15 @@ when the immutable v1.0.0-rc.1 tag and all publication receipts have been verifi
 * Google Colab notebook updated to v1.0.0 (uses `image_source`, removes pinned torch versions)
 
 ### Fixed
+* Analyzer execution now fails clearly when selected predictors have no unifier,
+  validates one prediction per input face, and uses explicit utilizer dependencies
+  instead of component-name coupling or first-face inference state
+* The shipped detector preprocessor preserves the raw tensor without a full-image
+  clone, while custom preprocessors retain defensive copying by default
+* RetinaFace postprocessing creates priors and NMS temporaries on the incoming
+  inference tensor device rather than relying on potentially stale configured state
+* Google Drive failures that produce no file now raise an actionable
+  `ArtifactIntegrityError` instead of a bare `FileNotFoundError`
 * "File name too long" error when passing tensor/array to `FaceAnalyzer.run()` with `ImageReader`
 * AU predictor YAML indentation error in merged config files
 * Numpy array reader now handles (H, W) and (H, W, 1) grayscale arrays

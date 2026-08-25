@@ -13,6 +13,10 @@ logger = LoggerJsonFile().logger
 
 
 class BaseDetPreProcessor(BaseProcessor):
+    # Custom preprocessors are assumed capable of mutating ``data.tensor`` and
+    # therefore retain the detector's defensive raw-image copy by default.
+    preserves_input_tensor = False
+
     @Timer(
         "BaseDetPreProcessor.__init__",
         "{name}: {milliseconds:.2f} ms",
@@ -54,6 +58,10 @@ class BaseDetPreProcessor(BaseProcessor):
 
 
 class DetectorPreProcessor(BaseDetPreProcessor):
+    # This implementation only rebinds ``data.tensor``. Custom detector
+    # preprocessors remain defensive by default through the base-class flag.
+    preserves_input_tensor = True
+
     @Timer(
         "DetectorPreProcessor.__init__",
         "{name}: {milliseconds:.2f} ms",

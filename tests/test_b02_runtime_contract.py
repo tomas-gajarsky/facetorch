@@ -15,6 +15,7 @@ import facetorch
 from facetorch.analyzer.core import FaceAnalyzer
 from facetorch.analyzer.detector.core import FaceDetector
 from facetorch.analyzer.detector.post import PostRetFace
+from facetorch.analyzer.detector.pre import DetectorPreProcessor
 from facetorch.analyzer.reader import core as reader_core
 from facetorch.analyzer.reader import TensorReader, UniversalReader, URLReader
 from facetorch.analyzer.utilizer.save import ImageSaver
@@ -29,6 +30,7 @@ from facetorch.datastruct import (
 from facetorch.exceptions import ConfigurationError, InputCoercionWarning, InputError
 from facetorch.input import InputSpec, canonicalize_image_tensor
 from facetorch.logger import LoggerJsonFile
+from torchvision import transforms
 
 pytestmark = pytest.mark.release_blocker
 
@@ -367,6 +369,40 @@ def test_within_image_face_batching_preserves_order(face_count):
     ]
 
 
+def test_selected_predictor_requires_a_unifier_with_skip_detector():
+    predictor = _BatchRecorder()
+    analyzer = _minimal_analyzer(predictors={"probe": predictor})
+
+    with pytest.raises(ConfigurationError, match="requires a face unifier"):
+        analyzer.run(
+            image_source=torch.zeros((3, 8, 9), dtype=torch.uint8),
+            skip_detector=True,
+        )
+
+    assert predictor.sizes == []
+
+
+def test_predictor_must_return_one_prediction_per_input_face():
+    class ShortPredictor:
+        def run(self, batch):
+            return [Prediction(label="short") for _ in batch[:-1]]
+
+    analyzer = _minimal_analyzer(
+        detector=_FaceDetectorStub(2),
+        unifier=_IdentityUnifier(),
+        predictors={"probe": ShortPredictor()},
+    )
+
+    with pytest.raises(
+        facetorch.InferenceError,
+        match=r"returned 1 prediction\(s\) for 2 input face\(s\)",
+    ):
+        analyzer.run(
+            image_source=torch.zeros((3, 8, 9), dtype=torch.uint8),
+            face_batch_size=2,
+        )
+
+
 def test_face_batch_alias_warns_and_conflicts_fail():
     predictor = _BatchRecorder()
     analyzer = _minimal_analyzer(
@@ -443,6 +479,56 @@ def test_detector_restores_raw_tensor_and_clamps_public_geometry():
     assert result.det.dets[0, :4].tolist() == [0.0, 0.0, 9.0, 8.0]
     assert result.det.boxes[0].tolist() == [0.0, 0.0, 9.0, 8.0]
     assert result.det.landmarks[0].tolist() == [0.0, 0.0, 9.0, 8.0]
+
+
+def test_detector_reuses_raw_tensor_for_declared_out_of_place_preprocessor():
+    class EmptyPostprocessor:
+        def run(self, data, _logits):
+            return data
+
+    detector = object.__new__(FaceDetector)
+    detector.device = torch.device("cpu")
+    detector.model = torch.nn.Identity()
+    detector.preprocessor = DetectorPreProcessor(
+        transform=transforms.Compose(
+            [transforms.Normalize(mean=[1.0, 1.0, 1.0], std=[1.0, 1.0, 1.0])]
+        ),
+        device=torch.device("cpu"),
+        optimize_transform=False,
+        reverse_colors=False,
+    )
+    detector.postprocessor = EmptyPostprocessor()
+    raw = torch.zeros((1, 3, 32, 32))
+    data = ImageData(tensor=raw)
+    data.set_dims()
+
+    result = detector.run(data)
+
+    assert result.tensor is raw
+    assert torch.count_nonzero(result.tensor) == 0
+
+
+def test_detector_defensively_clones_for_custom_preprocessor():
+    class InPlacePreprocessor:
+        def run(self, data):
+            data.tensor.add_(1)
+            return data
+
+    class EmptyPostprocessor:
+        def run(self, data, _logits):
+            return data
+
+    detector = object.__new__(FaceDetector)
+    detector.device = torch.device("cpu")
+    detector.model = torch.nn.Identity()
+    detector.preprocessor = InPlacePreprocessor()
+    detector.postprocessor = EmptyPostprocessor()
+    data = ImageData(tensor=torch.zeros((1, 3, 8, 9)))
+    data.set_dims()
+
+    result = detector.run(data)
+
+    assert torch.count_nonzero(result.tensor) == 0
 
 
 def test_custom_public_face_extractor_is_used_with_and_without_padding():
@@ -574,6 +660,38 @@ def test_retinaface_boxes_landmarks_and_crops_share_image_coordinates():
     dets_before = result.det.dets.clone()
     result.det.boxes.zero_()
     assert torch.equal(result.det.dets, dets_before)
+
+
+def test_retinaface_postprocessing_follows_incoming_tensor_device():
+    class OnePrior:
+        def forward(self, _dims):
+            return torch.tensor([[0.5, 0.5, 0.5, 0.5]])
+
+    postprocessor = PostRetFace(
+        transform=None,
+        device=torch.device("meta"),
+        optimize_transform=False,
+        confidence_threshold=0.1,
+        top_k=10,
+        nms_threshold=0.4,
+        keep_top_k=10,
+        score_threshold=0.1,
+        prior_box=OnePrior(),
+        variance=[0.1, 0.2],
+    )
+    data = ImageData(tensor=torch.zeros((1, 3, 8, 10)))
+    data.set_dims()
+    logits = (
+        torch.zeros((1, 1, 4)),
+        torch.tensor([[[0.1, 0.9]]]),
+        torch.zeros((1, 1, 10)),
+    )
+
+    result = postprocessor.run(data, logits)
+
+    assert result.det.dets.device.type == "cpu"
+    assert result.det.boxes.device.type == "cpu"
+    assert result.det.landmarks.device.type == "cpu"
 
 
 class _FakeConnection:

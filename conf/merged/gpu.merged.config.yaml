@@ -1,6 +1,9 @@
 analyzer:
   device: cuda
   optimize_transforms: true
+  utilizer_dependencies:
+    align:
+    - align
   reader:
     _target_: facetorch.analyzer.reader.UniversalReader
     device:
