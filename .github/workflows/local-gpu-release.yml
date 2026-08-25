@@ -80,7 +80,7 @@ jobs:
           clean: true
           fetch-depth: 1
           persist-credentials: false
-          ref: ${{ needs.authorize-candidate.outputs.source_sha }}
+          ref: ${{ github.sha }}
       - name: Verify exact clean candidate
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
