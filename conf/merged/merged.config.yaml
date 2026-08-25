@@ -23,7 +23,7 @@ analyzer:
       path_local: ${facetorch.model_dir:}/exported/detector/1/model.pt2
       repo_id: tomas-gajarsky/facetorch-detector-retinaface
       manifest_id: detector-retinaface
-      revision: 4dfd78263b94966ef27643dcec60a800701170c7
+      revision: 61ddd31cd4c3de8489c896122bf11e9bd9aad93b
       offline: ${offline}
       allow_legacy_models: ${allow_legacy_models}
       device: ${analyzer.device}
@@ -111,7 +111,7 @@ analyzer:
         path_local: ${facetorch.model_dir:}/exported/predictor/embed/1/model.pt2
         repo_id: tomas-gajarsky/facetorch-embed-resnet-50
         manifest_id: embed-resnet50
-        revision: 5409f78343d372b16bff024b93a0cffbe3a61aa4
+        revision: dc1f35b007801030606393dc24145f6246abbcab
         offline: ${offline}
         allow_legacy_models: ${allow_legacy_models}
         device: ${analyzer.device}
@@ -159,7 +159,7 @@ analyzer:
         path_local: ${facetorch.model_dir:}/exported/predictor/verify/2/model.pt2
         repo_id: tomas-gajarsky/facetorch-verify-adaface
         manifest_id: verify-adaface
-        revision: 71d5f83de703ec4686121e70e3b7061575b9354a
+        revision: 3445b8fdc75502c62d2c45b6e1dde59774f7fcff
         offline: ${offline}
         allow_legacy_models: ${allow_legacy_models}
         device: ${analyzer.device}
@@ -207,7 +207,7 @@ analyzer:
         path_local: ${facetorch.model_dir:}/exported/predictor/fer/2/model.pt2
         repo_id: tomas-gajarsky/facetorch-fer-efficientnet-b2
         manifest_id: fer-efficientnet-b2
-        revision: ca9a1856b1ab1269f3335ddebcebc69ef747086a
+        revision: 817a7d47a1cd0365b827d0f140c45e5c63f2f69b
         offline: ${offline}
         allow_legacy_models: ${allow_legacy_models}
         device: ${analyzer.device}
@@ -263,7 +263,7 @@ analyzer:
         path_local: ${facetorch.model_dir:}/exported/predictor/au/1/model.pt2
         repo_id: tomas-gajarsky/facetorch-au-opengraph
         manifest_id: au-opengraph
-        revision: 280fcd634108f43beab7dc7c2a1d2f751f462ee0
+        revision: 3eecab6fd3b32a9441d23967901cb68b3e891145
         offline: ${offline}
         allow_legacy_models: ${allow_legacy_models}
         device: ${analyzer.device}
@@ -353,7 +353,7 @@ analyzer:
         path_local: ${facetorch.model_dir:}/exported/predictor/va/1/model.pt2
         repo_id: tomas-gajarsky/facetorch-va-elim
         manifest_id: va-elim
-        revision: d71aafca2b4cb460147b66cc4d544feebb496df9
+        revision: ff74558b4dbd972bd94cf6cc1eccb6f3601f2799
         offline: ${offline}
         allow_legacy_models: ${allow_legacy_models}
         device: ${analyzer.device}
@@ -405,7 +405,7 @@ analyzer:
         path_local: ${facetorch.model_dir:}/exported/predictor/deepfake/1/model.pt2
         repo_id: tomas-gajarsky/facetorch-deepfake-efficientnet-b7
         manifest_id: deepfake-efficientnet-b7
-        revision: 4acc494f37eb63d7457166eff2acb45c5b04b9a6
+        revision: 365026f938d07523f1cb9c503edab789c094d5c6
         offline: ${offline}
         allow_legacy_models: ${allow_legacy_models}
         device: ${analyzer.device}
@@ -455,7 +455,7 @@ analyzer:
         path_local: ${facetorch.model_dir:}/exported/predictor/align/1/model.pt2
         repo_id: tomas-gajarsky/facetorch-align-synergynet
         manifest_id: align-synergynet
-        revision: 51cf3068635436edd18aedda5b8d8dd12a17473d
+        revision: 364645b1201b0a418a91d52cf420c33a29cb2f17
         offline: ${offline}
         allow_legacy_models: ${allow_legacy_models}
         device: ${analyzer.device}

@@ -7,7 +7,7 @@ downloader:
   path_local: ${facetorch.model_dir:}/exported/predictor/fer/1/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-fer-efficientnet-b0  # HuggingFace repo ID
   manifest_id: fer-efficientnet-b0
-  revision: 4eed534b4f90f20a8dd5919de8d8636cdbb6abde
+  revision: 5ccd9ec97c4f8a432864891d5a78927089d60cdd
   offline: ${offline}
   allow_legacy_models: ${allow_legacy_models}
   device: ${analyzer.device}

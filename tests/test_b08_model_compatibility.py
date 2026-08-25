@@ -11,7 +11,7 @@ import pytest
 import yaml
 
 from facetorch.artifacts import ArtifactManifest, get_model_manifest
-from facetorch.exceptions import ConfigurationError, ModelCompatibilityError
+from facetorch.exceptions import ModelCompatibilityError
 from scripts import audit_model_manifest_hf as hub_audit
 from scripts.audit_model_manifest_hf import audit_remote_manifest
 from scripts.export_model_cohorts_hf import _environment_metadata, _model_specs
@@ -108,7 +108,7 @@ def test_unsupported_torch_fails_before_even_explicit_legacy_fallback():
 
 
 @pytest.mark.release_blocker
-def test_provenance_records_approve_every_model_but_not_the_candidate_matrix():
+def test_provenance_and_matrix_approve_every_published_model():
     manifest_raw = _json(MANIFEST_PATH)
     compatibility = _json(COMPATIBILITY_PATH)
     governance = _json(GOVERNANCE_PATH)
@@ -135,13 +135,22 @@ def test_provenance_records_approve_every_model_but_not_the_candidate_matrix():
         assert record["limitations"], model_id
         assert record["intended_use"], model_id
 
-    manifest_raw["status"] = "approved"
-    with pytest.raises(ConfigurationError, match="complete provenance"):
-        ArtifactManifest.from_mapping(
-            manifest_raw,
-            compatibility=compatibility,
-            governance=governance,
-        )
+    assert manifest_raw["status"] == "approved"
+    assert compatibility["status"] == "approved"
+    assert compatibility["candidate_evidence"]["status"] == (
+        "validated_clean_commit"
+    )
+    manifest = ArtifactManifest.from_mapping(
+        manifest_raw,
+        compatibility=compatibility,
+        governance=governance,
+    )
+    assert manifest.status == "approved"
+    assert all(
+        descriptor.export_commit
+        == compatibility["candidate_evidence"]["source_commit"]
+        for descriptor in manifest.iter_descriptors()
+    )
 
 
 @pytest.mark.release_blocker
@@ -438,7 +447,7 @@ def test_candidate_matrix_requires_every_cohort_model_and_device(tmp_path):
             require_approval=False,
         )
 
-    with pytest.raises(ReleaseMatrixError, match="approved manifest"):
+    with pytest.raises(ReleaseMatrixError, match="dirty tree"):
         verify_release_matrix(
             staging_root=tmp_path,
             summary_paths=summaries,

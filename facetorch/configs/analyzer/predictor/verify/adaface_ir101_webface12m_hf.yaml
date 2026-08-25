@@ -7,7 +7,7 @@ downloader:
   path_local: ${facetorch.model_dir:}/exported/predictor/verify/2/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-verify-adaface  # HuggingFace repo ID
   manifest_id: verify-adaface
-  revision: 71d5f83de703ec4686121e70e3b7061575b9354a
+  revision: 3445b8fdc75502c62d2c45b6e1dde59774f7fcff
   offline: ${offline}
   allow_legacy_models: ${allow_legacy_models}
   device: ${analyzer.device}

@@ -51,10 +51,14 @@ its validated spatial sizes are `480x640`, `512x512`, and `480x608`, matching th
 runtime's multiple-of-32 padding contract. Every retained case remained within the
 declared numeric bounds.
 
-This is candidate evidence from an uncommitted tree, not final release evidence. It
-must be repeated from the exact clean release commit. Model governance is approved,
-but compatibility and the packaged manifest remain provisional until current,
-digest-bound validation metadata and the exact clean-commit matrix are verified.
+The original diagnostic was superseded on 2026-08-25 by the complete matrix from
+clean commit `4aac25033cbafd836d32351e8fe9bc6c0e088ed5`. Its 20 artifacts and
+schema-2 validation records were published through the digest-approved plan, and
+the final Hub audit verified their immutable LFS identities, sizes, metadata, and
+legal documents. Compatibility and the packaged artifact manifest are therefore
+approved. This model-artifact approval is distinct from the coordinated RC1
+release, which must still run its protected dry run from the exact final source
+commit.
 
 ## Validation semantics
 
@@ -115,8 +119,9 @@ weights to pinned upstream checkpoint evidence, preserves the upstream MIT or
 Apache-2.0 license without conversion, records attribution and redistribution
 approval, and documents intended use and limitations. Release eligibility covers
 only the listed artifacts under the recorded owner-approved policy; it does not
-license upstream datasets or make the provisional runtime manifest an approved
-release manifest.
+license upstream datasets or waive any deployment-specific obligation. Artifact
+release eligibility also does not by itself publish the Facetorch package or
+satisfy the coordinated release pipeline.
 
 No face-analysis output should be the sole basis for a consequential decision.
 Verification scores are not proof of identity; expression, action-unit,

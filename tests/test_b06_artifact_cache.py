@@ -33,7 +33,7 @@ from facetorch.model_cache import (
 def test_packaged_manifest_covers_every_model_and_real_format():
     manifest = get_model_manifest()
     assert manifest.manifest_version == 1
-    assert manifest.status == "provisional"
+    assert manifest.status == "approved"
     assert len(manifest.models) == 10
     descriptors_per_model = len(manifest.supported_torch_minors) + 1
     assert len(tuple(manifest.iter_descriptors())) == (

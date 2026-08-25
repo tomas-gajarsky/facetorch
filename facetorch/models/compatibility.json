@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
-  "status": "candidate",
+  "status": "approved",
+  "approved_on": "2026-08-25",
   "python": {
     "specifier": ">=3.10,<3.13",
     "minor_lines": ["3.10", "3.11", "3.12"]
@@ -44,18 +45,21 @@
     "cross_device_tolerances": {"max_abs": 0.002, "mean_abs": 0.001}
   },
   "candidate_evidence": {
-    "status": "validated_uncommitted_tree",
-    "date": "2026-08-21",
+    "status": "validated_clean_commit",
+    "date": "2026-08-25",
+    "source_commit": "4aac25033cbafd836d32351e8fe9bc6c0e088ed5",
     "platform": {"system": "Linux", "machine": "x86_64"},
     "gpu": "NVIDIA GeForce RTX 3090",
     "cohorts": 2,
     "models_per_cohort": 10,
     "artifacts": 20,
     "executed_cases": 1248,
-    "publication_status": "not_published",
+    "publication_status": "published_immutable_candidate",
+    "publication_plan_id": "4c23beba6fc44f5688adbb468584ef5c5f23ddd52c42263e9f3490a0dd0ad63d",
+    "manifest_revision": "f40a1f4cc5ea9006d88296e9db74dc3756ff89b5",
     "release_limitations": [
-      "Evidence was produced from an uncommitted working tree and must be repeated from the exact clean release commit.",
-      "Model governance was approved after this evidence run, so the clean-commit matrix must bind the approved records before compatibility and the manifest can be approved.",
+      "The coordinated RC1 release still requires its separate dry run from the exact final protected source commit.",
+      "The published artifact metadata binds the clean export commit above; later documentation-only source commits do not rewrite immutable model bytes.",
       "The AU cohorts preserve digest-pinned published programs because the current native forward definition does not reproduce the legacy reference, even though the upstream checkpoint tensors are mapped."
     ]
   },
@@ -66,8 +70,8 @@
       "torchvision_patch": "0.21.0",
       "artifact_cohort": "2.6",
       "export_schema": {"major": 8, "minor": 2},
-      "cpu": {"runtime": "cpu", "evidence_status": "candidate_validated_uncommitted_tree"},
-      "cuda": {"runtime": "12.4", "evidence_status": "candidate_validated_local_rtx3090_uncommitted_tree"}
+      "cpu": {"runtime": "cpu", "evidence_status": "validated_clean_commit"},
+      "cuda": {"runtime": "12.4", "evidence_status": "validated_clean_commit_local_rtx3090"}
     },
     {
       "torch_minor": "2.11",
@@ -75,8 +79,8 @@
       "torchvision_patch": "0.26.0",
       "artifact_cohort": "2.11",
       "export_schema": {"major": 8, "minor": 17},
-      "cpu": {"runtime": "cpu", "evidence_status": "candidate_validated_uncommitted_tree"},
-      "cuda": {"runtime": "13.0", "evidence_status": "candidate_validated_local_rtx3090_uncommitted_tree"}
+      "cpu": {"runtime": "cpu", "evidence_status": "validated_clean_commit"},
+      "cuda": {"runtime": "13.0", "evidence_status": "validated_clean_commit_local_rtx3090"}
     }
   ]
 }
