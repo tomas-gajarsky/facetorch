@@ -91,7 +91,9 @@ el.replaceWith(d);
             )
         path = os.fspath(image_source)
         if _is_remote_reference(path):
-            raise InputError(&#34;ImageReader does not permit remote URLs; configure URLReader.&#34;)
+            raise InputError(
+                &#34;ImageReader does not permit remote URLs; configure URLReader.&#34;
+            )
         return self.read_image_from_path(
             path,
             fix_img_size,
@@ -201,8 +203,15 @@ All subclass should overwrite:</p>
                 input_spec=input_spec,
                 path_input=str(Path(path_image)),
             )
-    except (FileNotFoundError, PermissionError, UnidentifiedImageError, OSError) as exc:
-        raise InputError(f&#34;Could not read local image path {path_image!r}.&#34;) from exc</code></pre>
+    except (
+        FileNotFoundError,
+        PermissionError,
+        UnidentifiedImageError,
+        OSError,
+    ) as exc:
+        raise InputError(
+            f&#34;Could not read local image path {path_image!r}.&#34;
+        ) from exc</code></pre>
 </details>
 <div class="desc"></div>
 </dd>
@@ -535,12 +544,21 @@ All subclass should overwrite:</p>
                     input_spec=input_spec,
                     path_input=str(Path(path_image)),
                 )
-        except (FileNotFoundError, PermissionError, UnidentifiedImageError, OSError) as exc:
-            raise InputError(f&#34;Could not read local image path {path_image!r}.&#34;) from exc
+        except (
+            FileNotFoundError,
+            PermissionError,
+            UnidentifiedImageError,
+            OSError,
+        ) as exc:
+            raise InputError(
+                f&#34;Could not read local image path {path_image!r}.&#34;
+            ) from exc
 
     def read_image_from_url(self, *_args, **_kwargs) -&gt; ImageData:
         &#34;&#34;&#34;Compatibility guard for callers that previously used implicit networking.&#34;&#34;&#34;
-        raise InputError(&#34;Remote image input requires an explicit URLReader configuration.&#34;)</code></pre>
+        raise InputError(
+            &#34;Remote image input requires an explicit URLReader configuration.&#34;
+        )</code></pre>
 </details>
 <div class="desc"><p>Read local paths and in-memory images; network access is intentionally absent.</p>
 <p>Base class for image reader.</p>
@@ -733,8 +751,15 @@ All subclass should overwrite:</p>
                 input_spec=input_spec,
                 path_input=str(Path(path_image)),
             )
-    except (FileNotFoundError, PermissionError, UnidentifiedImageError, OSError) as exc:
-        raise InputError(f&#34;Could not read local image path {path_image!r}.&#34;) from exc</code></pre>
+    except (
+        FileNotFoundError,
+        PermissionError,
+        UnidentifiedImageError,
+        OSError,
+    ) as exc:
+        raise InputError(
+            f&#34;Could not read local image path {path_image!r}.&#34;
+        ) from exc</code></pre>
 </details>
 <div class="desc"></div>
 </dd>
@@ -748,7 +773,9 @@ All subclass should overwrite:</p>
 </summary>
 <pre><code class="python">def read_image_from_url(self, *_args, **_kwargs) -&gt; ImageData:
     &#34;&#34;&#34;Compatibility guard for callers that previously used implicit networking.&#34;&#34;&#34;
-    raise InputError(&#34;Remote image input requires an explicit URLReader configuration.&#34;)</code></pre>
+    raise InputError(
+        &#34;Remote image input requires an explicit URLReader configuration.&#34;
+    )</code></pre>
 </details>
 <div class="desc"><p>Compatibility guard for callers that previously used implicit networking.</p></div>
 </dd>
@@ -827,19 +854,27 @@ All subclass should overwrite:</p>
             parsed = urlsplit(current_url)
             if parsed.scheme.lower() not in self.allowed_schemes or not parsed.netloc:
                 raise InputError(&#34;URL scheme is not allowed or the URL has no host.&#34;)
-            _validate_public_url_target(parsed)
-            try:
-                response = requests.get(
-                    current_url,
-                    timeout=self.timeout,
-                    allow_redirects=False,
-                    stream=True,
-                )
-            except requests.RequestException as exc:
-                raise InputError(&#34;Remote image request failed or timed out.&#34;) from exc
+            addresses = _validate_public_url_target(parsed)
+            connection = None
+            response = None
+            last_error = None
+            for address in addresses:
+                try:
+                    connection, response = _open_pinned_response(
+                        parsed,
+                        address,
+                        self.timeout,
+                    )
+                    break
+                except (OSError, ValueError, http.client.HTTPException) as exc:
+                    last_error = exc
+            if connection is None or response is None:
+                raise InputError(
+                    &#34;Remote image request failed or timed out.&#34;
+                ) from last_error
 
             try:
-                if response.status_code in self._REDIRECT_STATUSES:
+                if response.status in self._REDIRECT_STATUSES:
                     location = response.headers.get(&#34;Location&#34;)
                     if location is None:
                         raise InputError(&#34;Remote image redirect omitted its target.&#34;)
@@ -848,7 +883,8 @@ All subclass should overwrite:</p>
                     current_url = urljoin(current_url, location)
                     continue
 
-                response.raise_for_status()
+                if response.status &lt; 200 or response.status &gt;= 300:
+                    raise InputError(&#34;Remote image returned an unsuccessful response.&#34;)
                 content_length = response.headers.get(&#34;Content-Length&#34;)
                 if content_length is not None:
                     try:
@@ -858,21 +894,31 @@ All subclass should overwrite:</p>
                             &#34;Remote image returned an invalid Content-Length header.&#34;
                         ) from exc
                     if declared_size &gt; self.max_bytes:
-                        raise InputError(&#34;Remote image exceeds the configured size limit.&#34;)
+                        raise InputError(
+                            &#34;Remote image exceeds the configured size limit.&#34;
+                        )
 
                 chunks = []
                 received = 0
-                for chunk in response.iter_content(chunk_size=64 * 1024):
+                while True:
+                    chunk = response.read(64 * 1024)
                     if not chunk:
-                        continue
+                        break
                     received += len(chunk)
                     if received &gt; self.max_bytes:
-                        raise InputError(&#34;Remote image exceeds the configured size limit.&#34;)
+                        raise InputError(
+                            &#34;Remote image exceeds the configured size limit.&#34;
+                        )
                     chunks.append(chunk)
-            except requests.RequestException as exc:
-                raise InputError(&#34;Remote image returned an unsuccessful response.&#34;) from exc
+            except InputError:
+                raise
+            except (OSError, ValueError, http.client.HTTPException) as exc:
+                raise InputError(
+                    &#34;Remote image returned an unsuccessful response.&#34;
+                ) from exc
             finally:
                 response.close()
+                connection.close()
 
             hostname = parsed.hostname or &#34;&#34;
             if &#34;:&#34; in hostname:

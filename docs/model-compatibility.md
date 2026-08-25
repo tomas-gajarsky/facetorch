@@ -51,10 +51,10 @@ its validated spatial sizes are `480x640`, `512x512`, and `480x608`, matching th
 runtime's multiple-of-32 padding contract. Every retained case remained within the
 declared numeric bounds.
 
-This is candidate evidence from an uncommitted tree, not release approval. It
-must be repeated from the exact clean release commit. No artifact was uploaded,
-the packaged manifest still names the current remote objects, and governance is
-still incomplete.
+This is candidate evidence from an uncommitted tree, not final release evidence. It
+must be repeated from the exact clean release commit. Model governance is approved,
+but compatibility and the packaged manifest remain provisional until current,
+digest-bound validation metadata and the exact clean-commit matrix are verified.
 
 ## Validation semantics
 
@@ -110,13 +110,13 @@ may be redistributed. Each record includes immutable upstream revision evidence,
 source-checkpoint mapping status, weight-license and redistribution status,
 attribution status, intended use, and task-specific limitations.
 
-All ten records currently remain `release_eligible: false`: hosted legacy-object
-digests are pinned, but the link to the original upstream checkpoint and the
-weight redistribution terms have not yet been approved by the provenance owner.
-Several README/model-card source descriptions disagree, and the valence/arousal
-model card links an unavailable path while the project README links a different
-repository. These are release blockers, not warnings. The runtime artifact
-manifest cannot be changed to `approved` while any governance record is incomplete.
+All ten records are currently `release_eligible: true`. Each one binds the hosted
+weights to pinned upstream checkpoint evidence, preserves the upstream MIT or
+Apache-2.0 license without conversion, records attribution and redistribution
+approval, and documents intended use and limitations. Release eligibility covers
+only the listed artifacts under the recorded owner-approved policy; it does not
+license upstream datasets or make the provisional runtime manifest an approved
+release manifest.
 
 No face-analysis output should be the sole basis for a consequential decision.
 Verification scores are not proof of identity; expression, action-unit,

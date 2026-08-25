@@ -237,7 +237,8 @@ jobs:
           uv run --frozen --extra dev pdoc --html facetorch \
             --output-dir "$docs_check_dir" --force --template-dir pdoc/templates
           diff -ru "$docs_check_dir/facetorch" docs/facetorch
-          cmp "$docs_check_dir/index.js" docs/index.js
+          uv run --frozen --extra dev python scripts/check_pdoc_search_index.py \
+            "$docs_check_dir/index.js" docs/index.js
           cmp "$docs_check_dir/doc-search.html" docs/doc-search.html
           mkdir -p "$RUNNER_TEMP/distribution-part/distributions" \
             "$RUNNER_TEMP/distribution-part/sboms"

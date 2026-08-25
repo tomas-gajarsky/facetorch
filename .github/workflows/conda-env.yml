@@ -43,7 +43,7 @@ jobs:
           from importlib.metadata import version
 
           config = facetorch.load_config(offline=True)
-          assert version("facetorch") == "1.0.0"
+          assert version("facetorch") == "1.0.0rc1"
           assert config.analyzer.device == "cpu"
           assert torch.__version__.split("+", 1)[0] == "2.6.0"
           PY
@@ -101,7 +101,7 @@ jobs:
           import torch
 
           config = facetorch.load_config("gpu", offline=True)
-          assert version("facetorch") == "1.0.0"
+          assert version("facetorch") == "1.0.0rc1"
           assert config.analyzer.device == "cuda"
           assert torch.__version__.split("+", 1)[0] == "2.6.0"
           assert torch.version.cuda == "12.4"

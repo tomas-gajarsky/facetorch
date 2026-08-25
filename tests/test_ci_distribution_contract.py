@@ -96,6 +96,17 @@ def test_distribution_docs_use_the_reviewed_build_python():
     )
     commands = _workflow_commands(WORKFLOW_ROOT / "python-package.yml")
     assert "scripts/check_pdoc_search_index.py" in commands
+    release_commands = _workflow_commands(WORKFLOW_ROOT / "release.yml")
+    assert "scripts/check_pdoc_search_index.py" in release_commands
+    assert 'cmp "$docs_check_dir/index.js" docs/index.js' not in release_commands
+
+
+@pytest.mark.release_blocker
+def test_conda_candidate_smokes_the_rc1_distribution():
+    commands = _workflow_commands(WORKFLOW_ROOT / "conda-env.yml")
+
+    assert commands.count('version("facetorch") == "1.0.0rc1"') == 2
+    assert 'version("facetorch") == "1.0.0"' not in commands
 
 
 @pytest.mark.release_blocker

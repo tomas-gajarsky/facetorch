@@ -475,11 +475,13 @@ versioned facetorch model/metadata roots.
 Models are available on the [Hugging Face Hub](https://huggingface.co/tomas-gajarsky).
 The legacy [Google Drive folder](https://drive.google.com/drive/folders/19qlklR18wYfFsCChQ78it10XciuTzbDM?usp=sharing)
 is retained for manual backward compatibility only. The packaged manifest remains
-provisional. The retained uncommitted-tree candidate lanes passed all ten models on
-CPU and a local RTX 3090 for Torch 2.6/CUDA 12.4 and 2.11/CUDA 13.0, but they must
-be repeated from the exact clean candidate and do not resolve provenance or
-weight-redistribution rights. Per-model gaps are recorded in the governance
-manifest rather than inferred from a model card's code-license label.
+provisional until its digest-bound validation metadata is published and the full
+matrix is repeated from the exact clean RC1 commit. Model governance is approved:
+all ten records are release-eligible under their pinned upstream licenses, verified
+checkpoint mappings, preserved attribution, and owner-approved redistribution
+policy. That approval does not grant rights to upstream training datasets or remove
+the deployment-specific consent, privacy, performance, and legal obligations listed
+in each model record.
 
 Maintainers export and validate every requested model locally before any remote
 write. Inline `--upload` is disabled. Publication requires a deterministic plan,

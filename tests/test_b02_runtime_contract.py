@@ -8,7 +8,6 @@ from uuid import uuid4
 
 import numpy as np
 import pytest
-import requests
 import torch
 from PIL import Image
 
@@ -16,13 +15,20 @@ import facetorch
 from facetorch.analyzer.core import FaceAnalyzer
 from facetorch.analyzer.detector.core import FaceDetector
 from facetorch.analyzer.detector.post import PostRetFace
+from facetorch.analyzer.reader import core as reader_core
 from facetorch.analyzer.reader import TensorReader, UniversalReader, URLReader
 from facetorch.analyzer.utilizer.save import ImageSaver
-from facetorch.datastruct import Detection, Dimensions, Face, ImageData, Location, Prediction
+from facetorch.datastruct import (
+    Detection,
+    Dimensions,
+    Face,
+    ImageData,
+    Location,
+    Prediction,
+)
 from facetorch.exceptions import ConfigurationError, InputCoercionWarning, InputError
 from facetorch.input import InputSpec, canonicalize_image_tensor
 from facetorch.logger import LoggerJsonFile
-
 
 pytestmark = pytest.mark.release_blocker
 
@@ -91,12 +97,9 @@ def _minimal_analyzer(*, reader=None, detector=None, unifier=None, predictors=No
 )
 def test_coerce_and_explicit_strict_share_one_canonical_pipeline(source, strict_spec):
     reader = UniversalReader(None, torch.device("cpu"), False)
-    expects_warning = (
-        strict_spec.color_space != "RGB"
-        or (
-            isinstance(source, (torch.Tensor, np.ndarray))
-            and (source.dtype == torch.float32 or source.dtype == np.float32)
-        )
+    expects_warning = strict_spec.color_space != "RGB" or (
+        isinstance(source, (torch.Tensor, np.ndarray))
+        and (source.dtype == torch.float32 or source.dtype == np.float32)
     )
     warning_context = (
         pytest.warns(InputCoercionWarning) if expects_warning else nullcontext()
@@ -573,37 +576,49 @@ def test_retinaface_boxes_landmarks_and_crops_share_image_coordinates():
     assert torch.equal(result.det.dets, dets_before)
 
 
-class _FakeResponse:
-    def __init__(self, body=b"", status_code=200, headers=None):
-        self.body = body
-        self.status_code = status_code
-        self.headers = headers or {}
+class _FakeConnection:
+    def __init__(self):
         self.closed = False
-
-    def raise_for_status(self):
-        if self.status_code >= 400:
-            raise requests.HTTPError("failed")
-
-    def iter_content(self, chunk_size):
-        yield from (
-            self.body[index : index + chunk_size]
-            for index in range(0, len(self.body), chunk_size)
-        )
 
     def close(self):
         self.closed = True
+
+
+class _FakeResponse:
+    def __init__(self, body=b"", status_code=200, headers=None):
+        self.body = body
+        self.status = status_code
+        self.headers = headers or {}
+        self.closed = False
+        self._offset = 0
+
+    def read(self, chunk_size):
+        chunk = self.body[self._offset : self._offset + chunk_size]
+        self._offset += len(chunk)
+        return chunk
+
+    def close(self):
+        self.closed = True
+
+
+def _fake_url_open(*responses):
+    pending = list(responses)
+
+    def open_response(*_args, **_kwargs):
+        return _FakeConnection(), pending.pop(0)
+
+    return open_response
 
 
 def test_url_reader_is_explicit_bounded_and_removes_query_metadata(monkeypatch):
     response = _FakeResponse(_png_bytes(_rgb_array()))
     monkeypatch.setattr(
         "facetorch.analyzer.reader.core.socket.getaddrinfo",
-        lambda _host, port, **_kwargs: [
-            (2, 1, 6, "", ("93.184.216.34", port))
-        ],
+        lambda _host, port, **_kwargs: [(2, 1, 6, "", ("93.184.216.34", port))],
     )
     monkeypatch.setattr(
-        "facetorch.analyzer.reader.core.requests.get", lambda *_args, **_kwargs: response
+        "facetorch.analyzer.reader.core._open_pinned_response",
+        _fake_url_open(response),
     )
     reader = URLReader(
         None,
@@ -625,9 +640,7 @@ def test_url_reader_is_explicit_bounded_and_removes_query_metadata(monkeypatch):
 def test_url_reader_rejects_scheme_size_redirects_and_timeouts(monkeypatch):
     monkeypatch.setattr(
         "facetorch.analyzer.reader.core.socket.getaddrinfo",
-        lambda _host, port, **_kwargs: [
-            (2, 1, 6, "", ("93.184.216.34", port))
-        ],
+        lambda _host, port, **_kwargs: [(2, 1, 6, "", ("93.184.216.34", port))],
     )
     reader = URLReader(
         None,
@@ -643,8 +656,8 @@ def test_url_reader_rejects_scheme_size_redirects_and_timeouts(monkeypatch):
 
     oversized = _FakeResponse(b"12345", headers={"Content-Length": "5"})
     monkeypatch.setattr(
-        "facetorch.analyzer.reader.core.requests.get",
-        lambda *_args, **_kwargs: oversized,
+        "facetorch.analyzer.reader.core._open_pinned_response",
+        _fake_url_open(oversized),
     )
     with pytest.raises(InputError, match="size limit"):
         reader.run("https://example.test/image.png")
@@ -652,17 +665,19 @@ def test_url_reader_rejects_scheme_size_redirects_and_timeouts(monkeypatch):
 
     redirect = _FakeResponse(status_code=302, headers={"Location": "/other.png"})
     monkeypatch.setattr(
-        "facetorch.analyzer.reader.core.requests.get",
-        lambda *_args, **_kwargs: redirect,
+        "facetorch.analyzer.reader.core._open_pinned_response",
+        _fake_url_open(redirect),
     )
     with pytest.raises(InputError, match="redirect limit"):
         reader.run("https://example.test/image.png")
     assert redirect.closed
 
     def raise_timeout(*_args, **_kwargs):
-        raise requests.Timeout()
+        raise TimeoutError()
 
-    monkeypatch.setattr("facetorch.analyzer.reader.core.requests.get", raise_timeout)
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core._open_pinned_response", raise_timeout
+    )
     with pytest.raises(InputError, match="timed out"):
         reader.run("https://example.test/image.png")
 
@@ -680,13 +695,95 @@ def test_url_reader_rejects_private_network_targets_before_request(monkeypatch):
         lambda _host, port, **_kwargs: [(2, 1, 6, "", ("127.0.0.1", port))],
     )
     monkeypatch.setattr(
-        "facetorch.analyzer.reader.core.requests.get", record_request
+        "facetorch.analyzer.reader.core._open_pinned_response", record_request
     )
     reader = URLReader(None, torch.device("cpu"), False)
 
     with pytest.raises(InputError, match="public network"):
         reader.run("https://internal.example/image.png")
     assert called is False
+
+
+def test_pinned_https_connection_uses_numeric_ip_and_original_tls_hostname(
+    monkeypatch,
+):
+    observed = {}
+
+    class RawSocket:
+        def close(self):
+            observed["raw_closed"] = True
+
+    class TLSContext:
+        def wrap_socket(self, raw_socket, *, server_hostname):
+            observed["raw_socket"] = raw_socket
+            observed["server_hostname"] = server_hostname
+            return "tls-socket"
+
+    raw_socket = RawSocket()
+
+    def create_connection(target, timeout, source_address):
+        observed["target"] = target
+        observed["timeout"] = timeout
+        observed["source_address"] = source_address
+        return raw_socket
+
+    monkeypatch.setattr(reader_core.socket, "create_connection", create_connection)
+    connection = reader_core._PinnedHTTPSConnection(
+        "example.test",
+        "93.184.216.34",
+        443,
+        2.5,
+    )
+    connection._context = TLSContext()
+
+    connection.connect()
+
+    assert observed["target"] == ("93.184.216.34", 443)
+    assert observed["server_hostname"] == "example.test"
+    assert observed["timeout"] == 2.5
+    assert connection.sock == "tls-socket"
+
+
+def test_pinned_request_preserves_host_and_query_without_reresolving(monkeypatch):
+    observed = {}
+    response = _FakeResponse()
+
+    class Connection:
+        def __init__(self, hostname, address, port, timeout):
+            observed["constructor"] = (hostname, address, port, timeout)
+
+        def request(self, method, target, headers):
+            observed["request"] = (method, target, headers)
+
+        def getresponse(self):
+            return response
+
+        def close(self):
+            observed["closed"] = True
+
+    monkeypatch.setattr(reader_core, "_PinnedHTTPSConnection", Connection)
+    parsed = reader_core.urlsplit("https://example.test:444/image.png?signature=opaque")
+
+    connection, result = reader_core._open_pinned_response(
+        parsed,
+        "93.184.216.34",
+        3.0,
+    )
+
+    assert result is response
+    assert observed["constructor"] == (
+        "example.test",
+        "93.184.216.34",
+        444,
+        3.0,
+    )
+    assert observed["request"][0:2] == (
+        "GET",
+        "/image.png?signature=opaque",
+    )
+    assert observed["request"][2]["Host"] == "example.test:444"
+    connection.close()
+    assert observed["closed"] is True
 
 
 def test_valid_bytes_preserve_configuration_errors():
@@ -972,8 +1069,8 @@ def test_url_reader_handles_redirect_and_stream_protocol_errors(monkeypatch):
 
     missing_target = _FakeResponse(status_code=302)
     monkeypatch.setattr(
-        "facetorch.analyzer.reader.core.requests.get",
-        lambda *_args, **_kwargs: missing_target,
+        "facetorch.analyzer.reader.core._open_pinned_response",
+        _fake_url_open(missing_target),
     )
     with pytest.raises(InputError, match="omitted its target"):
         reader.run("https://example.test/image.png")
@@ -981,8 +1078,8 @@ def test_url_reader_handles_redirect_and_stream_protocol_errors(monkeypatch):
 
     invalid_length = _FakeResponse(headers={"Content-Length": "many"})
     monkeypatch.setattr(
-        "facetorch.analyzer.reader.core.requests.get",
-        lambda *_args, **_kwargs: invalid_length,
+        "facetorch.analyzer.reader.core._open_pinned_response",
+        _fake_url_open(invalid_length),
     )
     with pytest.raises(InputError, match="invalid Content-Length"):
         reader.run("https://example.test/image.png")
@@ -990,8 +1087,8 @@ def test_url_reader_handles_redirect_and_stream_protocol_errors(monkeypatch):
 
     streamed = _FakeResponse(body=b"12345")
     monkeypatch.setattr(
-        "facetorch.analyzer.reader.core.requests.get",
-        lambda *_args, **_kwargs: streamed,
+        "facetorch.analyzer.reader.core._open_pinned_response",
+        _fake_url_open(streamed),
     )
     with pytest.raises(InputError, match="size limit"):
         reader.run("https://example.test/image.png")
@@ -999,8 +1096,8 @@ def test_url_reader_handles_redirect_and_stream_protocol_errors(monkeypatch):
 
     failed = _FakeResponse(status_code=500)
     monkeypatch.setattr(
-        "facetorch.analyzer.reader.core.requests.get",
-        lambda *_args, **_kwargs: failed,
+        "facetorch.analyzer.reader.core._open_pinned_response",
+        _fake_url_open(failed),
     )
     with pytest.raises(InputError, match="unsuccessful response"):
         reader.run("https://example.test/image.png")
@@ -1019,8 +1116,8 @@ def test_url_reader_follows_one_redirect_and_sanitizes_ipv6_metadata(monkeypatch
         ],
     )
     monkeypatch.setattr(
-        "facetorch.analyzer.reader.core.requests.get",
-        lambda *_args, **_kwargs: responses.pop(0),
+        "facetorch.analyzer.reader.core._open_pinned_response",
+        _fake_url_open(*responses),
     )
     reader = URLReader(None, torch.device("cpu"), False, max_redirects=1)
     result = reader.run(
