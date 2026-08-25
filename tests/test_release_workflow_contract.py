@@ -5,7 +5,6 @@ import re
 import pytest
 import yaml
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RELEASE_WORKFLOWS = (
     REPO_ROOT / ".github" / "workflows" / "release.yml",
@@ -43,9 +42,7 @@ def _publication_jobs(workflow):
 
 @pytest.mark.release_blocker
 def test_dispatch_input_is_never_interpolated_directly_into_shell():
-    unsafe = re.compile(
-        r"\$\{\{\s*(?:github\.event\.)?inputs\.tag\s*\}\}"
-    )
+    unsafe = re.compile(r"\$\{\{\s*(?:github\.event\.)?inputs\.tag\s*\}\}")
     violations = []
     for path in RELEASE_WORKFLOWS:
         for job_name, job in _workflow(path).get("jobs", {}).items():
@@ -76,6 +73,22 @@ def test_publication_jobs_checkout_the_resolved_immutable_candidate():
                     violations.append(f"{path.name}:{job_name}")
 
     assert violations == []
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize("workflow_name", ("local-gpu-release.yml", "release.yml"))
+def test_manual_release_checkouts_use_the_trusted_event_sha(workflow_name):
+    workflow = _workflow(REPO_ROOT / ".github" / "workflows" / workflow_name)
+    checkout_refs = [
+        str(step.get("with", {}).get("ref", ""))
+        for job in workflow["jobs"].values()
+        for step in job.get("steps", [])
+        if isinstance(step, dict)
+        and str(step.get("uses", "")).startswith("actions/checkout@")
+    ]
+
+    assert checkout_refs
+    assert set(checkout_refs) == {"${{ github.sha }}"}
 
 
 @pytest.mark.release_blocker
@@ -322,9 +335,7 @@ def test_public_repository_security_automation_is_present():
     workflow = (REPO_ROOT / ".github" / "workflows" / "security.yml").read_text(
         encoding="utf-8"
     )
-    dependabot = (REPO_ROOT / ".github" / "dependabot.yml").read_text(
-        encoding="utf-8"
-    )
+    dependabot = (REPO_ROOT / ".github" / "dependabot.yml").read_text(encoding="utf-8")
     assert "actions/dependency-review-action@" in workflow
     assert "gitleaks/gitleaks-action@" in workflow
     for ecosystem in ("github-actions", "pip", "docker"):
