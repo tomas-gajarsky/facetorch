@@ -326,6 +326,25 @@ All subclass should overwrite:</p>
     def _target_for(self, descriptor: ArtifactDescriptor) -&gt; Path:
         return descriptor.cache_path(self.path_local)
 
+    def resolve_cached_path(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Activate an existing manifest target without mutating its cache.
+
+        This fast path is intentionally available only when callers explicitly
+        disable verification on use.  Downloads and verified cache reuse still go
+        through :meth:`run`, which serializes verification and mutation with the
+        directory lock.
+        &#34;&#34;&#34;
+        if self.verify_on_use is not False:
+            return None
+        candidates = self._resolve_candidates()
+        descriptor = candidates[0]
+        target = self._target_for(descriptor)
+        if not target.is_file():
+            return None
+        self._candidate_index = 0
+        self._active_filename = descriptor.filename
+        return self._activate(descriptor, target)
+
     def _download_descriptor(
         self, descriptor: ArtifactDescriptor, *, force_download: bool = False
     ) -&gt; str:
@@ -462,6 +481,40 @@ All subclass should overwrite:</p>
 </details>
 <div class="desc"><p>Persist a runtime/schema rejection without executing the artifact again.</p></div>
 </dd>
+<dt id="facetorch.downloader.DownloaderHuggingFace.resolve_cached_path"><code class="name flex">
+<span>def <span class="ident">resolve_cached_path</span></span>(<span>self) ‑> str | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def resolve_cached_path(self) -&gt; Optional[str]:
+    &#34;&#34;&#34;Activate an existing manifest target without mutating its cache.
+
+    This fast path is intentionally available only when callers explicitly
+    disable verification on use.  Downloads and verified cache reuse still go
+    through :meth:`run`, which serializes verification and mutation with the
+    directory lock.
+    &#34;&#34;&#34;
+    if self.verify_on_use is not False:
+        return None
+    candidates = self._resolve_candidates()
+    descriptor = candidates[0]
+    target = self._target_for(descriptor)
+    if not target.is_file():
+        return None
+    self._candidate_index = 0
+    self._active_filename = descriptor.filename
+    return self._activate(descriptor, target)</code></pre>
+</details>
+<div class="desc"><p>Activate an existing manifest target without mutating its cache.</p>
+<p>This fast path is intentionally available only when callers explicitly
+disable verification on use.
+Downloads and verified cache reuse still go
+through :meth:<code>run</code>, which serializes verification and mutation with the
+directory lock.</p></div>
+</dd>
 <dt id="facetorch.downloader.DownloaderHuggingFace.try_next"><code class="name flex">
 <span>def <span class="ident">try_next</span></span>(<span>self, force_download: bool = False) ‑> bool</span>
 </code></dt>
@@ -573,6 +626,7 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="facetorch.downloader.DownloaderHuggingFace" href="#facetorch.downloader.DownloaderHuggingFace">DownloaderHuggingFace</a></code></h4>
 <ul class="">
 <li><code><a title="facetorch.downloader.DownloaderHuggingFace.mark_incompatible" href="#facetorch.downloader.DownloaderHuggingFace.mark_incompatible">mark_incompatible</a></code></li>
+<li><code><a title="facetorch.downloader.DownloaderHuggingFace.resolve_cached_path" href="#facetorch.downloader.DownloaderHuggingFace.resolve_cached_path">resolve_cached_path</a></code></li>
 <li><code><a title="facetorch.downloader.DownloaderHuggingFace.try_next" href="#facetorch.downloader.DownloaderHuggingFace.try_next">try_next</a></code></li>
 </ul>
 </li>

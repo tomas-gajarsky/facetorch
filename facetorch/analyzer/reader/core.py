@@ -6,6 +6,7 @@ import ipaddress
 import os
 import socket
 import ssl
+import time
 import warnings
 from pathlib import Path
 from typing import Optional, Protocol, Sequence, Union, runtime_checkable
@@ -171,6 +172,30 @@ def _open_pinned_response(parsed, address: str, timeout: float):
     except Exception:
         connection.close()
         raise
+
+
+def _remaining_timeout(deadline: float) -> float:
+    """Return the remaining request budget or fail with the public timeout error."""
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise InputError("Remote image request timed out.")
+    return remaining
+
+
+def _set_response_timeout(connection, response, timeout: float) -> None:
+    """Apply the shrinking request budget to every reachable response socket."""
+    response_file = getattr(response, "fp", None)
+    response_raw = getattr(response_file, "raw", response_file)
+    sockets = (
+        getattr(connection, "sock", None),
+        getattr(response_raw, "_sock", None),
+    )
+    updated = set()
+    for response_socket in sockets:
+        if response_socket is None or id(response_socket) in updated:
+            continue
+        response_socket.settimeout(timeout)
+        updated.add(id(response_socket))
 
 
 def _array_to_tensor(array: np.ndarray) -> torch.Tensor:
@@ -551,11 +576,14 @@ class URLReader(UniversalReader):
             )
 
         current_url = image_source
+        deadline = time.monotonic() + self.timeout
         for redirect_count in range(self.max_redirects + 1):
+            _remaining_timeout(deadline)
             parsed = urlsplit(current_url)
             if parsed.scheme.lower() not in self.allowed_schemes or not parsed.netloc:
                 raise InputError("URL scheme is not allowed or the URL has no host.")
             addresses = _validate_public_url_target(parsed)
+            _remaining_timeout(deadline)
             connection = None
             response = None
             last_error = None
@@ -564,12 +592,26 @@ class URLReader(UniversalReader):
                     connection, response = _open_pinned_response(
                         parsed,
                         address,
-                        self.timeout,
+                        _remaining_timeout(deadline),
                     )
+                    try:
+                        _remaining_timeout(deadline)
+                    except InputError:
+                        response.close()
+                        connection.close()
+                        raise
                     break
+                except InputError:
+                    raise
+                except TimeoutError as exc:
+                    last_error = exc
+                    if time.monotonic() >= deadline:
+                        raise InputError("Remote image request timed out.") from exc
                 except (OSError, ValueError, http.client.HTTPException) as exc:
                     last_error = exc
             if connection is None or response is None:
+                if isinstance(last_error, TimeoutError) or time.monotonic() >= deadline:
+                    raise InputError("Remote image request timed out.") from last_error
                 raise InputError(
                     "Remote image request failed or timed out."
                 ) from last_error
@@ -602,7 +644,10 @@ class URLReader(UniversalReader):
                 chunks = []
                 received = 0
                 while True:
+                    remaining = _remaining_timeout(deadline)
+                    _set_response_timeout(connection, response, remaining)
                     chunk = response.read(64 * 1024)
+                    _remaining_timeout(deadline)
                     if not chunk:
                         break
                     received += len(chunk)
@@ -613,6 +658,8 @@ class URLReader(UniversalReader):
                     chunks.append(chunk)
             except InputError:
                 raise
+            except TimeoutError as exc:
+                raise InputError("Remote image request timed out.") from exc
             except (OSError, ValueError, http.client.HTTPException) as exc:
                 raise InputError(
                     "Remote image returned an unsuccessful response."

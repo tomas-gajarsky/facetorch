@@ -949,11 +949,14 @@ All subclass should overwrite:</p>
             )
 
         current_url = image_source
+        deadline = time.monotonic() + self.timeout
         for redirect_count in range(self.max_redirects + 1):
+            _remaining_timeout(deadline)
             parsed = urlsplit(current_url)
             if parsed.scheme.lower() not in self.allowed_schemes or not parsed.netloc:
                 raise InputError(&#34;URL scheme is not allowed or the URL has no host.&#34;)
             addresses = _validate_public_url_target(parsed)
+            _remaining_timeout(deadline)
             connection = None
             response = None
             last_error = None
@@ -962,12 +965,26 @@ All subclass should overwrite:</p>
                     connection, response = _open_pinned_response(
                         parsed,
                         address,
-                        self.timeout,
+                        _remaining_timeout(deadline),
                     )
+                    try:
+                        _remaining_timeout(deadline)
+                    except InputError:
+                        response.close()
+                        connection.close()
+                        raise
                     break
+                except InputError:
+                    raise
+                except TimeoutError as exc:
+                    last_error = exc
+                    if time.monotonic() &gt;= deadline:
+                        raise InputError(&#34;Remote image request timed out.&#34;) from exc
                 except (OSError, ValueError, http.client.HTTPException) as exc:
                     last_error = exc
             if connection is None or response is None:
+                if isinstance(last_error, TimeoutError) or time.monotonic() &gt;= deadline:
+                    raise InputError(&#34;Remote image request timed out.&#34;) from last_error
                 raise InputError(
                     &#34;Remote image request failed or timed out.&#34;
                 ) from last_error
@@ -1000,7 +1017,10 @@ All subclass should overwrite:</p>
                 chunks = []
                 received = 0
                 while True:
+                    remaining = _remaining_timeout(deadline)
+                    _set_response_timeout(connection, response, remaining)
                     chunk = response.read(64 * 1024)
+                    _remaining_timeout(deadline)
                     if not chunk:
                         break
                     received += len(chunk)
@@ -1011,6 +1031,8 @@ All subclass should overwrite:</p>
                     chunks.append(chunk)
             except InputError:
                 raise
+            except TimeoutError as exc:
+                raise InputError(&#34;Remote image request timed out.&#34;) from exc
             except (OSError, ValueError, http.client.HTTPException) as exc:
                 raise InputError(
                     &#34;Remote image returned an unsuccessful response.&#34;

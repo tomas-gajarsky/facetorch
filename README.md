@@ -63,11 +63,21 @@ conda install -c conda-forge facetorch
 Docker Compose provides an easy way of building a working facetorch environment with a single command.
 
 ### Run docker example
-    
-* CPU: ```docker compose run --rm facetorch python ./scripts/example.py /opt/facetorch/data/input/test.jpg --output /opt/facetorch/data/output/test.jpg```
-* GPU: ```docker compose run --rm facetorch-gpu python ./scripts/example.py /opt/facetorch/data/input/test.jpg --profile gpu --output /opt/facetorch/data/output/test.jpg```
 
-Check *data/output* for resulting images with bounding boxes and facial 3D landmarks.
+The production image contains the example script. Compose mounts `data/input`
+read-only and keeps generated images in the `facetorch-output` volume, so the
+non-root container never needs write access to the source checkout.
+
+* CPU: ```docker compose run --rm facetorch python /opt/facetorch/example.py /workspace/data/input/test.jpg --output /workspace/data/output/test.png```
+* GPU: ```docker compose run --rm facetorch-gpu python /opt/facetorch/example.py /workspace/data/input/test.jpg --profile gpu --output /workspace/data/output/test-gpu.png```
+
+Copy a result from the persistent volume into the checkout when needed:
+
+```bash
+docker compose run --rm -T facetorch cat /workspace/data/output/test.png > data/output/test.png
+```
+
+Check *data/output* for the copied image with bounding boxes and facial 3D landmarks.
 
 (Apple Mac M1) Use Rosetta 2 emulator in Docker Desktop to run the CPU version.
 

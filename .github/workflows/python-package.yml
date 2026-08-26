@@ -82,3 +82,20 @@ jobs:
           assert analyzer.detector_loaded is False
           assert "site-packages" in Path(facetorch.__file__).as_posix()
           PY
+      - name: Smoke the lowest supported Hydra and OmegaConf versions
+        if: matrix.python-version == '3.12'
+        run: |
+          uv pip install --python "$RUNNER_TEMP/wheel-venv/bin/python" --no-deps \
+            "hydra-core==1.3.2" "omegaconf==2.3.0"
+          uv pip check --python "$RUNNER_TEMP/wheel-venv/bin/python"
+          mkdir "$RUNNER_TEMP/minimum-config-empty"
+          cd "$RUNNER_TEMP/minimum-config-empty"
+          FACETORCH_OFFLINE=1 "$RUNNER_TEMP/wheel-venv/bin/python" - <<'PY'
+          import hydra
+          import omegaconf
+          import facetorch
+
+          assert hydra.__version__ == "1.3.2"
+          assert omegaconf.__version__ == "2.3.0"
+          assert facetorch.load_config(offline=True).analyzer.device == "cpu"
+          PY
