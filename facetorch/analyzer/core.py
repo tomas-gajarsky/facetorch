@@ -28,12 +28,12 @@ from facetorch.exceptions import (
     InputError,
 )
 from facetorch.input import InputSpec
-from facetorch.logger import LoggerJsonFile
+from facetorch.logger import LoggerJsonFile, get_logger
 from importlib.metadata import version
 from hydra.utils import instantiate
 from omegaconf import OmegaConf
 
-logger = LoggerJsonFile().logger
+logger = get_logger()
 
 _UNLOADED = object()
 

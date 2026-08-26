@@ -21,9 +21,9 @@ from facetorch.base import BaseReader
 from facetorch.datastruct import ImageData
 from facetorch.exceptions import FacetorchError, InputCoercionWarning, InputError
 from facetorch.input import InputSpec
-from facetorch.logger import LoggerJsonFile
+from facetorch.logger import get_logger
 
-logger = LoggerJsonFile().logger
+logger = get_logger()
 
 LocalPath = Union[str, os.PathLike]
 ImageSource = Union[LocalPath, torch.Tensor, np.ndarray, bytes, Image.Image]

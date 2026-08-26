@@ -10,10 +10,10 @@ from facetorch import utils
 from facetorch.datastruct import ImageData
 from facetorch.exceptions import ConfigurationError, ModelCompatibilityError
 from facetorch.input import InputSpec, canonicalize_image_tensor
-from facetorch.logger import LoggerJsonFile
+from facetorch.logger import get_logger
 from facetorch.transforms import script_transform
 
-logger = LoggerJsonFile().logger
+logger = get_logger()
 
 
 class BaseProcessor(object, metaclass=ABCMeta):

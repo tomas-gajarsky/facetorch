@@ -18,6 +18,7 @@ from scripts.release_transaction import (
     validate_packaged_model_governance,
     validate_local_release_evidence,
     verify_checksums,
+    verify_github_release_assets,
     verify_publication_receipt,
     verify_release_plan,
     write_checksums,
@@ -290,6 +291,7 @@ def _bundle(tmp_path, repo=None, source_sha=None):
         "distributions/facetorch-1.0.0.tar.gz": b"sdist",
         "images/facetorch-cpu.tar.zst": b"cpu image",
         "images/facetorch-gpu.tar.zst": b"gpu image",
+        "release-evidence.tar.zst": b"release evidence",
         "sboms/distributions.spdx.json": b"{}\n",
         "sboms/facetorch-cpu.spdx.json": b"{}\n",
         "sboms/facetorch-gpu.spdx.json": b"{}\n",
@@ -324,6 +326,66 @@ def _release_plan(tmp_path, version="1.0.0", tag="v1.0.0"):
         allow_missing_tag=True,
     )
     return plan, plan_path, bundle
+
+
+def _github_release_asset_fixture(tmp_path):
+    plan, plan_path, bundle = _release_plan(tmp_path)
+    checksums = bundle / "SHA256SUMS"
+    write_checksums(bundle, checksums)
+
+    receipts = tmp_path / "receipts"
+    receipts.mkdir()
+    for channel in IMMUTABLE_CHANNELS:
+        record_channel(
+            plan,
+            receipts / f"receipt-{channel}.json",
+            channel,
+            plan["channel_subjects"][channel],
+        )
+    publication_receipt = tmp_path / "publication-receipt.json"
+    for channel in IMMUTABLE_CHANNELS:
+        record_channel(
+            plan,
+            publication_receipt,
+            channel,
+            plan["channel_subjects"][channel],
+        )
+
+    expected_paths = [
+        *sorted((bundle / "distributions").iterdir()),
+        bundle / "release-evidence.tar.zst",
+        plan_path,
+        checksums,
+        *(receipts / f"receipt-{channel}.json" for channel in IMMUTABLE_CHANNELS),
+        publication_receipt,
+    ]
+    downloaded = tmp_path / "downloaded"
+    downloaded.mkdir()
+    for path in expected_paths:
+        (downloaded / path.name).write_bytes(path.read_bytes())
+    metadata = tmp_path / "release-assets.json"
+    _write_json(
+        metadata,
+        {
+            "assets": [
+                {
+                    "name": path.name,
+                    "size": path.stat().st_size,
+                    "digest": f"sha256:{_sha256(path)}",
+                }
+                for path in expected_paths
+            ]
+        },
+    )
+    return {
+        "plan": plan,
+        "plan_path": plan_path,
+        "bundle": bundle,
+        "receipts": receipts,
+        "publication_receipt": publication_receipt,
+        "downloaded": downloaded,
+        "metadata": metadata,
+    }
 
 
 @pytest.mark.release_blocker
@@ -387,6 +449,95 @@ def test_release_plan_binds_every_artifact_and_detects_changed_bytes(tmp_path):
         verify_release_plan(plan_path, bundle)
     with pytest.raises(ReleaseError, match="Checksum mismatch"):
         verify_checksums(bundle, checksums)
+
+
+@pytest.mark.release_blocker
+def test_github_release_assets_are_revalidated_immediately_before_publish(tmp_path):
+    candidate = _github_release_asset_fixture(tmp_path)
+
+    report = verify_github_release_assets(
+        plan_path=candidate["plan_path"],
+        bundle_root=candidate["bundle"],
+        receipt_dir=candidate["receipts"],
+        publication_receipt_path=candidate["publication_receipt"],
+        asset_metadata_path=candidate["metadata"],
+        downloaded_assets_dir=candidate["downloaded"],
+    )
+
+    assert report["status"] == "identical"
+    assert {asset["name"] for asset in report["assets"]} == {
+        "facetorch-1.0.0-py3-none-any.whl",
+        "facetorch-1.0.0.tar.gz",
+        "publication-receipt.json",
+        "receipt-docker-cpu.json",
+        "receipt-docker-gpu.json",
+        "receipt-github-release.json",
+        "receipt-model-manifest.json",
+        "receipt-pypi.json",
+        "release-evidence.tar.zst",
+        "release-plan.json",
+        "SHA256SUMS",
+    }
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize("mutation", ("missing", "unexpected", "replaced"))
+def test_github_release_asset_revalidation_rejects_draft_drift(tmp_path, mutation):
+    candidate = _github_release_asset_fixture(tmp_path)
+    metadata = json.loads(candidate["metadata"].read_text(encoding="utf-8"))
+    wheel = candidate["downloaded"] / "facetorch-1.0.0-py3-none-any.whl"
+    if mutation == "missing":
+        wheel.unlink()
+        metadata["assets"] = [
+            asset for asset in metadata["assets"] if asset["name"] != wheel.name
+        ]
+    elif mutation == "unexpected":
+        rogue = candidate["downloaded"] / "unapproved.bin"
+        rogue.write_bytes(b"rogue")
+        metadata["assets"].append(
+            {
+                "name": rogue.name,
+                "size": rogue.stat().st_size,
+                "digest": f"sha256:{_sha256(rogue)}",
+            }
+        )
+    else:
+        wheel.write_bytes(b"other")
+        remote = next(
+            asset for asset in metadata["assets"] if asset["name"] == wheel.name
+        )
+        remote["size"] = wheel.stat().st_size
+        remote["digest"] = f"sha256:{_sha256(wheel)}"
+    _write_json(candidate["metadata"], metadata)
+
+    with pytest.raises(ReleaseError, match="asset set differs|asset digest differs"):
+        verify_github_release_assets(
+            plan_path=candidate["plan_path"],
+            bundle_root=candidate["bundle"],
+            receipt_dir=candidate["receipts"],
+            publication_receipt_path=candidate["publication_receipt"],
+            asset_metadata_path=candidate["metadata"],
+            downloaded_assets_dir=candidate["downloaded"],
+        )
+
+
+@pytest.mark.release_blocker
+def test_github_release_asset_revalidation_rejects_untrusted_receipts(tmp_path):
+    candidate = _github_release_asset_fixture(tmp_path)
+    receipt = candidate["receipts"] / "receipt-pypi.json"
+    payload = json.loads(receipt.read_text(encoding="utf-8"))
+    payload["channels"]["pypi"]["subject_digest"] = "0" * 64
+    _write_json(receipt, payload)
+
+    with pytest.raises(ReleaseError, match="invalid for pypi"):
+        verify_github_release_assets(
+            plan_path=candidate["plan_path"],
+            bundle_root=candidate["bundle"],
+            receipt_dir=candidate["receipts"],
+            publication_receipt_path=candidate["publication_receipt"],
+            asset_metadata_path=candidate["metadata"],
+            downloaded_assets_dir=candidate["downloaded"],
+        )
 
 
 @pytest.mark.release_blocker

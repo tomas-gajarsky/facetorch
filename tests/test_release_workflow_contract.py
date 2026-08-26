@@ -148,7 +148,8 @@ def test_stable_alias_mutation_is_serialized_and_monotonic():
 @pytest.mark.release_blocker
 def test_finalization_revalidates_versioned_docker_tags_immediately_before_publish():
     workflow = _workflow(REPO_ROOT / ".github" / "workflows" / "release.yml")
-    finalize_commands = _commands(workflow["jobs"]["finalize-github-release"])
+    finalize = workflow["jobs"]["finalize-github-release"]
+    finalize_commands = _commands(finalize)
 
     assert "for channel in docker-cpu docker-gpu" in finalize_commands
     assert ".channels[$channel].details.reference" in finalize_commands
@@ -157,6 +158,39 @@ def test_finalization_revalidates_versioned_docker_tags_immediately_before_publi
     assert 'test "$(jq -r .status "$state")" = "identical"' in finalize_commands
     assert finalize_commands.rfind("release_transaction.py docker-state") < (
         finalize_commands.index('gh release edit "$TAG" --draft=false --latest=false')
+    )
+
+
+@pytest.mark.release_blocker
+def test_finalization_revalidates_the_exact_draft_asset_bytes_before_publish():
+    release_path = REPO_ROOT / ".github" / "workflows" / "release.yml"
+    workflow_text = release_path.read_text(encoding="utf-8")
+    workflow = _workflow(release_path)
+    finalize = workflow["jobs"]["finalize-github-release"]
+    commands = _commands(finalize)
+    receipt_downloads = [
+        step
+        for step in finalize["steps"]
+        if str(step.get("uses", "")).startswith("actions/download-artifact@")
+        and "pattern" in step.get("with", {})
+    ]
+
+    assert len(receipt_downloads) == 1
+    assert receipt_downloads[0]["with"] == {
+        "pattern": "release-receipts-*-${{ needs.validate-inputs.outputs.source_sha }}",
+        "path": "${{ runner.temp }}/channel-receipts",
+        "merge-multiple": True,
+    }
+    assert "release-receipts-github-${{" in workflow_text
+    assert "release-receipts-${{ matrix.channel }}-${{" in workflow_text
+    assert "release-receipts-pypi-${{" in workflow_text
+    assert 'gh release view "$TAG" --json assets' in commands
+    assert 'gh release download "$TAG" --dir "$RUNNER_TEMP/final-release-assets"' in commands
+    assert "release_transaction.py github-release-assets" in commands
+    verify_index = commands.index("release_transaction.py github-release-assets")
+    assert commands.rfind("release_transaction.py docker-state") < verify_index
+    assert verify_index < commands.index(
+        'gh release edit "$TAG" --draft=false --latest=false'
     )
 
 

@@ -35,10 +35,10 @@ from facetorch.exceptions import (
     ModelCompatibilityError,
     OfflineCacheError,
 )
-from facetorch.logger import LoggerJsonFile
+from facetorch.logger import get_logger
 from facetorch.paths import get_offline_mode
 
-logger = LoggerJsonFile().logger
+logger = get_logger()
 
 
 class _DirectoryLock(AbstractContextManager):

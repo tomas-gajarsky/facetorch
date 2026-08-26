@@ -3,11 +3,11 @@ from abc import abstractmethod
 import torch
 from codetiming import Timer
 from facetorch.base import BaseProcessor
-from facetorch.logger import LoggerJsonFile
+from facetorch.logger import get_logger
 from facetorch.utils import rgb2bgr
 from torchvision import transforms
 
-logger = LoggerJsonFile().logger
+logger = get_logger()
 
 
 class BasePredPreProcessor(BaseProcessor):
