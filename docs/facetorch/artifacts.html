@@ -712,6 +712,7 @@ class ArtifactDescriptor:
         torch_version: str,
         device: Any,
         allow_legacy_models: bool = False,
+        incompatible_artifact_ids: Iterable[str] = (),
     ) -&gt; tuple[ArtifactDescriptor, ...]:
         try:
             artifacts = self.models[model_id]
@@ -743,7 +744,24 @@ class ArtifactDescriptor:
         legacy.sort(key=lambda item: item.priority)
         selected = exports + (legacy if allow_legacy_models else [])
         if selected:
-            return tuple(selected)
+            if isinstance(incompatible_artifact_ids, (str, bytes)):
+                raise ConfigurationError(
+                    &#34;incompatible_artifact_ids must be a collection of artifact IDs.&#34;
+                )
+            rejected = set(incompatible_artifact_ids)
+            if any(not isinstance(item, str) or not item for item in rejected):
+                raise ConfigurationError(
+                    &#34;incompatible_artifact_ids must contain non-empty strings.&#34;
+                )
+            eligible = tuple(
+                item for item in selected if item.artifact_id not in rejected
+            )
+            if eligible:
+                return eligible
+            raise ModelCompatibilityError(
+                f&#34;All eligible artifacts for {model_id!r} were already rejected by &#34;
+                f&#34;torch {runtime_label} on {device_family}.&#34;
+            )
 
         if legacy and not allow_legacy_models:
             remedy = &#34; Set allow_legacy_models=True to use an eligible verified legacy artifact.&#34;
@@ -793,7 +811,7 @@ class ArtifactDescriptor:
 <div class="desc"></div>
 </dd>
 <dt id="facetorch.artifacts.ArtifactManifest.candidates"><code class="name flex">
-<span>def <span class="ident">candidates</span></span>(<span>self,<br>model_id: str,<br>*,<br>torch_version: str,<br>device: Any,<br>allow_legacy_models: bool = False) ‑> tuple[<a title="facetorch.artifacts.ArtifactDescriptor" href="#facetorch.artifacts.ArtifactDescriptor">ArtifactDescriptor</a>, ...]</span>
+<span>def <span class="ident">candidates</span></span>(<span>self,<br>model_id: str,<br>*,<br>torch_version: str,<br>device: Any,<br>allow_legacy_models: bool = False,<br>incompatible_artifact_ids: Iterable[str] = ()) ‑> tuple[<a title="facetorch.artifacts.ArtifactDescriptor" href="#facetorch.artifacts.ArtifactDescriptor">ArtifactDescriptor</a>, ...]</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -807,6 +825,7 @@ class ArtifactDescriptor:
     torch_version: str,
     device: Any,
     allow_legacy_models: bool = False,
+    incompatible_artifact_ids: Iterable[str] = (),
 ) -&gt; tuple[ArtifactDescriptor, ...]:
     try:
         artifacts = self.models[model_id]
@@ -838,7 +857,24 @@ class ArtifactDescriptor:
     legacy.sort(key=lambda item: item.priority)
     selected = exports + (legacy if allow_legacy_models else [])
     if selected:
-        return tuple(selected)
+        if isinstance(incompatible_artifact_ids, (str, bytes)):
+            raise ConfigurationError(
+                &#34;incompatible_artifact_ids must be a collection of artifact IDs.&#34;
+            )
+        rejected = set(incompatible_artifact_ids)
+        if any(not isinstance(item, str) or not item for item in rejected):
+            raise ConfigurationError(
+                &#34;incompatible_artifact_ids must contain non-empty strings.&#34;
+            )
+        eligible = tuple(
+            item for item in selected if item.artifact_id not in rejected
+        )
+        if eligible:
+            return eligible
+        raise ModelCompatibilityError(
+            f&#34;All eligible artifacts for {model_id!r} were already rejected by &#34;
+            f&#34;torch {runtime_label} on {device_family}.&#34;
+        )
 
     if legacy and not allow_legacy_models:
         remedy = &#34; Set allow_legacy_models=True to use an eligible verified legacy artifact.&#34;

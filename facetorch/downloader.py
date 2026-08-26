@@ -22,8 +22,9 @@ from facetorch.artifacts import (
     ArtifactDescriptor,
     ArtifactManifest,
     get_model_manifest,
+    incompatibility_key,
     normalize_device,
-    parse_runtime_version,
+    read_incompatible_artifact_ids,
     verify_artifact,
 )
 from facetorch.exceptions import (
@@ -432,26 +433,19 @@ class DownloaderHuggingFace(_VerifiedDownloader):
         return Path(self.path_local).expanduser().parent / ".incompatible.json"
 
     def _incompatibility_key(self) -> str:
-        device = normalize_device(self.device)
-        runtime = parse_runtime_version(self._runtime_version())
-        return (
-            f"{self.manifest.manifest_revision}|"
-            f"{runtime[0]}.{runtime[1]}|{device}"
+        return incompatibility_key(
+            self.manifest.manifest_revision,
+            self._runtime_version(),
+            self.device,
         )
 
     def _read_incompatible(self) -> set[str]:
         path = self._incompatibility_path
-        if not path.is_file():
-            return set()
         try:
-            raw = json.loads(path.read_text(encoding="utf-8"))
-            values = raw.get(self._incompatibility_key(), [])
-            if not isinstance(values, list) or not all(
-                isinstance(value, str) for value in values
-            ):
-                raise ValueError("invalid incompatibility record")
-            return set(values)
-        except (OSError, ValueError, json.JSONDecodeError):
+            return read_incompatible_artifact_ids(
+                path, self._incompatibility_key()
+            )
+        except ArtifactIntegrityError:
             _quarantine(path, "invalid incompatibility sidecar")
             return set()
 
@@ -506,6 +500,7 @@ class DownloaderHuggingFace(_VerifiedDownloader):
                 torch_version=self._runtime_version(),
                 device=self.device,
                 allow_legacy_models=self.allow_legacy_models,
+                incompatible_artifact_ids=self._read_incompatible(),
             )
             if any(item.repo_id != self.repo_id for item in candidates):
                 raise ConfigurationError(
@@ -519,19 +514,9 @@ class DownloaderHuggingFace(_VerifiedDownloader):
                     f"Configured revision for {self.manifest_id!r} does not match "
                     "the packaged immutable manifest."
                 )
-        incompatible = self._read_incompatible() if self.manifest_id else set()
-        filtered = tuple(
-            item for item in candidates if item.artifact_id not in incompatible
-        )
-        if not filtered:
-            raise ModelCompatibilityError(
-                f"All eligible artifacts for {self.manifest_id!r} were already "
-                f"rejected by torch {self._runtime_version()} on "
-                f"{normalize_device(self.device)}."
-            )
-        self._resolved_candidates = filtered
-        self._last_candidates = [item.filename for item in filtered]
-        return filtered
+        self._resolved_candidates = candidates
+        self._last_candidates = [item.filename for item in candidates]
+        return candidates
 
     def _target_for(self, descriptor: ArtifactDescriptor) -> Path:
         return descriptor.cache_path(self.path_local)

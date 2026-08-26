@@ -142,10 +142,7 @@ class FaceAnalyzer(object):
         if hasattr(self.cfg, "logger") and self.cfg.logger is not None:
             self.logger = instantiate(self.cfg.logger).logger
         else:
-            self.logger = logging.getLogger("facetorch")
-            if not self.logger.handlers:
-                self.logger.setLevel(logging.INFO)
-                self.logger.addHandler(logging.StreamHandler())
+            self.logger = LoggerJsonFile(level=logging.INFO).logger
 
         self.logger.info("Initializing FaceAnalyzer")
         self.logger.debug("Config", extra=self.cfg.__dict__["_content"])

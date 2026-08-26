@@ -46,6 +46,42 @@ def normalize_device(value: Any) -> str:
     return device
 
 
+def incompatibility_key(
+    manifest_revision: str, torch_version: str, device: Any
+) -> str:
+    """Return the shared runtime key used by incompatibility sidecars."""
+    runtime = parse_runtime_version(torch_version)
+    return (
+        f"{manifest_revision}|{runtime[0]}.{runtime[1]}|"
+        f"{normalize_device(device)}"
+    )
+
+
+def read_incompatible_artifact_ids(path: str | Path, key: str) -> set[str]:
+    """Read one incompatibility selection without mutating cache state."""
+    sidecar = Path(path)
+    if not sidecar.is_file():
+        return set()
+    try:
+        raw = json.loads(sidecar.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ArtifactIntegrityError(
+            f"Invalid incompatibility sidecar {sidecar}."
+        ) from exc
+    if not isinstance(raw, Mapping):
+        raise ArtifactIntegrityError(
+            f"Invalid incompatibility sidecar {sidecar}."
+        )
+    values = raw.get(key, [])
+    if not isinstance(values, list) or not all(
+        isinstance(value, str) and value for value in values
+    ):
+        raise ArtifactIntegrityError(
+            f"Invalid incompatibility sidecar {sidecar}."
+        )
+    return set(values)
+
+
 def _version_bound(value: Optional[str]) -> Optional[tuple[int, int]]:
     return None if value is None else parse_runtime_version(value)
 
@@ -442,6 +478,7 @@ class ArtifactManifest:
         torch_version: str,
         device: Any,
         allow_legacy_models: bool = False,
+        incompatible_artifact_ids: Iterable[str] = (),
     ) -> tuple[ArtifactDescriptor, ...]:
         try:
             artifacts = self.models[model_id]
@@ -473,7 +510,24 @@ class ArtifactManifest:
         legacy.sort(key=lambda item: item.priority)
         selected = exports + (legacy if allow_legacy_models else [])
         if selected:
-            return tuple(selected)
+            if isinstance(incompatible_artifact_ids, (str, bytes)):
+                raise ConfigurationError(
+                    "incompatible_artifact_ids must be a collection of artifact IDs."
+                )
+            rejected = set(incompatible_artifact_ids)
+            if any(not isinstance(item, str) or not item for item in rejected):
+                raise ConfigurationError(
+                    "incompatible_artifact_ids must contain non-empty strings."
+                )
+            eligible = tuple(
+                item for item in selected if item.artifact_id not in rejected
+            )
+            if eligible:
+                return eligible
+            raise ModelCompatibilityError(
+                f"All eligible artifacts for {model_id!r} were already rejected by "
+                f"torch {runtime_label} on {device_family}."
+            )
 
         if legacy and not allow_legacy_models:
             remedy = " Set allow_legacy_models=True to use an eligible verified legacy artifact."

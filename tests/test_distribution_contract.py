@@ -58,6 +58,7 @@ SDIST_ALLOWED_TOP_LEVEL = {
     "gpu.environment.yml",
     "gpu.conda-lock.yml",
     "model_defs",
+    "model_cards",
     "notebooks",
     "pyproject.toml",
     "pytest.ini",
@@ -311,10 +312,57 @@ def test_sdist_content_matches_source_allowlist(built_distributions):
         "uv.lock",
         "scripts/check_dependency_sync.py",
         "scripts/audit_dependencies.py",
+        "scripts/audit_model_manifest_hf.py",
         "scripts/model_cohort_publication.py",
+        "scripts/render_model_cards.py",
         "scripts/release_transaction.py",
+        "model_cards/catalog.json",
+        "model_cards/upstream_licenses/adaface-LICENSE",
         "notebooks/facetorch_notebook_demo.ipynb",
     } <= relative
+
+
+@pytest.mark.release_blocker
+def test_sdist_model_manifest_auditor_has_its_renderer_inputs(built_distributions):
+    extract_root = built_distributions["root"] / "auditor-extracted"
+    with tarfile.open(built_distributions["sdist"], mode="r:gz") as archive:
+        archive.extractall(extract_root)
+    source_root = next(path for path in extract_root.iterdir() if path.is_dir())
+    smoke = """
+from pathlib import Path
+
+from scripts.audit_model_manifest_hf import audit_remote_manifest
+
+class OfflineApi:
+    def model_info(self, **kwargs):
+        raise RuntimeError("deliberate offline audit probe")
+
+report = audit_remote_manifest(
+    Path("facetorch/models/manifest.json"),
+    api=OfflineApi(),
+    download_fn=lambda **kwargs: None,
+)
+assert report["status"] == "failed"
+assert report["failures"]
+assert not any(
+    item["model_id"] == "model-card-contract"
+    for item in report["failures"]
+), report
+assert all(
+    item["error"] == "deliberate offline audit probe"
+    for item in report["failures"]
+), report
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", smoke],
+        cwd=source_root,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 @pytest.mark.release_blocker

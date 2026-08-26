@@ -593,6 +593,147 @@ def _verify_remote_commit(api: Any, repo_id: str, revision: str) -> None:
         )
 
 
+def _content_contract(value: Path | bytes) -> Dict[str, Any]:
+    """Describe bytes using both Hub storage digest schemes."""
+    if isinstance(value, Path):
+        size = value.stat().st_size
+        sha256 = hashlib.sha256()
+        git_blob = hashlib.sha1()
+        git_blob.update(f"blob {size}\0".encode("ascii"))
+        with value.open("rb") as source:
+            for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                sha256.update(chunk)
+                git_blob.update(chunk)
+        sha256_value = sha256.hexdigest()
+        git_blob_value = git_blob.hexdigest()
+    else:
+        size = len(value)
+        sha256_value = _sha256_bytes(value)
+        git_blob_value = hashlib.sha1(
+            f"blob {size}\0".encode("ascii") + value
+        ).hexdigest()
+    return {
+        "size_bytes": size,
+        "sha256": sha256_value,
+        "git_blob_id": git_blob_value,
+    }
+
+
+def _remote_tree(api: Any, repo_id: str, revision: str) -> Dict[str, Any]:
+    """Return immutable file signatures for one Hub tree."""
+    try:
+        list_repo_tree = getattr(api, "list_repo_tree", None)
+        if callable(list_repo_tree):
+            entries = list_repo_tree(
+                repo_id=repo_id,
+                revision=revision,
+                recursive=True,
+                expand=True,
+            )
+        else:
+            list_files_info = getattr(api, "list_files_info", None)
+            if not callable(list_files_info):
+                raise PublicationError(
+                    "Installed huggingface_hub cannot inspect repository files"
+                )
+            entries = list_files_info(
+                repo_id=repo_id,
+                paths=None,
+                revision=revision,
+                expand=True,
+            )
+        tree = {}
+        for entry in entries:
+            blob_id = getattr(entry, "blob_id", None)
+            size = getattr(entry, "size", None)
+            if blob_id is None or size is None:
+                continue
+            path = str(getattr(entry, "path", ""))
+            if not path or path in tree:
+                raise PublicationError(
+                    f"Remote repository {repo_id}@{revision} has an invalid tree"
+                )
+            lfs = getattr(entry, "lfs", None)
+            lfs_sha256 = (
+                lfs.get("sha256")
+                if isinstance(lfs, Mapping)
+                else getattr(lfs, "sha256", None)
+            )
+            tree[path] = {
+                "size_bytes": int(size),
+                "blob_id": str(blob_id).lower(),
+                "lfs_sha256": (
+                    str(lfs_sha256).lower() if lfs_sha256 is not None else None
+                ),
+            }
+        return tree
+    except PublicationError:
+        raise
+    except Exception as exc:
+        raise PublicationError(
+            f"Cannot inspect remote repository tree {repo_id}@{revision}"
+        ) from exc
+
+
+def _remote_file_matches(
+    observed: Mapping[str, Any], expected: Mapping[str, Any]
+) -> bool:
+    if observed.get("size_bytes") != expected.get("size_bytes"):
+        return False
+    lfs_sha256 = observed.get("lfs_sha256")
+    if lfs_sha256 is not None:
+        return lfs_sha256 == expected.get("sha256")
+    return observed.get("blob_id") == expected.get("git_blob_id")
+
+
+def _reconcile_candidate_branch(
+    api: Any,
+    *,
+    repo_id: str,
+    branch: str,
+    parent_revision: str,
+    expected_files: Mapping[str, Mapping[str, Any]],
+) -> Optional[str]:
+    """Recover an exact post-commit state, or require a fresh parent commit."""
+    try:
+        info = api.repo_info(repo_id=repo_id, revision=branch)
+    except Exception as exc:
+        raise PublicationError(
+            f"Cannot resolve candidate branch {repo_id}@{branch}"
+        ) from exc
+    head = _require_commit(
+        getattr(info, "sha", None), f"Candidate branch head for {repo_id}"
+    )
+    if head == parent_revision:
+        return None
+
+    parent_tree = _remote_tree(api, repo_id, parent_revision)
+    candidate_tree = _remote_tree(api, repo_id, head)
+    planned_paths = set(expected_files)
+    unplanned_changes = {
+        path
+        for path in set(parent_tree).union(candidate_tree) - planned_paths
+        if parent_tree.get(path) != candidate_tree.get(path)
+    }
+    mismatched = {
+        path
+        for path, contract in expected_files.items()
+        if path not in candidate_tree
+        or not _remote_file_matches(candidate_tree[path], contract)
+    }
+    if unplanned_changes or mismatched:
+        details = []
+        if unplanned_changes:
+            details.append(f"unplanned paths {sorted(unplanned_changes)}")
+        if mismatched:
+            details.append(f"mismatched planned paths {sorted(mismatched)}")
+        raise PublicationError(
+            f"Candidate branch {repo_id}@{branch} diverged from the approved plan: "
+            + "; ".join(details)
+        )
+    return head
+
+
 def _new_receipt(plan: Mapping[str, Any], plan_path: Path) -> Dict[str, Any]:
     return {
         "schema_version": RECEIPT_SCHEMA_VERSION,
@@ -745,9 +886,19 @@ def publish_publication_plan(
 
         operations = []
         artifact_receipts = {}
+        expected_files = {}
         for model in group["artifacts"]:
             artifact = _safe_staged_file(root, model["artifact_path"], "artifact")
             metadata = _safe_staged_file(root, model["metadata_path"], "metadata")
+            for filename, path in (
+                (model["artifact_filename"], artifact),
+                (model["metadata_filename"], metadata),
+            ):
+                if filename in expected_files:
+                    raise PublicationError(
+                        f"Duplicate planned Hub path for {key}: {filename}"
+                    )
+                expected_files[filename] = _content_contract(path)
             operations.extend(
                 [
                     CommitOperationAdd(
@@ -771,20 +922,29 @@ def publish_publication_plan(
                 revision=group["parent_revision"],
                 exist_ok=True,
             )
-            commit = api.create_commit(
+            commit_revision = _reconcile_candidate_branch(
+                api,
                 repo_id=group["repo_id"],
-                operations=operations,
-                revision=branch,
-                parent_commit=group["parent_revision"],
-                commit_message=(
-                    f"Stage {group['model_id']} cohorts for {plan['plan_id'][:16]}"
-                ),
-                commit_description=(
-                    "Candidate only; the release manifest is promoted after every "
-                    f"model succeeds. Plan: {plan['plan_id']}"
-                ),
+                branch=branch,
+                parent_revision=group["parent_revision"],
+                expected_files=expected_files,
             )
-            commit_revision = _commit_oid(commit)
+            if commit_revision is None:
+                commit = api.create_commit(
+                    repo_id=group["repo_id"],
+                    operations=operations,
+                    revision=branch,
+                    parent_commit=group["parent_revision"],
+                    commit_message=(
+                        f"Stage {group['model_id']} cohorts for "
+                        f"{plan['plan_id'][:16]}"
+                    ),
+                    commit_description=(
+                        "Candidate only; the release manifest is promoted after "
+                        f"every model succeeds. Plan: {plan['plan_id']}"
+                    ),
+                )
+                commit_revision = _commit_oid(commit)
         except Exception:
             receipt["status"] = "incomplete"
             _write_json_atomic(receipt_path, receipt)
@@ -809,6 +969,9 @@ def publish_publication_plan(
         manifest = _manifest_payload(plan, receipt)
         manifest_bytes = _canonical_json_bytes(manifest)
         manifest_filename = f"manifests/{plan['plan_id']}.json"
+        expected_files = {
+            manifest_filename: _content_contract(manifest_bytes)
+        }
         try:
             api.create_branch(
                 repo_id=manifest_target["repo_id"],
@@ -816,23 +979,31 @@ def publish_publication_plan(
                 revision=manifest_target["parent_revision"],
                 exist_ok=True,
             )
-            commit = api.create_commit(
+            revision = _reconcile_candidate_branch(
+                api,
                 repo_id=manifest_target["repo_id"],
-                operations=[
-                    CommitOperationAdd(
-                        path_in_repo=manifest_filename,
-                        path_or_fileobj=manifest_bytes,
-                    )
-                ],
-                revision=branch,
-                parent_commit=manifest_target["parent_revision"],
-                commit_message=f"Pin cohort manifest {plan['plan_id'][:16]}",
-                commit_description=(
-                    "Immutable candidate manifest created only after all model "
-                    f"commits succeeded. Plan: {plan['plan_id']}"
-                ),
+                branch=branch,
+                parent_revision=manifest_target["parent_revision"],
+                expected_files=expected_files,
             )
-            revision = _commit_oid(commit)
+            if revision is None:
+                commit = api.create_commit(
+                    repo_id=manifest_target["repo_id"],
+                    operations=[
+                        CommitOperationAdd(
+                            path_in_repo=manifest_filename,
+                            path_or_fileobj=manifest_bytes,
+                        )
+                    ],
+                    revision=branch,
+                    parent_commit=manifest_target["parent_revision"],
+                    commit_message=f"Pin cohort manifest {plan['plan_id'][:16]}",
+                    commit_description=(
+                        "Immutable candidate manifest created only after all model "
+                        f"commits succeeded. Plan: {plan['plan_id']}"
+                    ),
+                )
+                revision = _commit_oid(commit)
         except Exception:
             receipt["status"] = "incomplete"
             _write_json_atomic(receipt_path, receipt)

@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
+import scripts.model_cohort_publication as publication
 from scripts.model_cohort_publication import (
     PublicationError,
     create_approval_template,
@@ -155,21 +156,69 @@ class _FakeHubApi:
         self.branches = []
         self.commits = []
         self.verified = []
+        self.branch_heads = {}
+        self.trees = {}
 
     def create_branch(self, **kwargs):
         self.branches.append(kwargs)
+        key = (kwargs["repo_id"], kwargs["branch"])
+        self.branch_heads.setdefault(key, kwargs["revision"])
 
     def create_commit(self, **kwargs):
         if kwargs["repo_id"] == self.fail_once_for:
             self.fail_once_for = None
             raise RuntimeError("deliberate candidate upload failure")
+        branch_key = (kwargs["repo_id"], kwargs["revision"])
+        if self.branch_heads.get(branch_key) != kwargs["parent_commit"]:
+            raise RuntimeError("stale parent commit")
+        parent_tree = self.trees.get(
+            (kwargs["repo_id"], kwargs["parent_commit"]), {}
+        )
+        tree = dict(parent_tree)
+        for operation in kwargs["operations"]:
+            source = operation.path_or_fileobj
+            if isinstance(source, bytes):
+                value = source
+            else:
+                value = Path(source).read_bytes()
+            tree[operation.path_in_repo] = value
         self.commits.append(kwargs)
-        digit = format(len(self.commits), "x")
-        return SimpleNamespace(oid=digit * 40)
+        digit = format(len(self.commits) + 9, "x")
+        revision = digit * 40
+        self.trees[(kwargs["repo_id"], revision)] = tree
+        self.branch_heads[branch_key] = revision
+        return SimpleNamespace(oid=revision)
 
     def repo_info(self, *, repo_id, revision):
-        self.verified.append((repo_id, revision))
-        return SimpleNamespace(sha=revision)
+        observed = self.branch_heads.get((repo_id, revision), revision)
+        if revision == observed:
+            self.verified.append((repo_id, revision))
+        return SimpleNamespace(sha=observed)
+
+    def list_repo_tree(self, *, repo_id, revision, recursive, expand):
+        observed = self.branch_heads.get((repo_id, revision), revision)
+        tree = self.trees.get((repo_id, observed), {})
+        return [
+            SimpleNamespace(
+                path=path,
+                size=len(value),
+                blob_id=hashlib.sha1(
+                    f"blob {len(value)}\0".encode("ascii") + value
+                ).hexdigest(),
+                lfs=None,
+            )
+            for path, value in sorted(tree.items())
+        ]
+
+    def list_files_info(self, *, repo_id, paths, revision, expand):
+        assert paths is None
+        return type(self).list_repo_tree(
+            self,
+            repo_id=repo_id,
+            revision=revision,
+            recursive=True,
+            expand=expand,
+        )
 
 
 @pytest.mark.release_blocker
@@ -292,7 +341,7 @@ def test_publish_commits_each_model_atomically_then_manifest_last(tmp_path):
     assert all(
         call["revision"].startswith("facetorch-candidate-") for call in api.commits
     )
-    assert receipt["manifest"]["commit_revision"] == "3" * 40
+    assert receipt["manifest"]["commit_revision"] == "c" * 40
 
 
 @pytest.mark.release_blocker
@@ -325,11 +374,147 @@ def test_failed_publish_is_resumable_without_early_manifest(tmp_path):
         api=resumed_api,
     )
     assert complete["status"] == "complete"
-    assert resumed_api.verified == [("owner/model-a", "1" * 40)]
+    assert resumed_api.verified == [("owner/model-a", "a" * 40)]
     assert [call["repo_id"] for call in resumed_api.commits] == [
         "owner/model-b",
         "owner/facetorch-model-manifest",
     ]
+
+
+@pytest.mark.release_blocker
+def test_publish_recovers_exact_model_commit_after_receipt_write_crash(
+    tmp_path, monkeypatch
+):
+    summary = _stage_summary(tmp_path, "2.11")
+    plan = _prepare(tmp_path, [summary])
+    approval = tmp_path / "approval.json"
+    receipt_path = tmp_path / "receipt.json"
+    _approve(plan, approval)
+    api = _FakeHubApi()
+    write_json_atomic = publication._write_json_atomic
+    crashed = False
+
+    def crash_after_first_model(path, value):
+        nonlocal crashed
+        if (
+            not crashed
+            and path == receipt_path
+            and set(value.get("models", {})) == {"model-a"}
+        ):
+            crashed = True
+            raise OSError("deliberate receipt write crash")
+        write_json_atomic(path, value)
+
+    monkeypatch.setattr(publication, "_write_json_atomic", crash_after_first_model)
+    with pytest.raises(OSError, match="receipt write crash"):
+        publish_publication_plan(
+            plan_path=plan,
+            approval_path=approval,
+            receipt_path=receipt_path,
+            api=api,
+        )
+    assert [call["repo_id"] for call in api.commits] == ["owner/model-a"]
+
+    monkeypatch.setattr(publication, "_write_json_atomic", write_json_atomic)
+    monkeypatch.setattr(api, "list_repo_tree", None)
+    complete = publish_publication_plan(
+        plan_path=plan,
+        approval_path=approval,
+        receipt_path=receipt_path,
+        api=api,
+    )
+
+    assert complete["status"] == "complete"
+    assert [call["repo_id"] for call in api.commits] == [
+        "owner/model-a",
+        "owner/model-b",
+        "owner/facetorch-model-manifest",
+    ]
+
+
+@pytest.mark.release_blocker
+def test_publish_recovers_exact_manifest_commit_after_receipt_write_crash(
+    tmp_path, monkeypatch
+):
+    summary = _stage_summary(tmp_path, "2.11", model_ids=("model-a",))
+    plan = _prepare(tmp_path, [summary], model_ids=("model-a",))
+    approval = tmp_path / "approval.json"
+    receipt_path = tmp_path / "receipt.json"
+    _approve(plan, approval)
+    api = _FakeHubApi()
+    write_json_atomic = publication._write_json_atomic
+    crashed = False
+
+    def crash_after_manifest(path, value):
+        nonlocal crashed
+        if (
+            not crashed
+            and path == receipt_path
+            and isinstance(value.get("manifest"), dict)
+        ):
+            crashed = True
+            raise OSError("deliberate manifest receipt write crash")
+        write_json_atomic(path, value)
+
+    monkeypatch.setattr(publication, "_write_json_atomic", crash_after_manifest)
+    with pytest.raises(OSError, match="manifest receipt write crash"):
+        publish_publication_plan(
+            plan_path=plan,
+            approval_path=approval,
+            receipt_path=receipt_path,
+            api=api,
+        )
+    assert len(api.commits) == 2
+
+    monkeypatch.setattr(publication, "_write_json_atomic", write_json_atomic)
+    complete = publish_publication_plan(
+        plan_path=plan,
+        approval_path=approval,
+        receipt_path=receipt_path,
+        api=api,
+    )
+
+    assert complete["status"] == "complete"
+    assert len(api.commits) == 2
+
+
+@pytest.mark.release_blocker
+def test_publish_recovery_rejects_a_divergent_candidate_branch(
+    tmp_path, monkeypatch
+):
+    summary = _stage_summary(tmp_path, "2.11", model_ids=("model-a",))
+    plan = _prepare(tmp_path, [summary], model_ids=("model-a",))
+    approval = tmp_path / "approval.json"
+    receipt_path = tmp_path / "receipt.json"
+    _approve(plan, approval)
+    api = _FakeHubApi()
+    write_json_atomic = publication._write_json_atomic
+
+    def crash_after_model(path, value):
+        if path == receipt_path and value.get("models"):
+            raise OSError("deliberate receipt write crash")
+        write_json_atomic(path, value)
+
+    monkeypatch.setattr(publication, "_write_json_atomic", crash_after_model)
+    with pytest.raises(OSError, match="receipt write crash"):
+        publish_publication_plan(
+            plan_path=plan,
+            approval_path=approval,
+            receipt_path=receipt_path,
+            api=api,
+        )
+    committed = api.commits[0]
+    head = api.branch_heads[(committed["repo_id"], committed["revision"])]
+    api.trees[(committed["repo_id"], head)]["unexpected.txt"] = b"diverged"
+
+    monkeypatch.setattr(publication, "_write_json_atomic", write_json_atomic)
+    with pytest.raises(PublicationError, match="diverged from the approved plan"):
+        publish_publication_plan(
+            plan_path=plan,
+            approval_path=approval,
+            receipt_path=receipt_path,
+            api=api,
+        )
 
 
 @pytest.mark.release_blocker

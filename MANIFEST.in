@@ -25,6 +25,7 @@ include scripts/example.py
 include scripts/example_tensor.py
 include scripts/export_model_cohorts_hf.py
 include scripts/audit_model_manifest_hf.py
+include scripts/render_model_cards.py
 include scripts/model_cohort_publication.py
 include scripts/record_container_evidence.py
 include scripts/release_transaction.py
@@ -32,6 +33,7 @@ include scripts/verify_model_release_matrix.py
 include scripts/repeated_inference.py
 include scripts/run_local_cuda_release_matrix.py
 include scripts/smoke_staged_default_analyzer.py
+recursive-include model_cards *
 include data/input*/*.jpg
 include data*/*.png
 include tests*/*.py
