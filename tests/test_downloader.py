@@ -551,6 +551,7 @@ def test_targeted_candidate_download_and_try_next_validate_state(tmp_path):
     cache.mkdir()
     shutil.copy2(exported, cache / "toy.pt2")
     shutil.copy2(legacy, cache / "toy.pt")
+    assert Path(downloader._download_one_candidate("toy.pt2")).name == "toy.pt2"
     assert Path(downloader.run()).name == "toy.pt2"
     with pytest.warns(LegacyModelWarning):
         assert downloader.try_next() is True

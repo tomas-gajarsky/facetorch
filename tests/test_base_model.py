@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 from facetorch.artifacts import get_model_manifest
 from facetorch.base import BaseModel
 from facetorch.downloader import DownloaderHuggingFace
-from facetorch.exceptions import ModelCompatibilityError
+from facetorch.exceptions import ConfigurationError, ModelCompatibilityError
 
 
 class ConcreteModel(BaseModel):
@@ -202,6 +202,65 @@ class TestLoadExportedModel:
         assert downloader.active_descriptor == descriptor
         load.assert_called_once_with(str(cached_path))
 
+    def test_manifest_cache_fast_path_requires_explicitly_disabled_verification(
+        self, tmp_path
+    ):
+        manifest = get_model_manifest()
+        descriptor = manifest.candidates(
+            "detector-retinaface",
+            torch_version=str(torch.__version__),
+            device="cpu",
+            allow_legacy_models=False,
+        )[0]
+        downloader = DownloaderHuggingFace(
+            file_id=descriptor.repo_id,
+            repo_id=descriptor.repo_id,
+            path_local=str(tmp_path / "model.pt2"),
+            manifest_id="detector-retinaface",
+            manifest=manifest,
+            torch_version=str(torch.__version__),
+            device="cpu",
+            offline=True,
+            verify_on_use=True,
+        )
+
+        assert downloader.resolve_cached_path() is None
+
+    def test_manifest_cache_fast_path_returns_none_when_candidate_is_absent(
+        self, tmp_path
+    ):
+        manifest = get_model_manifest()
+        descriptor = manifest.candidates(
+            "detector-retinaface",
+            torch_version=str(torch.__version__),
+            device="cpu",
+            allow_legacy_models=False,
+        )[0]
+        downloader = DownloaderHuggingFace(
+            file_id=descriptor.repo_id,
+            repo_id=descriptor.repo_id,
+            path_local=str(tmp_path / "model.pt2"),
+            manifest_id="detector-retinaface",
+            manifest=manifest,
+            torch_version=str(torch.__version__),
+            device="cpu",
+            offline=True,
+            verify_on_use=False,
+        )
+
+        assert downloader.resolve_cached_path() is None
+
+    def test_data_artifact_is_rejected_as_an_executable_model(self, tmp_path):
+        data_path = tmp_path / "metadata.pt"
+        data_path.write_bytes(b"authenticated metadata")
+        downloader = _make_dummy_downloader(str(data_path))
+        downloader.active_format = "torch_data"
+
+        with pytest.raises(ConfigurationError, match="data, not an executable model"):
+            ConcreteModel(downloader=downloader, device=torch.device("cpu"))
+
+        downloader.run.assert_not_called()
+
     def test_exported_model_bad_file(self, tmp_path):
         bad_pt2 = str(tmp_path / "bad.pt2")
         with open(bad_pt2, "wb") as f:
@@ -241,6 +300,24 @@ class TestLoadExportedModel:
             with pytest.raises(
                 ModelCompatibilityError,
                 match="Upload/export a compatible model artifact",
+            ):
+                ConcreteModel(downloader=dl, device=torch.device("cpu"))
+
+    def test_schema_error_supports_legacy_no_argument_candidate_retry(self, tmp_path):
+        bad_pt2 = str(tmp_path / "model.pt2")
+        Path(bad_pt2).write_bytes(b"not a real model")
+        dl = _make_dummy_downloader(bad_pt2)
+
+        def try_next():
+            raise ModelCompatibilityError("all rejected")
+
+        dl.try_next = try_next
+        with patch(
+            "torch.export.load", side_effect=RuntimeError("schema version mismatch")
+        ):
+            with pytest.raises(
+                ModelCompatibilityError,
+                match="incompatible with current PyTorch",
             ):
                 ConcreteModel(downloader=dl, device=torch.device("cpu"))
 
@@ -341,6 +418,20 @@ class TestBaseModelMisc:
 
         m = ConcreteModel(downloader=dl, device=torch.device("cpu"))
         assert m.model is not None
+
+    def test_missing_model_reports_unwritable_cache_directory(self, tmp_path):
+        missing_file = str(tmp_path / "cache" / "model.pt")
+        dl = _make_dummy_downloader(missing_file)
+
+        with (
+            patch("facetorch.base.os.makedirs", side_effect=OSError("read-only")),
+            pytest.raises(
+                ConfigurationError, match="Cannot create model cache directory"
+            ),
+        ):
+            ConcreteModel(downloader=dl, device=torch.device("cpu"))
+
+        dl.run.assert_not_called()
 
     def test_downloader_called_when_basename_file_missing(self, tmp_path, monkeypatch):
         """Cover missing basename paths without trying to create an empty directory."""
