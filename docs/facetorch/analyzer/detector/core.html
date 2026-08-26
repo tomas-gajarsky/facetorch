@@ -102,7 +102,10 @@ el.replaceWith(d);
         Returns:
             ImageData: Image data object with Detection tensors and detected Face objects.
         &#34;&#34;&#34;
-        raw_tensor = data.tensor.clone()
+        preserves_input = (
+            getattr(self.preprocessor, &#34;preserves_input_tensor&#34;, False) is True
+        )
+        raw_tensor = data.tensor if preserves_input else data.tensor.clone()
         img_h, img_w = raw_tensor.shape[-2:]
         data = self.preprocessor.run(data)
         logits = self.inference(data.tensor)
@@ -218,7 +221,10 @@ def run(self, data: ImageData) -&gt; ImageData:
     Returns:
         ImageData: Image data object with Detection tensors and detected Face objects.
     &#34;&#34;&#34;
-    raw_tensor = data.tensor.clone()
+    preserves_input = (
+        getattr(self.preprocessor, &#34;preserves_input_tensor&#34;, False) is True
+    )
+    raw_tensor = data.tensor if preserves_input else data.tensor.clone()
     img_h, img_w = raw_tensor.shape[-2:]
     data = self.preprocessor.run(data)
     logits = self.inference(data.tensor)
