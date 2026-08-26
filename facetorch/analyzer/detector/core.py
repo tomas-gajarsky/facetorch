@@ -4,12 +4,12 @@ import torch
 from codetiming import Timer
 from facetorch.base import BaseDownloader, BaseModel
 from facetorch.datastruct import Dimensions, Face, ImageData, Location
-from facetorch.logger import LoggerJsonFile
+from facetorch.logger import get_logger
 
 from .post import BaseDetPostProcessor
 from .pre import BaseDetPreProcessor
 
-logger = LoggerJsonFile().logger
+logger = get_logger()
 
 
 class FaceDetector(BaseModel):

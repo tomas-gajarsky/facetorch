@@ -1145,6 +1145,154 @@ def verify_publication_receipt(
     return receipt
 
 
+def verify_github_release_assets(
+    *,
+    plan_path: Path,
+    bundle_root: Path,
+    receipt_dir: Path,
+    publication_receipt_path: Path,
+    asset_metadata_path: Path,
+    downloaded_assets_dir: Path,
+) -> dict[str, Any]:
+    """Verify the exact draft asset set immediately before publication."""
+
+    plan = _load_plan_without_bundle(plan_path)
+    artifacts = plan.get("artifacts")
+    if not isinstance(artifacts, list):
+        raise ReleaseError("Release plan has no artifact list")
+
+    expected_sources: dict[str, Path] = {}
+
+    def add_expected(name: str, path: Path) -> None:
+        if name in expected_sources:
+            raise ReleaseError(f"GitHub release repeats asset name {name}")
+        if path.is_symlink() or not path.is_file():
+            raise ReleaseError(f"Expected GitHub release asset is unavailable: {name}")
+        expected_sources[name] = path
+
+    planned_release_assets = []
+    for record in artifacts:
+        if not isinstance(record, dict) or not isinstance(record.get("path"), str):
+            raise ReleaseError("Release plan has an invalid artifact record")
+        relative = record["path"]
+        if not (
+            relative.startswith("distributions/")
+            or relative == "release-evidence.tar.zst"
+        ):
+            continue
+        source = _safe_relative_file(bundle_root.resolve(), relative)
+        observed = {
+            "path": relative,
+            "sha256": sha256_file(source),
+            "size_bytes": source.stat().st_size,
+        }
+        if observed != record:
+            raise ReleaseError(f"Release artifact changed after planning: {relative}")
+        planned_release_assets.append(relative)
+        add_expected(source.name, source)
+
+    wheels = [name for name in planned_release_assets if name.endswith(".whl")]
+    sdists = [name for name in planned_release_assets if name.endswith(".tar.gz")]
+    if (
+        len(wheels) != 1
+        or len(sdists) != 1
+        or planned_release_assets.count("release-evidence.tar.zst") != 1
+    ):
+        raise ReleaseError("GitHub release candidate asset set is incomplete")
+
+    if plan_path.name != "release-plan.json":
+        raise ReleaseError("GitHub release plan must be named release-plan.json")
+    add_expected(plan_path.name, plan_path)
+    add_expected("SHA256SUMS", bundle_root / "SHA256SUMS")
+
+    for channel in IMMUTABLE_CHANNELS:
+        name = f"receipt-{channel}.json"
+        path = receipt_dir / name
+        receipt = verify_publication_receipt(plan, path)
+        if set(receipt["channels"]) != {channel}:
+            raise ReleaseError(f"{name} must contain exactly the {channel} channel")
+        add_expected(name, path)
+
+    publication_receipt = verify_publication_receipt(
+        plan, publication_receipt_path
+    )
+    if set(publication_receipt["channels"]) != set(IMMUTABLE_CHANNELS):
+        raise ReleaseError("Publication receipt is missing coordinated channels")
+    if publication_receipt_path.name != "publication-receipt.json":
+        raise ReleaseError(
+            "Combined GitHub receipt must be named publication-receipt.json"
+        )
+    add_expected(publication_receipt_path.name, publication_receipt_path)
+
+    expected = {
+        name: {
+            "sha256": sha256_file(path),
+            "size_bytes": path.stat().st_size,
+        }
+        for name, path in expected_sources.items()
+    }
+
+    metadata = _read_json(asset_metadata_path)
+    assets = metadata.get("assets") if isinstance(metadata, dict) else None
+    if not isinstance(assets, list):
+        raise ReleaseError("GitHub release asset metadata is invalid")
+    metadata_by_name = {}
+    for asset in assets:
+        if not isinstance(asset, dict) or not isinstance(asset.get("name"), str):
+            raise ReleaseError("GitHub release contains invalid asset metadata")
+        name = asset["name"]
+        if name in metadata_by_name:
+            raise ReleaseError(f"GitHub release repeats remote asset {name}")
+        metadata_by_name[name] = asset
+
+    expected_names = set(expected)
+    remote_names = set(metadata_by_name)
+    missing = sorted(expected_names - remote_names)
+    unexpected = sorted(remote_names - expected_names)
+    if missing or unexpected:
+        raise ReleaseError(
+            f"GitHub release asset set differs; missing={missing}, "
+            f"unexpected={unexpected}"
+        )
+    for name, record in expected.items():
+        metadata_record = metadata_by_name[name]
+        size = metadata_record.get("size")
+        if isinstance(size, bool) or not isinstance(size, int):
+            raise ReleaseError(f"GitHub release asset size is invalid: {name}")
+        if size != record["size_bytes"]:
+            raise ReleaseError(f"GitHub release asset size differs: {name}")
+        digest = metadata_record.get("digest")
+        if digest not in (None, ""):
+            if digest != f"sha256:{record['sha256']}":
+                raise ReleaseError(f"GitHub release asset digest differs: {name}")
+
+    observed_records = _artifact_records(downloaded_assets_dir.resolve(), set())
+    observed = {
+        record["path"]: {
+            "sha256": record["sha256"],
+            "size_bytes": record["size_bytes"],
+        }
+        for record in observed_records
+    }
+    if set(observed) != expected_names:
+        missing = sorted(expected_names - set(observed))
+        unexpected = sorted(set(observed) - expected_names)
+        raise ReleaseError(
+            f"Downloaded GitHub asset set differs; missing={missing}, "
+            f"unexpected={unexpected}"
+        )
+    for name, record in expected.items():
+        if observed[name] != record:
+            raise ReleaseError(f"Downloaded GitHub release asset differs: {name}")
+
+    return {
+        "status": "identical",
+        "assets": [
+            {"name": name, **expected[name]} for name in sorted(expected)
+        ],
+    }
+
+
 def assert_stable_alias_promotion(
     plan: Mapping[str, Any],
     receipt_path: Path,
@@ -1419,6 +1567,15 @@ def _parse_args() -> argparse.Namespace:
     verify_receipt = subparsers.add_parser("verify-receipt")
     verify_receipt.add_argument("--plan", required=True)
     verify_receipt.add_argument("--receipt", required=True)
+
+    github_assets = subparsers.add_parser("github-release-assets")
+    github_assets.add_argument("--plan", required=True)
+    github_assets.add_argument("--bundle-root", required=True)
+    github_assets.add_argument("--receipt-dir", required=True)
+    github_assets.add_argument("--publication-receipt", required=True)
+    github_assets.add_argument("--asset-metadata", required=True)
+    github_assets.add_argument("--downloaded-assets-dir", required=True)
+    github_assets.add_argument("--output", required=True)
     return parser.parse_args()
 
 
@@ -1497,6 +1654,17 @@ def main() -> int:
     if args.command == "verify-receipt":
         plan = _load_plan_without_bundle(Path(args.plan))
         verify_publication_receipt(plan, Path(args.receipt))
+        return 0
+    if args.command == "github-release-assets":
+        report = verify_github_release_assets(
+            plan_path=Path(args.plan),
+            bundle_root=Path(args.bundle_root),
+            receipt_dir=Path(args.receipt_dir),
+            publication_receipt_path=Path(args.publication_receipt),
+            asset_metadata_path=Path(args.asset_metadata),
+            downloaded_assets_dir=Path(args.downloaded_assets_dir),
+        )
+        _write_output(Path(args.output), report)
         return 0
     plan = _load_plan_without_bundle(Path(args.plan))
     assert_stable_alias_promotion(

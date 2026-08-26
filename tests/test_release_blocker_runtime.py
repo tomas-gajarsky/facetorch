@@ -2,6 +2,8 @@ import inspect
 import json
 import logging
 from pathlib import Path
+import subprocess
+import sys
 from types import SimpleNamespace
 from unittest.mock import patch
 from uuid import uuid4
@@ -440,6 +442,49 @@ def test_file_logging_can_be_enabled_after_package_import(tmp_path):
         assert "release-blocker-probe" in path_log.read_text(encoding="utf-8")
     finally:
         _clear_logger(name)
+
+
+@pytest.mark.release_blocker
+def test_cold_component_imports_preserve_explicit_analyzer_logging(tmp_path):
+    """Lazy Hydra imports must not reconfigure the shared package logger."""
+
+    path_log = tmp_path / "cold-import.log"
+    probe = r"""
+import logging
+from pathlib import Path
+import sys
+
+from facetorch import FaceAnalyzer, load_config
+
+path_log = Path(sys.argv[1]).resolve()
+cfg = load_config(profile="cpu", offline=True)
+cfg.analyzer.logger.level = logging.INFO
+cfg.analyzer.logger.path_file = str(path_log)
+analyzer = FaceAnalyzer(cfg.analyzer)
+managed_files = [
+    handler
+    for handler in analyzer.logger.handlers
+    if getattr(handler, "_facetorch_file_handler", False)
+]
+if analyzer.logger.level != logging.INFO:
+    raise SystemExit(f"logger level changed to {analyzer.logger.level}")
+if len(managed_files) != 1 or Path(managed_files[0].baseFilename) != path_log:
+    raise SystemExit("configured file handler was not retained")
+analyzer.logger.info("after-lazy-component-imports")
+for handler in analyzer.logger.handlers:
+    handler.flush()
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", probe, str(path_log)],
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "after-lazy-component-imports" in path_log.read_text(encoding="utf-8")
 
 
 @pytest.mark.release_blocker

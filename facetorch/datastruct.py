@@ -5,9 +5,9 @@ import warnings as _warnings
 import torch
 from codetiming import Timer
 
-from facetorch.logger import LoggerJsonFile
+from facetorch.logger import get_logger
 
-logger = LoggerJsonFile().logger
+logger = get_logger()
 
 
 @dataclass

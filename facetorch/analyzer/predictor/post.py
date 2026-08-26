@@ -6,10 +6,10 @@ from codetiming import Timer
 from itertools import compress
 from facetorch.base import BaseProcessor
 from facetorch.datastruct import Prediction
-from facetorch.logger import LoggerJsonFile
+from facetorch.logger import get_logger
 from torchvision import transforms
 
-logger = LoggerJsonFile().logger
+logger = get_logger()
 
 
 class BasePredPostProcessor(BaseProcessor):

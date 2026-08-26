@@ -21,6 +21,16 @@ class CustomJsonFormatter(JsonFormatter):
             del log_record["taskName"]
 
 
+def get_logger(name: str = "facetorch") -> logging.Logger:
+    """Return a shared logger without changing its configured state.
+
+    Module-level timing hooks use this accessor so importing a component cannot
+    override logging that an application configured explicitly.
+    """
+
+    return logging.getLogger(name)
+
+
 class LoggerJsonFile:
     def __init__(
         self,

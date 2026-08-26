@@ -5,10 +5,10 @@ from codetiming import Timer
 from facetorch.base import BaseUtilizer
 from facetorch.datastruct import ImageData
 from facetorch.exceptions import ConfigurationError
-from facetorch.logger import LoggerJsonFile
+from facetorch.logger import get_logger
 from torchvision import transforms
 
-logger = LoggerJsonFile().logger
+logger = get_logger()
 
 
 class ImageSaver(BaseUtilizer):

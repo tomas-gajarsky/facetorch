@@ -4,12 +4,12 @@ import torch
 from codetiming import Timer
 from facetorch.base import BaseDownloader, BaseModel
 from facetorch.datastruct import Prediction
-from facetorch.logger import LoggerJsonFile
+from facetorch.logger import get_logger
 
 from .post import BasePredPostProcessor
 from .pre import BasePredPreProcessor
 
-logger = LoggerJsonFile().logger
+logger = get_logger()
 
 
 class FacePredictor(BaseModel):
