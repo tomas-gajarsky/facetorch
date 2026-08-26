@@ -755,6 +755,77 @@ def test_url_reader_is_explicit_bounded_and_removes_query_metadata(monkeypatch):
     assert response.closed
 
 
+def test_url_reader_shares_one_deadline_across_redirects(monkeypatch):
+    now = [100.0]
+    observed_timeouts = []
+    responses = [
+        _FakeResponse(status_code=302, headers={"Location": "/final.png"}),
+        _FakeResponse(_png_bytes(_rgb_array())),
+    ]
+
+    monkeypatch.setattr("facetorch.analyzer.reader.core.time.monotonic", lambda: now[0])
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core.socket.getaddrinfo",
+        lambda _host, port, **_kwargs: [(2, 1, 6, "", ("93.184.216.34", port))],
+    )
+
+    def open_response(_parsed, _address, timeout):
+        observed_timeouts.append(timeout)
+        if len(observed_timeouts) == 1:
+            now[0] += 0.4
+        return _FakeConnection(), responses.pop(0)
+
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core._open_pinned_response", open_response
+    )
+    reader = URLReader(
+        None,
+        torch.device("cpu"),
+        False,
+        timeout=1.0,
+        max_redirects=1,
+    )
+
+    result = reader.run("https://example.test/start.png")
+
+    assert result.tensor.shape == (1, 3, 8, 9)
+    assert observed_timeouts == pytest.approx([1.0, 0.6])
+
+
+def test_url_reader_stops_slow_stream_at_total_deadline(monkeypatch):
+    now = [0.0]
+    connection = _FakeConnection()
+
+    class _SlowResponse(_FakeResponse):
+        def read(self, _chunk_size):
+            now[0] += 0.4
+            return b"x"
+
+    response = _SlowResponse()
+    monkeypatch.setattr("facetorch.analyzer.reader.core.time.monotonic", lambda: now[0])
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core.socket.getaddrinfo",
+        lambda _host, port, **_kwargs: [(2, 1, 6, "", ("93.184.216.34", port))],
+    )
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core._open_pinned_response",
+        lambda *_args, **_kwargs: (connection, response),
+    )
+    reader = URLReader(
+        None,
+        torch.device("cpu"),
+        False,
+        timeout=1.0,
+        max_bytes=1024,
+    )
+
+    with pytest.raises(InputError, match="timed out"):
+        reader.run("https://example.test/image.png")
+
+    assert response.closed
+    assert connection.closed
+
+
 def test_url_reader_rejects_scheme_size_redirects_and_timeouts(monkeypatch):
     monkeypatch.setattr(
         "facetorch.analyzer.reader.core.socket.getaddrinfo",

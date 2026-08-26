@@ -163,6 +163,28 @@ def test_production_images_use_a_frozen_dependency_definition(dockerfile):
 
 
 @pytest.mark.release_blocker
+def test_configuration_dependency_floors_match_used_apis_and_are_smoked():
+    requirements = {
+        Requirement(raw).name: Requirement(raw)
+        for raw in _project_metadata()["dependencies"]
+    }
+    hydra = requirements["hydra-core"].specifier
+    omegaconf = requirements["omegaconf"].specifier
+
+    assert Version("1.3.2") in hydra
+    assert Version("1.3.1") not in hydra
+    assert Version("1.4.0") not in hydra
+    assert Version("2.3.0") in omegaconf
+    assert Version("2.2.3") not in omegaconf
+    assert Version("2.4.0") not in omegaconf
+
+    commands = _workflow_commands(WORKFLOW_ROOT / "python-package.yml")
+    assert '"hydra-core==1.3.2"' in commands
+    assert '"omegaconf==2.3.0"' in commands
+    assert "facetorch.load_config(offline=True)" in commands
+
+
+@pytest.mark.release_blocker
 def test_cpu_ci_has_an_explicit_supported_torch_cohort_matrix():
     workflow = (WORKFLOW_ROOT / "cpu-cohorts.yml").read_text(encoding="utf-8")
     for cohort in ("2.6", "2.11"):
@@ -448,6 +470,21 @@ def test_production_images_install_the_candidate_wheel_as_non_root(dockerfile, p
     assert "uv pip install" in final_stage and "--no-deps" in final_stage
     assert "USER facetorch" in final_stage
     assert "COPY facetorch/" not in final_stage
+    assert "scripts/example.py /opt/facetorch/example.py" in final_stage
+    assert 'CMD ["/bin/bash"]' in final_stage
+    assert "ENTRYPOINT" not in final_stage
+
+
+@pytest.mark.release_blocker
+def test_docker_quickstart_uses_files_and_persistent_mounts_present_in_images():
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    compose = (REPO_ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+
+    assert "/opt/facetorch/example.py" in readme
+    assert "/workspace/data/input/test.jpg" in readme
+    assert "/workspace/data/output/test.png" in readme
+    assert "facetorch-output:/workspace/data/output" in compose
+    assert "./data/input:/workspace/data/input:ro" in compose
 
 
 @pytest.mark.release_blocker

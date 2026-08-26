@@ -4,7 +4,9 @@ import torch
 import pytest
 from unittest.mock import MagicMock, patch
 
+from facetorch.artifacts import get_model_manifest
 from facetorch.base import BaseModel
+from facetorch.downloader import DownloaderHuggingFace
 from facetorch.exceptions import ModelCompatibilityError
 
 
@@ -149,6 +151,56 @@ class TestLoadNativeModelMocked:
 @pytest.mark.unit
 @pytest.mark.model
 class TestLoadExportedModel:
+
+    def test_unverified_manifest_cache_loads_read_only_without_lock(self, tmp_path):
+        manifest = get_model_manifest()
+        manifest_id = "detector-retinaface"
+        descriptor = manifest.candidates(
+            manifest_id,
+            torch_version=str(torch.__version__),
+            device="cpu",
+            allow_legacy_models=False,
+        )[0]
+        cache_dir = tmp_path / "cache"
+        cache_dir.mkdir()
+        cached_path = cache_dir / descriptor.filename
+        cached_path.write_bytes(b"trusted pre-fetched export")
+        placeholder = cache_dir / "model.pt2"
+        downloader = DownloaderHuggingFace(
+            file_id=descriptor.repo_id,
+            repo_id=descriptor.repo_id,
+            path_local=str(placeholder),
+            manifest_id=manifest_id,
+            manifest=manifest,
+            torch_version=str(torch.__version__),
+            device="cpu",
+            offline=True,
+            verify_on_use=False,
+        )
+
+        class _ExportedProgram:
+            def module(self):
+                return _FakeModule()
+
+        cache_dir.chmod(0o555)
+        try:
+            with (
+                patch(
+                    "facetorch.downloader._DirectoryLock",
+                    side_effect=AssertionError("read-only reuse must not lock"),
+                ),
+                patch("torch.export.load", return_value=_ExportedProgram()) as load,
+            ):
+                model = ConcreteModel(
+                    downloader=downloader,
+                    device=torch.device("cpu"),
+                )
+        finally:
+            cache_dir.chmod(0o755)
+
+        assert model.path_local == str(cached_path)
+        assert downloader.active_descriptor == descriptor
+        load.assert_called_once_with(str(cached_path))
 
     def test_exported_model_bad_file(self, tmp_path):
         bad_pt2 = str(tmp_path / "bad.pt2")

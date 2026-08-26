@@ -268,6 +268,14 @@ class BaseModel(object, metaclass=ABCMeta):
             torch.nn.Module: Loaded model in eval mode.
         """
         should_verify = self._verify_artifacts
+        if not should_verify:
+            resolve_cached_path = getattr(
+                type(self.downloader), "resolve_cached_path", None
+            )
+            if callable(resolve_cached_path):
+                resolved_path = resolve_cached_path(self.downloader)
+                if resolved_path is not None:
+                    self.path_local = os.fspath(resolved_path)
         if should_verify or not os.path.exists(self.path_local):
             dir_local = os.path.dirname(self.path_local)
             if dir_local:

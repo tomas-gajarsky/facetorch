@@ -8,9 +8,10 @@ services:
       dockerfile: ./docker/Dockerfile
     volumes:
       - facetorch-cache-cpu:/var/cache/facetorch
+      - ./data/input:/workspace/data/input:ro
+      - facetorch-output:/workspace/data/output
     environment:
       FACETORCH_CACHE_DIR: /var/cache/facetorch
-    entrypoint: [ "/bin/bash" ]
 
   facetorch-gpu:
     image: tomasgajarsky/facetorch-gpu:latest
@@ -20,6 +21,8 @@ services:
       dockerfile: ./docker/Dockerfile.gpu
     volumes:
       - facetorch-cache-gpu:/var/cache/facetorch
+      - ./data/input:/workspace/data/input:ro
+      - facetorch-output:/workspace/data/output
     environment:
       FACETORCH_CACHE_DIR: /var/cache/facetorch
     deploy:
@@ -29,7 +32,6 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-    entrypoint: [ "/bin/bash" ]
 
   facetorch-gpu-no-device:
     image: tomasgajarsky/facetorch-gpu:latest
@@ -39,10 +41,12 @@ services:
       dockerfile: ./docker/Dockerfile.gpu
     volumes:
       - facetorch-cache-gpu:/var/cache/facetorch
+      - ./data/input:/workspace/data/input:ro
+      - facetorch-output:/workspace/data/output
     environment:
       FACETORCH_CACHE_DIR: /var/cache/facetorch
-    entrypoint: [ "/bin/bash" ]
 
 volumes:
   facetorch-cache-cpu:
   facetorch-cache-gpu:
+  facetorch-output:

@@ -317,10 +317,14 @@ def test_cpu_and_gpu_compose_services_mount_explicit_separate_caches():
         assert (
             f"{volume_name}:/var/cache/facetorch" in service["volumes"]
         )
+        assert "./data/input:/workspace/data/input:ro" in service["volumes"]
+        assert "facetorch-output:/workspace/data/output" in service["volumes"]
+        assert "entrypoint" not in service
 
     assert set(compose_config["volumes"]) == {
         "facetorch-cache-cpu",
         "facetorch-cache-gpu",
+        "facetorch-output",
     }
 
 

@@ -22,11 +22,12 @@ RUN uv sync --project /opt/facetorch-profile --frozen --no-dev && \
     uv pip install --python /opt/facetorch-profile/.venv/bin/python \
         --no-deps /tmp/facetorch-*.whl && \
     useradd --create-home --uid 10001 facetorch && \
-    mkdir -p /var/cache/facetorch /workspace && \
+    mkdir -p /var/cache/facetorch /workspace/data/output && \
     chown -R facetorch:facetorch /var/cache/facetorch /workspace
 RUN cd /tmp && python -c \
     "import facetorch; cfg=facetorch.load_config(offline=True); assert cfg.analyzer.device == 'cpu'"
+COPY --chown=10001:10001 scripts/example.py /opt/facetorch/example.py
 
 USER facetorch
 WORKDIR /workspace
-ENTRYPOINT ["/bin/bash"]
+CMD ["/bin/bash"]

@@ -521,6 +521,25 @@ class DownloaderHuggingFace(_VerifiedDownloader):
     def _target_for(self, descriptor: ArtifactDescriptor) -> Path:
         return descriptor.cache_path(self.path_local)
 
+    def resolve_cached_path(self) -> Optional[str]:
+        """Activate an existing manifest target without mutating its cache.
+
+        This fast path is intentionally available only when callers explicitly
+        disable verification on use.  Downloads and verified cache reuse still go
+        through :meth:`run`, which serializes verification and mutation with the
+        directory lock.
+        """
+        if self.verify_on_use is not False:
+            return None
+        candidates = self._resolve_candidates()
+        descriptor = candidates[0]
+        target = self._target_for(descriptor)
+        if not target.is_file():
+            return None
+        self._candidate_index = 0
+        self._active_filename = descriptor.filename
+        return self._activate(descriptor, target)
+
     def _download_descriptor(
         self, descriptor: ArtifactDescriptor, *, force_download: bool = False
     ) -> str:
