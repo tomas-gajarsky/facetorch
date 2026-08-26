@@ -16,6 +16,8 @@ from facetorch.artifacts import (
     ArtifactDescriptor,
     detect_model_format,
     get_model_manifest,
+    incompatibility_key,
+    read_incompatible_artifact_ids,
     sha256_file,
     verify_artifact,
 )
@@ -164,11 +166,27 @@ def plan_model_prefetch(
     manifest = get_model_manifest()
     items: list[PrefetchItem] = []
     for component, downloader in selected_configs:
+        sidecar = (
+            Path(str(downloader.path_local)).expanduser().parent
+            / ".incompatible.json"
+        )
+        key = incompatibility_key(
+            manifest.manifest_revision,
+            str(torch.__version__),
+            str(downloader.device),
+        )
+        try:
+            incompatible = read_incompatible_artifact_ids(sidecar, key)
+        except ArtifactIntegrityError:
+            # Planning is deliberately non-mutating. Runtime resolution will
+            # quarantine the malformed sidecar and make this same empty choice.
+            incompatible = set()
         candidates = manifest.candidates(
             str(downloader.manifest_id),
             torch_version=str(torch.__version__),
             device=str(downloader.device),
             allow_legacy_models=allow_legacy_models,
+            incompatible_artifact_ids=incompatible,
         )
         descriptor = candidates[0]
         path = descriptor.cache_path(str(downloader.path_local))

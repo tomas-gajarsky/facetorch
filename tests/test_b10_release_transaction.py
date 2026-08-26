@@ -538,6 +538,29 @@ def test_rc_never_promotes_latest_and_stable_requires_every_channel(tmp_path):
 
 
 @pytest.mark.release_blocker
+def test_stable_alias_promotion_is_monotonic_and_idempotent(tmp_path):
+    plan, _, _ = _release_plan(tmp_path)
+    receipt = tmp_path / "receipt.json"
+    for channel in IMMUTABLE_CHANNELS:
+        record_channel(plan, receipt, channel, plan["channel_subjects"][channel])
+
+    assert_stable_alias_promotion(
+        plan, receipt, current_latest_tag="v0.9.9"
+    )
+    assert_stable_alias_promotion(
+        plan, receipt, current_latest_tag="v1.0.0"
+    )
+    with pytest.raises(ReleaseError, match="move latest backward"):
+        assert_stable_alias_promotion(
+            plan, receipt, current_latest_tag="v1.0.1"
+        )
+    with pytest.raises(ReleaseError, match="stable release tag"):
+        assert_stable_alias_promotion(
+            plan, receipt, current_latest_tag="v1.1.0-rc.1"
+        )
+
+
+@pytest.mark.release_blocker
 def test_pypi_and_docker_reconciliation_are_fail_closed(tmp_path):
     sdist = tmp_path / "facetorch-1.0.0.tar.gz"
     wheel = tmp_path / "facetorch-1.0.0-py3-none-any.whl"

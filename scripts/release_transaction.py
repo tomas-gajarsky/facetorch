@@ -956,12 +956,33 @@ def verify_publication_receipt(
 
 
 def assert_stable_alias_promotion(
-    plan: Mapping[str, Any], receipt_path: Path
+    plan: Mapping[str, Any],
+    receipt_path: Path,
+    *,
+    current_latest_tag: str | None = None,
 ) -> dict[str, Any]:
-    """Require a stable release and all immutable channels before moving latest."""
+    """Require a monotonic stable release and every immutable channel."""
 
     if plan.get("is_prerelease") or plan.get("release_kind") != "stable":
         raise ReleaseError("Release candidates must never move stable aliases")
+    target = parse_release_tag(str(plan.get("tag", "")))
+    if target["is_prerelease"] or target["release_kind"] != "stable":
+        raise ReleaseError("Stable alias target must use a stable release tag")
+    if target["project_version"] != plan.get("version"):
+        raise ReleaseError("Stable alias target tag does not match the release plan")
+    if current_latest_tag:
+        current = parse_release_tag(current_latest_tag)
+        if current["is_prerelease"] or current["release_kind"] != "stable":
+            raise ReleaseError("Current latest release must use a stable release tag")
+        target_version = tuple(int(part) for part in target["project_version"].split("."))
+        current_version = tuple(
+            int(part) for part in current["project_version"].split(".")
+        )
+        if target_version < current_version:
+            raise ReleaseError(
+                f"Stable alias promotion would move latest backward from "
+                f"{current['tag']} to {target['tag']}"
+            )
     receipt = verify_publication_receipt(plan, receipt_path)
     missing = sorted(set(IMMUTABLE_CHANNELS) - set(receipt["channels"]))
     if missing:
@@ -1203,6 +1224,7 @@ def _parse_args() -> argparse.Namespace:
     promote = subparsers.add_parser("assert-stable-alias")
     promote.add_argument("--plan", required=True)
     promote.add_argument("--receipt", required=True)
+    promote.add_argument("--current-latest-tag", default="")
 
     verify_receipt = subparsers.add_parser("verify-receipt")
     verify_receipt.add_argument("--plan", required=True)
@@ -1287,7 +1309,11 @@ def main() -> int:
         verify_publication_receipt(plan, Path(args.receipt))
         return 0
     plan = _load_plan_without_bundle(Path(args.plan))
-    assert_stable_alias_promotion(plan, Path(args.receipt))
+    assert_stable_alias_promotion(
+        plan,
+        Path(args.receipt),
+        current_latest_tag=args.current_latest_tag or None,
+    )
     return 0
 
 

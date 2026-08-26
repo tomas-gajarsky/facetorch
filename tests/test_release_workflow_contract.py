@@ -119,6 +119,33 @@ def test_latest_alias_is_promoted_only_after_immutable_artifacts():
 
 
 @pytest.mark.release_blocker
+def test_release_image_smokes_use_valid_explicit_profiles():
+    workflow = _workflow(REPO_ROOT / ".github" / "workflows" / "release.yml")
+    matrix = workflow["jobs"]["build-images"]["strategy"]["matrix"]["include"]
+
+    assert {entry["flavor"]: entry["config"] for entry in matrix} == {
+        "cpu": "cpu",
+        "gpu": "gpu",
+    }
+
+
+@pytest.mark.release_blocker
+def test_stable_alias_mutation_is_serialized_and_monotonic():
+    workflow = _workflow(REPO_ROOT / ".github" / "workflows" / "release.yml")
+    job = workflow["jobs"]["promote-stable-aliases"]
+    commands = _commands(job)
+    finalize_commands = _commands(workflow["jobs"]["finalize-github-release"])
+
+    assert job["concurrency"] == {
+        "group": "facetorch-stable-alias-promotion",
+        "cancel-in-progress": False,
+    }
+    assert "gh release view --json tagName" in commands
+    assert "--current-latest-tag" in commands
+    assert 'gh release edit "$TAG" --draft=false --latest=false' in finalize_commands
+
+
+@pytest.mark.release_blocker
 def test_release_pipeline_has_a_no_publish_dry_run():
     manual_workflow = (REPO_ROOT / ".github" / "workflows" / "release.yml").read_text(
         encoding="utf-8"

@@ -11,6 +11,7 @@ from facetorch.artifacts import (
     ArtifactDescriptor,
     ArtifactManifest,
     get_model_manifest,
+    incompatibility_key,
 )
 from facetorch.analyzer.utilizer.align import Lmk3DMeshPose
 from facetorch.exceptions import (
@@ -122,6 +123,53 @@ def test_prefetch_plan_matches_requested_runtime_components():
         "predictor.align",
         "align-metadata",
     ]
+
+
+@pytest.mark.release_blocker
+def test_prefetch_plan_uses_the_runtime_incompatibility_selection(
+    tmp_path, monkeypatch
+):
+    model_root = tmp_path / "models"
+    monkeypatch.setenv("FACETORCH_MODEL_DIR", str(model_root))
+    manifest = get_model_manifest()
+    runtime = str(torch.__version__)
+    candidates = manifest.candidates(
+        "fer-efficientnet-b2",
+        torch_version=runtime,
+        device="cpu",
+        allow_legacy_models=True,
+    )
+    assert len(candidates) == 2
+    modern, legacy = candidates
+    sidecar = model_root / "exported" / "predictor" / "fer" / "2" / ".incompatible.json"
+    sidecar.parent.mkdir(parents=True)
+    key = incompatibility_key(manifest.manifest_revision, runtime, "cpu")
+    sidecar.write_text(
+        json.dumps({key: [modern.artifact_id]}) + "\n",
+        encoding="utf-8",
+    )
+
+    plan = plan_model_prefetch(
+        "cpu",
+        include_predictors=["fer"],
+        skip_detector=True,
+        offline=True,
+        allow_legacy_models=True,
+    )
+    assert [item.artifact_id for item in plan.items] == [legacy.artifact_id]
+
+    sidecar.write_text(
+        json.dumps({key: [modern.artifact_id, legacy.artifact_id]}) + "\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ModelCompatibilityError, match="All eligible artifacts"):
+        plan_model_prefetch(
+            "cpu",
+            include_predictors=["fer"],
+            skip_detector=True,
+            offline=True,
+            allow_legacy_models=True,
+        )
 
 
 @pytest.mark.release_blocker

@@ -134,6 +134,38 @@ def test_model_components_are_not_eagerly_constructed():
 
 
 @pytest.mark.release_blocker
+def test_optional_analyzer_logger_restores_info_diagnostics():
+    cfg = OmegaConf.create({"reader": {"component": "reader"}})
+    target = logging.getLogger("facetorch")
+    original_level = target.level
+    original_handler_levels = {
+        handler: handler.level for handler in target.handlers
+    }
+    try:
+        target.setLevel(logging.CRITICAL)
+        for handler in target.handlers:
+            if getattr(handler, "_facetorch_stream_handler", False):
+                handler.setLevel(logging.CRITICAL)
+        with patch(
+            "facetorch.analyzer.core.instantiate", return_value=object()
+        ):
+            analyzer = FaceAnalyzer(cfg)
+
+        managed = [
+            handler
+            for handler in target.handlers
+            if getattr(handler, "_facetorch_stream_handler", False)
+        ]
+        assert analyzer.logger is target
+        assert target.level == logging.INFO
+        assert managed and all(handler.level == logging.INFO for handler in managed)
+    finally:
+        target.setLevel(original_level)
+        for handler, level in original_handler_levels.items():
+            handler.setLevel(level)
+
+
+@pytest.mark.release_blocker
 def test_remote_input_requires_an_explicit_bounded_url_reader():
     url_reader_type = getattr(reader_api, "URLReader", None)
     assert url_reader_type is not None

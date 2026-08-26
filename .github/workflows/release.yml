@@ -278,7 +278,7 @@ jobs:
         include:
           - flavor: cpu
             dockerfile: docker/Dockerfile
-            config: ""
+            config: cpu
           - flavor: gpu
             dockerfile: docker/Dockerfile.gpu
             config: gpu
@@ -963,7 +963,7 @@ jobs:
           else
             gh release upload "$TAG" "$combined"
           fi
-          gh release edit "$TAG" --draft=false
+          gh release edit "$TAG" --draft=false --latest=false
           test "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = "false"
 
   promote-stable-aliases:
@@ -979,6 +979,9 @@ jobs:
       - finalize-github-release
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    concurrency:
+      group: facetorch-stable-alias-promotion
+      cancel-in-progress: false
     environment: stable-release
     permissions:
       actions: read
@@ -1002,9 +1005,11 @@ jobs:
           TAG: ${{ needs.validate-inputs.outputs.tag }}
         run: |
           gh release download "$TAG" --pattern publication-receipt.json --dir "$RUNNER_TEMP"
+          current_latest_tag="$(gh release view --json tagName --jq .tagName 2>/dev/null || true)"
           python scripts/release_transaction.py assert-stable-alias \
             --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
-            --receipt "$RUNNER_TEMP/publication-receipt.json"
+            --receipt "$RUNNER_TEMP/publication-receipt.json" \
+            --current-latest-tag "$current_latest_tag"
       - name: Authenticate to Docker Hub through standard input
         env:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
