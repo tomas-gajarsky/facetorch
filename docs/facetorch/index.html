@@ -1573,11 +1573,14 @@ class CacheEntryInspection:
             self.logger.info(&#34;Predicting facial features&#34;)
             ran_predictors = set()
             for predictor_name in selected_predictors:
-                predictor = self.predictors[predictor_name]
                 self.logger.info(f&#34;Running FacePredictor: {predictor_name}&#34;)
                 data = _run_component(
                     f&#34;Face predictor {predictor_name!r}&#34;,
-                    lambda: _predict_batch(data, predictor, predictor_name),
+                    lambda predictor_name=predictor_name: _predict_batch(
+                        data,
+                        self.predictors[predictor_name],
+                        predictor_name,
+                    ),
                 )
                 ran_predictors.add(predictor_name)
 
@@ -1601,10 +1604,12 @@ class CacheEntryInspection:
                         + &#34;)&#34;
                     )
                     continue
-                utilizer = self.utilizers[utilizer_name]
                 self.logger.info(f&#34;Running BaseUtilizer: {utilizer_name}&#34;)
                 data = _run_component(
-                    f&#34;Face utilizer {utilizer_name!r}&#34;, lambda: utilizer.run(data)
+                    f&#34;Face utilizer {utilizer_name!r}&#34;,
+                    lambda utilizer_name=utilizer_name: self.utilizers[
+                        utilizer_name
+                    ].run(data),
                 )
         else:
             if &#34;save&#34; in self.utilizers:
@@ -2162,11 +2167,14 @@ def run(
         self.logger.info(&#34;Predicting facial features&#34;)
         ran_predictors = set()
         for predictor_name in selected_predictors:
-            predictor = self.predictors[predictor_name]
             self.logger.info(f&#34;Running FacePredictor: {predictor_name}&#34;)
             data = _run_component(
                 f&#34;Face predictor {predictor_name!r}&#34;,
-                lambda: _predict_batch(data, predictor, predictor_name),
+                lambda predictor_name=predictor_name: _predict_batch(
+                    data,
+                    self.predictors[predictor_name],
+                    predictor_name,
+                ),
             )
             ran_predictors.add(predictor_name)
 
@@ -2190,10 +2198,12 @@ def run(
                     + &#34;)&#34;
                 )
                 continue
-            utilizer = self.utilizers[utilizer_name]
             self.logger.info(f&#34;Running BaseUtilizer: {utilizer_name}&#34;)
             data = _run_component(
-                f&#34;Face utilizer {utilizer_name!r}&#34;, lambda: utilizer.run(data)
+                f&#34;Face utilizer {utilizer_name!r}&#34;,
+                lambda utilizer_name=utilizer_name: self.utilizers[
+                    utilizer_name
+                ].run(data),
             )
     else:
         if &#34;save&#34; in self.utilizers:
@@ -2585,11 +2595,15 @@ class ImageData:
             self.faces[i].tensor = torch.tensor([])
 
     def reset_face_pred_tensors(self) -&gt; None:
-        &#34;&#34;&#34;Reset the face prediction tensors to empty state.&#34;&#34;&#34;
+        &#34;&#34;&#34;Reset prediction tensors while preserving non-tensor metadata.&#34;&#34;&#34;
         for i in range(0, len(self.faces)):
             for key in self.faces[i].preds:
-                self.faces[i].preds[key].logits = torch.tensor([])
-                self.faces[i].preds[key].other = {}
+                prediction = self.faces[i].preds[key]
+                prediction.logits = torch.tensor([])
+                cleaned_other = _without_tensors(prediction.other)
+                prediction.other = (
+                    {} if cleaned_other is _REMOVED_TENSOR else cleaned_other
+                )
 
     def reset_det_tensors(self) -&gt; None:
         &#34;&#34;&#34;Reset the detection object to empty state.&#34;&#34;&#34;
@@ -2788,13 +2802,17 @@ None</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def reset_face_pred_tensors(self) -&gt; None:
-    &#34;&#34;&#34;Reset the face prediction tensors to empty state.&#34;&#34;&#34;
+    &#34;&#34;&#34;Reset prediction tensors while preserving non-tensor metadata.&#34;&#34;&#34;
     for i in range(0, len(self.faces)):
         for key in self.faces[i].preds:
-            self.faces[i].preds[key].logits = torch.tensor([])
-            self.faces[i].preds[key].other = {}</code></pre>
+            prediction = self.faces[i].preds[key]
+            prediction.logits = torch.tensor([])
+            cleaned_other = _without_tensors(prediction.other)
+            prediction.other = (
+                {} if cleaned_other is _REMOVED_TENSOR else cleaned_other
+            )</code></pre>
 </details>
-<div class="desc"><p>Reset the face prediction tensors to empty state.</p></div>
+<div class="desc"><p>Reset prediction tensors while preserving non-tensor metadata.</p></div>
 </dd>
 <dt id="facetorch.ImageData.reset_det_tensors"><code class="name flex">
 <span>def <span class="ident">reset_det_tensors</span></span>(<span>self) ‑> None</span>
