@@ -197,10 +197,16 @@ def canonicalize_image_tensor(
         raise InputError("InputSpec.alpha_mode is valid only for RGBA input.")
 
     numeric = tensor.detach().clone()
-    if not torch.isfinite(numeric.float()).all():
+    # Preserve float64 precision at the range boundary. Other real dtypes use
+    # float32: every integer in the accepted 0..255 interval is represented
+    # exactly, and the conversion also supports unsigned dtypes whose native
+    # reductions are unavailable in PyTorch.
+    bounds = numeric if numeric.dtype == torch.float64 else numeric.to(torch.float32)
+    if not torch.isfinite(bounds).all():
         raise InputError("Image values must be finite; NaN and Inf are not supported.")
-    minimum = float(numeric.min().item())
-    maximum = float(numeric.max().item())
+    minimum = float(bounds.min().item())
+    maximum = float(bounds.max().item())
+    del bounds
 
     value_range = spec.value_range
     if value_range is None:

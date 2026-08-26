@@ -45,6 +45,7 @@ PUBLICATION_ORDER = (
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _IMAGE_DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+_TORCH_MINOR_RE = re.compile(r"^(?P<major>0|[1-9][0-9]*)\.(?P<minor>0|[1-9][0-9]*)$")
 _REPO_ID_RE = re.compile(
     r"^[A-Za-z0-9](?:[A-Za-z0-9_.-]{0,94}[A-Za-z0-9])?/"
     r"[A-Za-z0-9](?:[A-Za-z0-9_.-]{0,94}[A-Za-z0-9])?$"
@@ -364,37 +365,226 @@ def validate_packaged_model_governance(
         ):
             raise ReleaseError(f"Model governance is incomplete for {model_id}")
 
+    torch_policy = compatibility.get("torch")
+    platform_policy = compatibility.get("platform_policy")
+    supported_values = (
+        torch_policy.get("supported_minor_lines")
+        if isinstance(torch_policy, dict)
+        else None
+    )
+    required_values = (
+        platform_policy.get("required_devices")
+        if isinstance(platform_policy, dict)
+        else None
+    )
+    if (
+        not isinstance(supported_values, list)
+        or not supported_values
+        or not isinstance(required_values, list)
+        or not required_values
+    ):
+        raise ReleaseError("Packaged compatibility cohorts or devices are incomplete")
+
+    def exact_text(value: Any, label: str) -> str:
+        if not isinstance(value, str) or not value:
+            raise ReleaseError(f"{label} must be a non-empty string")
+        return value
+
+    def cohort_range(value: Any, label: str) -> tuple[str, str]:
+        cohort = exact_text(value, label)
+        match = _TORCH_MINOR_RE.fullmatch(cohort)
+        if match is None:
+            raise ReleaseError(f"{label} must be a canonical Torch major.minor line")
+        upper = f"{match.group('major')}.{int(match.group('minor')) + 1}"
+        return cohort, upper
+
+    supported_cohorts = {
+        cohort_range(value, "Supported Torch cohort")[0] for value in supported_values
+    }
+    if len(supported_cohorts) != len(supported_values):
+        raise ReleaseError("Packaged compatibility has duplicate Torch cohorts")
+    if any(not isinstance(value, str) or not value for value in required_values) or len(
+        set(required_values)
+    ) != len(required_values):
+        raise ReleaseError("Packaged compatibility has invalid required devices")
+    required_devices = tuple(sorted(required_values))
+
+    expected_records: dict[tuple[str, str], dict[str, Any]] = {}
+    for model_id, model in packaged_models.items():
+        if not isinstance(model, dict):
+            raise ReleaseError(f"Packaged model record is invalid for {model_id}")
+        repo_id = exact_text(
+            model.get("repo_id"), f"Packaged repository for {model_id}"
+        )
+        if _REPO_ID_RE.fullmatch(repo_id) is None:
+            raise ReleaseError(f"Packaged repository is invalid for {model_id}")
+        model_revision = _require_sha(
+            exact_text(
+                model.get("revision"), f"Packaged revision for {model_id}"
+            ),
+            f"Packaged revision for {model_id}",
+        )
+        artifacts = model.get("artifacts")
+        if not isinstance(artifacts, list):
+            raise ReleaseError(f"Packaged artifacts are invalid for {model_id}")
+        model_cohorts: set[str] = set()
+        for artifact in artifacts:
+            if not isinstance(artifact, dict) or artifact.get("format") != "pt2":
+                continue
+            cohort, expected_upper = cohort_range(
+                artifact.get("torch_min"),
+                f"Packaged cohort for {model_id}",
+            )
+            packaged_upper = exact_text(
+                artifact.get("torch_max_exclusive"),
+                f"Packaged maximum Torch version for {model_id}/{cohort}",
+            )
+            if packaged_upper != expected_upper:
+                raise ReleaseError(
+                    f"Packaged cohort range is invalid for {model_id}/{cohort}"
+                )
+            key = (str(model_id), cohort)
+            if key in expected_records:
+                raise ReleaseError(
+                    f"Duplicate packaged cohort record: {model_id}/{cohort}"
+                )
+            size = artifact.get("size_bytes")
+            devices = artifact.get("devices")
+            if isinstance(size, bool) or not isinstance(size, int) or size < 1:
+                raise ReleaseError(
+                    f"Packaged artifact size is invalid for {model_id}/{cohort}"
+                )
+            if (
+                not isinstance(devices, list)
+                or any(not isinstance(value, str) or not value for value in devices)
+                or len(set(devices)) != len(devices)
+                or tuple(sorted(devices)) != required_devices
+            ):
+                raise ReleaseError(
+                    f"Packaged devices are invalid for {model_id}/{cohort}"
+                )
+            filename = exact_text(
+                artifact.get("filename"),
+                f"Packaged artifact filename for {model_id}/{cohort}",
+            )
+            if PurePosixPath(filename).name != filename:
+                raise ReleaseError(
+                    f"Packaged artifact filename is invalid for {model_id}/{cohort}"
+                )
+            expected_records[key] = {
+                "model_id": str(model_id),
+                "repo_id": repo_id,
+                "cohort": cohort,
+                "revision": model_revision,
+                "artifact_filename": filename,
+                "artifact_sha256": _require_sha256(
+                    exact_text(
+                        artifact.get("sha256"),
+                        f"Packaged artifact digest for {model_id}/{cohort}",
+                    ),
+                    f"Packaged artifact digest for {model_id}/{cohort}",
+                ),
+                "artifact_size_bytes": size,
+                "required_devices": required_devices,
+                "torch_min": cohort,
+                "torch_max_exclusive": expected_upper,
+            }
+            model_cohorts.add(cohort)
+        if model_cohorts != supported_cohorts:
+            raise ReleaseError(
+                f"Packaged cohorts do not match compatibility for {model_id}"
+            )
+        export_commit = model.get("export_commit")
+        license_ref = model.get("license_ref")
+        if (
+            not isinstance(export_commit, str)
+            or _SHA_RE.fullmatch(export_commit) is None
+            or not isinstance(license_ref, str)
+            or not license_ref
+        ):
+            raise ReleaseError(f"Export provenance is incomplete for model {model_id}")
+
     remote = _read_json(remote_manifest_path)
     remote_models = remote.get("models")
     if not isinstance(remote_models, list) or not remote_models:
         raise ReleaseError("Remote model manifest contains no records")
-    remote_by_model: dict[str, list[dict[str, Any]]] = {}
+    observed_records: dict[tuple[str, str], dict[str, Any]] = {}
     for record in remote_models:
-        if isinstance(record, dict):
-            remote_by_model.setdefault(str(record.get("model_id", "")), []).append(record)
-    if set(remote_by_model) != set(packaged_models):
-        raise ReleaseError("Packaged and remote model manifests cover different models")
-    for model_id, model in packaged_models.items():
-        remote_records = remote_by_model[model_id]
-        revisions = {str(record.get("revision", "")) for record in remote_records}
-        if revisions != {str(model.get("revision", ""))}:
-            raise ReleaseError(f"Remote revision differs for model {model_id}")
-        remote_artifacts = {
-            (str(record.get("artifact_filename", "")), str(record.get("artifact_sha256", "")))
-            for record in remote_records
-        }
-        packaged_exports = {
-            (str(record.get("filename", "")), str(record.get("sha256", "")))
-            for record in model.get("artifacts", [])
-            if isinstance(record, dict) and record.get("format") == "pt2"
-        }
-        if not remote_artifacts or remote_artifacts != packaged_exports:
-            raise ReleaseError(f"Remote cohort bytes differ for model {model_id}")
+        if not isinstance(record, dict):
+            raise ReleaseError("Remote model manifest contains an invalid record")
+        model_id = exact_text(record.get("model_id"), "Remote model ID")
+        cohort, inferred_upper = cohort_range(
+            record.get("cohort"),
+            f"Remote cohort for {model_id or 'unknown model'}",
+        )
+        key = (model_id, cohort)
+        if key in observed_records:
+            raise ReleaseError(f"Duplicate remote cohort record: {model_id}/{cohort}")
+        size = record.get("artifact_size_bytes")
+        devices = record.get("required_devices")
+        if isinstance(size, bool) or not isinstance(size, int) or size < 1:
+            raise ReleaseError(
+                f"Remote artifact size is invalid for {model_id}/{cohort}"
+            )
         if (
-            _SHA_RE.fullmatch(str(model.get("export_commit", ""))) is None
-            or not model.get("license_ref")
+            not isinstance(devices, list)
+            or any(not isinstance(value, str) or not value for value in devices)
+            or len(set(devices)) != len(devices)
         ):
-            raise ReleaseError(f"Export provenance is incomplete for model {model_id}")
+            raise ReleaseError(f"Remote devices are invalid for {model_id}/{cohort}")
+        filename = exact_text(
+            record.get("artifact_filename"),
+            f"Remote artifact filename for {model_id}/{cohort}",
+        )
+        if PurePosixPath(filename).name != filename:
+            raise ReleaseError(
+                f"Remote artifact filename is invalid for {model_id}/{cohort}"
+            )
+        observed_records[key] = {
+            "model_id": model_id,
+            "repo_id": exact_text(
+                record.get("repo_id"), f"Remote repository for {model_id}/{cohort}"
+            ),
+            "cohort": cohort,
+            "revision": _require_sha(
+                exact_text(
+                    record.get("revision"),
+                    f"Remote revision for {model_id}/{cohort}",
+                ),
+                f"Remote revision for {model_id}/{cohort}",
+            ),
+            "artifact_filename": filename,
+            "artifact_sha256": _require_sha256(
+                exact_text(
+                    record.get("artifact_sha256"),
+                    f"Remote artifact digest for {model_id}/{cohort}",
+                ),
+                f"Remote artifact digest for {model_id}/{cohort}",
+            ),
+            "artifact_size_bytes": size,
+            "required_devices": tuple(sorted(devices)),
+            "torch_min": exact_text(
+                record.get("torch_min", cohort),
+                f"Remote minimum Torch version for {model_id}/{cohort}",
+            ),
+            "torch_max_exclusive": exact_text(
+                record.get("torch_max_exclusive", inferred_upper),
+                f"Remote maximum Torch version for {model_id}/{cohort}",
+            ),
+        }
+
+    if set(observed_records) != set(expected_records):
+        raise ReleaseError("Packaged and remote model cohort coverage differs")
+    for key, expected in expected_records.items():
+        observed = observed_records[key]
+        differing = sorted(
+            field for field in expected if observed.get(field) != expected[field]
+        )
+        if differing:
+            identity = "/".join(key)
+            raise ReleaseError(
+                f"Remote cohort record differs for {identity}: {', '.join(differing)}"
+            )
 
 
 def validate_local_release_evidence(

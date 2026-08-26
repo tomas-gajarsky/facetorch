@@ -171,9 +171,13 @@ def test_remote_input_requires_an_explicit_bounded_url_reader():
     assert url_reader_type is not None
 
     parameters = inspect.signature(url_reader_type).parameters
-    assert {"allowed_schemes", "timeout", "max_redirects", "max_bytes"}.issubset(
-        parameters
-    )
+    assert {
+        "allowed_schemes",
+        "timeout",
+        "max_redirects",
+        "max_bytes",
+        "max_decoded_pixels",
+    }.issubset(parameters)
 
 
 @pytest.mark.release_blocker

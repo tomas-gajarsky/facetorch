@@ -10,6 +10,7 @@ analyzer:
       _target_: torch.device
       type: ${analyzer.device}
     optimize_transform: ${analyzer.optimize_transforms}
+    max_decoded_pixels: 16777216
     transform:
       _target_: torchvision.transforms.Compose
       transforms:
