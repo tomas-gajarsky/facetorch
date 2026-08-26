@@ -4,6 +4,7 @@ import logging
 from contextlib import nullcontext
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import numpy as np
@@ -820,6 +821,100 @@ def test_url_reader_stops_slow_stream_at_total_deadline(monkeypatch):
     )
 
     with pytest.raises(InputError, match="timed out"):
+        reader.run("https://example.test/image.png")
+
+    assert response.closed
+    assert connection.closed
+
+
+def test_url_reader_closes_response_when_connect_exhausts_deadline(monkeypatch):
+    now = [0.0]
+    connection = _FakeConnection()
+    response = _FakeResponse()
+    monkeypatch.setattr("facetorch.analyzer.reader.core.time.monotonic", lambda: now[0])
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core.socket.getaddrinfo",
+        lambda _host, port, **_kwargs: [(2, 1, 6, "", ("93.184.216.34", port))],
+    )
+
+    def open_response(*_args, **_kwargs):
+        now[0] = 1.0
+        return connection, response
+
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core._open_pinned_response", open_response
+    )
+    reader = URLReader(None, torch.device("cpu"), False, timeout=1.0)
+
+    with pytest.raises(InputError, match="timed out"):
+        reader.run("https://example.test/image.png")
+
+    assert response.closed
+    assert connection.closed
+
+
+def test_url_reader_reports_connect_timeout_at_total_deadline(monkeypatch):
+    now = [0.0]
+    monkeypatch.setattr("facetorch.analyzer.reader.core.time.monotonic", lambda: now[0])
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core.socket.getaddrinfo",
+        lambda _host, port, **_kwargs: [(2, 1, 6, "", ("93.184.216.34", port))],
+    )
+
+    def raise_timeout(*_args, **_kwargs):
+        now[0] = 1.0
+        raise TimeoutError()
+
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core._open_pinned_response", raise_timeout
+    )
+    reader = URLReader(None, torch.device("cpu"), False, timeout=1.0)
+
+    with pytest.raises(InputError, match="timed out"):
+        reader.run("https://example.test/image.png")
+
+
+def test_url_reader_wraps_connection_failure(monkeypatch):
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core.socket.getaddrinfo",
+        lambda _host, port, **_kwargs: [(2, 1, 6, "", ("93.184.216.34", port))],
+    )
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core._open_pinned_response",
+        MagicMock(side_effect=OSError("connection refused")),
+    )
+    reader = URLReader(None, torch.device("cpu"), False, timeout=1.0)
+
+    with pytest.raises(InputError, match="failed or timed out"):
+        reader.run("https://example.test/image.png")
+
+
+@pytest.mark.parametrize(
+    ("failure", "message"),
+    [
+        (TimeoutError("read timed out"), "timed out"),
+        (OSError("connection reset"), "unsuccessful response"),
+    ],
+)
+def test_url_reader_wraps_body_read_failures(monkeypatch, failure, message):
+    connection = _FakeConnection()
+
+    class _FailingResponse(_FakeResponse):
+        def read(self, _chunk_size):
+            raise failure
+
+    response = _FailingResponse()
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core.socket.getaddrinfo",
+        lambda _host, port, **_kwargs: [(2, 1, 6, "", ("93.184.216.34", port))],
+    )
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core._open_pinned_response",
+        lambda *_args, **_kwargs: (connection, response),
+    )
+    reader = URLReader(None, torch.device("cpu"), False, timeout=1.0)
+
+    with pytest.raises(InputError, match=message):
         reader.run("https://example.test/image.png")
 
     assert response.closed
