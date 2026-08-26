@@ -654,11 +654,14 @@ el.replaceWith(d);
             self.logger.info(&#34;Predicting facial features&#34;)
             ran_predictors = set()
             for predictor_name in selected_predictors:
-                predictor = self.predictors[predictor_name]
                 self.logger.info(f&#34;Running FacePredictor: {predictor_name}&#34;)
                 data = _run_component(
                     f&#34;Face predictor {predictor_name!r}&#34;,
-                    lambda: _predict_batch(data, predictor, predictor_name),
+                    lambda predictor_name=predictor_name: _predict_batch(
+                        data,
+                        self.predictors[predictor_name],
+                        predictor_name,
+                    ),
                 )
                 ran_predictors.add(predictor_name)
 
@@ -682,10 +685,12 @@ el.replaceWith(d);
                         + &#34;)&#34;
                     )
                     continue
-                utilizer = self.utilizers[utilizer_name]
                 self.logger.info(f&#34;Running BaseUtilizer: {utilizer_name}&#34;)
                 data = _run_component(
-                    f&#34;Face utilizer {utilizer_name!r}&#34;, lambda: utilizer.run(data)
+                    f&#34;Face utilizer {utilizer_name!r}&#34;,
+                    lambda utilizer_name=utilizer_name: self.utilizers[
+                        utilizer_name
+                    ].run(data),
                 )
         else:
             if &#34;save&#34; in self.utilizers:
@@ -1243,11 +1248,14 @@ def run(
         self.logger.info(&#34;Predicting facial features&#34;)
         ran_predictors = set()
         for predictor_name in selected_predictors:
-            predictor = self.predictors[predictor_name]
             self.logger.info(f&#34;Running FacePredictor: {predictor_name}&#34;)
             data = _run_component(
                 f&#34;Face predictor {predictor_name!r}&#34;,
-                lambda: _predict_batch(data, predictor, predictor_name),
+                lambda predictor_name=predictor_name: _predict_batch(
+                    data,
+                    self.predictors[predictor_name],
+                    predictor_name,
+                ),
             )
             ran_predictors.add(predictor_name)
 
@@ -1271,10 +1279,12 @@ def run(
                     + &#34;)&#34;
                 )
                 continue
-            utilizer = self.utilizers[utilizer_name]
             self.logger.info(f&#34;Running BaseUtilizer: {utilizer_name}&#34;)
             data = _run_component(
-                f&#34;Face utilizer {utilizer_name!r}&#34;, lambda: utilizer.run(data)
+                f&#34;Face utilizer {utilizer_name!r}&#34;,
+                lambda utilizer_name=utilizer_name: self.utilizers[
+                    utilizer_name
+                ].run(data),
             )
     else:
         if &#34;save&#34; in self.utilizers:
