@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 import warnings as _warnings
 
 import torch
@@ -8,6 +8,34 @@ from codetiming import Timer
 from facetorch.logger import get_logger
 
 logger = get_logger()
+
+_REMOVED_TENSOR = object()
+
+
+def _without_tensors(value: Any) -> Any:
+    """Return nested prediction metadata with only tensor values removed."""
+    if isinstance(value, torch.Tensor):
+        return _REMOVED_TENSOR
+    if isinstance(value, dict):
+        cleaned = {}
+        for key, item in value.items():
+            cleaned_item = _without_tensors(item)
+            if cleaned_item is not _REMOVED_TENSOR:
+                cleaned[key] = cleaned_item
+        return cleaned
+    if isinstance(value, list):
+        return [
+            cleaned_item
+            for item in value
+            if (cleaned_item := _without_tensors(item)) is not _REMOVED_TENSOR
+        ]
+    if isinstance(value, tuple):
+        return tuple(
+            cleaned_item
+            for item in value
+            if (cleaned_item := _without_tensors(item)) is not _REMOVED_TENSOR
+        )
+    return value
 
 
 @dataclass
@@ -221,11 +249,15 @@ class ImageData:
             self.faces[i].tensor = torch.tensor([])
 
     def reset_face_pred_tensors(self) -> None:
-        """Reset the face prediction tensors to empty state."""
+        """Reset prediction tensors while preserving non-tensor metadata."""
         for i in range(0, len(self.faces)):
             for key in self.faces[i].preds:
-                self.faces[i].preds[key].logits = torch.tensor([])
-                self.faces[i].preds[key].other = {}
+                prediction = self.faces[i].preds[key]
+                prediction.logits = torch.tensor([])
+                cleaned_other = _without_tensors(prediction.other)
+                prediction.other = (
+                    {} if cleaned_other is _REMOVED_TENSOR else cleaned_other
+                )
 
     def reset_det_tensors(self) -> None:
         """Reset the detection object to empty state."""

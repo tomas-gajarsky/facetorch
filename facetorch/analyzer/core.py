@@ -675,11 +675,14 @@ class FaceAnalyzer(object):
             self.logger.info("Predicting facial features")
             ran_predictors = set()
             for predictor_name in selected_predictors:
-                predictor = self.predictors[predictor_name]
                 self.logger.info(f"Running FacePredictor: {predictor_name}")
                 data = _run_component(
                     f"Face predictor {predictor_name!r}",
-                    lambda: _predict_batch(data, predictor, predictor_name),
+                    lambda predictor_name=predictor_name: _predict_batch(
+                        data,
+                        self.predictors[predictor_name],
+                        predictor_name,
+                    ),
                 )
                 ran_predictors.add(predictor_name)
 
@@ -703,10 +706,12 @@ class FaceAnalyzer(object):
                         + ")"
                     )
                     continue
-                utilizer = self.utilizers[utilizer_name]
                 self.logger.info(f"Running BaseUtilizer: {utilizer_name}")
                 data = _run_component(
-                    f"Face utilizer {utilizer_name!r}", lambda: utilizer.run(data)
+                    f"Face utilizer {utilizer_name!r}",
+                    lambda utilizer_name=utilizer_name: self.utilizers[
+                        utilizer_name
+                    ].run(data),
                 )
         else:
             if "save" in self.utilizers:

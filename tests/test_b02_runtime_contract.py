@@ -370,6 +370,76 @@ def test_within_image_face_batching_preserves_order(face_count):
     ]
 
 
+def test_default_result_preserves_va_and_au_metadata_without_tensors():
+    class MetadataPredictor:
+        def __init__(self, prediction):
+            self.prediction = prediction
+
+        def run(self, batch):
+            return [
+                Prediction(
+                    label=self.prediction.label,
+                    logits=self.prediction.logits.clone(),
+                    other={
+                        key: value.copy() if isinstance(value, dict) else value
+                        for key, value in self.prediction.other.items()
+                    },
+                )
+                for _ in batch
+            ]
+
+    analyzer = _minimal_analyzer(
+        detector=_FaceDetectorStub(1),
+        unifier=_IdentityUnifier(),
+        predictors={
+            "va": MetadataPredictor(
+                Prediction(
+                    label="other",
+                    logits=torch.tensor([0.25, -0.5]),
+                    other={
+                        "valence": 0.25,
+                        "arousal": -0.5,
+                        "diagnostic": {
+                            "source": "va",
+                            "tensor": torch.ones(1),
+                            "values": [
+                                1.0,
+                                torch.ones(1),
+                                {"name": "nested", "tensor": torch.ones(1)},
+                            ],
+                            "pair": ("kept", torch.ones(1)),
+                        },
+                    },
+                )
+            ),
+            "au": MetadataPredictor(
+                Prediction(
+                    label="AU1",
+                    logits=torch.tensor([0.8, 0.7]),
+                    other={"multi": ["AU1", "AU2"]},
+                )
+            ),
+        },
+    )
+
+    result = analyzer.run(
+        image_source=torch.zeros((3, 8, 9), dtype=torch.uint8),
+    )
+
+    assert result.faces[0].preds["va"].logits.numel() == 0
+    assert result.faces[0].preds["va"].other == {
+        "valence": 0.25,
+        "arousal": -0.5,
+        "diagnostic": {
+            "source": "va",
+            "values": [1.0, {"name": "nested"}],
+            "pair": ("kept",),
+        },
+    }
+    assert result.faces[0].preds["au"].logits.numel() == 0
+    assert result.faces[0].preds["au"].other == {"multi": ["AU1", "AU2"]}
+
+
 def test_selected_predictor_requires_a_unifier_with_skip_detector():
     predictor = _BatchRecorder()
     analyzer = _minimal_analyzer(predictors={"probe": predictor})

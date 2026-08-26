@@ -268,15 +268,23 @@ class BaseModel(object, metaclass=ABCMeta):
             torch.nn.Module: Loaded model in eval mode.
         """
         should_verify = self._verify_artifacts
+        cache_resolver = None
+        cache_resolution_missed = False
         if not should_verify:
-            resolve_cached_path = getattr(
+            cache_resolver = getattr(
                 type(self.downloader), "resolve_cached_path", None
             )
-            if callable(resolve_cached_path):
-                resolved_path = resolve_cached_path(self.downloader)
+            if callable(cache_resolver):
+                resolved_path = cache_resolver(self.downloader)
                 if resolved_path is not None:
                     self.path_local = os.fspath(resolved_path)
-        if should_verify or not os.path.exists(self.path_local):
+                else:
+                    cache_resolution_missed = True
+        if (
+            should_verify
+            or cache_resolution_missed
+            or not os.path.exists(self.path_local)
+        ):
             dir_local = os.path.dirname(self.path_local)
             if dir_local:
                 try:
@@ -289,6 +297,14 @@ class BaseModel(object, metaclass=ABCMeta):
                     ) from exc
             resolved_path = self.downloader.run()
             if resolved_path is not None:
+                self.path_local = os.fspath(resolved_path)
+            elif cache_resolution_missed and callable(cache_resolver):
+                resolved_path = cache_resolver(self.downloader)
+                if resolved_path is None:
+                    raise ConfigurationError(
+                        "Manifest-aware downloader did not resolve an eligible "
+                        "model artifact."
+                    )
                 self.path_local = os.fspath(resolved_path)
             else:
                 self.path_local = self.downloader.path_local

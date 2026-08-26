@@ -7,7 +7,11 @@ from unittest.mock import MagicMock, patch
 from facetorch.artifacts import get_model_manifest
 from facetorch.base import BaseModel
 from facetorch.downloader import DownloaderHuggingFace
-from facetorch.exceptions import ConfigurationError, ModelCompatibilityError
+from facetorch.exceptions import (
+    ConfigurationError,
+    ModelCompatibilityError,
+    OfflineCacheError,
+)
 
 
 class ConcreteModel(BaseModel):
@@ -40,6 +44,25 @@ def _make_dummy_downloader(path_local):
     dl.path_local = path_local
     dl.try_next = MagicMock(return_value=False)
     return dl
+
+
+class _ManifestResolverDownloader:
+    def __init__(self, path_local, resolved_path=None):
+        self.path_local = path_local
+        self.resolved_path = resolved_path
+        self.verify_on_use = False
+        self.resolve_calls = 0
+        self.run_calls = 0
+
+    def resolve_cached_path(self):
+        self.resolve_calls += 1
+        if self.resolve_calls == 1:
+            return None
+        return self.resolved_path
+
+    def run(self):
+        self.run_calls += 1
+        return None
 
 
 # Optional integration assets must be selected explicitly. Using a fixed path under
@@ -250,6 +273,36 @@ class TestLoadExportedModel:
 
         assert downloader.resolve_cached_path() is None
 
+    def test_missing_manifest_candidate_never_loads_a_generic_cache_alias(
+        self, tmp_path
+    ):
+        manifest = get_model_manifest()
+        descriptor = manifest.candidates(
+            "detector-retinaface",
+            torch_version=str(torch.__version__),
+            device="cpu",
+            allow_legacy_models=False,
+        )[0]
+        alias = tmp_path / "model.pt2"
+        alias.write_bytes(b"stale unrelated export")
+        downloader = DownloaderHuggingFace(
+            file_id=descriptor.repo_id,
+            repo_id=descriptor.repo_id,
+            path_local=str(alias),
+            manifest_id="detector-retinaface",
+            manifest=manifest,
+            torch_version=str(torch.__version__),
+            device="cpu",
+            offline=True,
+            verify_on_use=False,
+        )
+
+        with patch("torch.export.load") as load:
+            with pytest.raises(OfflineCacheError, match="verified artifact"):
+                ConcreteModel(downloader=downloader, device=torch.device("cpu"))
+
+        load.assert_not_called()
+
     def test_data_artifact_is_rejected_as_an_executable_model(self, tmp_path):
         data_path = tmp_path / "metadata.pt"
         data_path.write_bytes(b"authenticated metadata")
@@ -418,6 +471,38 @@ class TestBaseModelMisc:
 
         m = ConcreteModel(downloader=dl, device=torch.device("cpu"))
         assert m.model is not None
+
+    def test_manifest_resolver_rechecks_after_legacy_none_download(self, tmp_path):
+        resolved_path = str(tmp_path / "cohort.pt")
+        scripted = _make_torchscript_fake_module()
+        torch.jit.save(scripted, resolved_path)
+        downloader = _ManifestResolverDownloader(
+            str(tmp_path / "model.pt"), resolved_path
+        )
+
+        model = ConcreteModel(downloader=downloader, device=torch.device("cpu"))
+
+        assert model.path_local == resolved_path
+        assert downloader.resolve_calls == 2
+        assert downloader.run_calls == 1
+
+    def test_manifest_resolver_rejects_unresolved_none_download(self, tmp_path):
+        alias = tmp_path / "model.pt"
+        alias.write_bytes(b"stale unrelated model")
+        downloader = _ManifestResolverDownloader(str(alias))
+
+        with (
+            patch("torch.jit.load") as load,
+            pytest.raises(
+                ConfigurationError,
+                match="did not resolve an eligible model artifact",
+            ),
+        ):
+            ConcreteModel(downloader=downloader, device=torch.device("cpu"))
+
+        load.assert_not_called()
+        assert downloader.resolve_calls == 2
+        assert downloader.run_calls == 1
 
     def test_missing_model_reports_unwritable_cache_directory(self, tmp_path):
         missing_file = str(tmp_path / "cache" / "model.pt")

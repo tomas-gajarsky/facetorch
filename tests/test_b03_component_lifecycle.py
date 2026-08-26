@@ -14,7 +14,7 @@ from facetorch.analyzer.detector.core import FaceDetector
 from facetorch.analyzer.predictor.core import FacePredictor
 from facetorch.analyzer.reader import TensorReader
 from facetorch.datastruct import Prediction
-from facetorch.exceptions import ConfigurationError
+from facetorch.exceptions import ConfigurationError, InferenceError
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -226,6 +226,56 @@ def test_selection_constructs_only_requested_components_and_caches_them():
     assert analyzer.loaded_predictors == ("first",)
     assert analyzer.loaded_utilizers == ()
     assert analyzer.detector_loaded is False
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    ("unavailable", "selection", "message"),
+    [
+        ("predictor:first", ["first"], "Face predictor 'first'"),
+        ("utilizer:consumer", ["second"], "Face utilizer 'consumer'"),
+    ],
+)
+def test_lazy_component_construction_failures_use_public_inference_error(
+    unavailable, selection, message
+):
+    graph = _component_graph(unavailable={unavailable})
+
+    with patch(
+        "facetorch.analyzer.core.instantiate", side_effect=graph.instantiate
+    ):
+        analyzer = FaceAnalyzer(graph.cfg)
+        with pytest.raises(InferenceError, match=message) as caught:
+            analyzer.run(
+                image_source=torch.zeros((3, 4, 5), dtype=torch.uint8),
+                skip_detector=True,
+                include_predictors=selection,
+            )
+
+    assert isinstance(caught.value.__cause__, RuntimeError)
+
+
+@pytest.mark.release_blocker
+def test_lazy_component_construction_preserves_public_errors():
+    graph = _component_graph()
+
+    def instantiate_component(component):
+        if component["component"] == "predictor:first":
+            raise ConfigurationError("predictor configuration is invalid")
+        return graph.instantiate(component)
+
+    with patch(
+        "facetorch.analyzer.core.instantiate", side_effect=instantiate_component
+    ):
+        analyzer = FaceAnalyzer(graph.cfg)
+        with pytest.raises(
+            ConfigurationError, match="predictor configuration is invalid"
+        ):
+            analyzer.run(
+                image_source=torch.zeros((3, 4, 5), dtype=torch.uint8),
+                skip_detector=True,
+                include_predictors=["first"],
+            )
 
 
 @pytest.mark.release_blocker
