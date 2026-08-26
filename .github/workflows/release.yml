@@ -939,6 +939,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.validate-inputs.outputs.tag }}
+          VERSION_TAG: ${{ needs.resolve-candidate.outputs.docker_tag }}
         run: |
           mkdir -p "$RUNNER_TEMP/channel-receipts"
           combined="$RUNNER_TEMP/publication-receipt.json"
@@ -963,6 +964,22 @@ jobs:
           else
             gh release upload "$TAG" "$combined"
           fi
+          for channel in docker-cpu docker-gpu; do
+            source="$RUNNER_TEMP/channel-receipts/receipt-${channel}.json"
+            reference="$(jq -er --arg channel "$channel" \
+              '.channels[$channel].details.reference' "$source")"
+            if [ "$channel" = "docker-cpu" ]; then
+              expected_reference="$CPU_REPOSITORY:$VERSION_TAG"
+            else
+              expected_reference="$GPU_REPOSITORY:$VERSION_TAG"
+            fi
+            test "$reference" = "$expected_reference"
+            state="$RUNNER_TEMP/final-${channel}-state.json"
+            python scripts/release_transaction.py docker-state \
+              --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+              --channel "$channel" --reference "$reference" --output "$state"
+            test "$(jq -r .status "$state")" = "identical"
+          done
           gh release edit "$TAG" --draft=false --latest=false
           test "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = "false"
 

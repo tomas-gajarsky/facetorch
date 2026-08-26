@@ -65,8 +65,7 @@ class LoggerJsonFile:
 
     def configure(self):
         """Configure JSON console/file handlers idempotently."""
-        if self.logger.level == 0 or self.level < self.logger.level:
-            self.logger.setLevel(self.level)
+        self.logger.setLevel(self.level)
 
         formatter = CustomJsonFormatter(fmt=self.json_format)
         stream_handlers = [
@@ -83,8 +82,22 @@ class LoggerJsonFile:
             handler.setLevel(self.level)
             handler.setFormatter(formatter)
 
-        if self.path_file is not None:
-            normalized_path = os.path.abspath(os.fspath(self.path_file))
+        normalized_path = (
+            os.path.abspath(os.fspath(self.path_file))
+            if self.path_file is not None
+            else None
+        )
+        managed_file_handlers = [
+            handler
+            for handler in self.logger.handlers
+            if getattr(handler, "_facetorch_file_handler", False)
+        ]
+        for handler in managed_file_handlers:
+            if normalized_path is None or handler.baseFilename != normalized_path:
+                self.logger.removeHandler(handler)
+                handler.close()
+
+        if normalized_path is not None:
             parent = os.path.dirname(normalized_path)
             if parent:
                 try:
@@ -97,9 +110,13 @@ class LoggerJsonFile:
             file_handlers = [
                 handler
                 for handler in self.logger.handlers
-                if isinstance(handler, logging.FileHandler)
-                and os.path.abspath(handler.baseFilename) == normalized_path
+                if getattr(handler, "_facetorch_file_handler", False)
+                and handler.baseFilename == normalized_path
             ]
+            for handler in file_handlers[1:]:
+                self.logger.removeHandler(handler)
+                handler.close()
+            file_handlers = file_handlers[:1]
             if not file_handlers:
                 path_file_handler = RotatingFileHandler(
                     normalized_path,
@@ -107,11 +124,14 @@ class LoggerJsonFile:
                     maxBytes=self.max_bytes,
                     backupCount=self.backup_count,
                 )
+                path_file_handler._facetorch_file_handler = True
                 path_file_handler.setLevel(self.level)
                 path_file_handler.setFormatter(formatter)
                 self.logger.addHandler(path_file_handler)
             else:
                 for handler in file_handlers:
+                    handler.maxBytes = self.max_bytes
+                    handler.backupCount = self.backup_count
                     handler.setLevel(self.level)
                     handler.setFormatter(formatter)
 

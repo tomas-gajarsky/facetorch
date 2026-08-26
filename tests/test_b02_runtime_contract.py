@@ -955,6 +955,80 @@ def test_file_logging_rotates_at_the_configured_bound(tmp_path):
         _clear_logger(name)
 
 
+def test_file_logging_reconfiguration_retires_the_previous_managed_path(tmp_path):
+    name = f"facetorch-b02-reconfigure-{uuid4()}"
+    first_path = tmp_path / "first.log"
+    second_path = tmp_path / "second.log"
+    try:
+        first = LoggerJsonFile(
+            name=name,
+            level=logging.INFO,
+            path_file=str(first_path),
+        )
+        first.logger.info("first-only")
+        second = LoggerJsonFile(
+            name=name,
+            level=logging.ERROR,
+            path_file=str(second_path),
+        )
+        second.logger.error("second-only")
+        for handler in second.logger.handlers:
+            handler.flush()
+
+        assert second.logger.level == logging.ERROR
+        assert "first-only" in first_path.read_text(encoding="utf-8")
+        assert "second-only" not in first_path.read_text(encoding="utf-8")
+        assert "second-only" in second_path.read_text(encoding="utf-8")
+        managed_files = [
+            handler
+            for handler in second.logger.handlers
+            if getattr(handler, "_facetorch_file_handler", False)
+        ]
+        assert [handler.baseFilename for handler in managed_files] == [
+            str(second_path.resolve())
+        ]
+    finally:
+        _clear_logger(name)
+
+
+def test_file_logging_reconfiguration_updates_rotation_in_place(tmp_path):
+    name = f"facetorch-b02-rotation-update-{uuid4()}"
+    path = tmp_path / "facetorch.log"
+    try:
+        first = LoggerJsonFile(
+            name=name,
+            level=logging.INFO,
+            path_file=str(path),
+            max_bytes=1024,
+            backup_count=3,
+        )
+        original = next(
+            handler
+            for handler in first.logger.handlers
+            if getattr(handler, "_facetorch_file_handler", False)
+        )
+        second = LoggerJsonFile(
+            name=name,
+            level=logging.WARNING,
+            path_file=str(path),
+            max_bytes=256,
+            backup_count=1,
+        )
+        managed_files = [
+            handler
+            for handler in second.logger.handlers
+            if getattr(handler, "_facetorch_file_handler", False)
+        ]
+
+        assert managed_files == [original]
+        assert original.maxBytes == 256
+        assert original.backupCount == 1
+        assert original.level == logging.WARNING
+        assert second.logger.level == logging.WARNING
+    finally:
+        _clear_logger(name)
+
+
 def test_image_saver_supports_nested_output(tmp_path):
     path = tmp_path / "nested" / "face.png"
     data = ImageData(
@@ -1089,6 +1163,61 @@ def test_canonical_input_handles_declared_bgr_and_integer_coercion():
     assert integer.tensor.dtype == torch.float32
 
 
+@pytest.mark.parametrize("dtype", (torch.uint16, torch.uint32, torch.uint64))
+def test_canonical_input_handles_unsigned_torch_dtypes(dtype):
+    source = torch.tensor(range(12), dtype=dtype).reshape(3, 2, 2)
+    with pytest.warns(InputCoercionWarning, match="integer image dtype"):
+        converted = canonicalize_image_tensor(source, source_kind="torch")
+
+    assert converted.tensor.dtype == torch.float32
+    assert converted.tensor.min().item() == 0
+    assert converted.tensor.max().item() == 11
+
+
+@pytest.mark.parametrize("dtype", (np.uint16, np.uint32, np.uint64))
+def test_canonical_input_handles_unsigned_numpy_dtypes(dtype):
+    source = np.arange(12, dtype=dtype).reshape(2, 2, 3)
+    reader = UniversalReader(None, torch.device("cpu"), False)
+    with pytest.warns(InputCoercionWarning, match="integer image dtype"):
+        converted = reader.run(source)
+
+    assert converted.tensor.dtype == torch.float32
+    assert converted.tensor.min().item() == 0
+    assert converted.tensor.max().item() == 11
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        torch.full((3, 2, 2), 256, dtype=torch.uint16),
+        np.full((2, 2, 3), 256, dtype=np.uint16),
+    ),
+)
+def test_unsigned_input_range_errors_remain_inside_the_public_boundary(source):
+    reader = UniversalReader(None, torch.device("cpu"), False)
+    with pytest.warns(InputCoercionWarning, match="integer image dtype"):
+        with pytest.raises(InputError, match="0..255"):
+            reader.run(source)
+
+
+def test_float64_range_validation_does_not_round_into_the_supported_boundary():
+    source = torch.full(
+        (3, 2, 2),
+        torch.nextafter(
+            torch.tensor(255.0, dtype=torch.float64),
+            torch.tensor(float("inf"), dtype=torch.float64),
+        ).item(),
+        dtype=torch.float64,
+    )
+
+    with pytest.raises(InputError, match="0..255"):
+        canonicalize_image_tensor(
+            source,
+            source_kind="torch",
+            input_spec=InputSpec(value_range="0_255"),
+        )
+
+
 def test_strict_rgba_requires_an_explicit_alpha_policy():
     with pytest.raises(InputError, match="alpha_mode"):
         canonicalize_image_tensor(
@@ -1129,6 +1258,32 @@ def test_decoded_unusual_pil_modes_are_explicitly_coerced_or_rejected():
     image.close()
 
 
+def test_decoded_images_are_bounded_before_materialization():
+    image = Image.new("RGB", (11, 10), color="red")
+    reader = UniversalReader(
+        None,
+        torch.device("cpu"),
+        False,
+        max_decoded_pixels=109,
+    )
+    try:
+        with pytest.raises(InputError, match="configured limit is 109"):
+            reader.read_pil_image(image, False)
+        with pytest.raises(InputError, match="configured limit is 109"):
+            reader.read_image_from_bytes(_png_bytes(np.array(image)), False)
+    finally:
+        image.close()
+
+
+def test_pillow_decompression_bomb_warnings_use_the_public_error(monkeypatch):
+    payload = _png_bytes(_rgb_array())
+    monkeypatch.setattr(Image, "MAX_IMAGE_PIXELS", 50)
+    reader = UniversalReader(None, torch.device("cpu"), False)
+
+    with pytest.raises(InputError, match="Pillow's safety limit"):
+        reader.read_image_from_bytes(payload, False)
+
+
 @pytest.mark.parametrize(
     ("kwargs", "message"),
     [
@@ -1137,6 +1292,8 @@ def test_decoded_unusual_pil_modes_are_explicitly_coerced_or_rejected():
         ({"timeout": 0}, "timeout"),
         ({"max_redirects": -1}, "max_redirects"),
         ({"max_bytes": 0}, "max_bytes"),
+        ({"max_decoded_pixels": 0}, "max_decoded_pixels"),
+        ({"max_decoded_pixels": True}, "max_decoded_pixels"),
     ],
 )
 def test_url_reader_rejects_invalid_limits(kwargs, message):
@@ -1160,6 +1317,29 @@ def test_url_reader_fails_closed_on_unsafe_dns_results(monkeypatch, resolver, me
     reader = URLReader(None, torch.device("cpu"), False)
     with pytest.raises(InputError, match=message):
         reader.run("https://example.test/image.png")
+
+
+def test_url_reader_bounds_decoded_pixels_after_bounded_download(monkeypatch):
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core.socket.getaddrinfo",
+        lambda _host, port, **_kwargs: [(2, 1, 6, "", ("93.184.216.34", port))],
+    )
+    response = _FakeResponse(_png_bytes(_rgb_array()))
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core._open_pinned_response",
+        _fake_url_open(response),
+    )
+    reader = URLReader(
+        None,
+        torch.device("cpu"),
+        False,
+        max_bytes=1024,
+        max_decoded_pixels=71,
+    )
+
+    with pytest.raises(InputError, match="configured limit is 71"):
+        reader.run("https://example.test/image.png")
+    assert response.closed
 
 
 def test_url_reader_rejects_credentials_missing_hosts_and_non_strings(monkeypatch):

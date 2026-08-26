@@ -146,6 +146,21 @@ def test_stable_alias_mutation_is_serialized_and_monotonic():
 
 
 @pytest.mark.release_blocker
+def test_finalization_revalidates_versioned_docker_tags_immediately_before_publish():
+    workflow = _workflow(REPO_ROOT / ".github" / "workflows" / "release.yml")
+    finalize_commands = _commands(workflow["jobs"]["finalize-github-release"])
+
+    assert "for channel in docker-cpu docker-gpu" in finalize_commands
+    assert ".channels[$channel].details.reference" in finalize_commands
+    assert 'test "$reference" = "$expected_reference"' in finalize_commands
+    assert "release_transaction.py docker-state" in finalize_commands
+    assert 'test "$(jq -r .status "$state")" = "identical"' in finalize_commands
+    assert finalize_commands.rfind("release_transaction.py docker-state") < (
+        finalize_commands.index('gh release edit "$TAG" --draft=false --latest=false')
+    )
+
+
+@pytest.mark.release_blocker
 def test_release_pipeline_has_a_no_publish_dry_run():
     manual_workflow = (REPO_ROOT / ".github" / "workflows" / "release.yml").read_text(
         encoding="utf-8"

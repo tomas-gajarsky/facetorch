@@ -27,6 +27,7 @@ logger = LoggerJsonFile().logger
 
 LocalPath = Union[str, os.PathLike]
 ImageSource = Union[LocalPath, torch.Tensor, np.ndarray, bytes, Image.Image]
+DEFAULT_MAX_DECODED_PIXELS = 16 * 1024 * 1024
 
 
 @runtime_checkable
@@ -181,6 +182,12 @@ def _array_to_tensor(array: np.ndarray) -> torch.Tensor:
         raise InputError(f"Unsupported NumPy image dtype {array.dtype}.") from exc
 
 
+def _validate_max_decoded_pixels(value: int) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise InputError("max_decoded_pixels must be a positive integer.")
+    return value
+
+
 class UniversalReader(BaseReader):
     """Read local paths and in-memory images; network access is intentionally absent."""
 
@@ -189,8 +196,10 @@ class UniversalReader(BaseReader):
         transform: torchvision.transforms.Compose,
         device: torch.device,
         optimize_transform: bool,
+        max_decoded_pixels: int = DEFAULT_MAX_DECODED_PIXELS,
     ):
         super().__init__(transform, device, optimize_transform)
+        self.max_decoded_pixels = _validate_max_decoded_pixels(max_decoded_pixels)
 
     @Timer("UniversalReader.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
     def run(
@@ -271,23 +280,48 @@ class UniversalReader(BaseReader):
         input_spec: Optional[InputSpec] = None,
         path_input: Optional[str] = None,
     ) -> ImageData:
+        try:
+            width, height = pil_image.size
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise InputError("Decoded image dimensions are invalid.") from exc
+        if (
+            isinstance(width, bool)
+            or not isinstance(width, int)
+            or isinstance(height, bool)
+            or not isinstance(height, int)
+        ):
+            raise InputError("Decoded image dimensions are invalid.")
+        decoded_pixels = width * height
+        if width < 1 or height < 1 or decoded_pixels > self.max_decoded_pixels:
+            raise InputError(
+                f"Decoded image contains {decoded_pixels} pixels; the configured "
+                f"limit is {self.max_decoded_pixels}."
+            )
+
         mode = getattr(pil_image, "mode", None)
         source = pil_image
         converted = None
         conversion_message = None
-        if mode not in {"L", "RGB", "RGBA"}:
-            if str(input_policy).lower().strip() == "strict":
-                raise InputError(
-                    f"Strict mode does not accept decoded PIL mode {mode!r}; "
-                    "convert it explicitly to L, RGB, or RGBA."
-                )
-            conversion_message = f"Converted decoded PIL mode {mode!r} to RGB."
-            warnings.warn(conversion_message, InputCoercionWarning, stacklevel=3)
-            converted = pil_image.convert("RGB")
-            source = converted
-
         try:
-            array = np.array(source, copy=True)
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", Image.DecompressionBombWarning)
+                if mode not in {"L", "RGB", "RGBA"}:
+                    if str(input_policy).lower().strip() == "strict":
+                        raise InputError(
+                            f"Strict mode does not accept decoded PIL mode {mode!r}; "
+                            "convert it explicitly to L, RGB, or RGBA."
+                        )
+                    conversion_message = f"Converted decoded PIL mode {mode!r} to RGB."
+                    warnings.warn(
+                        conversion_message,
+                        InputCoercionWarning,
+                        stacklevel=3,
+                    )
+                    converted = pil_image.convert("RGB")
+                    source = converted
+                array = np.array(source, copy=True)
+        except (Image.DecompressionBombError, Image.DecompressionBombWarning) as exc:
+            raise InputError("Decoded image exceeds Pillow's safety limit.") from exc
         finally:
             if converted is not None:
                 converted.close()
@@ -330,14 +364,18 @@ class UniversalReader(BaseReader):
         path_input: Optional[str] = None,
     ) -> ImageData:
         try:
-            with io.BytesIO(image_bytes) as buffer, Image.open(buffer) as pil_image:
-                return self.read_pil_image(
-                    pil_image,
-                    fix_img_size,
-                    input_policy=input_policy,
-                    input_spec=input_spec,
-                    path_input=path_input,
-                )
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", Image.DecompressionBombWarning)
+                with io.BytesIO(image_bytes) as buffer, Image.open(buffer) as pil_image:
+                    return self.read_pil_image(
+                        pil_image,
+                        fix_img_size,
+                        input_policy=input_policy,
+                        input_spec=input_spec,
+                        path_input=path_input,
+                    )
+        except (Image.DecompressionBombError, Image.DecompressionBombWarning) as exc:
+            raise InputError("Decoded image exceeds Pillow's safety limit.") from exc
         except (UnidentifiedImageError, OSError, ValueError) as exc:
             if isinstance(exc, FacetorchError):
                 raise
@@ -352,14 +390,18 @@ class UniversalReader(BaseReader):
         input_spec: Optional[InputSpec] = None,
     ) -> ImageData:
         try:
-            with Image.open(path_image) as pil_image:
-                return self.read_pil_image(
-                    pil_image,
-                    fix_img_size,
-                    input_policy=input_policy,
-                    input_spec=input_spec,
-                    path_input=str(Path(path_image)),
-                )
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", Image.DecompressionBombWarning)
+                with Image.open(path_image) as pil_image:
+                    return self.read_pil_image(
+                        pil_image,
+                        fix_img_size,
+                        input_policy=input_policy,
+                        input_spec=input_spec,
+                        path_input=str(Path(path_image)),
+                    )
+        except (Image.DecompressionBombError, Image.DecompressionBombWarning) as exc:
+            raise InputError("Decoded image exceeds Pillow's safety limit.") from exc
         except (
             FileNotFoundError,
             PermissionError,
@@ -385,8 +427,10 @@ class ImageReader(BaseReader):
         transform: torchvision.transforms.Compose,
         device: torch.device,
         optimize_transform: bool,
+        max_decoded_pixels: int = DEFAULT_MAX_DECODED_PIXELS,
     ):
         super().__init__(transform, device, optimize_transform)
+        self.max_decoded_pixels = _validate_max_decoded_pixels(max_decoded_pixels)
 
     read_pil_image = UniversalReader.read_pil_image
     read_image_from_path = UniversalReader.read_image_from_path
@@ -465,8 +509,14 @@ class URLReader(UniversalReader):
         timeout: float = 10.0,
         max_redirects: int = 3,
         max_bytes: int = 10 * 1024 * 1024,
+        max_decoded_pixels: int = DEFAULT_MAX_DECODED_PIXELS,
     ):
-        super().__init__(transform, device, optimize_transform)
+        super().__init__(
+            transform,
+            device,
+            optimize_transform,
+            max_decoded_pixels=max_decoded_pixels,
+        )
         if isinstance(allowed_schemes, str):
             allowed_schemes = (allowed_schemes,)
         self.allowed_schemes = tuple(

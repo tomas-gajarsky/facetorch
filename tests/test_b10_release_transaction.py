@@ -413,6 +413,140 @@ def test_packaged_model_governance_is_a_fail_closed_publication_gate(
 
 
 @pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("repo_id", "owner/different"),
+        ("cohort", "2.7"),
+        ("artifact_size_bytes", 124),
+        ("required_devices", ["cpu"]),
+        ("artifact_filename", "different.pt2"),
+        ("artifact_sha256", "9" * 64),
+    ],
+)
+def test_model_governance_binds_every_remote_cohort_field(tmp_path, field, value):
+    repo, _ = _candidate_repo(tmp_path)
+    _, manifest = _bundle(tmp_path)
+    remote = json.loads(manifest.read_text(encoding="utf-8"))
+    remote["models"][0][field] = value
+    _write_json(manifest, remote)
+
+    with pytest.raises(ReleaseError, match="Remote|cohort coverage"):
+        validate_packaged_model_governance(
+            repo,
+            remote_manifest_path=manifest,
+            remote_revision=MODEL_REVISION,
+        )
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("model_id", 1),
+        ("cohort", 2.6),
+        ("artifact_filename", 123),
+        ("revision", int("5" * 40)),
+        ("artifact_sha256", int("6" * 64)),
+    ],
+)
+def test_model_governance_rejects_non_string_remote_identity_fields(
+    tmp_path, field, value
+):
+    repo, _ = _candidate_repo(tmp_path)
+    _, manifest = _bundle(tmp_path)
+    remote = json.loads(manifest.read_text(encoding="utf-8"))
+    remote["models"][0][field] = value
+    _write_json(manifest, remote)
+
+    with pytest.raises(ReleaseError, match="must be a non-empty string"):
+        validate_packaged_model_governance(
+            repo,
+            remote_manifest_path=manifest,
+            remote_revision=MODEL_REVISION,
+        )
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    ("maximum", "message"),
+    [("2.8", "cohort range is invalid"), (2.7, "must be a non-empty string")],
+)
+def test_model_governance_rejects_invalid_packaged_cohort_ranges(
+    tmp_path, maximum, message
+):
+    repo, _ = _candidate_repo(tmp_path)
+    _, manifest = _bundle(tmp_path)
+    packaged_path = repo / "facetorch/models/manifest.json"
+    packaged = json.loads(packaged_path.read_text(encoding="utf-8"))
+    packaged["models"]["detector"]["artifacts"][0]["torch_max_exclusive"] = maximum
+    _write_json(packaged_path, packaged)
+
+    with pytest.raises(ReleaseError, match=message):
+        validate_packaged_model_governance(
+            repo,
+            remote_manifest_path=manifest,
+            remote_revision=MODEL_REVISION,
+        )
+
+
+@pytest.mark.release_blocker
+def test_model_governance_rejects_swapped_cohort_labels(tmp_path):
+    repo, _ = _candidate_repo(tmp_path)
+    _, manifest = _bundle(tmp_path)
+    packaged_path = repo / "facetorch/models/manifest.json"
+    compatibility_path = repo / "facetorch/models/compatibility.json"
+    packaged = json.loads(packaged_path.read_text(encoding="utf-8"))
+    compatibility = json.loads(compatibility_path.read_text(encoding="utf-8"))
+    first_artifact = packaged["models"]["detector"]["artifacts"][0]
+    second_artifact = json.loads(json.dumps(first_artifact))
+    second_artifact.update(
+        {
+            "id": "detector-torch2.11",
+            "filename": "model-torch2.11.pt2",
+            "sha256": "9" * 64,
+            "size_bytes": 456,
+            "torch_min": "2.11",
+            "torch_max_exclusive": "2.12",
+            "schema_minor": 17,
+            "validation_metadata": "model-torch2.11.pt2.meta.json",
+        }
+    )
+    packaged["models"]["detector"]["artifacts"].append(second_artifact)
+    compatibility["torch"]["supported_minor_lines"].append("2.11")
+    _write_json(packaged_path, packaged)
+    _write_json(compatibility_path, compatibility)
+
+    remote = json.loads(manifest.read_text(encoding="utf-8"))
+    second_remote = json.loads(json.dumps(remote["models"][0]))
+    second_remote.update(
+        {
+            "cohort": "2.11",
+            "artifact_filename": "model-torch2.11.pt2",
+            "artifact_sha256": "9" * 64,
+            "artifact_size_bytes": 456,
+        }
+    )
+    remote["models"].append(second_remote)
+    _write_json(manifest, remote)
+    validate_packaged_model_governance(
+        repo,
+        remote_manifest_path=manifest,
+        remote_revision=MODEL_REVISION,
+    )
+
+    remote["models"][0]["cohort"] = "2.11"
+    remote["models"][1]["cohort"] = "2.6"
+    _write_json(manifest, remote)
+    with pytest.raises(ReleaseError, match="Remote cohort record differs"):
+        validate_packaged_model_governance(
+            repo,
+            remote_manifest_path=manifest,
+            remote_revision=MODEL_REVISION,
+        )
+
+
+@pytest.mark.release_blocker
 def test_local_gpu_evidence_binds_exact_source_images_and_reports(tmp_path):
     repo, source_sha = _candidate_repo(tmp_path)
     bundle, _ = _bundle(tmp_path, repo, source_sha)
