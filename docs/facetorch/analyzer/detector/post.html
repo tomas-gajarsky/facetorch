@@ -453,7 +453,7 @@ and returns the data object.</p>
             areas = (x2 - x1 + 1) * (y2 - y1 + 1)
             order = torch.arange(dets.shape[0], device=dets.device)
 
-            zero_tensor = torch.tensor(0.0).to(self.device)
+            zero_tensor = dets.new_zeros(())
             keep = []
             while order.size()[0] &gt; 0:
                 i = order[0]
@@ -513,7 +513,7 @@ and returns the data object.</p>
 
             return _dets, _landmarks
 
-        priors = self.prior_box.forward(data.dims).to(self.device)
+        priors = self.prior_box.forward(data.dims).to(data.det.loc)
         prior_data = priors.data
         boxes = _decode(data.det.loc.data.squeeze(0), prior_data, self.variance)
         box_scale = boxes.new_tensor([data.dims.width, data.dims.height]).repeat(2)

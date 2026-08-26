@@ -56,6 +56,10 @@ el.replaceWith(d);
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class BaseDetPreProcessor(BaseProcessor):
+    # Custom preprocessors are assumed capable of mutating ``data.tensor`` and
+    # therefore retain the detector&#39;s defensive raw-image copy by default.
+    preserves_input_tensor = False
+
     @Timer(
         &#34;BaseDetPreProcessor.__init__&#34;,
         &#34;{name}: {milliseconds:.2f} ms&#34;,
@@ -119,6 +123,13 @@ All subclass should overwrite:</p>
 <ul class="hlist">
 <li><a title="facetorch.analyzer.detector.pre.DetectorPreProcessor" href="#facetorch.analyzer.detector.pre.DetectorPreProcessor">DetectorPreProcessor</a></li>
 </ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="facetorch.analyzer.detector.pre.BaseDetPreProcessor.preserves_input_tensor"><code class="name">var <span class="ident">preserves_input_tensor</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="facetorch.analyzer.detector.pre.BaseDetPreProcessor.run"><code class="name flex">
@@ -175,6 +186,10 @@ Returns a batch of preprocessed face tensors.</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class DetectorPreProcessor(BaseDetPreProcessor):
+    # This implementation only rebinds ``data.tensor``. Custom detector
+    # preprocessors remain defensive by default through the base-class flag.
+    preserves_input_tensor = True
+
     @Timer(
         &#34;DetectorPreProcessor.__init__&#34;,
         &#34;{name}: {milliseconds:.2f} ms&#34;,
@@ -246,6 +261,13 @@ Returns a batch of preprocessed face tensors.</p>
 <li><a title="facetorch.analyzer.detector.pre.BaseDetPreProcessor" href="#facetorch.analyzer.detector.pre.BaseDetPreProcessor">BaseDetPreProcessor</a></li>
 <li><a title="facetorch.base.BaseProcessor" href="../../base.html#facetorch.base.BaseProcessor">BaseProcessor</a></li>
 </ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="facetorch.analyzer.detector.pre.DetectorPreProcessor.preserves_input_tensor"><code class="name">var <span class="ident">preserves_input_tensor</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="facetorch.analyzer.detector.pre.DetectorPreProcessor.run"><code class="name flex">
@@ -372,12 +394,14 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="facetorch.analyzer.detector.pre.BaseDetPreProcessor" href="#facetorch.analyzer.detector.pre.BaseDetPreProcessor">BaseDetPreProcessor</a></code></h4>
 <ul class="">
 <li><code><a title="facetorch.analyzer.detector.pre.BaseDetPreProcessor.run" href="#facetorch.analyzer.detector.pre.BaseDetPreProcessor.run">run</a></code></li>
+<li><code><a title="facetorch.analyzer.detector.pre.BaseDetPreProcessor.preserves_input_tensor" href="#facetorch.analyzer.detector.pre.BaseDetPreProcessor.preserves_input_tensor">preserves_input_tensor</a></code></li>
 </ul>
 </li>
 <li>
 <h4><code><a title="facetorch.analyzer.detector.pre.DetectorPreProcessor" href="#facetorch.analyzer.detector.pre.DetectorPreProcessor">DetectorPreProcessor</a></code></h4>
 <ul class="">
 <li><code><a title="facetorch.analyzer.detector.pre.DetectorPreProcessor.run" href="#facetorch.analyzer.detector.pre.DetectorPreProcessor.run">run</a></code></li>
+<li><code><a title="facetorch.analyzer.detector.pre.DetectorPreProcessor.preserves_input_tensor" href="#facetorch.analyzer.detector.pre.DetectorPreProcessor.preserves_input_tensor">preserves_input_tensor</a></code></li>
 </ul>
 </li>
 </ul>

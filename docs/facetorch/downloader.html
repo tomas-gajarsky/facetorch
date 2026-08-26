@@ -129,6 +129,11 @@ el.replaceWith(d);
                     url, output=os.fspath(temporary_path), quiet=False
                 )
                 candidate = Path(downloaded) if downloaded else temporary_path
+                if not candidate.is_file():
+                    raise ArtifactIntegrityError(
+                        &#34;Google Drive download did not produce an artifact for &#34;
+                        f&#34;file_id {self.file_id!r}.&#34;
+                    )
                 _atomic_promote(candidate, target, descriptor)
         return self._activate(descriptor, target)</code></pre>
 </details>

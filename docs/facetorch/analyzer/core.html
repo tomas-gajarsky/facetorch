@@ -140,6 +140,16 @@ el.replaceWith(d);
             loader=self._load_utilizer,
             lock=self._component_lock,
         )
+        dependencies = (
+            self.cfg.utilizer_dependencies
+            if &#34;utilizer_dependencies&#34; in self.cfg
+            else None
+        )
+        self._utilizer_dependencies = self._normalize_utilizer_dependencies(
+            dependencies,
+            utilizer_names=tuple(utilizer_configs),
+            predictor_names=tuple(predictor_configs),
+        )
 
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
@@ -233,6 +243,11 @@ el.replaceWith(d);
         return tuple(registry)
 
     @property
+    def utilizer_dependencies(self) -&gt; dict[str, tuple[str, ...]]:
+        &#34;&#34;&#34;Explicit predictor requirements for configured utilizers.&#34;&#34;&#34;
+        return dict(self.__dict__.get(&#34;_utilizer_dependencies&#34;, {}))
+
+    @property
     def detector_loaded(self) -&gt; bool:
         &#34;&#34;&#34;Whether the detector wrapper and model are already cached.&#34;&#34;&#34;
         return self.__dict__.get(&#34;_detector&#34;, _UNLOADED) is not _UNLOADED
@@ -288,6 +303,60 @@ el.replaceWith(d);
                 + &#34;.&#34;
             )
         return names
+
+    @classmethod
+    def _normalize_utilizer_dependencies(
+        cls,
+        dependencies: Optional[Mapping[str, Iterable[str]]],
+        *,
+        utilizer_names: tuple[str, ...],
+        predictor_names: tuple[str, ...],
+    ) -&gt; dict[str, tuple[str, ...]]:
+        &#34;&#34;&#34;Validate the explicit utilizer-to-predictor execution graph.&#34;&#34;&#34;
+        if dependencies is None:
+            return {}
+        if not isinstance(dependencies, Mapping):
+            raise ConfigurationError(
+                &#34;utilizer_dependencies must map utilizer names to predictor names.&#34;
+            )
+
+        configured_utilizers = set(utilizer_names)
+        configured_predictors = set(predictor_names)
+        normalized = {}
+        for utilizer_name, requirements in dependencies.items():
+            if not isinstance(utilizer_name, str) or not utilizer_name:
+                raise ConfigurationError(
+                    &#34;utilizer_dependencies must use non-empty utilizer names.&#34;
+                )
+            if utilizer_name not in configured_utilizers:
+                raise ConfigurationError(
+                    f&#34;Unknown utilizer dependency target {utilizer_name!r}. &#34;
+                    &#34;Configured utilizers: &#34;
+                    + (&#34;, &#34;.join(utilizer_names) if utilizer_names else &#34;none&#34;)
+                    + &#34;.&#34;
+                )
+
+            option_name = f&#34;utilizer_dependencies[{utilizer_name!r}]&#34;
+            requirement_names = cls._normalize_predictor_selection(
+                requirements, option_name
+            )
+            if requirement_names is None:
+                raise ConfigurationError(
+                    f&#34;{option_name} must be a collection of predictor names.&#34;
+                )
+            unknown = [
+                name for name in requirement_names if name not in configured_predictors
+            ]
+            if unknown:
+                raise ConfigurationError(
+                    f&#34;{option_name} references unknown predictor name(s): &#34;
+                    + &#34;, &#34;.join(unknown)
+                    + &#34;. Configured predictors: &#34;
+                    + (&#34;, &#34;.join(predictor_names) if predictor_names else &#34;none&#34;)
+                    + &#34;.&#34;
+                )
+            normalized[utilizer_name] = requirement_names
+        return normalized
 
     def _select_predictor_names(
         self,
@@ -445,6 +514,20 @@ el.replaceWith(d);
                     [face.tensor for face in data.faces[face_indx_start:face_indx_end]]
                 )
                 preds = predictor.run(face_batch_tensor)
+                expected_count = face_indx_end - face_indx_start
+                try:
+                    prediction_count = len(preds)
+                except TypeError as exc:
+                    raise InferenceError(
+                        f&#34;Face predictor {predictor_name!r} must return one &#34;
+                        &#34;prediction per input face; its result has no length.&#34;
+                    ) from exc
+                if prediction_count != expected_count:
+                    raise InferenceError(
+                        f&#34;Face predictor {predictor_name!r} returned &#34;
+                        f&#34;{prediction_count} prediction(s) for &#34;
+                        f&#34;{expected_count} input face(s).&#34;
+                    )
                 data.add_preds(preds, predictor_name, face_indx_start)
 
             return data
@@ -454,6 +537,12 @@ el.replaceWith(d);
             include_predictors, exclude_predictors
         )
         configured_predictors = set(self.configured_predictors)
+        if skip_detector and selected_predictors and self.unifier is None:
+            raise ConfigurationError(
+                &#34;skip_detector=True with selected predictors requires a face &#34;
+                &#34;unifier. Configure analyzer.unifier or pass &#34;
+                &#34;include_predictors=[] for predictor-free processing.&#34;
+            )
 
         supplied_sources = [
             name
@@ -526,11 +615,20 @@ el.replaceWith(d);
 
         self.logger.info(f&#34;Number of faces: {n_faces}&#34;)
 
-        if n_faces &gt; 0 and self.unifier is not None:
-            self.logger.info(&#34;Unifying faces&#34;)
-            data = _run_component(&#34;Face unifier&#34;, lambda: self.unifier.run(data))
+        if n_faces &gt; 0:
+            if selected_predictors and self.unifier is None:
+                raise ConfigurationError(
+                    &#34;Detected faces cannot be sent to selected predictors without &#34;
+                    &#34;a face unifier. Configure analyzer.unifier or pass &#34;
+                    &#34;include_predictors=[] for predictor-free processing.&#34;
+                )
+
+            if self.unifier is not None:
+                self.logger.info(&#34;Unifying faces&#34;)
+                data = _run_component(&#34;Face unifier&#34;, lambda: self.unifier.run(data))
 
             self.logger.info(&#34;Predicting facial features&#34;)
+            ran_predictors = set()
             for predictor_name in selected_predictors:
                 predictor = self.predictors[predictor_name]
                 self.logger.info(f&#34;Running FacePredictor: {predictor_name}&#34;)
@@ -538,18 +636,26 @@ el.replaceWith(d);
                     f&#34;Face predictor {predictor_name!r}&#34;,
                     lambda: _predict_batch(data, predictor, predictor_name),
                 )
+                ran_predictors.add(predictor_name)
 
             self.logger.info(&#34;Utilizing facial features&#34;)
-            ran_predictors = (
-                set(data.faces[0].preds.keys()) if data.faces else set()
-            )
+            dependencies = self.__dict__.get(&#34;_utilizer_dependencies&#34;, {})
             for utilizer_name in self.utilizers:
-                if (
-                    utilizer_name in configured_predictors
-                    and utilizer_name not in ran_predictors
-                ):
+                required_predictors = set(dependencies.get(utilizer_name, ()))
+                unknown_requirements = required_predictors - configured_predictors
+                if unknown_requirements:
+                    raise ConfigurationError(
+                        f&#34;Utilizer {utilizer_name!r} requires unknown predictor(s): &#34;
+                        + &#34;, &#34;.join(sorted(unknown_requirements))
+                        + &#34;.&#34;
+                    )
+                missing_predictors = required_predictors - ran_predictors
+                if missing_predictors:
                     self.logger.info(
-                        f&#34;Skipping BaseUtilizer: {utilizer_name} (predictor not run)&#34;
+                        f&#34;Skipping BaseUtilizer: {utilizer_name} &#34;
+                        &#34;(required predictor(s) not run: &#34;
+                        + &#34;, &#34;.join(sorted(missing_predictors))
+                        + &#34;)&#34;
                     )
                     continue
                 utilizer = self.utilizers[utilizer_name]
@@ -847,6 +953,19 @@ def loaded_utilizers(self) -&gt; tuple[str, ...]:
 </details>
 <div class="desc"><p>Utilizer names whose objects are already cached.</p></div>
 </dd>
+<dt id="facetorch.analyzer.core.FaceAnalyzer.utilizer_dependencies"><code class="name">prop <span class="ident">utilizer_dependencies</span> : dict[str, tuple[str, ...]]</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def utilizer_dependencies(self) -&gt; dict[str, tuple[str, ...]]:
+    &#34;&#34;&#34;Explicit predictor requirements for configured utilizers.&#34;&#34;&#34;
+    return dict(self.__dict__.get(&#34;_utilizer_dependencies&#34;, {}))</code></pre>
+</details>
+<div class="desc"><p>Explicit predictor requirements for configured utilizers.</p></div>
+</dd>
 <dt id="facetorch.analyzer.core.FaceAnalyzer.detector_loaded"><code class="name">prop <span class="ident">detector_loaded</span> : bool</code></dt>
 <dd>
 <details class="source">
@@ -984,6 +1103,20 @@ def run(
                 [face.tensor for face in data.faces[face_indx_start:face_indx_end]]
             )
             preds = predictor.run(face_batch_tensor)
+            expected_count = face_indx_end - face_indx_start
+            try:
+                prediction_count = len(preds)
+            except TypeError as exc:
+                raise InferenceError(
+                    f&#34;Face predictor {predictor_name!r} must return one &#34;
+                    &#34;prediction per input face; its result has no length.&#34;
+                ) from exc
+            if prediction_count != expected_count:
+                raise InferenceError(
+                    f&#34;Face predictor {predictor_name!r} returned &#34;
+                    f&#34;{prediction_count} prediction(s) for &#34;
+                    f&#34;{expected_count} input face(s).&#34;
+                )
             data.add_preds(preds, predictor_name, face_indx_start)
 
         return data
@@ -993,6 +1126,12 @@ def run(
         include_predictors, exclude_predictors
     )
     configured_predictors = set(self.configured_predictors)
+    if skip_detector and selected_predictors and self.unifier is None:
+        raise ConfigurationError(
+            &#34;skip_detector=True with selected predictors requires a face &#34;
+            &#34;unifier. Configure analyzer.unifier or pass &#34;
+            &#34;include_predictors=[] for predictor-free processing.&#34;
+        )
 
     supplied_sources = [
         name
@@ -1065,11 +1204,20 @@ def run(
 
     self.logger.info(f&#34;Number of faces: {n_faces}&#34;)
 
-    if n_faces &gt; 0 and self.unifier is not None:
-        self.logger.info(&#34;Unifying faces&#34;)
-        data = _run_component(&#34;Face unifier&#34;, lambda: self.unifier.run(data))
+    if n_faces &gt; 0:
+        if selected_predictors and self.unifier is None:
+            raise ConfigurationError(
+                &#34;Detected faces cannot be sent to selected predictors without &#34;
+                &#34;a face unifier. Configure analyzer.unifier or pass &#34;
+                &#34;include_predictors=[] for predictor-free processing.&#34;
+            )
+
+        if self.unifier is not None:
+            self.logger.info(&#34;Unifying faces&#34;)
+            data = _run_component(&#34;Face unifier&#34;, lambda: self.unifier.run(data))
 
         self.logger.info(&#34;Predicting facial features&#34;)
+        ran_predictors = set()
         for predictor_name in selected_predictors:
             predictor = self.predictors[predictor_name]
             self.logger.info(f&#34;Running FacePredictor: {predictor_name}&#34;)
@@ -1077,18 +1225,26 @@ def run(
                 f&#34;Face predictor {predictor_name!r}&#34;,
                 lambda: _predict_batch(data, predictor, predictor_name),
             )
+            ran_predictors.add(predictor_name)
 
         self.logger.info(&#34;Utilizing facial features&#34;)
-        ran_predictors = (
-            set(data.faces[0].preds.keys()) if data.faces else set()
-        )
+        dependencies = self.__dict__.get(&#34;_utilizer_dependencies&#34;, {})
         for utilizer_name in self.utilizers:
-            if (
-                utilizer_name in configured_predictors
-                and utilizer_name not in ran_predictors
-            ):
+            required_predictors = set(dependencies.get(utilizer_name, ()))
+            unknown_requirements = required_predictors - configured_predictors
+            if unknown_requirements:
+                raise ConfigurationError(
+                    f&#34;Utilizer {utilizer_name!r} requires unknown predictor(s): &#34;
+                    + &#34;, &#34;.join(sorted(unknown_requirements))
+                    + &#34;.&#34;
+                )
+            missing_predictors = required_predictors - ran_predictors
+            if missing_predictors:
                 self.logger.info(
-                    f&#34;Skipping BaseUtilizer: {utilizer_name} (predictor not run)&#34;
+                    f&#34;Skipping BaseUtilizer: {utilizer_name} &#34;
+                    &#34;(required predictor(s) not run: &#34;
+                    + &#34;, &#34;.join(sorted(missing_predictors))
+                    + &#34;)&#34;
                 )
                 continue
             utilizer = self.utilizers[utilizer_name]
@@ -1276,6 +1432,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="facetorch.analyzer.core.FaceAnalyzer.utilizers" href="#facetorch.analyzer.core.FaceAnalyzer.utilizers">utilizers</a></code></li>
 <li><code><a title="facetorch.analyzer.core.FaceAnalyzer.configured_utilizers" href="#facetorch.analyzer.core.FaceAnalyzer.configured_utilizers">configured_utilizers</a></code></li>
 <li><code><a title="facetorch.analyzer.core.FaceAnalyzer.loaded_utilizers" href="#facetorch.analyzer.core.FaceAnalyzer.loaded_utilizers">loaded_utilizers</a></code></li>
+<li><code><a title="facetorch.analyzer.core.FaceAnalyzer.utilizer_dependencies" href="#facetorch.analyzer.core.FaceAnalyzer.utilizer_dependencies">utilizer_dependencies</a></code></li>
 <li><code><a title="facetorch.analyzer.core.FaceAnalyzer.detector_loaded" href="#facetorch.analyzer.core.FaceAnalyzer.detector_loaded">detector_loaded</a></code></li>
 </ul>
 </li>
