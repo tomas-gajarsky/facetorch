@@ -37,6 +37,8 @@ when the immutable v1.0.0-rc.1 tag and all publication receipts have been verifi
   task-level invariants
 * Digest-bound, review-gated model publication plans with per-model atomic Hub
   commits, resumable receipts, and manifest-last promotion
+* Publication evidence now requires finite per-case numerical proof, exact Hub
+  parent lineage on resume, and the immutable remote manifest path
 * Machine-readable compatibility and per-model governance/limitations records;
   incomplete weight rights or source-checkpoint mapping block manifest approval
 * Immutable Hub object auditor and complete local CPU/CUDA cohort-matrix verifier

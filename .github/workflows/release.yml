@@ -510,6 +510,7 @@ jobs:
         id: plan
         env:
           DRY_RUN: ${{ needs.validate-inputs.outputs.dry_run }}
+          MODEL_FILENAME: ${{ needs.validate-inputs.outputs.model_manifest_filename }}
           MODEL_REPO: ${{ needs.validate-inputs.outputs.model_manifest_repo }}
           MODEL_REVISION: ${{ needs.validate-inputs.outputs.model_manifest_revision }}
           MODEL_SHA256: ${{ needs.validate-inputs.outputs.model_manifest_sha256 }}
@@ -553,6 +554,7 @@ jobs:
             --source-sha "$SOURCE_SHA" --tag "$TAG" \
             --model-manifest-repo "$MODEL_REPO" \
             --model-manifest-revision "$MODEL_REVISION" \
+            --model-manifest-filename "$MODEL_FILENAME" \
             --model-manifest-sha256 "$MODEL_SHA256" \
             --cpu-image-digest "$(tr -d '\n' < "$RUNNER_TEMP/release-bundle/evidence/cpu-image-digest.txt")" \
             --gpu-image-digest "$(tr -d '\n' < "$RUNNER_TEMP/release-bundle/evidence/gpu-image-digest.txt")" \
