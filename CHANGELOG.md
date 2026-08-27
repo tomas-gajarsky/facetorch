@@ -89,6 +89,8 @@ when the immutable v1.0.0-rc.1 tag and all publication receipts have been verifi
 * Google Colab notebook updated to v1.0.0 (uses `image_source`, removes pinned torch versions)
 
 ### Fixed
+* Model-cache locks publish complete ownership records atomically before they
+  become visible to competing downloaders
 * URLReader charges DNS resolution against its total deadline and rejects
   multicast, site-local, and other non-unicast network targets
 * Model governance approval requires exact hosted-checkpoint digest verification
