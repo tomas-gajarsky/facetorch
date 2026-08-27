@@ -586,8 +586,10 @@ def _commit_oid(commit_info: Any) -> str:
 
 def _verify_remote_commit(api: Any, repo_id: str, revision: str) -> None:
     info = api.repo_info(repo_id=repo_id, revision=revision)
-    observed = getattr(info, "sha", None)
-    if observed is not None and str(observed).lower() != revision:
+    observed = _require_commit(
+        getattr(info, "sha", None), f"Remote revision for {repo_id}"
+    )
+    if observed != revision:
         raise PublicationError(
             f"Remote repository {repo_id} did not resolve expected commit {revision}"
         )
@@ -686,6 +688,54 @@ def _remote_file_matches(
     return observed.get("blob_id") == expected.get("git_blob_id")
 
 
+def _tree_contract_differences(
+    parent_tree: Mapping[str, Any],
+    candidate_tree: Mapping[str, Any],
+    expected_files: Mapping[str, Mapping[str, Any]],
+) -> tuple[set[str], set[str]]:
+    planned_paths = set(expected_files)
+    unplanned_changes = {
+        path
+        for path in set(parent_tree).union(candidate_tree) - planned_paths
+        if parent_tree.get(path) != candidate_tree.get(path)
+    }
+    mismatched = {
+        path
+        for path, contract in expected_files.items()
+        if path not in candidate_tree
+        or not _remote_file_matches(candidate_tree[path], contract)
+    }
+    return unplanned_changes, mismatched
+
+
+def _verify_remote_commit_contents(
+    api: Any,
+    *,
+    repo_id: str,
+    revision: str,
+    parent_revision: str,
+    expected_files: Mapping[str, Mapping[str, Any]],
+    label: str,
+) -> None:
+    """Verify that a recorded commit is the exact approved change over its parent."""
+    _verify_remote_commit(api, repo_id, revision)
+    parent_tree = _remote_tree(api, repo_id, parent_revision)
+    commit_tree = _remote_tree(api, repo_id, revision)
+    unplanned_changes, mismatched = _tree_contract_differences(
+        parent_tree, commit_tree, expected_files
+    )
+    if unplanned_changes or mismatched:
+        details = []
+        if unplanned_changes:
+            details.append(f"unplanned paths {sorted(unplanned_changes)}")
+        if mismatched:
+            details.append(f"mismatched planned paths {sorted(mismatched)}")
+        raise PublicationError(
+            f"{label} {repo_id}@{revision} does not match the approved plan: "
+            + "; ".join(details)
+        )
+
+
 def _reconcile_candidate_branch(
     api: Any,
     *,
@@ -709,18 +759,9 @@ def _reconcile_candidate_branch(
 
     parent_tree = _remote_tree(api, repo_id, parent_revision)
     candidate_tree = _remote_tree(api, repo_id, head)
-    planned_paths = set(expected_files)
-    unplanned_changes = {
-        path
-        for path in set(parent_tree).union(candidate_tree) - planned_paths
-        if parent_tree.get(path) != candidate_tree.get(path)
-    }
-    mismatched = {
-        path
-        for path, contract in expected_files.items()
-        if path not in candidate_tree
-        or not _remote_file_matches(candidate_tree[path], contract)
-    }
+    unplanned_changes, mismatched = _tree_contract_differences(
+        parent_tree, candidate_tree, expected_files
+    )
     if unplanned_changes or mismatched:
         details = []
         if unplanned_changes:
@@ -877,14 +918,7 @@ def publish_publication_plan(
 
     for group in _group_models(plan):
         key = group["model_id"]
-        completed = receipt["models"].get(key)
-        if completed is not None:
-            if not _completed_model_matches(completed, group):
-                raise PublicationError(f"Receipt bytes do not match plan for {key}")
-            _verify_remote_commit(api, group["repo_id"], completed["commit_revision"])
-            continue
-
-        operations = []
+        staged_files = []
         artifact_receipts = {}
         expected_files = {}
         for model in group["artifacts"]:
@@ -899,22 +933,30 @@ def publish_publication_plan(
                         f"Duplicate planned Hub path for {key}: {filename}"
                     )
                 expected_files[filename] = _content_contract(path)
-            operations.extend(
-                [
-                    CommitOperationAdd(
-                        path_in_repo=model["artifact_filename"],
-                        path_or_fileobj=str(artifact),
-                    ),
-                    CommitOperationAdd(
-                        path_in_repo=model["metadata_filename"],
-                        path_or_fileobj=str(metadata),
-                    ),
-                ]
-            )
+                staged_files.append((filename, path))
             artifact_receipts[model["cohort"]] = {
                 "artifact_sha256": model["artifact_sha256"],
                 "metadata_sha256": model["metadata_sha256"],
             }
+
+        completed = receipt["models"].get(key)
+        if completed is not None:
+            if not _completed_model_matches(completed, group):
+                raise PublicationError(f"Receipt bytes do not match plan for {key}")
+            _verify_remote_commit_contents(
+                api,
+                repo_id=group["repo_id"],
+                revision=completed["commit_revision"],
+                parent_revision=group["parent_revision"],
+                expected_files=expected_files,
+                label=f"Recorded model commit for {key}",
+            )
+            continue
+
+        operations = [
+            CommitOperationAdd(path_in_repo=filename, path_or_fileobj=str(path))
+            for filename, path in staged_files
+        ]
         try:
             api.create_branch(
                 repo_id=group["repo_id"],
@@ -959,19 +1001,34 @@ def publish_publication_plan(
         _write_json_atomic(receipt_path, receipt)
 
     manifest_target = plan["manifest_target"]
+    manifest = _manifest_payload(plan, receipt)
+    manifest_bytes = _canonical_json_bytes(manifest)
+    manifest_filename = f"manifests/{plan['plan_id']}.json"
+    expected_files = {manifest_filename: _content_contract(manifest_bytes)}
     existing_manifest = receipt.get("manifest")
     if isinstance(existing_manifest, dict):
+        expected_receipt = {
+            "repo_id": manifest_target["repo_id"],
+            "filename": manifest_filename,
+            "sha256": _sha256_bytes(manifest_bytes),
+        }
+        if any(
+            existing_manifest.get(key) != value
+            for key, value in expected_receipt.items()
+        ):
+            raise PublicationError("Manifest receipt bytes do not match plan")
         revision = _require_commit(
             existing_manifest.get("commit_revision"), "Manifest receipt revision"
         )
-        _verify_remote_commit(api, manifest_target["repo_id"], revision)
+        _verify_remote_commit_contents(
+            api,
+            repo_id=manifest_target["repo_id"],
+            revision=revision,
+            parent_revision=manifest_target["parent_revision"],
+            expected_files=expected_files,
+            label="Recorded manifest commit",
+        )
     else:
-        manifest = _manifest_payload(plan, receipt)
-        manifest_bytes = _canonical_json_bytes(manifest)
-        manifest_filename = f"manifests/{plan['plan_id']}.json"
-        expected_files = {
-            manifest_filename: _content_contract(manifest_bytes)
-        }
         try:
             api.create_branch(
                 repo_id=manifest_target["repo_id"],
