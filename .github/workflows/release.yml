@@ -1061,7 +1061,30 @@ jobs:
           TAG: ${{ needs.validate-inputs.outputs.tag }}
         run: |
           gh release download "$TAG" --pattern publication-receipt.json --dir "$RUNNER_TEMP"
-          current_latest_tag="$(gh release view --json tagName --jq .tagName 2>/dev/null || true)"
+          repository_name="${GITHUB_REPOSITORY#*/}"
+          gh api graphql \
+            -f query='query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { latestRelease { tagName } } }' \
+            -F owner="$GITHUB_REPOSITORY_OWNER" \
+            -F name="$repository_name" \
+            > "$RUNNER_TEMP/current-latest-release.json"
+          current_latest_tag="$(
+            jq -er '
+              if ((.errors? // []) | length) > 0 then
+                error("GitHub latest-release query returned errors")
+              elif (.data.repository | type) != "object" then
+                error("GitHub latest-release query returned no repository")
+              elif .data.repository.latestRelease == null then
+                ""
+              elif (
+                (.data.repository.latestRelease.tagName | type) == "string" and
+                (.data.repository.latestRelease.tagName | length) > 0
+              ) then
+                .data.repository.latestRelease.tagName
+              else
+                error("GitHub latest-release query returned an invalid tag")
+              end
+            ' "$RUNNER_TEMP/current-latest-release.json"
+          )"
           python scripts/release_transaction.py assert-stable-alias \
             --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
             --receipt "$RUNNER_TEMP/publication-receipt.json" \
