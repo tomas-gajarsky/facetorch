@@ -58,8 +58,9 @@ class BaseDetPreProcessor(BaseProcessor):
 
 
 class DetectorPreProcessor(BaseDetPreProcessor):
-    # This implementation only rebinds ``data.tensor``. Custom detector
-    # preprocessors remain defensive by default through the base-class flag.
+    # This implementation isolates configurable transforms from the caller's
+    # tensor. Custom preprocessors remain defensive by default through the
+    # base-class flag.
     preserves_input_tensor = True
     model_min_size = 64
     model_max_size = 2048
@@ -101,10 +102,11 @@ class DetectorPreProcessor(BaseDetPreProcessor):
         Returns:
             ImageData: ImageData object containing the preprocessed image tensor.
         """
-        if data.tensor.device != self.device:
-            data.tensor = data.tensor.to(self.device)
-
         source_h, source_w = data.tensor.shape[-2:]
+        # A configured transform may mutate its argument (for example,
+        # ``Normalize(inplace=True)``). Always give it independent storage so
+        # FaceDetector can safely restore the canonical source tensor.
+        data.tensor = data.tensor.to(device=self.device, copy=True)
         data.tensor = self.transform(data.tensor)
 
         if self.reverse_colors:

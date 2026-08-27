@@ -186,13 +186,21 @@ def test_configuration_dependency_floors_match_used_apis_and_are_smoked():
 
 @pytest.mark.release_blocker
 def test_cpu_ci_has_an_explicit_supported_torch_cohort_matrix():
-    workflow = (WORKFLOW_ROOT / "cpu-cohorts.yml").read_text(encoding="utf-8")
+    workflow_path = WORKFLOW_ROOT / "cpu-cohorts.yml"
+    workflow = workflow_path.read_text(encoding="utf-8")
     for cohort in ("2.6", "2.11"):
         assert f'torch-cohort: "{cohort}"' in workflow
         assert f"profile: environments/torch-{cohort}-cpu" in workflow
     assert 'torch-cohort: "2.3"' not in workflow
     assert "python -m pytest -q" in workflow
     assert "Path(facetorch.__file__).resolve().is_relative_to(Path.cwd())" in workflow
+
+    matrix = yaml.safe_load(workflow)["jobs"]["cpu-cohort"]["strategy"]["matrix"]
+    lanes = {
+        (lane["torch-cohort"], lane["python-version"])
+        for lane in matrix["include"]
+    }
+    assert {("2.6", "3.10"), ("2.11", "3.10"), ("2.6", "3.11")} <= lanes
 
 
 @pytest.mark.release_blocker
