@@ -1,4 +1,5 @@
 import hashlib
+import io
 import json
 import subprocess
 
@@ -27,6 +28,7 @@ from scripts.release_transaction import (
 
 SOURCE_SHA = "1" * 40
 MODEL_REVISION = "2" * 40
+MODEL_FILENAME = "manifests/approved-plan.json"
 CPU_IMAGE_DIGEST = "sha256:" + "3" * 64
 GPU_IMAGE_DIGEST = "sha256:" + "4" * 64
 
@@ -303,6 +305,17 @@ def _bundle(tmp_path, repo=None, source_sha=None):
         path.write_bytes(content)
     manifest = bundle / "evidence/model-manifest.json"
     _model_manifest(manifest)
+    _write_json(
+        bundle / "evidence/model-manifest-report.json",
+        {
+            "repo_id": "owner/facetorch-model-manifest",
+            "revision": MODEL_REVISION,
+            "filename": MODEL_FILENAME,
+            "sha256": _sha256(manifest),
+            "plan_id": "model-plan",
+            "model_cohort_count": 1,
+        },
+    )
     if repo is not None and source_sha is not None:
         _local_release_evidence(bundle, repo, source_sha)
     return bundle, manifest
@@ -319,6 +332,7 @@ def _release_plan(tmp_path, version="1.0.0", tag="v1.0.0"):
         tag=tag,
         model_manifest_repo="owner/facetorch-model-manifest",
         model_manifest_revision=MODEL_REVISION,
+        model_manifest_filename=MODEL_FILENAME,
         model_manifest_sha256=_sha256(manifest),
         cpu_image_digest=CPU_IMAGE_DIGEST,
         gpu_image_digest=GPU_IMAGE_DIGEST,
@@ -426,12 +440,65 @@ def test_model_manifest_filename_rejects_output_and_path_injection(tmp_path, fil
 
 
 @pytest.mark.release_blocker
+def test_fetched_model_manifest_preserves_its_remote_path(tmp_path):
+    source = tmp_path / "source-manifest.json"
+    _model_manifest(source)
+    payload = source.read_bytes()
+
+    report = fetch_model_manifest(
+        repo_id="owner/repository",
+        revision=MODEL_REVISION,
+        filename=MODEL_FILENAME,
+        expected_sha256=hashlib.sha256(payload).hexdigest(),
+        output_path=tmp_path / "model-manifest.json",
+        opener=lambda *_args, **_kwargs: io.BytesIO(payload),
+    )
+
+    assert report["filename"] == MODEL_FILENAME
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("filename", "manifests/other-plan.json"),
+        ("plan_id", "other-publication-plan"),
+        ("model_cohort_count", 2),
+    ],
+)
+def test_release_plan_rejects_mismatched_manifest_report(tmp_path, field, value):
+    repo, source_sha = _candidate_repo(tmp_path)
+    bundle, manifest = _bundle(tmp_path, repo, source_sha)
+    report_path = bundle / "evidence/model-manifest-report.json"
+    report = json.loads(report_path.read_text())
+    report[field] = value
+    _write_json(report_path, report)
+
+    with pytest.raises(ReleaseError, match="report disagrees"):
+        prepare_release_plan(
+            repo_root=repo,
+            bundle_root=bundle,
+            source_sha=source_sha,
+            tag="v1.0.0",
+            model_manifest_repo="owner/facetorch-model-manifest",
+            model_manifest_revision=MODEL_REVISION,
+            model_manifest_filename=MODEL_FILENAME,
+            model_manifest_sha256=_sha256(manifest),
+            cpu_image_digest=CPU_IMAGE_DIGEST,
+            gpu_image_digest=GPU_IMAGE_DIGEST,
+            output_path=bundle / "release-plan.json",
+            allow_missing_tag=True,
+        )
+
+
+@pytest.mark.release_blocker
 def test_release_plan_binds_every_artifact_and_detects_changed_bytes(tmp_path):
     plan, plan_path, bundle = _release_plan(tmp_path)
     checksums = bundle / "SHA256SUMS"
     write_checksums(bundle, checksums)
 
     assert set(plan["channel_subjects"]) == set(IMMUTABLE_CHANNELS)
+    assert plan["model_manifest"]["filename"] == MODEL_FILENAME
     assert verify_release_plan(plan_path, bundle) == plan
     verify_checksums(bundle, checksums)
 

@@ -54,9 +54,15 @@ def _stage_summary(root, cohort, model_ids=("model-a", "model-b"), devices=("cpu
                 "status": "ok",
                 "num_cases": len(devices),
                 "max_abs_tolerance": 1e-4,
+                "mean_abs_tolerance": 1e-5,
                 "cross_device_max_abs_tolerance": 2e-4,
                 "cross_device_mean_abs_tolerance": 2e-5,
                 "fixed_reference_device": "cpu",
+                "worst_case_id": "case-1",
+                "worst_device": "cpu",
+                "worst_max_abs_diff_vs_reference": 0.0,
+                "worst_mean_abs_diff_vs_reference": 0.0,
+                "failures": [],
                 "requested_devices": list(devices),
                 "golden_reference": {
                     "schema_version": 1,
@@ -71,6 +77,14 @@ def _stage_summary(root, cohort, model_ids=("model-a", "model-b"), devices=("cpu
                         "device": device,
                         "status": "ok",
                         "num_cases": 1,
+                        "worst_case_id": "case-1",
+                        "worst_max_abs_diff_vs_reference": 0.0,
+                        "worst_mean_abs_diff_vs_reference": 0.0,
+                        "reference_execution_device": "cpu",
+                        "reference_tolerance_kind": (
+                            "same_device" if device == "cpu" else "cross_device"
+                        ),
+                        "failures": [],
                         "cases": [
                             {
                                 "case_id": "case-1",
@@ -81,10 +95,30 @@ def _stage_summary(root, cohort, model_ids=("model-a", "model-b"), devices=("cpu
                                 "reference_output_sha256": reference_output_sha,
                                 "exported_output_sha256": exported_output_sha,
                                 "max_abs_diff_vs_reference": 0.0,
+                                "mean_abs_diff_vs_reference": 0.0,
+                                "numel_compared": 4,
+                                "reference_execution_device": "cpu",
+                                "reference_max_abs_tolerance": (
+                                    1e-4 if device == "cpu" else 2e-4
+                                ),
+                                "reference_mean_abs_tolerance": (
+                                    1e-5 if device == "cpu" else 2e-5
+                                ),
                             }
                         ],
                     }
                     for device in devices
+                ],
+                "cross_device": [
+                    {
+                        "baseline_device": devices[0],
+                        "device": device,
+                        "case_id": "case-1",
+                        "status": "ok",
+                        "max_abs_diff": 0.0,
+                        "mean_abs_diff": 0.0,
+                    }
+                    for device in devices[1:]
                 ],
             },
         }
@@ -100,6 +134,10 @@ def _stage_summary(root, cohort, model_ids=("model-a", "model-b"), devices=("cpu
                 "meta_sha256": _sha256(metadata),
                 "size_bytes": artifact.stat().st_size,
                 "validation_status": "ok",
+                "max_abs_tolerance": 1e-4,
+                "mean_abs_tolerance": 1e-5,
+                "worst_max_abs_diff": 0.0,
+                "worst_mean_abs_diff": 0.0,
                 "num_cases": len(devices),
                 "golden_reference": str(golden_reference),
                 "golden_reference_sha256": golden_sha,
@@ -158,6 +196,7 @@ class _FakeHubApi:
         self.verified = []
         self.branch_heads = {}
         self.trees = {}
+        self.parents = {}
 
     def create_branch(self, **kwargs):
         self.branches.append(kwargs)
@@ -186,6 +225,7 @@ class _FakeHubApi:
         digit = format(len(self.commits) + 9, "x")
         revision = digit * 40
         self.trees[(kwargs["repo_id"], revision)] = tree
+        self.parents[(kwargs["repo_id"], revision)] = kwargs["parent_commit"]
         self.branch_heads[branch_key] = revision
         return SimpleNamespace(oid=revision)
 
@@ -220,6 +260,14 @@ class _FakeHubApi:
             expand=expand,
         )
 
+    def list_repo_commits(self, *, repo_id, revision):
+        observed = self.branch_heads.get((repo_id, revision), revision)
+        commits = [SimpleNamespace(commit_id=observed)]
+        parent = self.parents.get((repo_id, observed))
+        if parent is not None:
+            commits.append(SimpleNamespace(commit_id=parent))
+        return commits
+
 
 @pytest.mark.release_blocker
 def test_plan_rejects_a_required_device_that_is_not_ok(tmp_path):
@@ -236,6 +284,99 @@ def test_plan_rejects_a_required_device_that_is_not_ok(tmp_path):
     _write_json(summary, summary_value)
 
     with pytest.raises(PublicationError, match="not ok"):
+        _prepare(tmp_path, [summary], model_ids=("model-a",))
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("max_abs_diff_vs_reference", None),
+        ("mean_abs_diff_vs_reference", float("nan")),
+        ("reference_max_abs_tolerance", float("inf")),
+        ("reference_mean_abs_tolerance", -1.0),
+    ],
+)
+def test_plan_rejects_missing_or_unsafe_case_numerical_evidence(
+    tmp_path, field, value
+):
+    summary = _stage_summary(tmp_path, "2.11", model_ids=("model-a",))
+    summary_value = json.loads(summary.read_text())
+    metadata = Path(summary_value["results"][0]["meta"])
+    metadata_value = json.loads(metadata.read_text())
+    case = metadata_value["validation"]["devices"][0]["cases"][0]
+    if value is None:
+        case.pop(field)
+    else:
+        case[field] = value
+    _write_json(metadata, metadata_value)
+    summary_value["results"][0]["meta_sha256"] = _sha256(metadata)
+    _write_json(summary, summary_value)
+
+    with pytest.raises(PublicationError, match="finite nonnegative number"):
+        _prepare(tmp_path, [summary], model_ids=("model-a",))
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("max_abs_tolerance", None),
+        ("mean_abs_tolerance", float("nan")),
+        ("cross_device_max_abs_tolerance", float("inf")),
+        ("cross_device_mean_abs_tolerance", -1.0),
+    ],
+)
+def test_plan_rejects_missing_or_unsafe_validation_tolerances(
+    tmp_path, field, value
+):
+    summary = _stage_summary(tmp_path, "2.11", model_ids=("model-a",))
+    summary_value = json.loads(summary.read_text())
+    metadata = Path(summary_value["results"][0]["meta"])
+    metadata_value = json.loads(metadata.read_text())
+    if value is None:
+        metadata_value["validation"].pop(field)
+    else:
+        metadata_value["validation"][field] = value
+    _write_json(metadata, metadata_value)
+    summary_value["results"][0]["meta_sha256"] = _sha256(metadata)
+    _write_json(summary, summary_value)
+
+    with pytest.raises(PublicationError, match="finite nonnegative number"):
+        _prepare(tmp_path, [summary], model_ids=("model-a",))
+
+
+@pytest.mark.release_blocker
+def test_plan_checks_each_case_against_its_declared_tolerance(tmp_path):
+    summary = _stage_summary(tmp_path, "2.11", model_ids=("model-a",))
+    summary_value = json.loads(summary.read_text())
+    metadata = Path(summary_value["results"][0]["meta"])
+    metadata_value = json.loads(metadata.read_text())
+    metadata_value["validation"]["devices"][0]["cases"][0][
+        "max_abs_diff_vs_reference"
+    ] = 2e-4
+    _write_json(metadata, metadata_value)
+    summary_value["results"][0]["meta_sha256"] = _sha256(metadata)
+    _write_json(summary, summary_value)
+
+    with pytest.raises(PublicationError, match="drift exceeds tolerance"):
+        _prepare(tmp_path, [summary], model_ids=("model-a",))
+
+
+@pytest.mark.release_blocker
+def test_plan_rejects_incomplete_cross_device_numerical_evidence(tmp_path):
+    summary = _stage_summary(
+        tmp_path, "2.11", model_ids=("model-a",), devices=("cpu", "cuda")
+    )
+    summary_value = json.loads(summary.read_text())
+    metadata = Path(summary_value["results"][0]["meta"])
+    metadata_value = json.loads(metadata.read_text())
+    metadata_value["validation"]["cross_device"][0].pop("mean_abs_diff")
+    _write_json(metadata, metadata_value)
+    summary_value["results"][0]["meta_sha256"] = _sha256(metadata)
+    _write_json(summary, summary_value)
+
+    with pytest.raises(PublicationError, match="finite nonnegative number"):
         _prepare(tmp_path, [summary], model_ids=("model-a",))
 
 
@@ -369,6 +510,7 @@ def test_failed_publish_is_resumable_without_early_manifest(tmp_path):
     resumed_api = _FakeHubApi()
     resumed_api.branch_heads.update(first_api.branch_heads)
     resumed_api.trees.update(first_api.trees)
+    resumed_api.parents.update(first_api.parents)
     complete = publish_publication_plan(
         plan_path=plan,
         approval_path=approval,
@@ -405,7 +547,7 @@ def test_publish_resume_rejects_model_receipt_for_unrelated_commit(tmp_path):
     ]
     _write_json(receipt_path, receipt)
 
-    with pytest.raises(PublicationError, match="Recorded model commit.*approved plan"):
+    with pytest.raises(PublicationError, match="no verifiable direct parent"):
         publish_publication_plan(
             plan_path=plan,
             approval_path=approval,
@@ -436,9 +578,42 @@ def test_publish_resume_rejects_manifest_receipt_for_unrelated_commit(tmp_path):
     ]
     _write_json(receipt_path, receipt)
 
-    with pytest.raises(
-        PublicationError, match="Recorded manifest commit.*approved plan"
-    ):
+    with pytest.raises(PublicationError, match="no verifiable direct parent"):
+        publish_publication_plan(
+            plan_path=plan,
+            approval_path=approval,
+            receipt_path=receipt_path,
+            api=api,
+        )
+
+
+@pytest.mark.release_blocker
+def test_publish_resume_rejects_exact_tree_from_unrelated_parent(tmp_path):
+    summary = _stage_summary(tmp_path, "2.11", model_ids=("model-a",))
+    plan = _prepare(tmp_path, [summary], model_ids=("model-a",))
+    approval = tmp_path / "approval.json"
+    receipt_path = tmp_path / "receipt.json"
+    _approve(plan, approval)
+    api = _FakeHubApi()
+
+    publish_publication_plan(
+        plan_path=plan,
+        approval_path=approval,
+        receipt_path=receipt_path,
+        api=api,
+    )
+    receipt = json.loads(receipt_path.read_text())
+    model_receipt = receipt["models"]["model-a"]
+    recorded = model_receipt["commit_revision"]
+    unrelated = "e" * 40
+    api.trees[("owner/model-a", unrelated)] = dict(
+        api.trees[("owner/model-a", recorded)]
+    )
+    api.parents[("owner/model-a", unrelated)] = "9" * 40
+    model_receipt["commit_revision"] = unrelated
+    _write_json(receipt_path, receipt)
+
+    with pytest.raises(PublicationError, match="not a direct child"):
         publish_publication_plan(
             plan_path=plan,
             approval_path=approval,
@@ -534,6 +709,45 @@ def test_publish_recovers_exact_model_commit_after_receipt_write_crash(
         "owner/model-b",
         "owner/facetorch-model-manifest",
     ]
+
+
+@pytest.mark.release_blocker
+def test_publish_recovery_rejects_exact_tree_from_unrelated_parent(
+    tmp_path, monkeypatch
+):
+    summary = _stage_summary(tmp_path, "2.11", model_ids=("model-a",))
+    plan = _prepare(tmp_path, [summary], model_ids=("model-a",))
+    approval = tmp_path / "approval.json"
+    receipt_path = tmp_path / "receipt.json"
+    _approve(plan, approval)
+    api = _FakeHubApi()
+    write_json_atomic = publication._write_json_atomic
+
+    def crash_after_model(path, value):
+        if path == receipt_path and value.get("models"):
+            raise OSError("deliberate receipt write crash")
+        write_json_atomic(path, value)
+
+    monkeypatch.setattr(publication, "_write_json_atomic", crash_after_model)
+    with pytest.raises(OSError, match="receipt write crash"):
+        publish_publication_plan(
+            plan_path=plan,
+            approval_path=approval,
+            receipt_path=receipt_path,
+            api=api,
+        )
+    committed = api.commits[0]
+    head = api.branch_heads[(committed["repo_id"], committed["revision"])]
+    api.parents[(committed["repo_id"], head)] = "9" * 40
+
+    monkeypatch.setattr(publication, "_write_json_atomic", write_json_atomic)
+    with pytest.raises(PublicationError, match="not a direct child"):
+        publish_publication_plan(
+            plan_path=plan,
+            approval_path=approval,
+            receipt_path=receipt_path,
+            api=api,
+        )
 
 
 @pytest.mark.release_blocker
@@ -636,11 +850,13 @@ def test_multiple_cohorts_for_one_model_are_one_repository_commit(tmp_path):
             "device": "cpu",
             "exact_export_cases": 1,
             "guaranteed_max_abs_limit": 0.0002,
+            "guaranteed_mean_abs_limit": 0.00002,
             "left_cohort": "2.6",
             "model_id": "model-a",
             "num_cases": 1,
             "right_cohort": "2.11",
             "worst_guaranteed_max_abs": 0.0,
+            "worst_guaranteed_mean_abs": 0.0,
         }
     ]
 
@@ -675,7 +891,9 @@ def test_cross_cohort_cuda_bound_uses_cross_device_tolerance(tmp_path):
 
     comparisons = {item["device"]: item for item in plan["cross_cohort_comparisons"]}
     assert comparisons["cpu"]["guaranteed_max_abs_limit"] == 2e-4
+    assert comparisons["cpu"]["guaranteed_mean_abs_limit"] == 2e-5
     assert comparisons["cuda"]["guaranteed_max_abs_limit"] == 4e-4
+    assert comparisons["cuda"]["guaranteed_mean_abs_limit"] == 4e-5
 
 
 @pytest.mark.release_blocker

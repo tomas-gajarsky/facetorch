@@ -99,11 +99,14 @@ PYTHONPATH=. python scripts/model_cohort_publication.py prepare \
 ```
 
 Preparation re-verifies every artifact, metadata file, golden-reference bundle,
-size, digest, model, cohort, case count, and device status. The canonical plan ID
-determines a unique candidate branch. For repeated model/device/case identities
-across cohorts, it also requires the same immutable reference-output fingerprint
-and records either exact exported agreement or the mathematically guaranteed drift
-bound through that reference.
+size, digest, model, cohort, case count, and device status. Every tolerance and
+comparison statistic must be present, finite, and nonnegative; each same-device
+and cross-device case is checked independently against its declared maximum and
+mean limits. The canonical plan ID determines a unique candidate branch. For
+repeated model/device/case identities across cohorts, preparation also requires
+the same immutable reference-output fingerprint and records either exact exported
+agreement or mathematically guaranteed maximum and mean drift bounds through that
+reference.
 Re-running preparation over unchanged inputs produces identical plan bytes.
 
 ## 3. Review and approve
@@ -136,8 +139,9 @@ All cohorts for one model and their metadata are one repository commit on the
 plan-specific candidate branch. The receipt is atomically updated after each
 successful model. If a later upload fails, no manifest is created; rerun the same
 command with the same plan, approval, and receipt. Completed immutable commits are
-verified and skipped. A mismatched receipt, remote commit, local byte, or parent
-revision stops publication.
+verified and skipped only when their exact trees match and commit history proves
+they are direct children of the approved parent. A mismatched receipt, remote
+commit, local byte, or parent revision stops publication.
 
 Only after every model commit succeeds is a candidate manifest committed to the
 separate manifest repository. The receipt records its immutable revision. This tool

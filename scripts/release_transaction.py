@@ -266,11 +266,28 @@ def _safe_relative_file(root: Path, relative: str) -> Path:
     return resolved
 
 
+def _validated_manifest_filename(value: Any) -> str:
+    filename = str(value)
+    remote_path = PurePosixPath(filename)
+    if (
+        len(filename) > 512
+        or remote_path.is_absolute()
+        or not remote_path.parts
+        or any(
+            re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", part) is None
+            for part in filename.split("/")
+        )
+    ):
+        raise ReleaseError("Model manifest filename must be a safe relative path")
+    return filename
+
+
 def validate_model_manifest(
     path: Path,
     *,
     repo_id: str,
     revision: str,
+    remote_filename: str,
     expected_sha256: str,
 ) -> dict[str, Any]:
     """Validate the immutable manifest identity and its complete artifact list."""
@@ -278,6 +295,7 @@ def validate_model_manifest(
     if _REPO_ID_RE.fullmatch(repo_id) is None:
         raise ReleaseError("Model manifest repository must be OWNER/REPOSITORY")
     commit = _require_sha(revision, "Model manifest revision")
+    filename = _validated_manifest_filename(remote_filename)
     expected = _require_sha256(expected_sha256, "Model manifest digest")
     observed = sha256_file(path)
     if observed != expected:
@@ -310,7 +328,7 @@ def validate_model_manifest(
     return {
         "repo_id": repo_id,
         "revision": commit,
-        "filename": path.name,
+        "filename": filename,
         "sha256": observed,
         "plan_id": manifest.get("plan_id"),
         "model_cohort_count": len(models),
@@ -777,18 +795,8 @@ def fetch_model_manifest(
         raise ReleaseError("Model manifest repository must be OWNER/REPOSITORY")
     commit = _require_sha(revision, "Model manifest revision")
     expected = _require_sha256(expected_sha256, "Model manifest digest")
-    filename_value = str(filename)
+    filename_value = _validated_manifest_filename(filename)
     remote_path = PurePosixPath(filename_value)
-    if (
-        len(filename_value) > 512
-        or remote_path.is_absolute()
-        or not remote_path.parts
-        or any(
-            re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", part) is None
-            for part in filename_value.split("/")
-        )
-    ):
-        raise ReleaseError("Model manifest filename must be a safe relative path")
     encoded = "/".join(quote(part, safe="") for part in remote_path.parts)
     url = f"https://huggingface.co/{repo_id}/resolve/{commit}/{encoded}"
     try:
@@ -805,6 +813,7 @@ def fetch_model_manifest(
         output_path,
         repo_id=repo_id,
         revision=commit,
+        remote_filename=filename_value,
         expected_sha256=expected,
     )
 
@@ -846,6 +855,7 @@ def _validate_bundle_layout(records: Sequence[Mapping[str, Any]]) -> None:
         "images/facetorch-cpu.tar.zst",
         "images/facetorch-gpu.tar.zst",
         "evidence/model-manifest.json",
+        "evidence/model-manifest-report.json",
         "evidence/release-inputs.json",
     }
     missing = sorted(required - paths)
@@ -864,6 +874,7 @@ def prepare_release_plan(
     tag: str,
     model_manifest_repo: str,
     model_manifest_revision: str,
+    model_manifest_filename: str,
     model_manifest_sha256: str,
     cpu_image_digest: str,
     gpu_image_digest: str,
@@ -886,12 +897,19 @@ def prepare_release_plan(
     records = _artifact_records(root, excluded)
     _validate_bundle_layout(records)
     manifest_path = _safe_relative_file(root, "evidence/model-manifest.json")
+    manifest_report_path = _safe_relative_file(
+        root, "evidence/model-manifest-report.json"
+    )
+    manifest_report = _read_json(manifest_report_path)
     manifest = validate_model_manifest(
         manifest_path,
         repo_id=model_manifest_repo,
         revision=model_manifest_revision,
+        remote_filename=model_manifest_filename,
         expected_sha256=model_manifest_sha256,
     )
+    if manifest_report != manifest:
+        raise ReleaseError("Fetched model manifest report disagrees with release inputs")
     validate_packaged_model_governance(
         repo_root,
         remote_manifest_path=manifest_path,
@@ -1017,8 +1035,22 @@ def verify_release_plan(plan_path: Path, bundle_root: Path) -> dict[str, Any]:
     if not isinstance(manifest, dict) or manifest.get("sha256") != subjects["model-manifest"]:
         raise ReleaseError("Model manifest subject does not match the release plan")
     manifest_path = _safe_relative_file(bundle_root.resolve(), "evidence/model-manifest.json")
-    if sha256_file(manifest_path) != subjects["model-manifest"]:
-        raise ReleaseError("Model manifest bytes changed after planning")
+    validated_manifest = validate_model_manifest(
+        manifest_path,
+        repo_id=str(manifest.get("repo_id", "")),
+        revision=str(manifest.get("revision", "")),
+        remote_filename=str(manifest.get("filename", "")),
+        expected_sha256=str(manifest.get("sha256", "")),
+    )
+    if validated_manifest != manifest:
+        raise ReleaseError("Model manifest identity changed after planning")
+    manifest_report = _read_json(
+        _safe_relative_file(
+            bundle_root.resolve(), "evidence/model-manifest-report.json"
+        )
+    )
+    if manifest_report != manifest:
+        raise ReleaseError("Fetched model manifest report changed after planning")
     local_gpu = plan.get("local_gpu_evidence")
     if (
         not isinstance(local_gpu, dict)
@@ -1525,6 +1557,7 @@ def _parse_args() -> argparse.Namespace:
     prepare.add_argument("--tag", required=True)
     prepare.add_argument("--model-manifest-repo", required=True)
     prepare.add_argument("--model-manifest-revision", required=True)
+    prepare.add_argument("--model-manifest-filename", required=True)
     prepare.add_argument("--model-manifest-sha256", required=True)
     prepare.add_argument("--cpu-image-digest", required=True)
     prepare.add_argument("--gpu-image-digest", required=True)
@@ -1611,6 +1644,7 @@ def main() -> int:
             tag=args.tag,
             model_manifest_repo=args.model_manifest_repo,
             model_manifest_revision=args.model_manifest_revision,
+            model_manifest_filename=args.model_manifest_filename,
             model_manifest_sha256=args.model_manifest_sha256,
             cpu_image_digest=args.cpu_image_digest,
             gpu_image_digest=args.gpu_image_digest,

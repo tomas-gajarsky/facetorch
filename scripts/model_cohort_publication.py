@@ -15,13 +15,14 @@ import argparse
 import hashlib
 import itertools
 import json
+import math
 import os
 import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Sequence
 
-PLAN_SCHEMA_VERSION = 2
+PLAN_SCHEMA_VERSION = 3
 APPROVAL_SCHEMA_VERSION = 1
 RECEIPT_SCHEMA_VERSION = 1
 _COMMIT_PATTERN = re.compile(r"[0-9a-f]{40}")
@@ -78,6 +79,25 @@ def _require_commit(value: Any, label: str) -> str:
     if _COMMIT_PATTERN.fullmatch(revision) is None:
         raise PublicationError(f"{label} must be an immutable 40-character commit")
     return revision
+
+
+def _require_finite_nonnegative(
+    value: Any, label: str
+) -> float:
+    """Return one JSON number after rejecting omissions and unsafe values."""
+
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise PublicationError(f"{label} must be a finite nonnegative number")
+    number = float(value)
+    if not math.isfinite(number) or number < 0:
+        raise PublicationError(f"{label} must be a finite nonnegative number")
+    return number
+
+
+def _require_positive_integer(value: Any, label: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise PublicationError(f"{label} must be a positive integer")
+    return value
 
 
 def _cohort_key(value: Any):
@@ -162,22 +182,38 @@ def _validated_model_record(
     validation = metadata_value.get("validation")
     if not isinstance(validation, dict) or validation.get("status") != "ok":
         raise PublicationError(f"Metadata validation is not ok for {model_id}")
+    requested_value = validation.get(
+        "requested_devices", summary.get("validate_devices", [])
+    )
+    if not isinstance(requested_value, list):
+        raise PublicationError(f"Validation device matrix is invalid for {model_id}")
     requested_devices = [
-        str(device).strip().lower()
-        for device in validation.get(
-            "requested_devices", summary.get("validate_devices", [])
-        )
+        str(device).strip().lower() for device in requested_value
     ]
-    device_results = validation.get("devices", [])
-    device_status = {
-        str(item.get("device", "")).strip().lower(): item.get("status")
-        for item in device_results
-        if isinstance(item, dict)
-    }
-    if not requested_devices or set(device_status) != set(requested_devices):
+    if (
+        not requested_devices
+        or any(not device for device in requested_devices)
+        or len(set(requested_devices)) != len(requested_devices)
+    ):
+        raise PublicationError(f"Validation device matrix is invalid for {model_id}")
+
+    device_results = validation.get("devices")
+    if not isinstance(device_results, list):
+        raise PublicationError(f"Validation device matrix is invalid for {model_id}")
+    devices_by_name: Dict[str, Mapping[str, Any]] = {}
+    for device in device_results:
+        if not isinstance(device, dict):
+            raise PublicationError(f"Validation device matrix is invalid for {model_id}")
+        device_name = str(device.get("device", "")).strip().lower()
+        if not device_name or device_name in devices_by_name:
+            raise PublicationError(f"Validation device matrix is invalid for {model_id}")
+        devices_by_name[device_name] = device
+    if set(devices_by_name) != set(requested_devices):
         raise PublicationError(f"Validation device matrix is incomplete for {model_id}")
     non_ok = [
-        device for device in requested_devices if device_status.get(device) != "ok"
+        device
+        for device in requested_devices
+        if devices_by_name[device].get("status") != "ok"
     ]
     if non_ok:
         raise PublicationError(
@@ -210,17 +246,73 @@ def _validated_model_record(
     if not reference_device or reference_device not in requested_devices:
         raise PublicationError(f"Golden reference device is invalid for {model_id}")
 
+    max_abs_tolerance = _require_finite_nonnegative(
+        validation.get("max_abs_tolerance"),
+        f"Same-device maximum tolerance for {model_id}",
+    )
+    mean_abs_tolerance = _require_finite_nonnegative(
+        validation.get("mean_abs_tolerance"),
+        f"Same-device mean tolerance for {model_id}",
+    )
+    cross_device_max_abs_tolerance = _require_finite_nonnegative(
+        validation.get("cross_device_max_abs_tolerance"),
+        f"Cross-device maximum tolerance for {model_id}",
+    )
+    cross_device_mean_abs_tolerance = _require_finite_nonnegative(
+        validation.get("cross_device_mean_abs_tolerance"),
+        f"Cross-device mean tolerance for {model_id}",
+    )
+    validation_failures = validation.get("failures")
+    if not isinstance(validation_failures, list) or validation_failures:
+        raise PublicationError(f"Validation failures are inconsistent for {model_id}")
+
     validation_cases: Dict[str, Dict[str, Any]] = {}
-    for device in device_results:
-        if not isinstance(device, dict) or device.get("status") != "ok":
-            continue
-        device_name = str(device.get("device", "")).strip().lower()
-        cases = device.get("cases", [])
+    total_cases = 0
+    global_worst: Optional[tuple[str, str, float, float]] = None
+    for device_name in requested_devices:
+        device = devices_by_name[device_name]
+        cases = device.get("cases")
         if not isinstance(cases, list) or not cases:
             raise PublicationError(
                 f"Validation cases are missing for {model_id} on {device_name}"
             )
-        fingerprints = {}
+        if device.get("failures") != []:
+            raise PublicationError(
+                f"Validation failures are inconsistent for {model_id} on {device_name}"
+            )
+        if _require_positive_integer(
+            device.get("num_cases"),
+            f"Validation case count for {model_id} on {device_name}",
+        ) != len(cases):
+            raise PublicationError(
+                f"Validation case count disagrees for {model_id} on {device_name}"
+            )
+
+        use_cross_device_tolerance = device_name != reference_device
+        expected_max_tolerance = (
+            cross_device_max_abs_tolerance
+            if use_cross_device_tolerance
+            else max_abs_tolerance
+        )
+        expected_mean_tolerance = (
+            cross_device_mean_abs_tolerance
+            if use_cross_device_tolerance
+            else mean_abs_tolerance
+        )
+        expected_tolerance_kind = (
+            "cross_device" if use_cross_device_tolerance else "same_device"
+        )
+        if (
+            str(device.get("reference_execution_device", "")).strip().lower()
+            != reference_device
+            or device.get("reference_tolerance_kind") != expected_tolerance_kind
+        ):
+            raise PublicationError(
+                f"Reference execution contract disagrees for {model_id} on {device_name}"
+            )
+
+        fingerprints: Dict[str, Dict[str, Any]] = {}
+        device_worst: Optional[tuple[str, float, float]] = None
         for case in cases:
             if not isinstance(case, dict) or case.get("status") != "ok":
                 raise PublicationError(
@@ -243,15 +335,158 @@ def _validated_model_record(
                 raise PublicationError(
                     f"Validation case {case_id} is duplicated for {model_id}"
                 )
+            max_abs_diff = _require_finite_nonnegative(
+                case.get("max_abs_diff_vs_reference"),
+                f"Maximum comparison statistic for {model_id}/{device_name}/{case_id}",
+            )
+            mean_abs_diff = _require_finite_nonnegative(
+                case.get("mean_abs_diff_vs_reference"),
+                f"Mean comparison statistic for {model_id}/{device_name}/{case_id}",
+            )
+            declared_max_tolerance = _require_finite_nonnegative(
+                case.get("reference_max_abs_tolerance"),
+                f"Declared maximum tolerance for {model_id}/{device_name}/{case_id}",
+            )
+            declared_mean_tolerance = _require_finite_nonnegative(
+                case.get("reference_mean_abs_tolerance"),
+                f"Declared mean tolerance for {model_id}/{device_name}/{case_id}",
+            )
+            if (
+                declared_max_tolerance != expected_max_tolerance
+                or declared_mean_tolerance != expected_mean_tolerance
+                or str(case.get("reference_execution_device", "")).strip().lower()
+                != reference_device
+            ):
+                raise PublicationError(
+                    f"Validation tolerance contract disagrees for "
+                    f"{model_id}/{device_name}/{case_id}"
+                )
+            _require_positive_integer(
+                case.get("numel_compared"),
+                f"Compared element count for {model_id}/{device_name}/{case_id}",
+            )
+            if (
+                max_abs_diff > declared_max_tolerance
+                or mean_abs_diff > declared_mean_tolerance
+            ):
+                raise PublicationError(
+                    f"Validation drift exceeds tolerance for "
+                    f"{model_id}/{device_name}/{case_id}"
+                )
             fingerprints[case_id] = {
                 "input_sha256": input_sha,
                 "reference_output_sha256": reference_sha,
                 "exported_output_sha256": exported_sha,
-                "max_abs_diff_vs_reference": float(
-                    case.get("max_abs_diff_vs_reference", 0.0)
-                ),
+                "max_abs_diff_vs_reference": max_abs_diff,
+                "mean_abs_diff_vs_reference": mean_abs_diff,
             }
+            if device_worst is None or max_abs_diff > device_worst[1]:
+                device_worst = (case_id, max_abs_diff, mean_abs_diff)
+            if global_worst is None or max_abs_diff > global_worst[2]:
+                global_worst = (device_name, case_id, max_abs_diff, mean_abs_diff)
+
+        assert device_worst is not None
+        reported_device_worst = (
+            str(device.get("worst_case_id", "")),
+            _require_finite_nonnegative(
+                device.get("worst_max_abs_diff_vs_reference"),
+                f"Device maximum comparison statistic for {model_id}/{device_name}",
+            ),
+            _require_finite_nonnegative(
+                device.get("worst_mean_abs_diff_vs_reference"),
+                f"Device mean comparison statistic for {model_id}/{device_name}",
+            ),
+        )
+        if reported_device_worst != device_worst:
+            raise PublicationError(
+                f"Device worst-case evidence disagrees for {model_id} on {device_name}"
+            )
         validation_cases[device_name] = fingerprints
+        total_cases += len(fingerprints)
+
+    case_matrix = {frozenset(cases) for cases in validation_cases.values()}
+    if len(case_matrix) != 1:
+        raise PublicationError(f"Validation case matrix differs by device for {model_id}")
+    unique_case_count = len(next(iter(case_matrix)))
+    if int(golden_metadata.get("case_count", 0)) != unique_case_count:
+        raise PublicationError(f"Golden reference case count disagrees for {model_id}")
+    if (
+        _require_positive_integer(
+            validation.get("num_cases"), f"Validation total case count for {model_id}"
+        )
+        != total_cases
+        or _require_positive_integer(
+            result.get("num_cases"), f"Staging total case count for {model_id}"
+        )
+        != total_cases
+    ):
+        raise PublicationError(f"Validation total case count disagrees for {model_id}")
+
+    assert global_worst is not None
+    reported_global_worst = (
+        str(validation.get("worst_device", "")).strip().lower(),
+        str(validation.get("worst_case_id", "")),
+        _require_finite_nonnegative(
+            validation.get("worst_max_abs_diff_vs_reference"),
+            f"Global maximum comparison statistic for {model_id}",
+        ),
+        _require_finite_nonnegative(
+            validation.get("worst_mean_abs_diff_vs_reference"),
+            f"Global mean comparison statistic for {model_id}",
+        ),
+    )
+    if reported_global_worst != global_worst:
+        raise PublicationError(f"Global worst-case evidence disagrees for {model_id}")
+    summary_numeric_contract = {
+        "max_abs_tolerance": max_abs_tolerance,
+        "mean_abs_tolerance": mean_abs_tolerance,
+        "worst_max_abs_diff": global_worst[2],
+        "worst_mean_abs_diff": global_worst[3],
+    }
+    for key, expected_value in summary_numeric_contract.items():
+        if _require_finite_nonnegative(
+            result.get(key), f"Staging {key} for {model_id}"
+        ) != expected_value:
+            raise PublicationError(f"Staging numerical evidence disagrees for {model_id}")
+
+    baseline_device = requested_devices[0]
+    cross_device_results = validation.get("cross_device")
+    if not isinstance(cross_device_results, list):
+        raise PublicationError(f"Cross-device evidence is invalid for {model_id}")
+    expected_cross_device_cases = {
+        (baseline_device, device_name, case_id)
+        for device_name in requested_devices[1:]
+        for case_id in validation_cases[baseline_device]
+    }
+    observed_cross_device_cases = set()
+    for comparison in cross_device_results:
+        if not isinstance(comparison, dict) or comparison.get("status") != "ok":
+            raise PublicationError(f"Cross-device evidence is invalid for {model_id}")
+        identity = (
+            str(comparison.get("baseline_device", "")).strip().lower(),
+            str(comparison.get("device", "")).strip().lower(),
+            str(comparison.get("case_id", "")),
+        )
+        if identity in observed_cross_device_cases:
+            raise PublicationError(f"Cross-device evidence is duplicated for {model_id}")
+        max_abs_diff = _require_finite_nonnegative(
+            comparison.get("max_abs_diff"),
+            f"Cross-device maximum comparison statistic for {model_id}/{identity[2]}",
+        )
+        mean_abs_diff = _require_finite_nonnegative(
+            comparison.get("mean_abs_diff"),
+            f"Cross-device mean comparison statistic for {model_id}/{identity[2]}",
+        )
+        if (
+            max_abs_diff > cross_device_max_abs_tolerance
+            or mean_abs_diff > cross_device_mean_abs_tolerance
+        ):
+            raise PublicationError(
+                f"Cross-device drift exceeds tolerance for {model_id}/{identity[2]}"
+            )
+        observed_cross_device_cases.add(identity)
+    if observed_cross_device_cases != expected_cross_device_cases:
+        raise PublicationError(f"Cross-device evidence is incomplete for {model_id}")
 
     return {
         "model_id": model_id,
@@ -272,14 +507,11 @@ def _validated_model_record(
         "golden_reference_status": str(golden_metadata["status"]),
         "reference_device": reference_device,
         "required_devices": requested_devices,
-        "num_validation_cases": int(result["num_cases"]),
-        "max_abs_tolerance": float(validation.get("max_abs_tolerance", 0.0)),
-        "cross_device_max_abs_tolerance": float(
-            validation.get("cross_device_max_abs_tolerance", 0.0)
-        ),
-        "cross_device_mean_abs_tolerance": float(
-            validation.get("cross_device_mean_abs_tolerance", 0.0)
-        ),
+        "num_validation_cases": total_cases,
+        "max_abs_tolerance": max_abs_tolerance,
+        "mean_abs_tolerance": mean_abs_tolerance,
+        "cross_device_max_abs_tolerance": cross_device_max_abs_tolerance,
+        "cross_device_mean_abs_tolerance": cross_device_mean_abs_tolerance,
         "validation_cases": validation_cases,
     }
 
@@ -316,7 +548,9 @@ def _cross_cohort_comparisons(records: Sequence[Mapping[str, Any]]):
                     )
                 exact_exports = 0
                 worst_guaranteed_max_abs = 0.0
+                worst_guaranteed_mean_abs = 0.0
                 guaranteed_max_abs_limit = None
+                guaranteed_mean_abs_limit = None
                 for case_id in sorted(left_cases):
                     left_case = left_cases[case_id]
                     right_case = right_cases[case_id]
@@ -343,6 +577,10 @@ def _cross_cohort_comparisons(records: Sequence[Mapping[str, Any]]):
                         left_case["max_abs_diff_vs_reference"]
                         + right_case["max_abs_diff_vs_reference"]
                     )
+                    guaranteed_mean = (
+                        left_case["mean_abs_diff_vs_reference"]
+                        + right_case["mean_abs_diff_vs_reference"]
+                    )
                     left_limit = (
                         left["max_abs_tolerance"]
                         if device == left["reference_device"]
@@ -353,8 +591,19 @@ def _cross_cohort_comparisons(records: Sequence[Mapping[str, Any]]):
                         if device == right["reference_device"]
                         else right["cross_device_max_abs_tolerance"]
                     )
+                    left_mean_limit = (
+                        left["mean_abs_tolerance"]
+                        if device == left["reference_device"]
+                        else left["cross_device_mean_abs_tolerance"]
+                    )
+                    right_mean_limit = (
+                        right["mean_abs_tolerance"]
+                        if device == right["reference_device"]
+                        else right["cross_device_mean_abs_tolerance"]
+                    )
                     allowed = left_limit + right_limit
-                    if guaranteed > allowed:
+                    allowed_mean = left_mean_limit + right_mean_limit
+                    if guaranteed > allowed or guaranteed_mean > allowed_mean:
                         raise PublicationError(
                             "Cross-cohort drift exceeds the combined tolerance for "
                             f"{model_id}/{device}/{case_id}"
@@ -365,6 +614,12 @@ def _cross_cohort_comparisons(records: Sequence[Mapping[str, Any]]):
                     ):
                         worst_guaranteed_max_abs = guaranteed
                         guaranteed_max_abs_limit = allowed
+                    if (
+                        guaranteed_mean_abs_limit is None
+                        or guaranteed_mean > worst_guaranteed_mean_abs
+                    ):
+                        worst_guaranteed_mean_abs = guaranteed_mean
+                        guaranteed_mean_abs_limit = allowed_mean
                 comparisons.append(
                     {
                         "model_id": model_id,
@@ -375,6 +630,8 @@ def _cross_cohort_comparisons(records: Sequence[Mapping[str, Any]]):
                         "exact_export_cases": exact_exports,
                         "worst_guaranteed_max_abs": worst_guaranteed_max_abs,
                         "guaranteed_max_abs_limit": guaranteed_max_abs_limit,
+                        "worst_guaranteed_mean_abs": worst_guaranteed_mean_abs,
+                        "guaranteed_mean_abs_limit": guaranteed_mean_abs_limit,
                     }
                 )
     return comparisons
@@ -595,6 +852,42 @@ def _verify_remote_commit(api: Any, repo_id: str, revision: str) -> None:
         )
 
 
+def _verify_direct_parent(
+    api: Any,
+    *,
+    repo_id: str,
+    revision: str,
+    parent_revision: str,
+    label: str,
+) -> None:
+    """Require ``revision`` to be the direct child of the approved parent."""
+
+    list_repo_commits = getattr(api, "list_repo_commits", None)
+    if not callable(list_repo_commits):
+        raise PublicationError(
+            "Installed huggingface_hub cannot inspect repository commit history"
+        )
+    try:
+        commits = list_repo_commits(repo_id=repo_id, revision=revision)
+        if not isinstance(commits, list) or len(commits) < 2:
+            raise PublicationError(
+                f"{label} {repo_id}@{revision} has no verifiable direct parent"
+            )
+        observed_revision = _commit_oid(commits[0])
+        observed_parent = _commit_oid(commits[1])
+    except PublicationError:
+        raise
+    except Exception as exc:
+        raise PublicationError(
+            f"Cannot inspect commit history for {label} {repo_id}@{revision}"
+        ) from exc
+    if observed_revision != revision or observed_parent != parent_revision:
+        raise PublicationError(
+            f"{label} {repo_id}@{revision} is not a direct child of approved "
+            f"parent {parent_revision}"
+        )
+
+
 def _content_contract(value: Path | bytes) -> Dict[str, Any]:
     """Describe bytes using both Hub storage digest schemes."""
     if isinstance(value, Path):
@@ -719,6 +1012,13 @@ def _verify_remote_commit_contents(
 ) -> None:
     """Verify that a recorded commit is the exact approved change over its parent."""
     _verify_remote_commit(api, repo_id, revision)
+    _verify_direct_parent(
+        api,
+        repo_id=repo_id,
+        revision=revision,
+        parent_revision=parent_revision,
+        label=label,
+    )
     parent_tree = _remote_tree(api, repo_id, parent_revision)
     commit_tree = _remote_tree(api, repo_id, revision)
     unplanned_changes, mismatched = _tree_contract_differences(
@@ -756,6 +1056,14 @@ def _reconcile_candidate_branch(
     )
     if head == parent_revision:
         return None
+
+    _verify_direct_parent(
+        api,
+        repo_id=repo_id,
+        revision=head,
+        parent_revision=parent_revision,
+        label="Candidate branch commit",
+    )
 
     parent_tree = _remote_tree(api, repo_id, parent_revision)
     candidate_tree = _remote_tree(api, repo_id, head)
