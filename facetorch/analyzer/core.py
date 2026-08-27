@@ -674,6 +674,7 @@ class FaceAnalyzer(object):
 
         self.logger.info(f"Number of faces: {n_faces}")
 
+        ran_predictors = set()
         if n_faces > 0:
             if selected_predictors and self.unifier is None:
                 raise ConfigurationError(
@@ -687,7 +688,6 @@ class FaceAnalyzer(object):
                 data = _run_component("Face unifier", lambda: self.unifier.run(data))
 
             self.logger.info("Predicting facial features")
-            ran_predictors = set()
             for predictor_name in selected_predictors:
                 self.logger.info(f"Running FacePredictor: {predictor_name}")
                 data = _run_component(
@@ -700,38 +700,37 @@ class FaceAnalyzer(object):
                 )
                 ran_predictors.add(predictor_name)
 
-            self.logger.info("Utilizing facial features")
-            dependencies = self.__dict__.get("_utilizer_dependencies", {})
-            for utilizer_name in self.utilizers:
-                required_predictors = set(dependencies.get(utilizer_name, ()))
-                unknown_requirements = required_predictors - configured_predictors
-                if unknown_requirements:
-                    raise ConfigurationError(
-                        f"Utilizer {utilizer_name!r} requires unknown predictor(s): "
-                        + ", ".join(sorted(unknown_requirements))
-                        + "."
-                    )
-                missing_predictors = required_predictors - ran_predictors
-                if missing_predictors:
-                    self.logger.info(
-                        f"Skipping BaseUtilizer: {utilizer_name} "
-                        "(required predictor(s) not run: "
-                        + ", ".join(sorted(missing_predictors))
-                        + ")"
-                    )
-                    continue
-                self.logger.info(f"Running BaseUtilizer: {utilizer_name}")
-                data = _run_component(
-                    f"Face utilizer {utilizer_name!r}",
-                    lambda utilizer_name=utilizer_name: self.utilizers[
-                        utilizer_name
-                    ].run(data),
-                )
+            utilizer_names = tuple(self.utilizers)
         else:
-            if "save" in self.utilizers:
-                _run_component(
-                    "Face utilizer 'save'", lambda: self.utilizers["save"].run(data)
+            utilizer_names = ("save",) if "save" in self.utilizers else ()
+
+        self.logger.info("Utilizing facial features")
+        dependencies = self.__dict__.get("_utilizer_dependencies", {})
+        for utilizer_name in utilizer_names:
+            required_predictors = set(dependencies.get(utilizer_name, ()))
+            unknown_requirements = required_predictors - configured_predictors
+            if unknown_requirements:
+                raise ConfigurationError(
+                    f"Utilizer {utilizer_name!r} requires unknown predictor(s): "
+                    + ", ".join(sorted(unknown_requirements))
+                    + "."
                 )
+            missing_predictors = required_predictors - ran_predictors
+            if missing_predictors:
+                self.logger.info(
+                    f"Skipping BaseUtilizer: {utilizer_name} "
+                    "(required predictor(s) not run: "
+                    + ", ".join(sorted(missing_predictors))
+                    + ")"
+                )
+                continue
+            self.logger.info(f"Running BaseUtilizer: {utilizer_name}")
+            data = _run_component(
+                f"Face utilizer {utilizer_name!r}",
+                lambda utilizer_name=utilizer_name: self.utilizers[
+                    utilizer_name
+                ].run(data),
+            )
 
         if not include_tensors:
             self.logger.debug(
