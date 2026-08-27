@@ -92,8 +92,11 @@ when the immutable v1.0.0-rc.1 tag and all publication receipts have been verifi
 * Analyzer execution now fails clearly when selected predictors have no unifier,
   validates one prediction per input face, and uses explicit utilizer dependencies
   instead of component-name coupling or first-face inference state
-* The shipped detector preprocessor preserves the raw tensor without a full-image
-  clone, while custom preprocessors retain defensive copying by default
+* The shipped detector preprocessor isolates caller-configurable transforms from
+  the canonical raw tensor, including transforms configured for in-place mutation;
+  custom preprocessors retain defensive copying by default
+* Python 3.11 now runs the full source suite on the lowest supported Torch cohort,
+  in addition to the existing Python 3.10 cohort and Python 3.12 container suites
 * RetinaFace postprocessing creates priors and NMS temporaries on the incoming
   inference tensor device rather than relying on potentially stale configured state
 * Google Drive failures that produce no file now raise an actionable

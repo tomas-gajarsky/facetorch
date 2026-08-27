@@ -616,7 +616,7 @@ def test_detector_restores_raw_tensor_and_clamps_public_geometry():
     assert result.det.landmarks[0].tolist() == [0.0, 0.0, 9.0, 8.0]
 
 
-def test_detector_reuses_raw_tensor_for_declared_out_of_place_preprocessor():
+def test_detector_preserves_raw_tensor_for_configurable_in_place_preprocessor():
     class EmptyPostprocessor:
         def run(self, data, _logits):
             return data
@@ -626,7 +626,13 @@ def test_detector_reuses_raw_tensor_for_declared_out_of_place_preprocessor():
     detector.model = torch.nn.Identity()
     detector.preprocessor = DetectorPreProcessor(
         transform=transforms.Compose(
-            [transforms.Normalize(mean=[1.0, 1.0, 1.0], std=[1.0, 1.0, 1.0])]
+            [
+                transforms.Normalize(
+                    mean=[1.0, 1.0, 1.0],
+                    std=[1.0, 1.0, 1.0],
+                    inplace=True,
+                )
+            ]
         ),
         device=torch.device("cpu"),
         optimize_transform=False,
