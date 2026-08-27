@@ -1646,17 +1646,47 @@ class CacheEntryInspection:
 
     def run_legacy(
         self,
-        *args,
+        image_source: Optional[
+            Union[str, os.PathLike, torch.Tensor, np.ndarray, bytes, Image.Image]
+        ] = None,
+        path_image: Optional[str] = None,
+        batch_size: int = 8,
+        fix_img_size: bool = False,
         return_img_data: bool = False,
-        **kwargs,
+        include_tensors: bool = False,
+        path_output: Optional[str] = None,
+        tensor: Optional[torch.Tensor] = None,
+        include_predictors: Optional[List[str]] = None,
+        exclude_predictors: Optional[List[str]] = None,
+        skip_detector: bool = False,
+        *,
+        input_policy: str = &#34;coerce&#34;,
+        input_spec: Optional[InputSpec] = None,
     ) -&gt; Union[Response, ImageData]:
-        &#34;&#34;&#34;Run the canonical pipeline and adapt its result to the v0.x return union.&#34;&#34;&#34;
+        &#34;&#34;&#34;Run the canonical pipeline using the v0.x positional argument order.
+
+        Unlike ``run()``, the fifth positional argument controls whether this
+        adapter returns ``ImageData``. Prefer ``run()`` for new integrations.
+        &#34;&#34;&#34;
         warnings.warn(
             &#34;FaceAnalyzer.run_legacy is a v1.x compatibility adapter; migrate to run().&#34;,
             DeprecationWarning,
             stacklevel=2,
         )
-        result = self.run(*args, **kwargs)
+        result = self.run(
+            image_source=image_source,
+            path_image=path_image,
+            face_batch_size=batch_size,
+            fix_img_size=fix_img_size,
+            include_tensors=include_tensors,
+            path_output=path_output,
+            tensor=tensor,
+            include_predictors=include_predictors,
+            exclude_predictors=exclude_predictors,
+            skip_detector=skip_detector,
+            input_policy=input_policy,
+            input_spec=input_spec,
+        )
         if not return_img_data:
             return Response(faces=result.faces, version=result.version)
 
@@ -2302,7 +2332,7 @@ description, especially for strict-mode conversions.</dd>
 </dl></div>
 </dd>
 <dt id="facetorch.FaceAnalyzer.run_legacy"><code class="name flex">
-<span>def <span class="ident">run_legacy</span></span>(<span>self, *args, return_img_data: bool = False, **kwargs) ‑> <a title="facetorch.datastruct.Response" href="datastruct.html#facetorch.datastruct.Response">Response</a> | <a title="facetorch.datastruct.ImageData" href="datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+<span>def <span class="ident">run_legacy</span></span>(<span>self,<br>image_source: str | os.PathLike | torch.Tensor | numpy.ndarray | bytes | PIL.Image.Image | None = None,<br>path_image: str | None = None,<br>batch_size: int = 8,<br>fix_img_size: bool = False,<br>return_img_data: bool = False,<br>include_tensors: bool = False,<br>path_output: str | None = None,<br>tensor: torch.Tensor | None = None,<br>include_predictors: List[str] | None = None,<br>exclude_predictors: List[str] | None = None,<br>skip_detector: bool = False,<br>*,<br>input_policy: str = 'coerce',<br>input_spec: <a title="facetorch.input.InputSpec" href="input.html#facetorch.input.InputSpec">InputSpec</a> | None = None) ‑> <a title="facetorch.datastruct.Response" href="datastruct.html#facetorch.datastruct.Response">Response</a> | <a title="facetorch.datastruct.ImageData" href="datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
 </code></dt>
 <dd>
 <details class="source">
@@ -2311,17 +2341,47 @@ description, especially for strict-mode conversions.</dd>
 </summary>
 <pre><code class="python">def run_legacy(
     self,
-    *args,
+    image_source: Optional[
+        Union[str, os.PathLike, torch.Tensor, np.ndarray, bytes, Image.Image]
+    ] = None,
+    path_image: Optional[str] = None,
+    batch_size: int = 8,
+    fix_img_size: bool = False,
     return_img_data: bool = False,
-    **kwargs,
+    include_tensors: bool = False,
+    path_output: Optional[str] = None,
+    tensor: Optional[torch.Tensor] = None,
+    include_predictors: Optional[List[str]] = None,
+    exclude_predictors: Optional[List[str]] = None,
+    skip_detector: bool = False,
+    *,
+    input_policy: str = &#34;coerce&#34;,
+    input_spec: Optional[InputSpec] = None,
 ) -&gt; Union[Response, ImageData]:
-    &#34;&#34;&#34;Run the canonical pipeline and adapt its result to the v0.x return union.&#34;&#34;&#34;
+    &#34;&#34;&#34;Run the canonical pipeline using the v0.x positional argument order.
+
+    Unlike ``run()``, the fifth positional argument controls whether this
+    adapter returns ``ImageData``. Prefer ``run()`` for new integrations.
+    &#34;&#34;&#34;
     warnings.warn(
         &#34;FaceAnalyzer.run_legacy is a v1.x compatibility adapter; migrate to run().&#34;,
         DeprecationWarning,
         stacklevel=2,
     )
-    result = self.run(*args, **kwargs)
+    result = self.run(
+        image_source=image_source,
+        path_image=path_image,
+        face_batch_size=batch_size,
+        fix_img_size=fix_img_size,
+        include_tensors=include_tensors,
+        path_output=path_output,
+        tensor=tensor,
+        include_predictors=include_predictors,
+        exclude_predictors=exclude_predictors,
+        skip_detector=skip_detector,
+        input_policy=input_policy,
+        input_spec=input_spec,
+    )
     if not return_img_data:
         return Response(faces=result.faces, version=result.version)
 
@@ -2337,7 +2397,9 @@ description, especially for strict-mode conversions.</dd>
         warnings=list(result.warnings),
     )</code></pre>
 </details>
-<div class="desc"><p>Run the canonical pipeline and adapt its result to the v0.x return union.</p></div>
+<div class="desc"><p>Run the canonical pipeline using the v0.x positional argument order.</p>
+<p>Unlike <code>run()</code>, the fifth positional argument controls whether this
+adapter returns <code><a title="facetorch.ImageData" href="#facetorch.ImageData">ImageData</a></code>. Prefer <code>run()</code> for new integrations.</p></div>
 </dd>
 </dl>
 </dd>
