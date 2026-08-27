@@ -434,6 +434,27 @@ def test_no_faces_loads_detector_once_but_never_loads_predictors():
 
 
 @pytest.mark.release_blocker
+@pytest.mark.parametrize(("requirements", "expected_calls"), [(["first"], 0), ([], 1)])
+def test_no_face_save_utilizer_honors_predictor_dependencies(
+    requirements, expected_calls
+):
+    graph = _component_graph()
+    save = _RecordingUtilizer()
+    graph.utilizers["save"] = save
+    graph.cfg.utilizer.save = {"component": "utilizer:save"}
+    graph.cfg.utilizer_dependencies.save = requirements
+
+    with patch(
+        "facetorch.analyzer.core.instantiate", side_effect=graph.instantiate
+    ):
+        analyzer = FaceAnalyzer(graph.cfg)
+        analyzer.run(image_source=torch.zeros((3, 4, 5), dtype=torch.uint8))
+
+    assert save.calls == expected_calls
+    assert ("utilizer:save" in graph.constructed) is bool(expected_calls)
+
+
+@pytest.mark.release_blocker
 @pytest.mark.parametrize("component_class", [FacePredictor, FaceDetector])
 @pytest.mark.parametrize(
     "compile_kwargs",
