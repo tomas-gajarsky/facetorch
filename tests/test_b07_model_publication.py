@@ -367,6 +367,8 @@ def test_failed_publish_is_resumable_without_early_manifest(tmp_path):
     assert interrupted["manifest"] is None
 
     resumed_api = _FakeHubApi()
+    resumed_api.branch_heads.update(first_api.branch_heads)
+    resumed_api.trees.update(first_api.trees)
     complete = publish_publication_plan(
         plan_path=plan,
         approval_path=approval,
@@ -379,6 +381,108 @@ def test_failed_publish_is_resumable_without_early_manifest(tmp_path):
         "owner/model-b",
         "owner/facetorch-model-manifest",
     ]
+
+
+@pytest.mark.release_blocker
+def test_publish_resume_rejects_model_receipt_for_unrelated_commit(tmp_path):
+    summary = _stage_summary(tmp_path, "2.11", model_ids=("model-a",))
+    plan = _prepare(tmp_path, [summary], model_ids=("model-a",))
+    approval = tmp_path / "approval.json"
+    receipt_path = tmp_path / "receipt.json"
+    _approve(plan, approval)
+    api = _FakeHubApi()
+
+    publish_publication_plan(
+        plan_path=plan,
+        approval_path=approval,
+        receipt_path=receipt_path,
+        api=api,
+    )
+    plan_value = json.loads(plan.read_text())
+    receipt = json.loads(receipt_path.read_text())
+    receipt["models"]["model-a"]["commit_revision"] = plan_value["models"][0][
+        "parent_revision"
+    ]
+    _write_json(receipt_path, receipt)
+
+    with pytest.raises(PublicationError, match="Recorded model commit.*approved plan"):
+        publish_publication_plan(
+            plan_path=plan,
+            approval_path=approval,
+            receipt_path=receipt_path,
+            api=api,
+        )
+
+
+@pytest.mark.release_blocker
+def test_publish_resume_rejects_manifest_receipt_for_unrelated_commit(tmp_path):
+    summary = _stage_summary(tmp_path, "2.11", model_ids=("model-a",))
+    plan = _prepare(tmp_path, [summary], model_ids=("model-a",))
+    approval = tmp_path / "approval.json"
+    receipt_path = tmp_path / "receipt.json"
+    _approve(plan, approval)
+    api = _FakeHubApi()
+
+    publish_publication_plan(
+        plan_path=plan,
+        approval_path=approval,
+        receipt_path=receipt_path,
+        api=api,
+    )
+    plan_value = json.loads(plan.read_text())
+    receipt = json.loads(receipt_path.read_text())
+    receipt["manifest"]["commit_revision"] = plan_value["manifest_target"][
+        "parent_revision"
+    ]
+    _write_json(receipt_path, receipt)
+
+    with pytest.raises(
+        PublicationError, match="Recorded manifest commit.*approved plan"
+    ):
+        publish_publication_plan(
+            plan_path=plan,
+            approval_path=approval,
+            receipt_path=receipt_path,
+            api=api,
+        )
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("repo_id", "owner/unapproved-manifest"),
+        ("filename", "manifests/unapproved.json"),
+        ("sha256", "0" * 64),
+    ],
+)
+def test_publish_resume_rejects_tampered_manifest_receipt_contract(
+    tmp_path, field, value
+):
+    summary = _stage_summary(tmp_path, "2.11", model_ids=("model-a",))
+    plan = _prepare(tmp_path, [summary], model_ids=("model-a",))
+    approval = tmp_path / "approval.json"
+    receipt_path = tmp_path / "receipt.json"
+    _approve(plan, approval)
+    api = _FakeHubApi()
+
+    publish_publication_plan(
+        plan_path=plan,
+        approval_path=approval,
+        receipt_path=receipt_path,
+        api=api,
+    )
+    receipt = json.loads(receipt_path.read_text())
+    receipt["manifest"][field] = value
+    _write_json(receipt_path, receipt)
+
+    with pytest.raises(PublicationError, match="Manifest receipt bytes"):
+        publish_publication_plan(
+            plan_path=plan,
+            approval_path=approval,
+            receipt_path=receipt_path,
+            api=api,
+        )
 
 
 @pytest.mark.release_blocker
