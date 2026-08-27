@@ -105,6 +105,34 @@ def _selected_predictors(cfg, include_predictors: Optional[Iterable[str]]) -> li
     return [name for name in configured if name in requested_set]
 
 
+def _selected_utilizers(cfg, predictor_names: Sequence[str]) -> list[str]:
+    """Return utilizers whose configured predictor requirements are satisfied."""
+    from facetorch.analyzer.core import FaceAnalyzer
+
+    utilizer_names = (
+        tuple(cfg.analyzer.utilizer) if "utilizer" in cfg.analyzer else ()
+    )
+    configured_predictors = (
+        tuple(cfg.analyzer.predictor) if "predictor" in cfg.analyzer else ()
+    )
+    dependencies = (
+        cfg.analyzer.utilizer_dependencies
+        if "utilizer_dependencies" in cfg.analyzer
+        else None
+    )
+    normalized = FaceAnalyzer._normalize_utilizer_dependencies(
+        dependencies,
+        utilizer_names=utilizer_names,
+        predictor_names=configured_predictors,
+    )
+    selected_predictors = set(predictor_names)
+    return [
+        name
+        for name in utilizer_names
+        if set(normalized.get(name, ())).issubset(selected_predictors)
+    ]
+
+
 def _is_verified(path: Path, descriptor: ArtifactDescriptor) -> bool:
     if not path.is_file():
         return False
@@ -201,7 +229,7 @@ def plan_model_prefetch(
                 cached=_is_verified(path, descriptor),
             )
         )
-    if "align" in predictor_names:
+    if "align" in _selected_utilizers(cfg, predictor_names):
         items.append(_metadata_prefetch_item(cfg))
     return PrefetchPlan(profile=profile, items=tuple(items))
 
@@ -252,7 +280,7 @@ def prefetch_models(
     downloader_configs.extend(
         cfg.analyzer.predictor[name].downloader for name in predictor_names
     )
-    if "align" in predictor_names:
+    if "align" in _selected_utilizers(cfg, predictor_names):
         downloader_configs.append(
             cfg.analyzer.utilizer.align.downloader_meta
         )

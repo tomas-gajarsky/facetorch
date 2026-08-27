@@ -126,6 +126,32 @@ def test_prefetch_plan_matches_requested_runtime_components():
 
 
 @pytest.mark.release_blocker
+def test_prefetch_plan_uses_composed_utilizer_dependency_graph():
+    overrides = ["analyzer.utilizer_dependencies.align=[fer]"]
+
+    fer = plan_model_prefetch(
+        "cpu",
+        include_predictors=["fer"],
+        skip_detector=True,
+        offline=True,
+        overrides=overrides,
+    )
+    assert [item.component for item in fer.items] == [
+        "predictor.fer",
+        "align-metadata",
+    ]
+
+    align = plan_model_prefetch(
+        "cpu",
+        include_predictors=["align"],
+        skip_detector=True,
+        offline=True,
+        overrides=overrides,
+    )
+    assert [item.component for item in align.items] == ["predictor.align"]
+
+
+@pytest.mark.release_blocker
 def test_prefetch_plan_uses_the_runtime_incompatibility_selection(
     tmp_path, monkeypatch
 ):
@@ -220,6 +246,50 @@ def test_prefetch_instantiates_only_requested_downloader(tmp_path):
     assert len(result.paths) == 1
     hub.assert_not_called()
     drive.assert_not_called()
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    ("include_predictors", "expected"),
+    [
+        (
+            ["fer"],
+            ["fer-efficientnet-b2", "gdrive-file-11tdAcFuSXqCCf58g52WT1Rpa8KuQwe2o"],
+        ),
+        (["align"], ["align-synergynet"]),
+    ],
+)
+def test_prefetch_instantiates_metadata_from_composed_utilizer_dependencies(
+    tmp_path, include_predictors, expected
+):
+    selected = []
+
+    class FakeDownloader:
+        def __init__(self, config):
+            identity = (
+                config.manifest_id if "manifest_id" in config else config.revision
+            )
+            selected.append(str(identity))
+            self.path_local = str(tmp_path / f"artifact-{len(selected)}")
+
+        def run(self):
+            return self.path_local
+
+    with patch(
+        "facetorch.model_cache.instantiate",
+        side_effect=lambda config: FakeDownloader(config),
+    ):
+        result = prefetch_models(
+            "cpu",
+            include_predictors=include_predictors,
+            skip_detector=True,
+            offline=False,
+            overrides=["analyzer.utilizer_dependencies.align=[fer]"],
+            confirm=True,
+        )
+
+    assert selected == expected
+    assert len(result.paths) == len(expected)
 
 
 @pytest.mark.release_blocker
