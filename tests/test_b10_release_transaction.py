@@ -130,7 +130,10 @@ def _candidate_repo(tmp_path, version="1.0.0"):
                 "detector": {
                     "status": "approved",
                     "release_eligible": True,
-                    "source_checkpoint": {"upstream_checkpoint_mapping": "verified"},
+                    "source_checkpoint": {
+                        "upstream_checkpoint_mapping": "verified",
+                        "hosted_sha256_verified": True,
+                    },
                     "rights": {
                         "weights_license": "MIT",
                         "redistribution": "approved",
@@ -623,6 +626,40 @@ def test_packaged_model_governance_is_a_fail_closed_publication_gate(
     _write_json(governance_path, governance)
 
     with pytest.raises(ReleaseError, match="governance is not approved|incomplete"):
+        validate_packaged_model_governance(
+            repo,
+            remote_manifest_path=manifest,
+            remote_revision=MODEL_REVISION,
+        )
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    ("mode", "value"),
+    [
+        ("missing", None),
+        ("value", False),
+        ("value", 1),
+        ("value", "true"),
+    ],
+)
+def test_packaged_governance_requires_exact_hosted_digest_proof(
+    tmp_path,
+    mode,
+    value,
+):
+    repo, _ = _candidate_repo(tmp_path)
+    _, manifest = _bundle(tmp_path)
+    governance_path = repo / "facetorch/models/governance.json"
+    governance = json.loads(governance_path.read_text(encoding="utf-8"))
+    checkpoint = governance["models"]["detector"]["source_checkpoint"]
+    if mode == "missing":
+        checkpoint.pop("hosted_sha256_verified")
+    else:
+        checkpoint["hosted_sha256_verified"] = value
+    _write_json(governance_path, governance)
+
+    with pytest.raises(ReleaseError, match="governance is incomplete"):
         validate_packaged_model_governance(
             repo,
             remote_manifest_path=manifest,

@@ -4,8 +4,10 @@ import http.client
 import io
 import ipaddress
 import os
+import queue
 import socket
 import ssl
+import threading
 import time
 import warnings
 from pathlib import Path
@@ -29,6 +31,7 @@ logger = get_logger()
 LocalPath = Union[str, os.PathLike]
 ImageSource = Union[LocalPath, torch.Tensor, np.ndarray, bytes, Image.Image]
 DEFAULT_MAX_DECODED_PIXELS = 16 * 1024 * 1024
+_DNS_RESOLUTION_SLOTS = threading.BoundedSemaphore(value=4)
 
 
 @runtime_checkable
@@ -50,7 +53,7 @@ def _is_remote_reference(value: str) -> bool:
     return "://" in value
 
 
-def _validate_public_url_target(parsed) -> tuple[str, ...]:
+def _validate_public_url_target(parsed, deadline: float) -> tuple[str, ...]:
     """Resolve one URL once and return only validated public numeric addresses."""
     if parsed.username is not None or parsed.password is not None:
         raise InputError("Remote image URLs must not contain credentials.")
@@ -60,13 +63,53 @@ def _validate_public_url_target(parsed) -> tuple[str, ...]:
     try:
         hostname = hostname.encode("idna").decode("ascii")
         port = parsed.port or (443 if parsed.scheme.lower() == "https" else 80)
-        addresses = socket.getaddrinfo(
-            hostname,
-            port,
-            type=socket.SOCK_STREAM,
-        )
     except (OSError, ValueError) as exc:
         raise InputError("Remote image hostname could not be resolved safely.") from exc
+    if not _DNS_RESOLUTION_SLOTS.acquire(timeout=_remaining_timeout(deadline)):
+        raise InputError("Remote image request timed out.")
+
+    resolution = queue.Queue(maxsize=1)
+
+    def resolve_hostname() -> None:
+        try:
+            resolution.put(
+                (
+                    socket.getaddrinfo(
+                        hostname,
+                        port,
+                        type=socket.SOCK_STREAM,
+                    ),
+                    None,
+                )
+            )
+        except Exception as exc:
+            resolution.put((None, exc))
+        finally:
+            _DNS_RESOLUTION_SLOTS.release()
+
+    resolver = threading.Thread(
+        target=resolve_hostname,
+        name="facetorch-dns",
+        daemon=True,
+    )
+    try:
+        resolver.start()
+    except RuntimeError:
+        _DNS_RESOLUTION_SLOTS.release()
+        raise
+    try:
+        addresses, resolution_error = resolution.get(
+            timeout=_remaining_timeout(deadline)
+        )
+    except queue.Empty as exc:
+        raise InputError("Remote image request timed out.") from exc
+    if resolution_error is not None:
+        if isinstance(resolution_error, (OSError, ValueError)):
+            raise InputError(
+                "Remote image hostname could not be resolved safely."
+            ) from resolution_error
+        raise resolution_error
+    assert addresses is not None
     if not addresses:
         raise InputError("Remote image hostname did not resolve to an address.")
     validated = []
@@ -76,7 +119,15 @@ def _validate_public_url_target(parsed) -> tuple[str, ...]:
             resolved = ipaddress.ip_address(raw_address)
         except ValueError as exc:
             raise InputError("Remote image hostname resolved unexpectedly.") from exc
-        if not resolved.is_global:
+        if (
+            not resolved.is_global
+            or resolved.is_multicast
+            or resolved.is_unspecified
+            or resolved.is_loopback
+            or resolved.is_link_local
+            or resolved.is_reserved
+            or getattr(resolved, "is_site_local", False)
+        ):
             raise InputError(
                 "Remote image URLs must resolve only to public network addresses."
             )
@@ -588,7 +639,7 @@ class URLReader(UniversalReader):
             parsed = urlsplit(current_url)
             if parsed.scheme.lower() not in self.allowed_schemes or not parsed.netloc:
                 raise InputError("URL scheme is not allowed or the URL has no host.")
-            addresses = _validate_public_url_target(parsed)
+            addresses = _validate_public_url_target(parsed, deadline)
             _remaining_timeout(deadline)
             connection = None
             response = None

@@ -272,6 +272,7 @@ class ModelGovernance:
             and self.release_eligible
             and self.source_checkpoint.get("upstream_checkpoint_mapping")
             == "verified"
+            and self.source_checkpoint.get("hosted_sha256_verified") is True
             and self.rights.get("weights_license") not in {None, "unverified"}
             and self.rights.get("redistribution") == "approved"
             and self.rights.get("attribution") == "approved"

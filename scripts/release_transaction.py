@@ -375,6 +375,7 @@ def validate_packaged_model_governance(
             record.get("status") != "approved"
             or record.get("release_eligible") is not True
             or checkpoint.get("upstream_checkpoint_mapping") != "verified"
+            or checkpoint.get("hosted_sha256_verified") is not True
             or rights.get("weights_license") in {None, "unverified"}
             or rights.get("redistribution") != "approved"
             or rights.get("attribution") != "approved"

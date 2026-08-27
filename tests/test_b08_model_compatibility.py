@@ -18,6 +18,7 @@ from scripts.export_model_cohorts_hf import _environment_metadata, _model_specs
 from scripts.render_model_cards import ModelCardError, render_model_documents
 from scripts.verify_model_release_matrix import (
     ReleaseMatrixError,
+    _require_approved_governance,
     verify_release_matrix,
 )
 
@@ -125,6 +126,7 @@ def test_provenance_and_matrix_approve_every_published_model():
         assert record["source_checkpoint"]["upstream_checkpoint_mapping"] == (
             "verified"
         ), model_id
+        assert record["source_checkpoint"]["hosted_sha256_verified"] is True, model_id
         assert record["rights"]["weights_license"] in {
             "MIT",
             "Apache-2.0",
@@ -151,6 +153,30 @@ def test_provenance_and_matrix_approve_every_published_model():
         == compatibility["candidate_evidence"]["source_commit"]
         for descriptor in manifest.iter_descriptors()
     )
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    ("mode", "value"),
+    [
+        ("missing", None),
+        ("value", False),
+        ("value", 1),
+        ("value", "true"),
+    ],
+)
+def test_release_matrix_requires_exact_hosted_digest_proof(mode, value):
+    manifest = _json(MANIFEST_PATH)
+    compatibility = _json(COMPATIBILITY_PATH)
+    governance = _json(GOVERNANCE_PATH)
+    checkpoint = next(iter(governance["models"].values()))["source_checkpoint"]
+    if mode == "missing":
+        checkpoint.pop("hosted_sha256_verified")
+    else:
+        checkpoint["hosted_sha256_verified"] = value
+
+    with pytest.raises(ReleaseMatrixError, match="rights/provenance"):
+        _require_approved_governance(manifest, compatibility, governance)
 
 
 @pytest.mark.release_blocker

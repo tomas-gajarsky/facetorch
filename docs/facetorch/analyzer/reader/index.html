@@ -979,7 +979,7 @@ All subclass should overwrite:</p>
             parsed = urlsplit(current_url)
             if parsed.scheme.lower() not in self.allowed_schemes or not parsed.netloc:
                 raise InputError(&#34;URL scheme is not allowed or the URL has no host.&#34;)
-            addresses = _validate_public_url_target(parsed)
+            addresses = _validate_public_url_target(parsed, deadline)
             _remaining_timeout(deadline)
             connection = None
             response = None

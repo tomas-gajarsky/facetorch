@@ -65,7 +65,10 @@ def _governance(**overrides):
         "release_eligible": False,
         "hosted_model_card": "https://huggingface.co/owner/model",
         "upstream_sources": [{"url": "https://example.test/source"}],
-        "source_checkpoint": {"upstream_checkpoint_mapping": "unverified"},
+        "source_checkpoint": {
+            "upstream_checkpoint_mapping": "unverified",
+            "hosted_sha256_verified": False,
+        },
         "rights": {
             "weights_license": "unverified",
             "redistribution": "pending",
@@ -194,7 +197,10 @@ def test_governance_approval_requires_every_right_and_provenance_field():
         _governance(
             status="approved",
             release_eligible=True,
-            source_checkpoint={"upstream_checkpoint_mapping": "verified"},
+            source_checkpoint={
+                "upstream_checkpoint_mapping": "verified",
+                "hosted_sha256_verified": True,
+            },
             rights={
                 "weights_license": "Apache-2.0",
                 "redistribution": "approved",
@@ -204,6 +210,43 @@ def test_governance_approval_requires_every_right_and_provenance_field():
         ),
     )
     assert approved.approved is True
+
+
+@pytest.mark.parametrize(
+    "source_checkpoint",
+    [
+        {"upstream_checkpoint_mapping": "verified"},
+        {
+            "upstream_checkpoint_mapping": "verified",
+            "hosted_sha256_verified": False,
+        },
+        {
+            "upstream_checkpoint_mapping": "verified",
+            "hosted_sha256_verified": 1,
+        },
+        {
+            "upstream_checkpoint_mapping": "verified",
+            "hosted_sha256_verified": "true",
+        },
+    ],
+)
+def test_governance_approval_requires_exact_hosted_digest_proof(source_checkpoint):
+    governance = ModelGovernance.from_mapping(
+        "probe",
+        _governance(
+            status="approved",
+            release_eligible=True,
+            source_checkpoint=source_checkpoint,
+            rights={
+                "weights_license": "Apache-2.0",
+                "redistribution": "approved",
+                "attribution": "approved",
+                "owner_approval": "approved",
+            },
+        ),
+    )
+
+    assert governance.approved is False
 
 
 def test_manifest_constructor_rejects_invalid_metadata_duplicates_and_matrix():
