@@ -5,6 +5,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import shutil
+import threading
 import time
 from unittest.mock import patch
 
@@ -421,6 +422,73 @@ def test_concurrent_first_use_converges_on_one_verified_download(tmp_path):
 
 @pytest.mark.unit
 @pytest.mark.downloader
+def test_directory_lock_publishes_owner_before_competing_acquisition(tmp_path):
+    lock_path = tmp_path / ".facetorch-download.lock"
+    first_publish_paused = threading.Event()
+    first_publish_blocked = threading.Event()
+    release_first_publish = threading.Event()
+    second_entered = threading.Event()
+    release_second = threading.Event()
+    guard = threading.Lock()
+    rename_count = 0
+    active = 0
+    max_active = 0
+    entered = []
+    real_rename = os.rename
+
+    def controlled_rename(source, destination):
+        nonlocal rename_count
+        current = None
+        if Path(destination) == lock_path:
+            with guard:
+                rename_count += 1
+                current = rename_count
+            assert (Path(source) / "owner.json").is_file()
+            if current == 1:
+                first_publish_paused.set()
+                assert release_first_publish.wait(timeout=2.0)
+        try:
+            return real_rename(source, destination)
+        except OSError:
+            if current == 1:
+                first_publish_blocked.set()
+            raise
+
+    def acquire(name):
+        nonlocal active, max_active
+        with _DirectoryLock(lock_path, timeout=2.0):
+            with guard:
+                active += 1
+                max_active = max(max_active, active)
+                entered.append(name)
+            try:
+                if name == "second":
+                    second_entered.set()
+                    assert release_second.wait(timeout=2.0)
+            finally:
+                with guard:
+                    active -= 1
+
+    with patch("facetorch.downloader.os.rename", side_effect=controlled_rename):
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            first = executor.submit(acquire, "first")
+            assert first_publish_paused.wait(timeout=2.0)
+            second = executor.submit(acquire, "second")
+            assert second_entered.wait(timeout=2.0)
+            release_first_publish.set()
+            assert first_publish_blocked.wait(timeout=2.0)
+            assert entered == ["second"]
+            release_second.set()
+            first.result(timeout=2.0)
+            second.result(timeout=2.0)
+
+    assert entered == ["second", "first"]
+    assert max_active == 1
+    assert not lock_path.exists()
+
+
+@pytest.mark.unit
+@pytest.mark.downloader
 def test_directory_lock_reclaims_a_dead_recorded_owner(tmp_path, monkeypatch):
     lock_path = tmp_path / ".facetorch-download.lock"
     lock_path.mkdir()
@@ -449,6 +517,7 @@ def test_directory_lock_timeout_has_an_actionable_error(tmp_path, monkeypatch):
     with pytest.raises(CacheLockError, match="Confirm no facetorch process"):
         with _DirectoryLock(lock_path, timeout=0.01):
             pass
+    assert list(tmp_path.glob(f"{lock_path.name}.pending.*")) == []
 
 
 @pytest.mark.unit
@@ -624,10 +693,19 @@ def test_directory_lock_owner_record_failures_are_fail_closed(tmp_path):
     lock_path = tmp_path / "owner-write-failure.lock"
     lock = _DirectoryLock(lock_path, timeout=0.1)
     with patch.object(Path, "write_text", side_effect=OSError("read-only")):
-        with pytest.raises(CacheLockError, match="Could not record ownership"):
+        with pytest.raises(CacheLockError, match="Could not prepare ownership"):
             lock.__enter__()
     assert not lock_path.exists()
     assert lock._owner_token is None
+
+    publish_path = tmp_path / "owner-publish-failure.lock"
+    publish = _DirectoryLock(publish_path, timeout=0.1)
+    with patch("facetorch.downloader.os.rename", side_effect=OSError("read-only")):
+        with pytest.raises(CacheLockError, match="Could not publish ownership"):
+            publish.__enter__()
+    assert not publish_path.exists()
+    assert list(tmp_path.glob(f"{publish_path.name}.pending.*")) == []
+    assert publish._owner_token is None
 
     malformed_path = tmp_path / "malformed-owner.lock"
     malformed_path.mkdir()

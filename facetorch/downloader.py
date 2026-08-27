@@ -42,7 +42,7 @@ logger = get_logger()
 
 
 class _DirectoryLock(AbstractContextManager):
-    """Small cross-platform lock based on atomic directory creation."""
+    """Small cross-platform lock based on atomic directory publication."""
 
     def __init__(self, path: Path, *, timeout: float = 600.0) -> None:
         self.path = path
@@ -198,41 +198,56 @@ class _DirectoryLock(AbstractContextManager):
 
     def __enter__(self) -> "_DirectoryLock":
         started = time.monotonic()
-        while True:
-            try:
-                self.path.mkdir()
-                break
-            except FileExistsError:
-                if self._reclaim_stale_owner():
-                    continue
-                if time.monotonic() - started >= self.timeout:
-                    raise CacheLockError(
-                        f"Timed out waiting for model cache lock {self.path}. "
-                        "Confirm no facetorch process owns it before removing the "
-                        "lock directory and retrying."
-                    )
-                time.sleep(0.05)
-        self._owner_token = uuid4().hex
+        owner_token = uuid4().hex
         owner = {
             "pid": os.getpid(),
             "created": time.time(),
-            "token": self._owner_token,
+            "token": owner_token,
         }
         process_identity = self._process_identity(owner["pid"])
         if process_identity is not None:
             owner["process_identity"] = process_identity
+        pending_path = self.path.with_name(
+            f"{self.path.name}.pending.{uuid4().hex}"
+        )
         try:
-            (self.path / "owner.json").write_text(
+            pending_path.mkdir(mode=0o700)
+            (pending_path / "owner.json").write_text(
                 json.dumps(owner),
                 encoding="utf-8",
             )
         except OSError as exc:
-            shutil.rmtree(self.path, ignore_errors=True)
-            self._owner_token = None
+            shutil.rmtree(pending_path, ignore_errors=True)
             raise CacheLockError(
-                f"Could not record ownership for model cache lock {self.path}."
+                f"Could not prepare ownership for model cache lock {self.path}."
             ) from exc
-        return self
+
+        try:
+            while True:
+                if os.path.lexists(self.path):
+                    if self._reclaim_stale_owner():
+                        continue
+                    if time.monotonic() - started >= self.timeout:
+                        raise CacheLockError(
+                            f"Timed out waiting for model cache lock {self.path}. "
+                            "Confirm no facetorch process owns it before removing "
+                            "the lock directory and retrying."
+                        )
+                    time.sleep(0.05)
+                    continue
+                try:
+                    os.rename(pending_path, self.path)
+                except OSError as exc:
+                    if os.path.lexists(self.path):
+                        continue
+                    raise CacheLockError(
+                        f"Could not publish ownership for model cache lock "
+                        f"{self.path}."
+                    ) from exc
+                self._owner_token = owner_token
+                return self
+        finally:
+            shutil.rmtree(pending_path, ignore_errors=True)
 
     def __exit__(self, *_exc: object) -> None:
         try:
