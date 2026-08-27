@@ -345,8 +345,14 @@ class UniversalReader(BaseReader):
                     converted = pil_image.convert("RGB")
                     source = converted
                 array = np.array(source, copy=True)
+        except FacetorchError:
+            raise
         except (Image.DecompressionBombError, Image.DecompressionBombWarning) as exc:
             raise InputError("Decoded image exceeds Pillow's safety limit.") from exc
+        except (OSError, ValueError) as exc:
+            raise InputError(
+                "Could not decode or convert the supplied PIL image."
+            ) from exc
         finally:
             if converted is not None:
                 converted.close()

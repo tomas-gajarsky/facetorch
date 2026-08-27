@@ -185,8 +185,14 @@ All subclass should overwrite:</p>
                 converted = pil_image.convert(&#34;RGB&#34;)
                 source = converted
             array = np.array(source, copy=True)
+    except FacetorchError:
+        raise
     except (Image.DecompressionBombError, Image.DecompressionBombWarning) as exc:
         raise InputError(&#34;Decoded image exceeds Pillow&#39;s safety limit.&#34;) from exc
+    except (OSError, ValueError) as exc:
+        raise InputError(
+            &#34;Could not decode or convert the supplied PIL image.&#34;
+        ) from exc
     finally:
         if converted is not None:
             converted.close()
@@ -528,8 +534,14 @@ All subclass should overwrite:</p>
                     converted = pil_image.convert(&#34;RGB&#34;)
                     source = converted
                 array = np.array(source, copy=True)
+        except FacetorchError:
+            raise
         except (Image.DecompressionBombError, Image.DecompressionBombWarning) as exc:
             raise InputError(&#34;Decoded image exceeds Pillow&#39;s safety limit.&#34;) from exc
+        except (OSError, ValueError) as exc:
+            raise InputError(
+                &#34;Could not decode or convert the supplied PIL image.&#34;
+            ) from exc
         finally:
             if converted is not None:
                 converted.close()
@@ -738,8 +750,14 @@ All subclass should overwrite:</p>
                 converted = pil_image.convert(&#34;RGB&#34;)
                 source = converted
             array = np.array(source, copy=True)
+    except FacetorchError:
+        raise
     except (Image.DecompressionBombError, Image.DecompressionBombWarning) as exc:
         raise InputError(&#34;Decoded image exceeds Pillow&#39;s safety limit.&#34;) from exc
+    except (OSError, ValueError) as exc:
+        raise InputError(
+            &#34;Could not decode or convert the supplied PIL image.&#34;
+        ) from exc
     finally:
         if converted is not None:
             converted.close()

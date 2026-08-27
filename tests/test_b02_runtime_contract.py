@@ -319,7 +319,7 @@ def test_result_retention_and_legacy_adapter_are_explicit():
     ("return_img_data", "expected_type"),
     [(False, facetorch.Response), (True, facetorch.ImageData)],
 )
-def test_legacy_adapter_preserves_the_v0_positional_signature(
+def test_legacy_adapter_preserves_the_v05_positional_signature(
     return_img_data,
     expected_type,
 ):
@@ -334,6 +334,36 @@ def test_legacy_adapter_preserves_the_v0_positional_signature(
             False,
             return_img_data,
             True,
+            skip_detector=True,
+        )
+
+    assert isinstance(result, expected_type)
+    if return_img_data:
+        assert result.tensor.shape == (1, 3, 8, 9)
+
+
+@pytest.mark.parametrize(
+    ("return_img_data", "expected_type"),
+    [(False, facetorch.Response), (True, facetorch.ImageData)],
+)
+def test_legacy_adapter_preserves_the_pre_v05_positional_signature(
+    tmp_path,
+    return_img_data,
+    expected_type,
+):
+    path = tmp_path / "legacy.png"
+    Image.fromarray(_rgb_array()).save(path)
+    analyzer = _minimal_analyzer(
+        reader=UniversalReader(None, torch.device("cpu"), False)
+    )
+
+    with pytest.warns(DeprecationWarning, match="compatibility adapter"):
+        result = analyzer.run_legacy(
+            path,
+            8,
+            False,
+            return_img_data,
+            include_tensors=True,
             skip_detector=True,
         )
 
@@ -1625,6 +1655,28 @@ def test_decoded_unusual_pil_modes_are_explicitly_coerced_or_rejected():
     assert result.tensor.shape == (1, 3, 2, 3)
     assert result.warnings[0].startswith("Converted decoded PIL mode")
     image.close()
+
+
+def test_closed_pil_image_uses_the_public_input_error():
+    reader = UniversalReader(None, torch.device("cpu"), False)
+    image = Image.new("RGB", (3, 2), color="red")
+    image.close()
+
+    with pytest.raises(InputError, match="decode or convert"):
+        reader.read_pil_image(image, False)
+
+
+def test_truncated_lazy_pil_image_uses_the_public_input_error():
+    buffer = io.BytesIO()
+    with Image.fromarray(_rgb_array(24, 24)) as source:
+        source.save(buffer, format="JPEG")
+    image = Image.open(io.BytesIO(buffer.getvalue()[:-10]))
+    try:
+        with pytest.raises(InputError, match="decode or convert"):
+            reader = UniversalReader(None, torch.device("cpu"), False)
+            reader.read_pil_image(image, False)
+    finally:
+        image.close()
 
 
 def test_decoded_images_are_bounded_before_materialization():

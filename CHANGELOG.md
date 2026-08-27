@@ -89,6 +89,9 @@ when the immutable v1.0.0-rc.1 tag and all publication receipts have been verifi
 * Google Colab notebook updated to v1.0.0 (uses `image_source`, removes pinned torch versions)
 
 ### Fixed
+* The deprecated `run_legacy` adapter accepts both positional layouts shipped
+  across v0.x, and direct Pillow decode failures stay within the public
+  `InputError` hierarchy
 * Analyzer execution now fails clearly when selected predictors have no unifier,
   validates one prediction per input face, and uses explicit utilizer dependencies
   instead of component-name coupling or first-face inference state
