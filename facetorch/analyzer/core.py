@@ -863,10 +863,14 @@ class FaceAnalyzer(object):
             exclude_predictors = legacy_values["exclude_predictors"]
             skip_detector = legacy_values["skip_detector"]
 
-        # v0.5 and v0.6 preferred image_source when both source aliases were
-        # populated. Normalize before the stricter v1 input boundary.
-        if image_source is not None and path_image is not None:
+        # v0.5 and v0.6 selected the first populated source in this order:
+        # image_source, path_image, tensor. Normalize every alias combination
+        # before the stricter v1 input boundary.
+        if image_source is not None:
             path_image = None
+            tensor = None
+        elif path_image is not None:
+            tensor = None
 
         result = self.run(
             image_source=image_source,

@@ -84,6 +84,7 @@ def _require_approved_governance(
             record.get("status") == "approved"
             and record.get("release_eligible") is True
             and checkpoint.get("upstream_checkpoint_mapping") == "verified"
+            and checkpoint.get("hosted_sha256_verified") is True
             and rights.get("weights_license") not in {None, "unverified"}
             and rights.get("redistribution") == "approved"
             and rights.get("attribution") == "approved"

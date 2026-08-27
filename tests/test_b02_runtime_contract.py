@@ -1,6 +1,8 @@
 import io
 import json
 import logging
+import threading
+import time
 from contextlib import nullcontext
 from pathlib import Path
 from types import SimpleNamespace
@@ -370,6 +372,43 @@ def test_legacy_adapter_preserves_the_pre_v05_positional_signature(
     assert isinstance(result, expected_type)
     if return_img_data:
         assert result.tensor.shape == (1, 3, 8, 9)
+
+
+def test_legacy_adapter_preserves_source_alias_precedence(tmp_path):
+    path = tmp_path / "legacy-source.png"
+    Image.fromarray(_rgb_array()).save(path)
+    primary = torch.zeros((3, 8, 9), dtype=torch.uint8)
+    fallback = torch.ones((3, 8, 9), dtype=torch.uint8)
+
+    class RecordingReader:
+        def __init__(self):
+            self.sources = []
+            self.delegate = UniversalReader(None, torch.device("cpu"), False)
+
+        def run(self, image_source, fix_img_size=False, **kwargs):
+            self.sources.append(image_source)
+            return self.delegate.run(image_source, fix_img_size, **kwargs)
+
+    reader = RecordingReader()
+    analyzer = _minimal_analyzer(reader=reader)
+    cases = (
+        ({"image_source": primary, "path_image": path}, primary),
+        ({"image_source": primary, "tensor": fallback}, primary),
+        (
+            {"image_source": primary, "path_image": path, "tensor": fallback},
+            primary,
+        ),
+        ({"path_image": path, "tensor": fallback}, path),
+    )
+
+    for supplied, expected in cases:
+        with pytest.warns(DeprecationWarning):
+            analyzer.run_legacy(
+                **supplied,
+                include_predictors=[],
+                skip_detector=True,
+            )
+        assert reader.sources[-1] is expected
 
 
 class _FaceDetectorStub:
@@ -1026,6 +1065,30 @@ def test_url_reader_shares_one_deadline_across_redirects(monkeypatch):
     assert observed_timeouts == pytest.approx([1.0, 0.6])
 
 
+def test_url_reader_includes_dns_resolution_in_total_deadline(monkeypatch):
+    started = threading.Event()
+    release = threading.Event()
+
+    def slow_resolution(_host, port, **_kwargs):
+        started.set()
+        release.wait(timeout=1.0)
+        return [(2, 1, 6, "", ("93.184.216.34", port))]
+
+    monkeypatch.setattr(
+        "facetorch.analyzer.reader.core.socket.getaddrinfo", slow_resolution
+    )
+    reader = URLReader(None, torch.device("cpu"), False, timeout=0.05)
+    began = time.monotonic()
+    try:
+        with pytest.raises(InputError, match="timed out"):
+            reader.run("https://example.test/image.png")
+    finally:
+        release.set()
+
+    assert started.is_set()
+    assert time.monotonic() - began < 0.5
+
+
 def test_url_reader_stops_slow_stream_at_total_deadline(monkeypatch):
     now = [0.0]
     connection = _FakeConnection()
@@ -1199,7 +1262,14 @@ def test_url_reader_rejects_scheme_size_redirects_and_timeouts(monkeypatch):
         reader.run("https://example.test/image.png")
 
 
-def test_url_reader_rejects_private_network_targets_before_request(monkeypatch):
+@pytest.mark.parametrize(
+    "address",
+    ("127.0.0.1", "224.0.0.1", "fec0::1", "ff02::1"),
+)
+def test_url_reader_rejects_non_public_unicast_targets_before_request(
+    monkeypatch,
+    address,
+):
     called = False
 
     def record_request(*_args, **_kwargs):
@@ -1209,7 +1279,7 @@ def test_url_reader_rejects_private_network_targets_before_request(monkeypatch):
 
     monkeypatch.setattr(
         "facetorch.analyzer.reader.core.socket.getaddrinfo",
-        lambda _host, port, **_kwargs: [(2, 1, 6, "", ("127.0.0.1", port))],
+        lambda _host, port, **_kwargs: [(2, 1, 6, "", (address, port))],
     )
     monkeypatch.setattr(
         "facetorch.analyzer.reader.core._open_pinned_response", record_request
