@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+from types import SimpleNamespace
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
@@ -124,6 +125,112 @@ def test_model_cards_render_from_the_release_contract(tmp_path):
         for record in governance["models"].values()
         for source in record["upstream_sources"]
     }
+
+
+@pytest.mark.release_blocker
+def test_model_card_loading_examples_execute_supported_export_sequence(monkeypatch):
+    import huggingface_hub
+    import torch
+
+    from facetorch import artifacts as artifact_module
+
+    manifest = _json(REPO_ROOT / "facetorch/models/manifest.json")
+    candidate_requests = []
+    downloads = []
+    loaded_paths = []
+    moved_devices = []
+    example_shapes = []
+    expected_example = object()
+    expected_output = object()
+
+    class _Manifest:
+        def candidates(
+            self,
+            model_id,
+            *,
+            torch_version,
+            device,
+            allow_legacy_models,
+        ):
+            candidate_requests.append(
+                (model_id, torch_version, device, allow_legacy_models)
+            )
+            return [
+                SimpleNamespace(
+                    repo_id=f"facetorch/{model_id}",
+                    revision="a" * 40,
+                    filename="model.pt2",
+                )
+            ]
+
+    class _ExportedModule:
+        def to(self, device):
+            moved_devices.append(device)
+            return self
+
+        def eval(self):
+            raise AssertionError("exported modules must not be switched to eval mode")
+
+        def __call__(self, example):
+            assert example is expected_example
+            return expected_output
+
+    class _ExportedProgram:
+        def module(self):
+            return _ExportedModule()
+
+    def _download(*, repo_id, revision, filename):
+        downloads.append((repo_id, revision, filename))
+        return f"/models/{repo_id}/{revision}/{filename}"
+
+    def _load(path):
+        loaded_paths.append(path)
+        return _ExportedProgram()
+
+    def _randn(*shape, device):
+        example_shapes.append((shape, device))
+        return expected_example
+
+    monkeypatch.setattr(
+        artifact_module,
+        "get_model_manifest",
+        lambda: _Manifest(),
+    )
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", _download)
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
+    monkeypatch.setattr(torch.export, "load", _load)
+    monkeypatch.setattr(torch, "randn", _randn)
+
+    documents = render_model_documents()
+    for model_id, files in documents.items():
+        card = files["README.md"].decode("utf-8")
+        _, opening, remainder = card.partition("```python\n")
+        code, closing, _ = remainder.partition("\n```")
+        assert opening and closing
+
+        namespace = {}
+        exec(compile(code, f"<model-card:{model_id}>", "exec"), namespace)
+
+        assert namespace["MODEL_ID"] == model_id
+        assert namespace["output"] is expected_output
+
+    expected_model_ids = list(documents)
+    assert set(expected_model_ids) == set(manifest["models"])
+    assert candidate_requests == [
+        (model_id, torch.__version__, "cpu", False)
+        for model_id in expected_model_ids
+    ]
+    assert downloads == [
+        (f"facetorch/{model_id}", "a" * 40, "model.pt2")
+        for model_id in expected_model_ids
+    ]
+    assert loaded_paths == [
+        f"/models/facetorch/{model_id}/{'a' * 40}/model.pt2"
+        for model_id in expected_model_ids
+    ]
+    assert moved_devices == ["cpu"] * len(expected_model_ids)
+    assert len(example_shapes) == len(expected_model_ids)
+    assert all(device == "cpu" for _, device in example_shapes)
 
 
 @pytest.mark.release_blocker
