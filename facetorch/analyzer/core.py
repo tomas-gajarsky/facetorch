@@ -748,17 +748,47 @@ class FaceAnalyzer(object):
 
     def run_legacy(
         self,
-        *args,
+        image_source: Optional[
+            Union[str, os.PathLike, torch.Tensor, np.ndarray, bytes, Image.Image]
+        ] = None,
+        path_image: Optional[str] = None,
+        batch_size: int = 8,
+        fix_img_size: bool = False,
         return_img_data: bool = False,
-        **kwargs,
+        include_tensors: bool = False,
+        path_output: Optional[str] = None,
+        tensor: Optional[torch.Tensor] = None,
+        include_predictors: Optional[List[str]] = None,
+        exclude_predictors: Optional[List[str]] = None,
+        skip_detector: bool = False,
+        *,
+        input_policy: str = "coerce",
+        input_spec: Optional[InputSpec] = None,
     ) -> Union[Response, ImageData]:
-        """Run the canonical pipeline and adapt its result to the v0.x return union."""
+        """Run the canonical pipeline using the v0.x positional argument order.
+
+        Unlike ``run()``, the fifth positional argument controls whether this
+        adapter returns ``ImageData``. Prefer ``run()`` for new integrations.
+        """
         warnings.warn(
             "FaceAnalyzer.run_legacy is a v1.x compatibility adapter; migrate to run().",
             DeprecationWarning,
             stacklevel=2,
         )
-        result = self.run(*args, **kwargs)
+        result = self.run(
+            image_source=image_source,
+            path_image=path_image,
+            face_batch_size=batch_size,
+            fix_img_size=fix_img_size,
+            include_tensors=include_tensors,
+            path_output=path_output,
+            tensor=tensor,
+            include_predictors=include_predictors,
+            exclude_predictors=exclude_predictors,
+            skip_detector=skip_detector,
+            input_policy=input_policy,
+            input_spec=input_spec,
+        )
         if not return_img_data:
             return Response(faces=result.faces, version=result.version)
 

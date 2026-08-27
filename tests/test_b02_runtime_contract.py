@@ -315,6 +315,33 @@ def test_result_retention_and_legacy_adapter_are_explicit():
     assert legacy_data.tensor.shape == (1, 3, 8, 9)
 
 
+@pytest.mark.parametrize(
+    ("return_img_data", "expected_type"),
+    [(False, facetorch.Response), (True, facetorch.ImageData)],
+)
+def test_legacy_adapter_preserves_the_v0_positional_signature(
+    return_img_data,
+    expected_type,
+):
+    analyzer = _minimal_analyzer()
+    source = torch.zeros((3, 8, 9), dtype=torch.uint8)
+
+    with pytest.warns(DeprecationWarning, match="compatibility adapter"):
+        result = analyzer.run_legacy(
+            source,
+            None,
+            8,
+            False,
+            return_img_data,
+            True,
+            skip_detector=True,
+        )
+
+    assert isinstance(result, expected_type)
+    if return_img_data:
+        assert result.tensor.shape == (1, 3, 8, 9)
+
+
 class _FaceDetectorStub:
     def __init__(self, count):
         self.count = count
