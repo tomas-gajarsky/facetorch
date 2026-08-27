@@ -89,6 +89,8 @@ when the immutable v1.0.0-rc.1 tag and all publication receipts have been verifi
 * Google Colab notebook updated to v1.0.0 (uses `image_source`, removes pinned torch versions)
 
 ### Fixed
+* Stable alias promotion now fails closed on GitHub authentication, API, or
+  network errors while accepting only a schema-validated missing latest release
 * The deprecated `run_legacy` adapter accepts both positional layouts shipped
   across v0.x, and direct Pillow decode failures stay within the public
   `InputError` hierarchy

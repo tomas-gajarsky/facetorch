@@ -140,7 +140,12 @@ def test_stable_alias_mutation_is_serialized_and_monotonic():
         "group": "facetorch-stable-alias-promotion",
         "cancel-in-progress": False,
     }
-    assert "gh release view --json tagName" in commands
+    assert "gh api graphql" in commands
+    assert "latestRelease { tagName }" in commands
+    assert "current-latest-release.json" in commands
+    assert '(.data.repository | type) != "object"' in commands
+    assert ".data.repository.latestRelease == null" in commands
+    assert "|| true" not in commands
     assert "--current-latest-tag" in commands
     assert 'gh release edit "$TAG" --draft=false --latest=false' in finalize_commands
 
