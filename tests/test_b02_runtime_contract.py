@@ -370,6 +370,43 @@ def test_within_image_face_batching_preserves_order(face_count):
     ]
 
 
+def test_shipped_predictor_batch_limit_caps_requested_chunks():
+    predictor = _BatchRecorder()
+    predictor.max_batch_size = 64
+    analyzer = _minimal_analyzer(
+        detector=_FaceDetectorStub(65),
+        unifier=_IdentityUnifier(),
+        predictors={"probe": predictor},
+    )
+
+    result = analyzer.run(
+        image_source=torch.zeros((3, 8, 9), dtype=torch.uint8),
+        face_batch_size=65,
+    )
+
+    assert predictor.sizes == [64, 1]
+    assert len(result.faces) == 65
+
+
+@pytest.mark.parametrize("invalid_limit", [0, True, 1.5, "64"])
+def test_invalid_predictor_batch_limit_fails_before_inference(invalid_limit):
+    predictor = _BatchRecorder()
+    predictor.max_batch_size = invalid_limit
+    analyzer = _minimal_analyzer(
+        detector=_FaceDetectorStub(1),
+        unifier=_IdentityUnifier(),
+        predictors={"probe": predictor},
+    )
+
+    with pytest.raises(ConfigurationError, match="max_batch_size"):
+        analyzer.run(
+            image_source=torch.zeros((3, 8, 9), dtype=torch.uint8),
+            face_batch_size=8,
+        )
+
+    assert predictor.sizes == []
+
+
 def test_default_result_preserves_va_and_au_metadata_without_tensors():
     class MetadataPredictor:
         def __init__(self, prediction):
@@ -577,6 +614,69 @@ def test_detector_reuses_raw_tensor_for_declared_out_of_place_preprocessor():
 
     assert result.tensor is raw
     assert torch.count_nonzero(result.tensor) == 0
+
+
+def test_default_detector_bounds_large_input_and_restores_source_coordinates():
+    observed = {}
+
+    class ShapeRecorder(torch.nn.Module):
+        def forward(self, tensor):
+            observed["shape"] = tuple(tensor.shape)
+            return tensor
+
+    class DetectorCoordinatePostprocessor:
+        def run(self, data, _logits):
+            data.det = Detection(
+                dets=torch.tensor([[10.0, 20.0, 50.0, 100.0, 0.9]]),
+                boxes=torch.tensor([[10.0, 20.0, 50.0, 100.0]]),
+                landmarks=torch.tensor(
+                    [[10.0, 20.0, 20.0, 30.0, 30.0, 40.0, 40.0, 50.0, 50.0, 60.0]]
+                ),
+            )
+            data.faces = [
+                Face(
+                    indx=0,
+                    loc=Location(x1=10, y1=20, x2=50, y2=100),
+                    tensor=data.tensor[0, :, 20:100, 10:50],
+                )
+            ]
+            return data
+
+    detector = object.__new__(FaceDetector)
+    detector.device = torch.device("cpu")
+    detector.model = ShapeRecorder()
+    detector.preprocessor = DetectorPreProcessor(
+        transform=transforms.Compose([]),
+        device=torch.device("cpu"),
+        optimize_transform=False,
+        reverse_colors=False,
+    )
+    detector.postprocessor = DetectorCoordinatePostprocessor()
+    raw = torch.zeros((1, 3, 4096, 200))
+    data = ImageData(tensor=raw)
+    data.set_dims()
+
+    result = detector.run(data)
+
+    assert observed["shape"] == (1, 3, 2048, 128)
+    assert result.tensor is raw
+    assert result.dims == Dimensions(height=4096, width=200)
+    assert result.det.dets[0, :4].tolist() == [20.0, 40.0, 100.0, 200.0]
+    assert result.det.boxes[0].tolist() == [20.0, 40.0, 100.0, 200.0]
+    assert result.det.landmarks[0].tolist() == [
+        20.0,
+        40.0,
+        40.0,
+        60.0,
+        60.0,
+        80.0,
+        80.0,
+        100.0,
+        100.0,
+        120.0,
+    ]
+    assert result.faces[0].loc == Location(x1=20, y1=40, x2=100, y2=200)
+    assert torch.equal(result.faces[0].tensor, raw[0, :, 40:200, 20:100])
 
 
 def test_detector_defensively_clones_for_custom_preprocessor():

@@ -475,7 +475,8 @@ class FaceAnalyzer(object):
                 images. URLs require an explicit URLReader configuration.
             path_image (Optional[str]): Deprecated. Use image_source instead.
             face_batch_size (Optional[int]): Number of faces from this image sent to
-                each predictor at once. Default: 8.
+                each predictor at once. This is an upper bound; predictors may use
+                smaller chunks to honor their model artifact. Default: 8.
             fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False.
             return_img_data (Optional[bool]): Deprecated no-op. Use
                 ``include_tensors`` and the fields on ``AnalysisResult`` or call
@@ -549,11 +550,24 @@ class FaceAnalyzer(object):
             data: ImageData, predictor: FacePredictor, predictor_name: str
         ) -> ImageData:
             n_faces = len(data.faces)
-
-            for face_indx_start in range(0, n_faces, effective_face_batch_size):
-                face_indx_end = min(
-                    face_indx_start + effective_face_batch_size, n_faces
+            predictor_limit = getattr(predictor, "max_batch_size", None)
+            if predictor_limit is not None and (
+                isinstance(predictor_limit, bool)
+                or not isinstance(predictor_limit, int)
+                or predictor_limit < 1
+            ):
+                raise ConfigurationError(
+                    f"Face predictor {predictor_name!r} has invalid "
+                    f"max_batch_size {predictor_limit!r}."
                 )
+            chunk_size = (
+                effective_face_batch_size
+                if predictor_limit is None
+                else min(effective_face_batch_size, predictor_limit)
+            )
+
+            for face_indx_start in range(0, n_faces, chunk_size):
+                face_indx_end = min(face_indx_start + chunk_size, n_faces)
 
                 face_batch_tensor = torch.stack(
                     [face.tensor for face in data.faces[face_indx_start:face_indx_end]]

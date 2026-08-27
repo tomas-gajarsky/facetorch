@@ -65,8 +65,15 @@ class FaceDetector(BaseModel):
         raw_tensor = data.tensor if preserves_input else data.tensor.clone()
         img_h, img_w = raw_tensor.shape[-2:]
         data = self.preprocessor.run(data)
+        detector_scale = getattr(
+            data, "_facetorch_detector_coordinate_scale", (1.0, 1.0)
+        )
+        if hasattr(data, "_facetorch_detector_coordinate_scale"):
+            delattr(data, "_facetorch_detector_coordinate_scale")
+        scale_x, scale_y = detector_scale
         logits = self.inference(data.tensor)
         data = self.postprocessor.run(data, logits)
+        self._scale_detection_geometry(data, scale_x, scale_y)
 
         data.tensor = raw_tensor
         data.set_dims()
@@ -76,10 +83,37 @@ class FaceDetector(BaseModel):
             data.faces = []
             data = extract_faces(data)
         else:
-            data.faces = self._restore_custom_faces(data, img_w, img_h)
+            data.faces = self._restore_custom_faces(
+                data,
+                img_w,
+                img_h,
+                scale_x=scale_x,
+                scale_y=scale_y,
+            )
         self._clamp_detection_geometry(data, img_w, img_h)
 
         return data
+
+    @staticmethod
+    def _scale_detection_geometry(
+        data: ImageData, scale_x: float, scale_y: float
+    ) -> None:
+        """Map detector-image coordinates back to the source image."""
+        if scale_x == 1.0 and scale_y == 1.0:
+            return
+        if data.det.dets.numel() > 0 and data.det.dets.ndim == 2:
+            data.det.dets[:, 0].mul_(scale_x)
+            data.det.dets[:, 2].mul_(scale_x)
+            data.det.dets[:, 1].mul_(scale_y)
+            data.det.dets[:, 3].mul_(scale_y)
+        if data.det.boxes.numel() > 0 and data.det.boxes.ndim == 2:
+            data.det.boxes[:, 0].mul_(scale_x)
+            data.det.boxes[:, 2].mul_(scale_x)
+            data.det.boxes[:, 1].mul_(scale_y)
+            data.det.boxes[:, 3].mul_(scale_y)
+        if data.det.landmarks.numel() > 0 and data.det.landmarks.ndim == 2:
+            data.det.landmarks[:, 0::2].mul_(scale_x)
+            data.det.landmarks[:, 1::2].mul_(scale_y)
 
     @staticmethod
     def _clamp_detection_geometry(
@@ -102,17 +136,22 @@ class FaceDetector(BaseModel):
 
     @staticmethod
     def _restore_custom_faces(
-        data: ImageData, image_width: int, image_height: int
+        data: ImageData,
+        image_width: int,
+        image_height: int,
+        *,
+        scale_x: float = 1.0,
+        scale_y: float = 1.0,
     ) -> list:
         """Validate and recrop faces produced directly by a custom postprocessor."""
         restored = []
         image_area = image_width * image_height
         for face in data.faces:
             loc = Location(
-                x1=face.loc.x1,
-                y1=face.loc.y1,
-                x2=face.loc.x2,
-                y2=face.loc.y2,
+                x1=round(face.loc.x1 * scale_x),
+                y1=round(face.loc.y1 * scale_y),
+                x2=round(face.loc.x2 * scale_x),
+                y2=round(face.loc.y2 * scale_y),
             )
             loc.clamp(image_width, image_height)
             face_tensor = data.tensor[0, :, loc.y1 : loc.y2, loc.x1 : loc.x2]

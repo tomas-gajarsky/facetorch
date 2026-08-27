@@ -453,6 +453,201 @@ def test_directory_lock_timeout_has_an_actionable_error(tmp_path, monkeypatch):
 
 @pytest.mark.unit
 @pytest.mark.downloader
+def test_directory_lock_reclaims_same_pid_with_changed_process_identity(
+    tmp_path, monkeypatch
+):
+    lock_path = tmp_path / ".facetorch-download.lock"
+    lock_path.mkdir()
+    (lock_path / "owner.json").write_text(
+        json.dumps(
+            {
+                "pid": os.getpid(),
+                "process_identity": "previous-process",
+                "token": "previous-owner",
+                "created": time.time(),
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(_DirectoryLock, "_process_exists", staticmethod(lambda _pid: True))
+    monkeypatch.setattr(
+        _DirectoryLock,
+        "_process_identity",
+        staticmethod(lambda _pid: "current-process"),
+        raising=False,
+    )
+
+    with _DirectoryLock(lock_path, timeout=0.1):
+        owner = json.loads((lock_path / "owner.json").read_text(encoding="utf-8"))
+        assert owner["process_identity"] == "current-process"
+        assert owner["token"] != "previous-owner"
+
+    assert not lock_path.exists()
+
+
+@pytest.mark.unit
+@pytest.mark.downloader
+def test_directory_lock_exit_does_not_delete_a_replacement_owner(tmp_path):
+    lock_path = tmp_path / ".facetorch-download.lock"
+    lock = _DirectoryLock(lock_path, timeout=0.1)
+    lock.__enter__()
+    (lock_path / "owner.json").write_text(
+        json.dumps(
+            {
+                "pid": os.getpid(),
+                "process_identity": "replacement-process",
+                "token": "replacement-owner",
+                "created": time.time(),
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    lock.__exit__(None, None, None)
+
+    assert lock_path.is_dir()
+    owner = json.loads((lock_path / "owner.json").read_text(encoding="utf-8"))
+    assert owner["token"] == "replacement-owner"
+
+
+@pytest.mark.unit
+@pytest.mark.downloader
+def test_directory_lock_recovers_an_abandoned_reclamation_claim(
+    tmp_path, monkeypatch
+):
+    lock_path = tmp_path / ".facetorch-download.lock"
+    lock_path.mkdir()
+    (lock_path / "owner.json").write_text(
+        json.dumps({"pid": 10, "token": "dead-owner", "created": 0}),
+        encoding="utf-8",
+    )
+    (lock_path / ".reclaim").write_text(
+        json.dumps({"pid": 11, "token": "dead-claim", "created": 0}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        _DirectoryLock, "_process_exists", staticmethod(lambda _pid: False)
+    )
+
+    with _DirectoryLock(lock_path, timeout=0.2):
+        owner = json.loads((lock_path / "owner.json").read_text(encoding="utf-8"))
+        assert owner["token"] not in {"dead-owner", "dead-claim"}
+
+    assert not lock_path.exists()
+
+
+@pytest.mark.unit
+@pytest.mark.downloader
+def test_directory_lock_process_identity_and_claim_liveness_policy(
+    tmp_path, monkeypatch
+):
+    lock = _DirectoryLock(tmp_path / ".facetorch-download.lock", timeout=0.1)
+
+    assert _DirectoryLock._process_identity(0) is None
+    malformed_stat = " ".join(["field"] * 25)
+    with patch.object(
+        Path,
+        "read_text",
+        side_effect=[malformed_stat, "boot-id"],
+    ):
+        assert _DirectoryLock._process_identity(os.getpid()) is None
+    assert lock._recorded_process_is_live({}) is None
+
+    claim_path = tmp_path / ".reclaim"
+    claim_path.write_text(
+        json.dumps({"pid": os.getpid(), "token": "live"}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(lock, "_recorded_process_is_live", lambda _record: True)
+    assert lock._remove_abandoned_claim(claim_path) is False
+    assert claim_path.is_file()
+
+    claim_path.write_text("broken", encoding="utf-8")
+    assert lock._remove_abandoned_claim(claim_path) is False
+    old = time.time() - 10
+    os.utime(claim_path, (old, old))
+    with patch.object(Path, "unlink", side_effect=OSError("read-only")):
+        assert lock._remove_abandoned_claim(claim_path) is False
+    assert lock._remove_abandoned_claim(claim_path) is True
+    assert not claim_path.exists()
+
+
+@pytest.mark.unit
+@pytest.mark.downloader
+def test_directory_lock_reclamation_failures_preserve_the_current_owner(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(
+        _DirectoryLock, "_process_exists", staticmethod(lambda _pid: False)
+    )
+    monkeypatch.setattr(
+        _DirectoryLock, "_process_identity", staticmethod(lambda _pid: None)
+    )
+
+    def stale_lock(name):
+        lock_path = tmp_path / name
+        lock_path.mkdir()
+        owner_path = lock_path / "owner.json"
+        owner_path.write_text(
+            json.dumps({"pid": 12345, "token": name}),
+            encoding="utf-8",
+        )
+        return _DirectoryLock(lock_path, timeout=0.1), owner_path
+
+    invalid_path = tmp_path / "invalid.lock"
+    invalid_path.mkdir()
+    (invalid_path / "owner.json").write_text("{}", encoding="utf-8")
+    assert _DirectoryLock(invalid_path, timeout=0.1)._reclaim_stale_owner() is False
+    assert invalid_path.is_dir()
+
+    open_failure, open_owner = stale_lock("open-failure.lock")
+    with patch("facetorch.downloader.os.open", side_effect=OSError("read-only")):
+        assert open_failure._reclaim_stale_owner() is False
+    assert open_owner.is_file()
+
+    write_failure, write_owner = stale_lock("write-failure.lock")
+    with patch("facetorch.downloader.os.fsync", side_effect=OSError("write failed")):
+        assert write_failure._reclaim_stale_owner() is False
+    assert write_owner.is_file()
+    assert not (write_failure.path / ".reclaim").exists()
+
+    replace_failure, replace_owner = stale_lock("replace-failure.lock")
+    with patch("facetorch.downloader.os.replace", side_effect=OSError("busy")):
+        assert replace_failure._reclaim_stale_owner() is False
+    assert replace_owner.is_file()
+    assert not (replace_failure.path / ".reclaim").exists()
+
+
+@pytest.mark.unit
+@pytest.mark.downloader
+def test_directory_lock_owner_record_failures_are_fail_closed(tmp_path):
+    lock_path = tmp_path / "owner-write-failure.lock"
+    lock = _DirectoryLock(lock_path, timeout=0.1)
+    with patch.object(Path, "write_text", side_effect=OSError("read-only")):
+        with pytest.raises(CacheLockError, match="Could not record ownership"):
+            lock.__enter__()
+    assert not lock_path.exists()
+    assert lock._owner_token is None
+
+    malformed_path = tmp_path / "malformed-owner.lock"
+    malformed_path.mkdir()
+    (malformed_path / "owner.json").write_text("broken", encoding="utf-8")
+    malformed = _DirectoryLock(malformed_path, timeout=0.1)
+    malformed._owner_token = "expected-owner"
+    malformed.__exit__(None, None, None)
+    assert malformed_path.is_dir()
+    assert malformed._owner_token is None
+
+    (malformed_path / "owner.json").write_text("[]", encoding="utf-8")
+    non_mapping = _DirectoryLock(malformed_path, timeout=0.1)
+    non_mapping._owner_token = "expected-owner"
+    non_mapping.__exit__(None, None, None)
+    assert malformed_path.is_dir()
+    assert non_mapping._owner_token is None
+
+
+@pytest.mark.unit
+@pytest.mark.downloader
 def test_atomic_promotion_renames_same_filesystem_candidate(tmp_path):
     candidate = _make_export(tmp_path / "candidate.pt2")
     descriptor = _manifest(candidate).descriptor("toy-torch2.11")

@@ -32,8 +32,14 @@ with an `InputSpec` when a caller needs declared layout, range, color, or alpha
 semantics. Conversion warnings are part of the public contract.
 
 `face_batch_size` batches faces detected in one source image for predictors.
-It does not batch multiple images. The old `batch_size` spelling is a
+It does not batch multiple images and acts as an upper bound. Shipped predictor
+artifacts split requests into batches of at most 64; custom predictors may declare
+a different `max_batch_size`. The old `batch_size` spelling is a
 `DeprecationWarning` alias through v1.x; supplying both names is an error.
+
+The shipped detector accepts model inputs from 64 through 2048 pixels per axis in
+multiples of 32. Larger source images are downscaled for detection and all boxes,
+landmarks, and extracted faces are mapped back to original-image coordinates.
 
 Predictors, the detector, and selection-linked utilizers are lazy. Empty
 selection and `skip_detector=True` are supported, and unknown or duplicate

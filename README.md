@@ -155,6 +155,9 @@ four-dimensional input must have `B=1`.
 Every successful call returns `AnalysisResult`. Set `include_tensors=True` to retain
 the optional `image`, `tensor`, and `detection` fields. The v0.x `batch_size` name is
 a warning alias for `face_batch_size` throughout v1.x; supplying both is an error.
+`face_batch_size` is an upper bound: the shipped predictor artifacts automatically
+split requests into batches of at most 64, while custom predictors may declare a
+different `max_batch_size`.
 Code that temporarily needs the old `Response`/`ImageData` union can call the
 explicit, warning-emitting `analyzer.run_legacy(...)` adapter.
 

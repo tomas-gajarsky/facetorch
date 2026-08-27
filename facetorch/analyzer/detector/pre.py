@@ -61,6 +61,9 @@ class DetectorPreProcessor(BaseDetPreProcessor):
     # This implementation only rebinds ``data.tensor``. Custom detector
     # preprocessors remain defensive by default through the base-class flag.
     preserves_input_tensor = True
+    model_min_size = 64
+    model_max_size = 2048
+    model_size_multiple = 32
 
     @Timer(
         "DetectorPreProcessor.__init__",
@@ -101,16 +104,51 @@ class DetectorPreProcessor(BaseDetPreProcessor):
         if data.tensor.device != self.device:
             data.tensor = data.tensor.to(self.device)
 
+        source_h, source_w = data.tensor.shape[-2:]
         data.tensor = self.transform(data.tensor)
 
         if self.reverse_colors:
             data.tensor = rgb2bgr(data.tensor)
 
         _, _, h, w = data.tensor.shape
-        pad_h = (32 - h % 32) % 32
-        pad_w = (32 - w % 32) % 32
+        resize_scale = min(
+            1.0,
+            self.model_max_size / h,
+            self.model_max_size / w,
+        )
+        target_h = max(1, min(self.model_max_size, round(h * resize_scale)))
+        target_w = max(1, min(self.model_max_size, round(w * resize_scale)))
+        if (target_h, target_w) != (h, w):
+            data.tensor = F.interpolate(
+                data.tensor,
+                size=(target_h, target_w),
+                mode="bilinear",
+                align_corners=False,
+                antialias=True,
+            )
+
+        # FaceDetector consumes this private handoff before returning ImageData.
+        # Padding does not change pixel coordinates, so the scale uses the
+        # unpadded detector image dimensions.
+        data._facetorch_detector_coordinate_scale = (
+            source_w / target_w,
+            source_h / target_h,
+        )
+
+        padded_h = max(
+            self.model_min_size,
+            ((target_h + self.model_size_multiple - 1) // self.model_size_multiple)
+            * self.model_size_multiple,
+        )
+        padded_w = max(
+            self.model_min_size,
+            ((target_w + self.model_size_multiple - 1) // self.model_size_multiple)
+            * self.model_size_multiple,
+        )
+        pad_h = padded_h - target_h
+        pad_w = padded_w - target_w
         if pad_h > 0 or pad_w > 0:
             data.tensor = F.pad(data.tensor, (0, pad_w, 0, pad_h), value=0)
-            data.set_dims()
+        data.set_dims()
 
         return data

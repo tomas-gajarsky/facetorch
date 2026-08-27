@@ -1373,7 +1373,8 @@ class CacheEntryInspection:
                 images. URLs require an explicit URLReader configuration.
             path_image (Optional[str]): Deprecated. Use image_source instead.
             face_batch_size (Optional[int]): Number of faces from this image sent to
-                each predictor at once. Default: 8.
+                each predictor at once. This is an upper bound; predictors may use
+                smaller chunks to honor their model artifact. Default: 8.
             fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False.
             return_img_data (Optional[bool]): Deprecated no-op. Use
                 ``include_tensors`` and the fields on ``AnalysisResult`` or call
@@ -1447,11 +1448,24 @@ class CacheEntryInspection:
             data: ImageData, predictor: FacePredictor, predictor_name: str
         ) -&gt; ImageData:
             n_faces = len(data.faces)
-
-            for face_indx_start in range(0, n_faces, effective_face_batch_size):
-                face_indx_end = min(
-                    face_indx_start + effective_face_batch_size, n_faces
+            predictor_limit = getattr(predictor, &#34;max_batch_size&#34;, None)
+            if predictor_limit is not None and (
+                isinstance(predictor_limit, bool)
+                or not isinstance(predictor_limit, int)
+                or predictor_limit &lt; 1
+            ):
+                raise ConfigurationError(
+                    f&#34;Face predictor {predictor_name!r} has invalid &#34;
+                    f&#34;max_batch_size {predictor_limit!r}.&#34;
                 )
+            chunk_size = (
+                effective_face_batch_size
+                if predictor_limit is None
+                else min(effective_face_batch_size, predictor_limit)
+            )
+
+            for face_indx_start in range(0, n_faces, chunk_size):
+                face_indx_end = min(face_indx_start + chunk_size, n_faces)
 
                 face_batch_tensor = torch.stack(
                     [face.tensor for face in data.faces[face_indx_start:face_indx_end]]
@@ -1967,7 +1981,8 @@ def run(
             images. URLs require an explicit URLReader configuration.
         path_image (Optional[str]): Deprecated. Use image_source instead.
         face_batch_size (Optional[int]): Number of faces from this image sent to
-            each predictor at once. Default: 8.
+            each predictor at once. This is an upper bound; predictors may use
+            smaller chunks to honor their model artifact. Default: 8.
         fix_img_size (bool): If True, resizes the image to the size specified in reader. Default is False.
         return_img_data (Optional[bool]): Deprecated no-op. Use
             ``include_tensors`` and the fields on ``AnalysisResult`` or call
@@ -2041,11 +2056,24 @@ def run(
         data: ImageData, predictor: FacePredictor, predictor_name: str
     ) -&gt; ImageData:
         n_faces = len(data.faces)
-
-        for face_indx_start in range(0, n_faces, effective_face_batch_size):
-            face_indx_end = min(
-                face_indx_start + effective_face_batch_size, n_faces
+        predictor_limit = getattr(predictor, &#34;max_batch_size&#34;, None)
+        if predictor_limit is not None and (
+            isinstance(predictor_limit, bool)
+            or not isinstance(predictor_limit, int)
+            or predictor_limit &lt; 1
+        ):
+            raise ConfigurationError(
+                f&#34;Face predictor {predictor_name!r} has invalid &#34;
+                f&#34;max_batch_size {predictor_limit!r}.&#34;
             )
+        chunk_size = (
+            effective_face_batch_size
+            if predictor_limit is None
+            else min(effective_face_batch_size, predictor_limit)
+        )
+
+        for face_indx_start in range(0, n_faces, chunk_size):
+            face_indx_end = min(face_indx_start + chunk_size, n_faces)
 
             face_batch_tensor = torch.stack(
                 [face.tensor for face in data.faces[face_indx_start:face_indx_end]]
@@ -2236,7 +2264,8 @@ images. URLs require an explicit URLReader configuration.</dd>
 <dd>Deprecated. Use image_source instead.</dd>
 <dt><strong><code>face_batch_size</code></strong> :&ensp;<code>Optional[int]</code></dt>
 <dd>Number of faces from this image sent to
-each predictor at once. Default: 8.</dd>
+each predictor at once. This is an upper bound; predictors may use
+smaller chunks to honor their model artifact. Default: 8.</dd>
 <dt><strong><code>fix_img_size</code></strong> :&ensp;<code>bool</code></dt>
 <dd>If True, resizes the image to the size specified in reader. Default is False.</dd>
 <dt><strong><code>return_img_data</code></strong> :&ensp;<code>Optional[bool]</code></dt>

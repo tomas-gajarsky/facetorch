@@ -48,7 +48,7 @@ el.replaceWith(d);
 <dl>
 <dt id="facetorch.analyzer.predictor.core.FacePredictor"><code class="flex name class">
 <span>class <span class="ident">FacePredictor</span></span>
-<span>(</span><span>downloader: <a title="facetorch.base.BaseDownloader" href="../../base.html#facetorch.base.BaseDownloader">BaseDownloader</a>,<br>device: torch.device,<br>preprocessor: <a title="facetorch.analyzer.predictor.pre.BasePredPreProcessor" href="pre.html#facetorch.analyzer.predictor.pre.BasePredPreProcessor">BasePredPreProcessor</a>,<br>postprocessor: <a title="facetorch.analyzer.predictor.post.BasePredPostProcessor" href="post.html#facetorch.analyzer.predictor.post.BasePredPostProcessor">BasePredPostProcessor</a>,<br>native_model_class: str | None = None,<br>compile_model: bool = False,<br>compile_options: dict | None = None)</span>
+<span>(</span><span>downloader: <a title="facetorch.base.BaseDownloader" href="../../base.html#facetorch.base.BaseDownloader">BaseDownloader</a>,<br>device: torch.device,<br>preprocessor: <a title="facetorch.analyzer.predictor.pre.BasePredPreProcessor" href="pre.html#facetorch.analyzer.predictor.pre.BasePredPreProcessor">BasePredPreProcessor</a>,<br>postprocessor: <a title="facetorch.analyzer.predictor.post.BasePredPostProcessor" href="post.html#facetorch.analyzer.predictor.post.BasePredPostProcessor">BasePredPostProcessor</a>,<br>native_model_class: str | None = None,<br>compile_model: bool = False,<br>compile_options: dict | None = None,<br>max_batch_size: int | None = 64)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -68,6 +68,7 @@ el.replaceWith(d);
         native_model_class: Optional[str] = None,
         compile_model: bool = False,
         compile_options: Optional[dict] = None,
+        max_batch_size: Optional[int] = 64,
     ):
         &#34;&#34;&#34;FacePredictor is a wrapper around a neural network model that is trained to predict facial features.
 
@@ -81,7 +82,19 @@ el.replaceWith(d);
             compile_model (bool): If True, compile the loaded model. Default: False.
             compile_options (Optional[dict]): Keyword arguments forwarded to
                 ``torch.compile``. Default: None.
+            max_batch_size (Optional[int]): Maximum batch accepted by the model
+                artifact. Shipped exports support at most 64. ``None`` disables
+                predictor-specific capping for custom artifacts. Default: 64.
         &#34;&#34;&#34;
+        if max_batch_size is not None and (
+            isinstance(max_batch_size, bool)
+            or not isinstance(max_batch_size, int)
+            or max_batch_size &lt; 1
+        ):
+            raise ConfigurationError(
+                &#34;max_batch_size must be a positive integer or None, &#34;
+                f&#34;got {max_batch_size!r}.&#34;
+            )
         super().__init__(
             downloader,
             device,
@@ -92,6 +105,7 @@ el.replaceWith(d);
 
         self.preprocessor = preprocessor
         self.postprocessor = postprocessor
+        self.max_batch_size = max_batch_size
 
     @Timer(&#34;FacePredictor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
     def run(self, faces: torch.Tensor) -&gt; List[Prediction]:
@@ -129,6 +143,10 @@ PyTorch nn.Module to use instead of TorchScript. Default: None.</dd>
 <dt><strong><code>compile_options</code></strong> :&ensp;<code>Optional[dict]</code></dt>
 <dd>Keyword arguments forwarded to
 <code>torch.compile</code>. Default: None.</dd>
+<dt><strong><code>max_batch_size</code></strong> :&ensp;<code>Optional[int]</code></dt>
+<dd>Maximum batch accepted by the model
+artifact. Shipped exports support at most 64. <code>None</code> disables
+predictor-specific capping for custom artifacts. Default: 64.</dd>
 </dl></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
