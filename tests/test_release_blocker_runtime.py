@@ -380,6 +380,19 @@ def test_model_wrappers_forward_compile_options(component_class, tmp_path):
 
 
 @pytest.mark.release_blocker
+@pytest.mark.parametrize("invalid_limit", [0, True, 1.5, "64"])
+def test_predictor_rejects_invalid_artifact_batch_limits(invalid_limit):
+    with pytest.raises(facetorch.ConfigurationError, match="max_batch_size"):
+        FacePredictor(
+            downloader=object(),
+            device=torch.device("cpu"),
+            preprocessor=object(),
+            postprocessor=object(),
+            max_batch_size=invalid_limit,
+        )
+
+
+@pytest.mark.release_blocker
 def test_custom_detector_postprocessor_retains_faces_after_padding():
     class PadPreprocessor:
         def run(self, data):

@@ -47,6 +47,7 @@ class _DirectoryLock(AbstractContextManager):
     def __init__(self, path: Path, *, timeout: float = 600.0) -> None:
         self.path = path
         self.timeout = timeout
+        self._owner_token: Optional[str] = None
 
     @staticmethod
     def _process_exists(pid: int) -> bool:
@@ -62,12 +63,71 @@ class _DirectoryLock(AbstractContextManager):
             return exc.errno != errno.ESRCH
         return True
 
-    def _reclaim_stale_owner(self) -> bool:
-        """Atomically remove a lock whose recorded process no longer exists."""
-        owner_path = self.path / "owner.json"
+    @staticmethod
+    def _process_identity(pid: int) -> Optional[str]:
+        """Return Linux boot/process-start identity when the kernel exposes it."""
+        if pid <= 0:
+            return None
         try:
-            owner = json.loads(owner_path.read_text(encoding="utf-8"))
-            pid = int(owner["pid"])
+            stat_text = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8")
+            boot_id = Path("/proc/sys/kernel/random/boot_id").read_text(
+                encoding="utf-8"
+            ).strip()
+            command_end = stat_text.rfind(")")
+            fields = stat_text[command_end + 2 :].split()
+            start_ticks = fields[19]
+        except (IndexError, OSError, ValueError):
+            return None
+        if command_end < 0 or not boot_id or not start_ticks:
+            return None
+        return f"{boot_id}:{start_ticks}"
+
+    def _recorded_process_is_live(self, record: Mapping[str, Any]) -> Optional[bool]:
+        """Return whether an ownership record still identifies the same process."""
+        try:
+            pid = int(record["pid"])
+        except (KeyError, TypeError, ValueError):
+            return None
+        if not self._process_exists(pid):
+            return False
+        recorded_identity = record.get("process_identity")
+        current_identity = self._process_identity(pid)
+        if recorded_identity is not None and current_identity is not None:
+            return recorded_identity == current_identity
+        return True
+
+    def _remove_abandoned_claim(self, claim_path: Path) -> bool:
+        """Remove a stale reclamation claim without disturbing a live claimant."""
+        try:
+            claim = json.loads(claim_path.read_text(encoding="utf-8"))
+            claim_is_live = self._recorded_process_is_live(claim)
+        except (OSError, TypeError, ValueError, json.JSONDecodeError):
+            claim_is_live = None
+        if claim_is_live is True:
+            return False
+        if claim_is_live is None:
+            try:
+                old_enough = time.time() - claim_path.stat().st_mtime > 5.0
+            except OSError:
+                return False
+            if not old_enough:
+                return False
+        try:
+            claim_path.unlink()
+        except OSError:
+            return False
+        return True
+
+    def _reclaim_stale_owner(self) -> bool:
+        """Atomically remove a lock whose recorded process identity is stale."""
+        owner_path = self.path / "owner.json"
+        owner_text: Optional[str] = None
+        try:
+            owner_text = owner_path.read_text(encoding="utf-8")
+            owner = json.loads(owner_text)
+            owner_is_live = self._recorded_process_is_live(owner)
+            if owner_is_live is None:
+                raise ValueError("invalid ownership record")
         except (KeyError, TypeError, ValueError, OSError, json.JSONDecodeError):
             try:
                 old_enough = time.time() - self.path.stat().st_mtime > 5.0
@@ -76,8 +136,51 @@ class _DirectoryLock(AbstractContextManager):
             if not old_enough:
                 return False
         else:
-            if self._process_exists(pid):
+            if owner_is_live:
                 return False
+
+        claim_path = self.path / ".reclaim"
+        try:
+            claim_fd = os.open(
+                claim_path,
+                os.O_CREAT | os.O_EXCL | os.O_WRONLY,
+                0o600,
+            )
+        except FileExistsError:
+            self._remove_abandoned_claim(claim_path)
+            return False
+        except OSError:
+            return False
+        claim = {
+            "pid": os.getpid(),
+            "token": uuid4().hex,
+            "created": time.time(),
+        }
+        process_identity = self._process_identity(claim["pid"])
+        if process_identity is not None:
+            claim["process_identity"] = process_identity
+        try:
+            with os.fdopen(claim_fd, "w", encoding="utf-8") as claim_file:
+                json.dump(claim, claim_file)
+                claim_file.flush()
+                os.fsync(claim_file.fileno())
+        except OSError:
+            try:
+                claim_path.unlink()
+            except OSError:
+                pass
+            return False
+
+        try:
+            current_owner_text = owner_path.read_text(encoding="utf-8")
+        except OSError:
+            current_owner_text = None
+        if current_owner_text != owner_text:
+            try:
+                claim_path.unlink()
+            except OSError:
+                pass
+            return False
 
         stale_path = self.path.with_name(
             f"{self.path.name}.stale.{uuid4().hex}"
@@ -85,6 +188,10 @@ class _DirectoryLock(AbstractContextManager):
         try:
             os.replace(self.path, stale_path)
         except (FileNotFoundError, FileExistsError, OSError):
+            try:
+                claim_path.unlink()
+            except OSError:
+                pass
             return False
         shutil.rmtree(stale_path, ignore_errors=True)
         return True
@@ -105,17 +212,40 @@ class _DirectoryLock(AbstractContextManager):
                         "lock directory and retrying."
                     )
                 time.sleep(0.05)
+        self._owner_token = uuid4().hex
+        owner = {
+            "pid": os.getpid(),
+            "created": time.time(),
+            "token": self._owner_token,
+        }
+        process_identity = self._process_identity(owner["pid"])
+        if process_identity is not None:
+            owner["process_identity"] = process_identity
         try:
             (self.path / "owner.json").write_text(
-                json.dumps({"pid": os.getpid(), "created": time.time()}),
+                json.dumps(owner),
                 encoding="utf-8",
             )
-        except OSError:
-            pass
+        except OSError as exc:
+            shutil.rmtree(self.path, ignore_errors=True)
+            self._owner_token = None
+            raise CacheLockError(
+                f"Could not record ownership for model cache lock {self.path}."
+            ) from exc
         return self
 
     def __exit__(self, *_exc: object) -> None:
-        shutil.rmtree(self.path, ignore_errors=True)
+        try:
+            owner = json.loads(
+                (self.path / "owner.json").read_text(encoding="utf-8")
+            )
+        except (OSError, TypeError, ValueError, json.JSONDecodeError):
+            owner = {}
+        if not isinstance(owner, Mapping):
+            owner = {}
+        if self._owner_token is not None and owner.get("token") == self._owner_token:
+            shutil.rmtree(self.path, ignore_errors=True)
+        self._owner_token = None
 
 
 def _ensure_directory(path: Path) -> None:

@@ -189,6 +189,9 @@ Returns a batch of preprocessed face tensors.</p>
     # This implementation only rebinds ``data.tensor``. Custom detector
     # preprocessors remain defensive by default through the base-class flag.
     preserves_input_tensor = True
+    model_min_size = 64
+    model_max_size = 2048
+    model_size_multiple = 32
 
     @Timer(
         &#34;DetectorPreProcessor.__init__&#34;,
@@ -229,17 +232,52 @@ Returns a batch of preprocessed face tensors.</p>
         if data.tensor.device != self.device:
             data.tensor = data.tensor.to(self.device)
 
+        source_h, source_w = data.tensor.shape[-2:]
         data.tensor = self.transform(data.tensor)
 
         if self.reverse_colors:
             data.tensor = rgb2bgr(data.tensor)
 
         _, _, h, w = data.tensor.shape
-        pad_h = (32 - h % 32) % 32
-        pad_w = (32 - w % 32) % 32
+        resize_scale = min(
+            1.0,
+            self.model_max_size / h,
+            self.model_max_size / w,
+        )
+        target_h = max(1, min(self.model_max_size, round(h * resize_scale)))
+        target_w = max(1, min(self.model_max_size, round(w * resize_scale)))
+        if (target_h, target_w) != (h, w):
+            data.tensor = F.interpolate(
+                data.tensor,
+                size=(target_h, target_w),
+                mode=&#34;bilinear&#34;,
+                align_corners=False,
+                antialias=True,
+            )
+
+        # FaceDetector consumes this private handoff before returning ImageData.
+        # Padding does not change pixel coordinates, so the scale uses the
+        # unpadded detector image dimensions.
+        data._facetorch_detector_coordinate_scale = (
+            source_w / target_w,
+            source_h / target_h,
+        )
+
+        padded_h = max(
+            self.model_min_size,
+            ((target_h + self.model_size_multiple - 1) // self.model_size_multiple)
+            * self.model_size_multiple,
+        )
+        padded_w = max(
+            self.model_min_size,
+            ((target_w + self.model_size_multiple - 1) // self.model_size_multiple)
+            * self.model_size_multiple,
+        )
+        pad_h = padded_h - target_h
+        pad_w = padded_w - target_w
         if pad_h &gt; 0 or pad_w &gt; 0:
             data.tensor = F.pad(data.tensor, (0, pad_w, 0, pad_h), value=0)
-            data.set_dims()
+        data.set_dims()
 
         return data</code></pre>
 </details>
@@ -264,6 +302,18 @@ Returns a batch of preprocessed face tensors.</p>
 <h3>Class variables</h3>
 <dl>
 <dt id="facetorch.analyzer.detector.pre.DetectorPreProcessor.preserves_input_tensor"><code class="name">var <span class="ident">preserves_input_tensor</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.analyzer.detector.pre.DetectorPreProcessor.model_min_size"><code class="name">var <span class="ident">model_min_size</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.analyzer.detector.pre.DetectorPreProcessor.model_max_size"><code class="name">var <span class="ident">model_max_size</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.analyzer.detector.pre.DetectorPreProcessor.model_size_multiple"><code class="name">var <span class="ident">model_size_multiple</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -293,17 +343,52 @@ def run(self, data: ImageData) -&gt; ImageData:
     if data.tensor.device != self.device:
         data.tensor = data.tensor.to(self.device)
 
+    source_h, source_w = data.tensor.shape[-2:]
     data.tensor = self.transform(data.tensor)
 
     if self.reverse_colors:
         data.tensor = rgb2bgr(data.tensor)
 
     _, _, h, w = data.tensor.shape
-    pad_h = (32 - h % 32) % 32
-    pad_w = (32 - w % 32) % 32
+    resize_scale = min(
+        1.0,
+        self.model_max_size / h,
+        self.model_max_size / w,
+    )
+    target_h = max(1, min(self.model_max_size, round(h * resize_scale)))
+    target_w = max(1, min(self.model_max_size, round(w * resize_scale)))
+    if (target_h, target_w) != (h, w):
+        data.tensor = F.interpolate(
+            data.tensor,
+            size=(target_h, target_w),
+            mode=&#34;bilinear&#34;,
+            align_corners=False,
+            antialias=True,
+        )
+
+    # FaceDetector consumes this private handoff before returning ImageData.
+    # Padding does not change pixel coordinates, so the scale uses the
+    # unpadded detector image dimensions.
+    data._facetorch_detector_coordinate_scale = (
+        source_w / target_w,
+        source_h / target_h,
+    )
+
+    padded_h = max(
+        self.model_min_size,
+        ((target_h + self.model_size_multiple - 1) // self.model_size_multiple)
+        * self.model_size_multiple,
+    )
+    padded_w = max(
+        self.model_min_size,
+        ((target_w + self.model_size_multiple - 1) // self.model_size_multiple)
+        * self.model_size_multiple,
+    )
+    pad_h = padded_h - target_h
+    pad_w = padded_w - target_w
     if pad_h &gt; 0 or pad_w &gt; 0:
         data.tensor = F.pad(data.tensor, (0, pad_w, 0, pad_h), value=0)
-        data.set_dims()
+    data.set_dims()
 
     return data</code></pre>
 </details>
@@ -402,6 +487,9 @@ setTimeout(() => input.focus(), 100);
 <ul class="">
 <li><code><a title="facetorch.analyzer.detector.pre.DetectorPreProcessor.run" href="#facetorch.analyzer.detector.pre.DetectorPreProcessor.run">run</a></code></li>
 <li><code><a title="facetorch.analyzer.detector.pre.DetectorPreProcessor.preserves_input_tensor" href="#facetorch.analyzer.detector.pre.DetectorPreProcessor.preserves_input_tensor">preserves_input_tensor</a></code></li>
+<li><code><a title="facetorch.analyzer.detector.pre.DetectorPreProcessor.model_min_size" href="#facetorch.analyzer.detector.pre.DetectorPreProcessor.model_min_size">model_min_size</a></code></li>
+<li><code><a title="facetorch.analyzer.detector.pre.DetectorPreProcessor.model_max_size" href="#facetorch.analyzer.detector.pre.DetectorPreProcessor.model_max_size">model_max_size</a></code></li>
+<li><code><a title="facetorch.analyzer.detector.pre.DetectorPreProcessor.model_size_multiple" href="#facetorch.analyzer.detector.pre.DetectorPreProcessor.model_size_multiple">model_size_multiple</a></code></li>
 </ul>
 </li>
 </ul>
