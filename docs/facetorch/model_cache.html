@@ -294,7 +294,7 @@ el.replaceWith(d);
                 cached=_is_verified(path, descriptor),
             )
         )
-    if &#34;align&#34; in predictor_names:
+    if &#34;align&#34; in _selected_utilizers(cfg, predictor_names):
         items.append(_metadata_prefetch_item(cfg))
     return PrefetchPlan(profile=profile, items=tuple(items))</code></pre>
 </details>
@@ -354,7 +354,7 @@ el.replaceWith(d);
     downloader_configs.extend(
         cfg.analyzer.predictor[name].downloader for name in predictor_names
     )
-    if &#34;align&#34; in predictor_names:
+    if &#34;align&#34; in _selected_utilizers(cfg, predictor_names):
         downloader_configs.append(
             cfg.analyzer.utilizer.align.downloader_meta
         )

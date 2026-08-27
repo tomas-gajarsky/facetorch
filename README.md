@@ -438,8 +438,9 @@ prefetch_models(
 ```
 
 `include_predictors=[]` and `skip_detector=True` produce an empty plan and make no
-model-network request. Alignment metadata is included only when the `align`
-predictor is selected. Bulk prefetch refuses to start before `confirm=True` and
+model-network request. Alignment metadata is included only when the selected
+predictor set satisfies the composed `analyzer.utilizer_dependencies` requirements
+for the `align` utilizer. Bulk prefetch refuses to start before `confirm=True` and
 reports the estimated missing bytes first.
 
 For deployment, populate the same cache online and then compose with
