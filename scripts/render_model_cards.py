@@ -388,7 +388,7 @@ def _render_card(
         "    revision=artifact.revision,",
         "    filename=artifact.filename,",
         ")",
-        "model = torch.export.load(path).module().to(device).eval()",
+        "model = torch.export.load(path).module().to(device)",
         f"example = torch.randn({shape}, device=device)",
         "with torch.inference_mode():",
         "    output = model(example)",
