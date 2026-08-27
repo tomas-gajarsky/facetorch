@@ -1648,6 +1648,7 @@ class CacheEntryInspection:
         image_source: Optional[
             Union[str, os.PathLike, torch.Tensor, np.ndarray, bytes, Image.Image]
         ] = None,
+        *legacy_args: Any,
         path_image: Optional[str] = None,
         batch_size: int = 8,
         fix_img_size: bool = False,
@@ -1658,20 +1659,113 @@ class CacheEntryInspection:
         include_predictors: Optional[List[str]] = None,
         exclude_predictors: Optional[List[str]] = None,
         skip_detector: bool = False,
-        *,
         input_policy: str = &#34;coerce&#34;,
         input_spec: Optional[InputSpec] = None,
     ) -&gt; Union[Response, ImageData]:
-        &#34;&#34;&#34;Run the canonical pipeline using the v0.x positional argument order.
+        &#34;&#34;&#34;Run the canonical pipeline using either shipped v0 positional order.
 
-        Unlike ``run()``, the fifth positional argument controls whether this
-        adapter returns ``ImageData``. Prefer ``run()`` for new integrations.
+        Releases through v0.4 used ``path_image, batch_size, ...``. Releases
+        v0.5 and v0.6 inserted ``image_source, path_image, batch_size, ...``.
+        This adapter accepts both layouts and preserves their flag-dependent
+        return type. Prefer ``run()`` for new integrations.
         &#34;&#34;&#34;
         warnings.warn(
             &#34;FaceAnalyzer.run_legacy is a v1.x compatibility adapter; migrate to run().&#34;,
             DeprecationWarning,
             stacklevel=2,
         )
+
+        if legacy_args:
+            # The second positional value distinguishes the two historical
+            # layouts: v0.5+ path_image was a path/None, while earlier releases
+            # placed the integer batch_size there.
+            has_v05_source_slot = legacy_args[0] is None or isinstance(
+                legacy_args[0], (str, os.PathLike)
+            )
+            positional_names = (
+                (
+                    &#34;path_image&#34;,
+                    &#34;batch_size&#34;,
+                    &#34;fix_img_size&#34;,
+                    &#34;return_img_data&#34;,
+                    &#34;include_tensors&#34;,
+                    &#34;path_output&#34;,
+                    &#34;tensor&#34;,
+                    &#34;include_predictors&#34;,
+                    &#34;exclude_predictors&#34;,
+                    &#34;skip_detector&#34;,
+                )
+                if has_v05_source_slot
+                else (
+                    &#34;batch_size&#34;,
+                    &#34;fix_img_size&#34;,
+                    &#34;return_img_data&#34;,
+                    &#34;include_tensors&#34;,
+                    &#34;path_output&#34;,
+                    &#34;tensor&#34;,
+                    &#34;include_predictors&#34;,
+                    &#34;exclude_predictors&#34;,
+                    &#34;skip_detector&#34;,
+                )
+            )
+            if len(legacy_args) &gt; len(positional_names):
+                maximum = len(positional_names) + 1
+                supplied = len(legacy_args) + 1
+                raise TypeError(
+                    &#34;run_legacy() takes at most &#34;
+                    f&#34;{maximum} positional arguments but {supplied} were given&#34;
+                )
+
+            legacy_values = {
+                &#34;path_image&#34;: path_image,
+                &#34;batch_size&#34;: batch_size,
+                &#34;fix_img_size&#34;: fix_img_size,
+                &#34;return_img_data&#34;: return_img_data,
+                &#34;include_tensors&#34;: include_tensors,
+                &#34;path_output&#34;: path_output,
+                &#34;tensor&#34;: tensor,
+                &#34;include_predictors&#34;: include_predictors,
+                &#34;exclude_predictors&#34;: exclude_predictors,
+                &#34;skip_detector&#34;: skip_detector,
+            }
+            default_values = {
+                &#34;path_image&#34;: None,
+                &#34;batch_size&#34;: 8,
+                &#34;fix_img_size&#34;: False,
+                &#34;return_img_data&#34;: False,
+                &#34;include_tensors&#34;: False,
+                &#34;path_output&#34;: None,
+                &#34;tensor&#34;: None,
+                &#34;include_predictors&#34;: None,
+                &#34;exclude_predictors&#34;: None,
+                &#34;skip_detector&#34;: False,
+            }
+            for name, value in zip(positional_names, legacy_args):
+                current = legacy_values[name]
+                default = default_values[name]
+                is_default = current is None if default is None else current == default
+                if not is_default:
+                    raise TypeError(
+                        f&#34;run_legacy() got multiple values for argument {name!r}&#34;
+                    )
+                legacy_values[name] = value
+
+            path_image = legacy_values[&#34;path_image&#34;]
+            batch_size = legacy_values[&#34;batch_size&#34;]
+            fix_img_size = legacy_values[&#34;fix_img_size&#34;]
+            return_img_data = legacy_values[&#34;return_img_data&#34;]
+            include_tensors = legacy_values[&#34;include_tensors&#34;]
+            path_output = legacy_values[&#34;path_output&#34;]
+            tensor = legacy_values[&#34;tensor&#34;]
+            include_predictors = legacy_values[&#34;include_predictors&#34;]
+            exclude_predictors = legacy_values[&#34;exclude_predictors&#34;]
+            skip_detector = legacy_values[&#34;skip_detector&#34;]
+
+        # v0.5 and v0.6 preferred image_source when both source aliases were
+        # populated. Normalize before the stricter v1 input boundary.
+        if image_source is not None and path_image is not None:
+            path_image = None
+
         result = self.run(
             image_source=image_source,
             path_image=path_image,
@@ -2330,7 +2424,7 @@ description, especially for strict-mode conversions.</dd>
 </dl></div>
 </dd>
 <dt id="facetorch.FaceAnalyzer.run_legacy"><code class="name flex">
-<span>def <span class="ident">run_legacy</span></span>(<span>self,<br>image_source: str | os.PathLike | torch.Tensor | numpy.ndarray | bytes | PIL.Image.Image | None = None,<br>path_image: str | None = None,<br>batch_size: int = 8,<br>fix_img_size: bool = False,<br>return_img_data: bool = False,<br>include_tensors: bool = False,<br>path_output: str | None = None,<br>tensor: torch.Tensor | None = None,<br>include_predictors: List[str] | None = None,<br>exclude_predictors: List[str] | None = None,<br>skip_detector: bool = False,<br>*,<br>input_policy: str = 'coerce',<br>input_spec: <a title="facetorch.input.InputSpec" href="input.html#facetorch.input.InputSpec">InputSpec</a> | None = None) ‑> <a title="facetorch.datastruct.Response" href="datastruct.html#facetorch.datastruct.Response">Response</a> | <a title="facetorch.datastruct.ImageData" href="datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
+<span>def <span class="ident">run_legacy</span></span>(<span>self,<br>image_source: str | os.PathLike | torch.Tensor | numpy.ndarray | bytes | PIL.Image.Image | None = None,<br>*legacy_args: Any,<br>path_image: str | None = None,<br>batch_size: int = 8,<br>fix_img_size: bool = False,<br>return_img_data: bool = False,<br>include_tensors: bool = False,<br>path_output: str | None = None,<br>tensor: torch.Tensor | None = None,<br>include_predictors: List[str] | None = None,<br>exclude_predictors: List[str] | None = None,<br>skip_detector: bool = False,<br>input_policy: str = 'coerce',<br>input_spec: <a title="facetorch.input.InputSpec" href="input.html#facetorch.input.InputSpec">InputSpec</a> | None = None) ‑> <a title="facetorch.datastruct.Response" href="datastruct.html#facetorch.datastruct.Response">Response</a> | <a title="facetorch.datastruct.ImageData" href="datastruct.html#facetorch.datastruct.ImageData">ImageData</a></span>
 </code></dt>
 <dd>
 <details class="source">
@@ -2342,6 +2436,7 @@ description, especially for strict-mode conversions.</dd>
     image_source: Optional[
         Union[str, os.PathLike, torch.Tensor, np.ndarray, bytes, Image.Image]
     ] = None,
+    *legacy_args: Any,
     path_image: Optional[str] = None,
     batch_size: int = 8,
     fix_img_size: bool = False,
@@ -2352,20 +2447,113 @@ description, especially for strict-mode conversions.</dd>
     include_predictors: Optional[List[str]] = None,
     exclude_predictors: Optional[List[str]] = None,
     skip_detector: bool = False,
-    *,
     input_policy: str = &#34;coerce&#34;,
     input_spec: Optional[InputSpec] = None,
 ) -&gt; Union[Response, ImageData]:
-    &#34;&#34;&#34;Run the canonical pipeline using the v0.x positional argument order.
+    &#34;&#34;&#34;Run the canonical pipeline using either shipped v0 positional order.
 
-    Unlike ``run()``, the fifth positional argument controls whether this
-    adapter returns ``ImageData``. Prefer ``run()`` for new integrations.
+    Releases through v0.4 used ``path_image, batch_size, ...``. Releases
+    v0.5 and v0.6 inserted ``image_source, path_image, batch_size, ...``.
+    This adapter accepts both layouts and preserves their flag-dependent
+    return type. Prefer ``run()`` for new integrations.
     &#34;&#34;&#34;
     warnings.warn(
         &#34;FaceAnalyzer.run_legacy is a v1.x compatibility adapter; migrate to run().&#34;,
         DeprecationWarning,
         stacklevel=2,
     )
+
+    if legacy_args:
+        # The second positional value distinguishes the two historical
+        # layouts: v0.5+ path_image was a path/None, while earlier releases
+        # placed the integer batch_size there.
+        has_v05_source_slot = legacy_args[0] is None or isinstance(
+            legacy_args[0], (str, os.PathLike)
+        )
+        positional_names = (
+            (
+                &#34;path_image&#34;,
+                &#34;batch_size&#34;,
+                &#34;fix_img_size&#34;,
+                &#34;return_img_data&#34;,
+                &#34;include_tensors&#34;,
+                &#34;path_output&#34;,
+                &#34;tensor&#34;,
+                &#34;include_predictors&#34;,
+                &#34;exclude_predictors&#34;,
+                &#34;skip_detector&#34;,
+            )
+            if has_v05_source_slot
+            else (
+                &#34;batch_size&#34;,
+                &#34;fix_img_size&#34;,
+                &#34;return_img_data&#34;,
+                &#34;include_tensors&#34;,
+                &#34;path_output&#34;,
+                &#34;tensor&#34;,
+                &#34;include_predictors&#34;,
+                &#34;exclude_predictors&#34;,
+                &#34;skip_detector&#34;,
+            )
+        )
+        if len(legacy_args) &gt; len(positional_names):
+            maximum = len(positional_names) + 1
+            supplied = len(legacy_args) + 1
+            raise TypeError(
+                &#34;run_legacy() takes at most &#34;
+                f&#34;{maximum} positional arguments but {supplied} were given&#34;
+            )
+
+        legacy_values = {
+            &#34;path_image&#34;: path_image,
+            &#34;batch_size&#34;: batch_size,
+            &#34;fix_img_size&#34;: fix_img_size,
+            &#34;return_img_data&#34;: return_img_data,
+            &#34;include_tensors&#34;: include_tensors,
+            &#34;path_output&#34;: path_output,
+            &#34;tensor&#34;: tensor,
+            &#34;include_predictors&#34;: include_predictors,
+            &#34;exclude_predictors&#34;: exclude_predictors,
+            &#34;skip_detector&#34;: skip_detector,
+        }
+        default_values = {
+            &#34;path_image&#34;: None,
+            &#34;batch_size&#34;: 8,
+            &#34;fix_img_size&#34;: False,
+            &#34;return_img_data&#34;: False,
+            &#34;include_tensors&#34;: False,
+            &#34;path_output&#34;: None,
+            &#34;tensor&#34;: None,
+            &#34;include_predictors&#34;: None,
+            &#34;exclude_predictors&#34;: None,
+            &#34;skip_detector&#34;: False,
+        }
+        for name, value in zip(positional_names, legacy_args):
+            current = legacy_values[name]
+            default = default_values[name]
+            is_default = current is None if default is None else current == default
+            if not is_default:
+                raise TypeError(
+                    f&#34;run_legacy() got multiple values for argument {name!r}&#34;
+                )
+            legacy_values[name] = value
+
+        path_image = legacy_values[&#34;path_image&#34;]
+        batch_size = legacy_values[&#34;batch_size&#34;]
+        fix_img_size = legacy_values[&#34;fix_img_size&#34;]
+        return_img_data = legacy_values[&#34;return_img_data&#34;]
+        include_tensors = legacy_values[&#34;include_tensors&#34;]
+        path_output = legacy_values[&#34;path_output&#34;]
+        tensor = legacy_values[&#34;tensor&#34;]
+        include_predictors = legacy_values[&#34;include_predictors&#34;]
+        exclude_predictors = legacy_values[&#34;exclude_predictors&#34;]
+        skip_detector = legacy_values[&#34;skip_detector&#34;]
+
+    # v0.5 and v0.6 preferred image_source when both source aliases were
+    # populated. Normalize before the stricter v1 input boundary.
+    if image_source is not None and path_image is not None:
+        path_image = None
+
     result = self.run(
         image_source=image_source,
         path_image=path_image,
@@ -2395,9 +2583,11 @@ description, especially for strict-mode conversions.</dd>
         warnings=list(result.warnings),
     )</code></pre>
 </details>
-<div class="desc"><p>Run the canonical pipeline using the v0.x positional argument order.</p>
-<p>Unlike <code>run()</code>, the fifth positional argument controls whether this
-adapter returns <code><a title="facetorch.ImageData" href="#facetorch.ImageData">ImageData</a></code>. Prefer <code>run()</code> for new integrations.</p></div>
+<div class="desc"><p>Run the canonical pipeline using either shipped v0 positional order.</p>
+<p>Releases through v0.4 used <code>path_image, batch_size, &hellip;</code>. Releases
+v0.5 and v0.6 inserted <code>image_source, path_image, batch_size, &hellip;</code>.
+This adapter accepts both layouts and preserves their flag-dependent
+return type. Prefer <code>run()</code> for new integrations.</p></div>
 </dd>
 </dl>
 </dd>
