@@ -395,8 +395,17 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
             labels (List[str]): List of labels.
             threshold (float): Probability threshold for positive class.
         &#34;&#34;&#34;
+        if (
+            isinstance(threshold, bool)
+            or not isinstance(threshold, Real)
+            or not math.isfinite(float(threshold))
+            or not 0 &lt;= float(threshold) &lt;= 1
+        ):
+            raise ValueError(&#34;threshold must be a finite number between 0 and 1.&#34;)
+        if len(labels) != 2:
+            raise ValueError(&#34;PostSigmoidBinary requires exactly two labels.&#34;)
         super().__init__(transform, device, optimize_transform, labels)
-        self.threshold = threshold
+        self.threshold = float(threshold)
 
     @Timer(
         &#34;PostSigmoidBinary.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
@@ -414,9 +423,7 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
             preds = preds[0]
 
         preds = torch.sigmoid(preds.squeeze(1))
-        preds_thresh = preds.where(preds &gt;= self.threshold, torch.zeros_like(preds))
-        indices = torch.round(preds_thresh)
-        indices = indices.cpu().numpy().astype(int).tolist()
+        indices = (preds &gt;= self.threshold).to(dtype=torch.int64).cpu().tolist()
         pred_list = self.create_pred_list(preds, indices)
 
         return pred_list</code></pre>
@@ -467,9 +474,7 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
         preds = preds[0]
 
     preds = torch.sigmoid(preds.squeeze(1))
-    preds_thresh = preds.where(preds &gt;= self.threshold, torch.zeros_like(preds))
-    indices = torch.round(preds_thresh)
-    indices = indices.cpu().numpy().astype(int).tolist()
+    indices = (preds &gt;= self.threshold).to(dtype=torch.int64).cpu().tolist()
     pred_list = self.create_pred_list(preds, indices)
 
     return pred_list</code></pre>
