@@ -1,6 +1,7 @@
 # facetorch v1.0.0 remediation and release-readiness plan
 
-> Status: temporary review draft; not approved for implementation or release.
+> Status: release-readiness working record; implementation and policy decisions
+> are approved locally, but this is not approval to merge or publish.
 >
 > Scope: GitHub PR #91 (`release/v1.0.0` -> `main`).
 >
@@ -16,7 +17,9 @@
 >
 > Decision progress: Round 4 approved by the founder on 2026-08-21 (`D11`, `D13`, `D14`, `D21`, and `D22`). All `D01`-`D22` policy decisions are now approved; operational evidence questions remain open.
 >
-> Operational update 2026-08-21: no remote/server GPU is available for release testing; a local NVIDIA GPU is available. No non-author human reviewer or backup maintainer is currently available; only the founder and AI agents can review. This does not satisfy D20's independent-human approval gate.
+> Operational update 2026-08-21: no remote/server GPU is available for release testing; a local NVIDIA GPU is available. No non-author human reviewer or backup maintainer is currently available; only the founder and AI agents can review. This did not satisfy the original D20 independent-human approval gate.
+>
+> D20 amendment 2026-08-28: `tomas-gajarsky` explicitly accepts owner self-approval for code, model, environment, checklist, publication, and recovery gates for `1.0.0rc1` through `1.0.0`. This bounded exception replaces the non-author requirement for this release train only; it is not independent review, and AI review remains supplementary technical evidence. The durable decision record is `/home/toga/repos/facetorch-release-evidence/v1.0.0rc1/owner-self-approval-exception.json`; the pending exact-candidate record is `/home/toga/repos/facetorch-release-evidence/v1.0.0rc1/owner-release-approval-template.json`. The latter must remain pending until its source, plan, evidence, timestamp, and checklist are complete. Statements in dated evidence sections below that the original D20 gate was unsatisfied remain accurate for those earlier snapshots but are superseded as current policy by this amendment.
 
 This document converts the v1 audit into an implementable plan. It is deliberately broader than a bug list: each finding is assigned to a work item, an acceptance test, and a release gate. Nothing discovered in the audit is silently deferred.
 
@@ -38,7 +41,9 @@ The target outcome is a v1 release that:
 - supports exactly the Python, PyTorch, CUDA, Docker, and conda combinations that the project advertises;
 - cannot publish a partial or mismatched public release;
 - provides users of v0.6.2 with a practical migration and rollback path;
-- is independently reviewed and produces durable release evidence.
+- is thoroughly reviewed and produces durable release evidence; independent human
+  review is preferred, while the current v1 train uses the explicit bounded D20
+  owner-self-approval exception.
 
 The following rules apply throughout implementation:
 
@@ -75,7 +80,7 @@ Recommendations below are defaults, not hidden assumptions. Decisions D03-D10 an
 | D17 | Which customization and URL behaviors are public? | Support a small documented reader/postprocessor protocol; require explicit URL-reader opt-in with scheme, timeout, redirect, and size limits. | Treat Hydra-instantiated internals as public, which greatly expands compatibility obligations; or declare customization unsupported. | W1.1, W1.2, W1.4 | **Approved 2026-08-21:** support the small reader/postprocessor protocols; keep other Hydra internals private. Remote input is available only through an explicit restricted URL reader. |
 | D18 | Which OS/architecture/accelerator combinations are officially supported? | Guarantee tested Linux x86-64 CPU and named Linux/NVIDIA CUDA pairs; mark Windows, macOS, ARM, and MPS experimental until exercised. Remove or qualify `OS Independent`. | Promise broad OS/device support, which requires corresponding hardware and release gates. | W3.1, W4.1 | **Approved 2026-08-20:** officially support tested Linux x86-64 CPU and named NVIDIA CUDA pairs; mark Windows, macOS, ARM, and MPS experimental pending evidence. Qualify/remove `OS Independent`. |
 | D19 | What legal/responsible-use bar applies to model weights? | Verify source, weights license, redistribution permission, attribution, provenance, and limitations per model; exclude any model that cannot pass. Publish face-analysis limitations/responsible-use guidance. | Rely on the code's Apache-2.0 license alone; it does not establish rights or suitability for downloaded weights. | W3.6, W4.4 | **Policy approved 2026-08-21:** require per-model code/weights rights, source, redistribution, attribution, provenance, and limitations review; exclude any model that cannot pass. Evidence and indispensable-model choices remain open under Q06-Q07. |
-| D20 | Who supplies independent release authority? | Keep branch protection, add meaningful CODEOWNERS/roles, obtain a non-author code approval, and separately sign off the model manifest/release checklist. | Weaken protection for an owner-only release; faster, but defeats the current governance safety control. | Merge/release | **Policy approved 2026-08-20:** retain protection and require non-author approval plus model-manifest/release-checklist sign-off. Reviewer identity and backup operator remain open under Q11. |
+| D20 | Who supplies release authority? | Prefer meaningful CODEOWNERS/roles, non-author code approval, and separate model-manifest/release-checklist sign-off when another qualified human is available. | Use a bounded owner-only exception; operationally possible for a sole maintainer, but it removes separation of duties and backup coverage. | Merge/release | **Revised and approved 2026-08-28:** for `1.0.0rc1` through `1.0.0`, owner `tomas-gajarsky` may self-approve code, model, environment, checklist, publication, and recovery gates. Set the required approving-review count to zero for the owner-authored v1 PR because GitHub cannot count author self-review; retain all other protections and exact-candidate gates. This is owner risk acceptance, not independent review, and expires after the `1.0.0` transaction and post-publication verification. |
 | D21 | What is the post-release incident and revocation policy? | Never replace released bytes. Define when to yank, patch, revoke a model/image, roll back manifest pins, and end support for a release line. | Handle incidents ad hoc or retag in place; unpredictable and breaks reproducibility. | W4.3, W4.6 | **Approved 2026-08-21:** never replace released bytes. Use patch releases for corrections, yank only unusable/dangerous Python releases, and publish explicit immutable model/image revocation notices with rollback instructions. |
 | D22 | Is conda-forge a launch gate or an asynchronous supported channel? | Treat it as supported but asynchronous: validate the branch locally, state the published conda version honestly, and announce v1 separately after feedstock publication. | Block GA on feedstock completion, or classify conda as community/best effort. | W4.1, W4.5, W4.6 | **Approved 2026-08-21:** conda-forge is supported but asynchronous and does not gate v1 GA; validate the candidate locally, state channel status/version honestly, and announce v1 separately after feedstock publication. |
 
@@ -83,7 +88,13 @@ Recommendations below are defaults, not hidden assumptions. Decisions D03-D10 an
 
 All founder policy decisions `D01`-`D22` are approved. Implementation may use these decisions as the public v1 contract without further policy assumptions.
 
-This does not close the evidence questions below. In particular, v1 cannot be released until the required CUDA infrastructure, model rights/provenance records, independent reviewer and backup operator, security configuration, conda ownership/status, and RC participants are established and verified.
+This does not close the evidence questions below. The model rights/provenance trust
+root and Hub write path were completed and fully audited on 2026-08-28. V1 still
+cannot be released until the exact-candidate CUDA evidence, remaining
+security/provider configuration, conda ownership/status, and RC participants are
+established and verified. A non-author reviewer and backup operator are still
+preferred, but their absence is an explicitly accepted v1 operational risk under
+amended D20 rather than a release blocker.
 
 ### Open information questions
 
@@ -96,13 +107,13 @@ These are facts to establish, rather than policy choices. Record evidence or a c
 | Q03 | Do downstream users import old AU/model modules or provide custom Hydra readers/postprocessors/configs? | Establishes the real migration and extension-compatibility burden. | D10, D14, D17 | **Unknown** |
 | Q04 | Which current callers depend on the flag-dependent `Response`/`ImageData` return behavior? | Determines whether D16 needs a shim and for how long. | D10, D16 | **Unknown** |
 | Q05 | Are direct remote image URLs an intentional supported product feature? If yes, which schemes/auth/private-network behavior? | URL fetching introduces SSRF, timeout, size, privacy, and reproducibility obligations. | D07, D17 | **Unknown** |
-| Q06 | Which of the ten default models are indispensable for v1 if one fails rights, provenance, or validation review? | Determines whether a failed model blocks v1 or is removed from the default set. | D19, W3.6 | **Unknown** |
-| Q07 | Are original source checkpoints, source licenses, training-data terms, and redistribution permissions available for every hosted weight? | Required to establish a trustworthy, legally reviewable model release. | D13, D19, W3.6 | **Unknown** |
-| Q08 | Does the project control all Hugging Face model repositories and can it create immutable revisions/tags without rewriting them? | Required for the versioned manifest and revocation process. | D07, D21, W3.2, W3.5 | **Answered 2026-08-22:** the founder confirmed ownership of all ten Hugging Face repositories. Actual candidate-branch/immutable-commit permission remains to be exercised by a non-publishing dry run. |
+| Q06 | Which of the ten default models are indispensable for v1 if one fails rights, provenance, or validation review? | Determines whether a failed model blocks v1 or is removed from the default set. | D19, W3.6 | **Answered 2026-08-28:** all ten default models passed the approved rights, provenance, compatibility, and full-byte audit. No model has an indispensability override; a future failure excludes that model and requires a new complete manifest/matrix rather than weakening the gate. |
+| Q07 | Are original source checkpoints, source licenses, training-data terms, and redistribution permissions available for every hosted weight? | Required to establish a trustworthy, legally reviewable model release. | D13, D19, W3.6 | **Answered 2026-08-28 for the v1 release decision:** every model's approved governance record binds upstream source/revision, preserved license bytes and digest, checkpoint mapping and hashes, redistribution/attribution approval, intended use, limitations, and owner approval. Training-dataset rights are not claimed; the notices explicitly state that checkpoint licenses do not grant those rights. The legal-finalization transaction published the deterministic notices at ten direct-child revisions and a manifest-last commit; the strict audit verified all 30 legal documents and artifact payloads. This is project release-governance evidence, not an external legal opinion. |
+| Q08 | Does the project control all Hugging Face model repositories and can it create immutable revisions/tags without rewriting them? | Required for the versioned manifest and revocation process. | D07, D21, W3.2, W3.5 | **Answered and exercised 2026-08-28:** the approved legal-finalization transaction created plan-specific branches and immutable direct-child commits in all ten model repositories, then committed the aggregate manifest last. The completed receipt and live verifier prove the exact trees and parents; no default branch or stable alias moved. |
 | Q09 | What model-output drift is acceptable per task, and who has authority to approve tolerances? | Numerical tolerances are product correctness decisions, not merely test constants. | W3.4, W3.6 | **Approved 2026-08-22:** the founder approved B08's float32 same-device `max_abs=1e-4`/`mean_abs=1e-5` and cross-device `max_abs=2e-3`/`mean_abs=1e-3`. The full local matrix observed at most `6.06e-5`/`4.01e-6`; release evidence must use these exact metadata-bound limits. |
 | Q10 | What trusted CUDA runner/hardware and maintenance budget are available? | Determines the supportable CUDA matrix and whether release checks can be mandatory. | D12, D18, W4.1 | **Implemented locally 2026-08-22; release evidence open:** no server GPU exists. The owner-only, protected-ref workflow now targets an ephemeral-label local Linux x86-64 runner and rejects persistent publication credentials. A local RTX 3090 passed the dirty-tree CUDA matrix, installed-wheel/notebook smoke, and hardened production-GPU-container inference. The exact clean-SHA workflow and ongoing maintenance capacity must still be proven before RC. |
-| Q11 | Who can provide independent code/model/release approval and serve as backup operator? | Current branch protection cannot be satisfied by founder self-approval alone. | D20, P6 | **Answered 2026-08-21:** currently unassigned. Only the founder and AI agents are available. AI review is useful technical evidence but is not a non-author human approval or backup operator; D20 and the protected merge/RC approval gate remain unsatisfied until a human is recruited or the founder explicitly revises the policy with a documented exception. |
-| Q12 | Are PyPI trusted publishing, protected GitHub environments, Docker repository permissions, and private vulnerability reporting available/configured? | Determines the release/security implementation path. | D13, D20, W4.3, W4.4 | **Audited read-only 2026-08-22; configuration incomplete:** `main` is protected with one code-owner approval and strict required checks, but administrators are not bound and several required check names are stale after B09. Only the `github-pages` environment exists; `local-gpu-release`, `github-release`, `dockerhub`, `pypi`, and `stable-release` are absent. Private vulnerability reporting, secret scanning, push protection, Dependabot security updates, and repository-level SHA-pin enforcement are disabled; Actions default token permission is write. PyPI trusted publishing and Docker write permission remain unverified. All are pre-publication gates. |
+| Q11 | Who can approve code/model/release evidence and serve as backup operator? | Determines separation of duties, recovery coverage, and compatible branch/environment settings. | D20, P6 | **Revised 2026-08-28:** `tomas-gajarsky` is the owner approver, release operator, and recovery authority for `1.0.0rc1` through `1.0.0`. No non-author reviewer or backup operator is available; the founder explicitly accepts that risk under the bounded D20 exception. AI review is technical evidence only, not independent approval. The required approving-review count must be zero for the owner-authored v1 PR while all other protections remain. |
+| Q12 | Are PyPI trusted publishing, protected GitHub environments, Docker repository permissions, and private vulnerability reporting available/configured? | Determines the release/security implementation path. | D13, D20, W4.3, W4.4 | **Updated 2026-08-28; configuration still incomplete:** the five release environments now exist, name `tomas-gajarsky` as their sole reviewer, and allow self-review. Exact required CPU contexts are live on `main` and `release/v1.0.0`. `main` still requires one approving review and therefore must be changed to zero for the documented owner-authored v1 exception while retaining its other protections. Docker credentials remain unreadable repository secrets rather than environment-scoped credentials, and the PyPI trusted-publisher mapping still needs authenticated provider-side confirmation. |
 | Q13 | Who maintains the conda-forge feedstock, and what is its realistic publication lag? | Determines whether conda can be a launch gate or must be asynchronous. | D22, W4.5 | **Unknown** |
 | Q14 | Which existing users can test an RC, and what duration/sample constitutes a successful soak? | Turns D02 into a meaningful validation stage rather than a version label only. | D02, W4.6 | **Unknown** |
 | Q15 | Should the Torch 2.11 runtime's `setuptools==81.0.0` advisory receive a temporary exception? | Torch 2.11 requires `setuptools<82`, while PYSEC-2026-3447 is fixed in 83; without an approved bounded exception the dependency gate must stay red. | W4.2, W4.4 | **Approved 2026-08-22 through 2026-11-20:** the founder approved an exception for exactly `setuptools==81.0.0` in the Linux `root`, `torch-2.11-cpu`, and `torch-2.11-cu130` profiles. The advisory concerns macOS source-distribution path normalization; official production/release targets are Linux, source distributions use an isolated `setuptools>=83` backend, and runtime never builds sdists. Remove on an upstream-compatible Torch patch or drop the cohort; expiry returns the dependency gate to red automatically. |
@@ -119,7 +130,7 @@ The recommended structure is to keep PR #91 as the umbrella comparison with `mai
 | P3 | Complete W3 model compatibility and trust | P1, D03, D06-D08, D12, D18, D19 | Every advertised cohort/device passes independent validation; cache/fallback is restart-safe |
 | P4 | Complete W4 CI, release, security, and migration work | P2, P3, D11-D14, D20-D22 | A dry-run release from an immutable candidate succeeds without public publication |
 | P5 | Release candidate and soak | All prior phases | `1.0.0rc1` evidence reviewed; no open release blocker |
-| P6 | Stable promotion | P5 | Independent approval, final gates, coordinated publication, rollback evidence retained |
+| P6 | Stable promotion | P5 | Required approval (independent when available or the bounded D20 owner exception), final gates, coordinated publication, and rollback evidence retained |
 
 W1 and W2 can proceed in parallel after decisions. W3 tooling can also proceed in parallel, but artifact publication must wait for the final runtime contract and compatibility table. W4 CI scaffolding can start early; final release automation depends on the exact artifact set from W2 and W3.
 
@@ -569,7 +580,9 @@ Acceptance:
 - [ ] The Python 3.13 frozen environment resolves if 3.13 remains supported.
 - [ ] Install jobs do more than `pip install .`; each performs import/config/runtime smoke.
 - [ ] Docker, conda, source, wheel, and model tests consume declared compatible dependency sets.
-- [ ] Branch protection requires the release-critical checks and independent approval.
+- [ ] Branch protection requires the release-critical checks and the applicable
+  approval policy; for the owner-authored v1 PR, the documented D20 exception uses
+  zero required approving reviews and retains every other protection.
 - [ ] CUDA evidence identifies the exact source SHA, model-manifest revision, dependency lock, GPU/runtime, commands, and report hashes; the local runner exposes no persistent publication credentials or reusable untrusted workspace state.
 
 ### W4.2 Align and secure dependency environments
@@ -667,14 +680,15 @@ Recommended sequence:
 
 1. Freeze candidate source and model manifest.
 2. Run the full release matrix and archive evidence.
-3. Obtain an independent approving review; the repository owner must not self-approve.
+3. Record `tomas-gajarsky`'s owner approval under the bounded D20 exception. Do
+   not label it independent review.
 4. Publish `1.0.0rc1` without moving stable/`latest` aliases.
 5. Triage RC reports; changes require a new RC and complete affected-gate rerun.
 6. Rebuild only if the version/source changes; otherwise promote the exact approved artifacts where a channel permits it.
 7. Publish stable channels transactionally, move `latest` last, and initiate the asynchronous supported conda-feedstock handoff without representing conda v1 as available prematurely.
 8. Run post-publication installs/pulls/downloads from public endpoints and exercise rollback.
 
-Before step 3, apply D20 by recording who may merge the release, publish/revoke models, publish PyPI/Docker artifacts, approve exceptions, and receive security reports. Add CODEOWNERS only where the named owner can actually review and approve.
+Before step 3, apply D20 by recording who may merge the release, publish/revoke models, publish PyPI/Docker artifacts, approve exceptions, and receive security reports. For this v1 train, `tomas-gajarsky` holds those roles under the documented owner exception. Configure the owner-authored PR with zero required approving reviews because GitHub cannot count author self-review; retain strict required checks, protected `main`, conversation resolution, and every exact-candidate publication gate.
 
 Before stable publication, apply D21 by documenting patch versus yank criteria, immutable model/image revocation notices, supported 1.x lines, retention of old manifests, and the exact command/config users use to roll back. Apply D22 by treating the conda status as its own verified channel state rather than implying that the existing public 0.6.2 package is v1.
 
@@ -682,7 +696,9 @@ Before stable publication, apply D21 by documenting patch versus yank criteria, 
 
 - [ ] All required branch checks are green on the final immutable commit.
 - [ ] No required check is older than the final source/model/config change.
-- [ ] Independent approval is present and branch protection is satisfied.
+- [ ] Owner approval and the bounded D20 exception are present, and branch
+  protection is satisfied with every control except the intentionally zero review
+  count retained.
 - [ ] Dry-run release and all failure/retry scenarios pass.
 - [ ] Migration, security, provenance, changelog, and support-policy documents are published.
 - [ ] A tested rollback procedure and responsible operator are recorded before stable promotion.
@@ -1163,7 +1179,7 @@ Each batch should include:
 | F41 | P1 | Public return mode and notebook disagree about where retained image data exists | W1.6, W2.4 | W1/W2 |
 | F42 | P2 | `OS Independent` and broad CUDA wording exceed the tested platform matrix | W3.1, W4.5 | W3/W4 |
 | F43 | P1 | Code license does not establish per-model weight rights, provenance, or responsible-use limitations | W3.6, W4.4 | W3/W4 |
-| F44 | P1 | Merge is blocked with no qualifying independent approval/release-role assignment | D20, W4.6 | W4 |
+| F44 | P1 | Original independent-approval gate had no qualifying reviewer/release-role assignment; closed for the v1 train by the documented D20 owner exception, with no claim of independence | D20, W4.6 | W4 |
 | F45 | P1 | No formal patch/yank/model-revocation and post-release support policy exists | D21, W4.3, W4.6 | W4 |
 | F46 | P2 | URL/network/privacy behavior is not a deliberately bounded public contract | D07, D13, D17, W1.1, W4.4 | W1/W4 |
 
@@ -1203,7 +1219,8 @@ Commands may be wrapped by CI, but evidence must identify the exact source SHA, 
 The final release evidence bundle should contain:
 
 - source SHA and signed/annotated tag information;
-- founder decision register and independent review approval;
+- founder decision register and either independent review approval or the bounded
+  D20 owner-self-approval exception record;
 - CI run links and machine-readable test reports;
 - wheel/sdist/image checksums and SBOM/provenance;
 - model manifest revision, all artifact hashes, and complete validation report;
@@ -1219,7 +1236,9 @@ The final release evidence bundle should contain:
 - [ ] Public package/model/container artifacts are reproducible and digest-pinned.
 - [ ] Migration, offline/cache, compatibility, security, and rollback documentation is reviewable.
 - [ ] No known correctness, installability, remote-code/artifact-trust, or release-recovery blocker remains.
-- [ ] An independent reviewer approves the candidate.
+- [ ] The candidate has the required approval: independent review when available,
+  or `tomas-gajarsky` owner approval under the bounded D20 exception for this v1
+  train, explicitly recorded as non-independent.
 
 ## Definition of ready for stable `1.0.0`
 
@@ -1256,7 +1275,7 @@ D16 stable result type versus union return:
 D17 supported extension points and URL behavior:
 D18 supported OS/architecture/accelerator matrix:
 D19 model-rights and responsible-use bar:
-D20 independent reviewer and release authority:
+D20 reviewer/owner exception and release authority:
 D21 patch/yank/revocation/support policy:
 D22 conda launch-gate/asynchronous/community status:
 

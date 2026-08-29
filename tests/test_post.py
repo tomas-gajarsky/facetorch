@@ -137,6 +137,62 @@ class TestPostSigmoidBinary:
         assert len(result) == 1
         assert result[0].label == "Fake"
 
+    @pytest.mark.unit
+    @pytest.mark.parametrize("threshold", (0.2, 0.5, 0.7))
+    def test_threshold_is_inclusive_and_preserves_probability(
+        self, device, labels_2, threshold
+    ):
+        processor = PostSigmoidBinary(
+            transform=None,
+            device=device,
+            optimize_transform=False,
+            labels=labels_2,
+            threshold=threshold,
+        )
+        probabilities = torch.tensor(
+            [threshold - 0.01, threshold, threshold + 0.01], dtype=torch.float64
+        )
+        logits = torch.logit(probabilities).unsqueeze(1)
+
+        result = processor.run(logits)
+
+        assert [prediction.label for prediction in result] == [
+            "Real",
+            "Fake",
+            "Fake",
+        ]
+        torch.testing.assert_close(
+            torch.stack([prediction.logits for prediction in result]),
+            probabilities,
+            rtol=0,
+            atol=1e-15,
+        )
+
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        "threshold",
+        (True, False, -0.01, 1.01, float("nan"), float("inf"), "0.5"),
+    )
+    def test_rejects_invalid_thresholds(self, device, labels_2, threshold):
+        with pytest.raises(ValueError, match="threshold"):
+            PostSigmoidBinary(
+                transform=None,
+                device=device,
+                optimize_transform=False,
+                labels=labels_2,
+                threshold=threshold,
+            )
+
+    @pytest.mark.unit
+    def test_requires_exactly_two_labels(self, device):
+        with pytest.raises(ValueError, match="two labels"):
+            PostSigmoidBinary(
+                transform=None,
+                device=device,
+                optimize_transform=False,
+                labels=["only-one"],
+            )
+
 
 class TestPostEmbedder:
     @pytest.mark.unit

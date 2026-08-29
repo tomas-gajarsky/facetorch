@@ -24,7 +24,7 @@ from urllib.parse import quote
 from urllib.request import urlopen
 
 
-PLAN_SCHEMA_VERSION = 1
+PLAN_SCHEMA_VERSION = 2
 RECEIPT_SCHEMA_VERSION = 1
 PROJECT_NAME = "facetorch"
 IMMUTABLE_CHANNELS = (
@@ -41,6 +41,9 @@ PUBLICATION_ORDER = (
     "docker-gpu",
     "pypi",
 )
+BUNDLE_CHECKSUM_FILENAME = "BUNDLE-SHA256SUMS"
+PUBLIC_CHECKSUM_FILENAME = "SHA256SUMS"
+PUBLIC_FIXED_PAYLOADS = ("release-evidence.tar.zst", "release-plan.json")
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -305,8 +308,8 @@ def validate_model_manifest(
     manifest = _read_json(path)
     if manifest.get("schema_version") != 1:
         raise ReleaseError("Unsupported model manifest schema")
-    if manifest.get("status") not in {"candidate", "approved"}:
-        raise ReleaseError("Model manifest is not a release candidate")
+    if manifest.get("status") != "approved":
+        raise ReleaseError("Model manifest is not final and approved")
     models = manifest.get("models")
     if not isinstance(models, list) or not models:
         raise ReleaseError("Model manifest contains no model cohort records")
@@ -325,6 +328,25 @@ def validate_model_manifest(
         devices = model.get("required_devices")
         if not isinstance(devices, list) or set(devices) != {"cpu", "cuda"}:
             raise ReleaseError(f"Required CPU/CUDA evidence is incomplete for {identity}")
+        metadata_filename = model.get("metadata_filename")
+        if (
+            not isinstance(metadata_filename, str)
+            or PurePosixPath(metadata_filename).name != metadata_filename
+        ):
+            raise ReleaseError(f"Metadata filename is invalid for {identity}")
+        _require_sha256(
+            model.get("metadata_sha256"), f"Metadata digest for {identity}"
+        )
+        _require_sha256(
+            model.get("golden_reference_sha256"),
+            f"Golden-reference digest for {identity}",
+        )
+        if int(model.get("golden_reference_size_bytes", 0)) <= 0:
+            raise ReleaseError(f"Golden-reference size is missing for {identity}")
+        if not isinstance(model.get("golden_reference_source_cohort"), str):
+            raise ReleaseError(
+                f"Golden-reference source cohort is missing for {identity}"
+            )
     return {
         "repo_id": repo_id,
         "revision": commit,
@@ -504,10 +526,44 @@ def validate_packaged_model_governance(
                     f"Packaged artifact digest for {model_id}/{cohort}",
                 ),
                 "artifact_size_bytes": size,
+                "metadata_filename": exact_text(
+                    artifact.get("validation_metadata"),
+                    f"Packaged metadata filename for {model_id}/{cohort}",
+                ),
+                "metadata_sha256": _require_sha256(
+                    exact_text(
+                        artifact.get("metadata_sha256"),
+                        f"Packaged metadata digest for {model_id}/{cohort}",
+                    ),
+                    f"Packaged metadata digest for {model_id}/{cohort}",
+                ),
+                "golden_reference_sha256": _require_sha256(
+                    exact_text(
+                        artifact.get("golden_reference_sha256"),
+                        f"Packaged golden-reference digest for {model_id}/{cohort}",
+                    ),
+                    f"Packaged golden-reference digest for {model_id}/{cohort}",
+                ),
+                "golden_reference_size_bytes": artifact.get(
+                    "golden_reference_size_bytes"
+                ),
+                "golden_reference_source_cohort": exact_text(
+                    artifact.get("golden_reference_source_cohort"),
+                    f"Packaged golden-reference source for {model_id}/{cohort}",
+                ),
                 "required_devices": required_devices,
                 "torch_min": cohort,
                 "torch_max_exclusive": expected_upper,
             }
+            golden_size = expected_records[key]["golden_reference_size_bytes"]
+            if (
+                isinstance(golden_size, bool)
+                or not isinstance(golden_size, int)
+                or golden_size < 1
+            ):
+                raise ReleaseError(
+                    f"Packaged golden-reference size is invalid for {model_id}/{cohort}"
+                )
             model_cohorts.add(cohort)
         if model_cohorts != supported_cohorts:
             raise ReleaseError(
@@ -581,6 +637,31 @@ def validate_packaged_model_governance(
                 f"Remote artifact digest for {model_id}/{cohort}",
             ),
             "artifact_size_bytes": size,
+            "metadata_filename": exact_text(
+                record.get("metadata_filename"),
+                f"Remote metadata filename for {model_id}/{cohort}",
+            ),
+            "metadata_sha256": _require_sha256(
+                exact_text(
+                    record.get("metadata_sha256"),
+                    f"Remote metadata digest for {model_id}/{cohort}",
+                ),
+                f"Remote metadata digest for {model_id}/{cohort}",
+            ),
+            "golden_reference_sha256": _require_sha256(
+                exact_text(
+                    record.get("golden_reference_sha256"),
+                    f"Remote golden-reference digest for {model_id}/{cohort}",
+                ),
+                f"Remote golden-reference digest for {model_id}/{cohort}",
+            ),
+            "golden_reference_size_bytes": record.get(
+                "golden_reference_size_bytes"
+            ),
+            "golden_reference_source_cohort": exact_text(
+                record.get("golden_reference_source_cohort"),
+                f"Remote golden-reference source for {model_id}/{cohort}",
+            ),
             "required_devices": tuple(sorted(devices)),
             "torch_min": exact_text(
                 record.get("torch_min", cohort),
@@ -591,6 +672,15 @@ def validate_packaged_model_governance(
                 f"Remote maximum Torch version for {model_id}/{cohort}",
             ),
         }
+        remote_golden_size = observed_records[key]["golden_reference_size_bytes"]
+        if (
+            isinstance(remote_golden_size, bool)
+            or not isinstance(remote_golden_size, int)
+            or remote_golden_size < 1
+        ):
+            raise ReleaseError(
+                f"Remote golden-reference size is invalid for {model_id}/{cohort}"
+            )
 
     if set(observed_records) != set(expected_records):
         raise ReleaseError("Packaged and remote model cohort coverage differs")
@@ -604,6 +694,147 @@ def validate_packaged_model_governance(
             raise ReleaseError(
                 f"Remote cohort record differs for {identity}: {', '.join(differing)}"
             )
+
+
+def validate_model_audit_report(
+    repo_root: Path,
+    audit_report_path: Path,
+    *,
+    remote_manifest: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Bind a successful full-byte Hub audit to the exact packaged release."""
+
+    report = _read_json(audit_report_path)
+    packaged_path = repo_root.resolve() / "facetorch" / "models" / "manifest.json"
+    packaged = _read_json(packaged_path)
+    packaged_digest = sha256_file(packaged_path)
+    expected_remote = {
+        "repo_id": remote_manifest.get("repo_id"),
+        "revision": remote_manifest.get("revision"),
+        "filename": remote_manifest.get("filename"),
+        "sha256": remote_manifest.get("sha256"),
+        "plan_id": remote_manifest.get("plan_id"),
+        "status": "approved",
+    }
+    if (
+        report.get("schema_version") != 1
+        or report.get("status") != "ok"
+        or report.get("download_artifacts") is not True
+        or report.get("require_current_metadata") is not True
+        or report.get("verify_legal_documents") is not True
+        or report.get("failures") != []
+        or report.get("manifest_revision") != remote_manifest.get("revision")
+        or report.get("packaged_manifest_sha256") != packaged_digest
+        or report.get("remote_manifest") != expected_remote
+    ):
+        raise ReleaseError(
+            "Model audit does not prove the exact full-byte approved release"
+        )
+
+    packaged_models = packaged.get("models")
+    results = report.get("results")
+    if not isinstance(packaged_models, dict) or not isinstance(results, list):
+        raise ReleaseError("Model audit has invalid model coverage")
+    result_by_model: dict[str, Mapping[str, Any]] = {}
+    for result in results:
+        if not isinstance(result, Mapping):
+            raise ReleaseError("Model audit contains an invalid result")
+        model_id = str(result.get("model_id", ""))
+        if not model_id or model_id in result_by_model:
+            raise ReleaseError("Model audit has duplicate or empty model identities")
+        result_by_model[model_id] = result
+    if set(result_by_model) != set(packaged_models):
+        raise ReleaseError("Model audit coverage differs from the packaged manifest")
+
+    artifact_count = 0
+    for model_id, model in packaged_models.items():
+        if not isinstance(model, Mapping):
+            raise ReleaseError(f"Packaged model is invalid for {model_id}")
+        result = result_by_model[model_id]
+        if (
+            result.get("repo_id") != model.get("repo_id")
+            or result.get("revision") != model.get("revision")
+            or result.get("status") != "ok"
+        ):
+            raise ReleaseError(f"Model audit identity differs for {model_id}")
+
+        legal_documents = result.get("legal_documents")
+        if not isinstance(legal_documents, list) or len(legal_documents) != 3:
+            raise ReleaseError(f"Model audit legal evidence is invalid for {model_id}")
+        legal_by_name = {
+            str(document.get("filename", "")): document
+            for document in legal_documents
+            if isinstance(document, Mapping)
+        }
+        if len(legal_by_name) != len(legal_documents) or set(legal_by_name) != {
+            "README.md",
+            "LICENSE",
+            "THIRD_PARTY_NOTICES.md",
+        } or any(
+            document.get("bytes_verified") is not True
+            or _SHA256_RE.fullmatch(str(document.get("sha256", ""))) is None
+            or isinstance(document.get("size_bytes"), bool)
+            or not isinstance(document.get("size_bytes"), int)
+            or int(document["size_bytes"]) < 1
+            for document in legal_by_name.values()
+        ):
+            raise ReleaseError(f"Model audit legal evidence is incomplete for {model_id}")
+
+        artifacts = model.get("artifacts")
+        audited_artifacts = result.get("artifacts")
+        if not isinstance(artifacts, list) or not isinstance(audited_artifacts, list):
+            raise ReleaseError(f"Model audit artifacts are invalid for {model_id}")
+        audited_by_id: dict[str, Mapping[str, Any]] = {}
+        for artifact in audited_artifacts:
+            if not isinstance(artifact, Mapping):
+                raise ReleaseError(f"Model audit artifact is invalid for {model_id}")
+            artifact_id = str(artifact.get("artifact_id", ""))
+            if not artifact_id or artifact_id in audited_by_id:
+                raise ReleaseError(
+                    f"Model audit has duplicate artifact identities for {model_id}"
+                )
+            audited_by_id[artifact_id] = artifact
+        expected_ids = {
+            str(artifact.get("id", ""))
+            for artifact in artifacts
+            if isinstance(artifact, Mapping)
+        }
+        if set(audited_by_id) != expected_ids:
+            raise ReleaseError(f"Model audit artifact coverage differs for {model_id}")
+        for artifact in artifacts:
+            if not isinstance(artifact, Mapping):
+                raise ReleaseError(f"Packaged artifact is invalid for {model_id}")
+            artifact_id = str(artifact.get("id", ""))
+            audited = audited_by_id[artifact_id]
+            if (
+                audited.get("filename") != artifact.get("filename")
+                or audited.get("sha256") != artifact.get("sha256")
+                or audited.get("size_bytes") != artifact.get("size_bytes")
+                or audited.get("lfs_oid_verified") is not True
+                or audited.get("downloaded_bytes_verified") is not True
+            ):
+                raise ReleaseError(
+                    f"Model audit byte evidence differs for {model_id}/{artifact_id}"
+                )
+            if artifact.get("format") == "pt2" and (
+                audited.get("metadata_status") != "current"
+                or audited.get("metadata_sha256_verified") is not True
+                or audited.get("metadata_identity_verified") is not True
+            ):
+                raise ReleaseError(
+                    "Model audit metadata evidence is incomplete for "
+                    f"{model_id}/{artifact_id}"
+                )
+            artifact_count += 1
+
+    return {
+        "sha256": sha256_file(audit_report_path),
+        "packaged_manifest_sha256": packaged_digest,
+        "remote_manifest": expected_remote,
+        "model_count": len(result_by_model),
+        "artifact_count": artifact_count,
+        "download_artifacts": True,
+    }
 
 
 def validate_local_release_evidence(
@@ -698,7 +929,7 @@ def validate_local_release_evidence(
     lanes = matrix.get("lanes")
     if (
         runner.get("matrix_report_sha256") != sha256_file(matrix_path)
-        or matrix.get("schema_version") != 1
+        or matrix.get("schema_version") != 2
         or matrix.get("status") != "ok"
         or matrix.get("release_approval_required") is not False
         or set(matrix.get("required_devices", [])) != required_devices
@@ -857,6 +1088,7 @@ def _validate_bundle_layout(records: Sequence[Mapping[str, Any]]) -> None:
         "images/facetorch-gpu.tar.zst",
         "evidence/model-manifest.json",
         "evidence/model-manifest-report.json",
+        "evidence/model-manifest-audit.json",
         "evidence/release-inputs.json",
     }
     missing = sorted(required - paths)
@@ -894,7 +1126,12 @@ def prepare_release_plan(
     if not root.is_dir():
         raise ReleaseError(f"Release bundle root is unavailable: {root}")
     output = output_path.resolve()
-    excluded = {output, (root / "SHA256SUMS").resolve(), (root / "publication-receipt.json").resolve()}
+    excluded = {
+        output,
+        (root / BUNDLE_CHECKSUM_FILENAME).resolve(),
+        (root / PUBLIC_CHECKSUM_FILENAME).resolve(),
+        (root / "publication-receipt.json").resolve(),
+    }
     records = _artifact_records(root, excluded)
     _validate_bundle_layout(records)
     manifest_path = _safe_relative_file(root, "evidence/model-manifest.json")
@@ -915,6 +1152,11 @@ def prepare_release_plan(
         repo_root,
         remote_manifest_path=manifest_path,
         remote_revision=model_manifest_revision,
+    )
+    model_audit = validate_model_audit_report(
+        repo_root,
+        _safe_relative_file(root, "evidence/model-manifest-audit.json"),
+        remote_manifest=manifest,
     )
     distribution_records = [
         record for record in records if str(record["path"]).startswith("distributions/")
@@ -939,6 +1181,7 @@ def prepare_release_plan(
         "source_sha": identity["source_sha"],
         "tag_exists": identity["tag_exists"],
         "model_manifest": manifest,
+        "model_audit": model_audit,
         "local_gpu_evidence": local_gpu_evidence,
         "artifacts": records,
         "channel_subjects": {
@@ -1001,7 +1244,8 @@ def verify_release_plan(plan_path: Path, bundle_root: Path) -> dict[str, Any]:
     root = bundle_root.resolve()
     excluded = {
         plan_path.resolve(),
-        (root / "SHA256SUMS").resolve(),
+        (root / BUNDLE_CHECKSUM_FILENAME).resolve(),
+        (root / PUBLIC_CHECKSUM_FILENAME).resolve(),
         (root / "publication-receipt.json").resolve(),
     }
     if _artifact_records(root, excluded) != observed_records:
@@ -1052,6 +1296,33 @@ def verify_release_plan(plan_path: Path, bundle_root: Path) -> dict[str, Any]:
     )
     if manifest_report != manifest:
         raise ReleaseError("Fetched model manifest report changed after planning")
+    model_audit = plan.get("model_audit")
+    model_audit_path = _safe_relative_file(
+        bundle_root.resolve(), "evidence/model-manifest-audit.json"
+    )
+    bound_remote = model_audit.get("remote_manifest") if isinstance(
+        model_audit, dict
+    ) else None
+    if (
+        not isinstance(model_audit, dict)
+        or sha256_file(model_audit_path) != model_audit.get("sha256")
+    ):
+        raise ReleaseError("Model audit evidence changed after planning")
+    audit_report = _read_json(model_audit_path)
+    if (
+        audit_report.get("status") != "ok"
+        or audit_report.get("download_artifacts") is not True
+        or audit_report.get("require_current_metadata") is not True
+        or audit_report.get("verify_legal_documents") is not True
+        or audit_report.get("failures") != []
+        or audit_report.get("packaged_manifest_sha256")
+        != model_audit.get("packaged_manifest_sha256")
+        or not isinstance(bound_remote, dict)
+        or audit_report.get("remote_manifest") != bound_remote
+        or bound_remote.get("revision") != manifest.get("revision")
+        or bound_remote.get("sha256") != manifest.get("sha256")
+    ):
+        raise ReleaseError("Model audit binding is inconsistent with the release plan")
     local_gpu = plan.get("local_gpu_evidence")
     if (
         not isinstance(local_gpu, dict)
@@ -1064,37 +1335,143 @@ def verify_release_plan(plan_path: Path, bundle_root: Path) -> dict[str, Any]:
     return plan
 
 
-def write_checksums(bundle_root: Path, output_path: Path) -> None:
-    """Write sorted SHA256SUMS without including the checksum file itself."""
+def _checksum_entries(
+    checksums_path: Path, *, label: str, basenames_only: bool
+) -> dict[str, str]:
+    """Parse one strict GNU-style SHA-256 document without path ambiguity."""
+
+    try:
+        lines = checksums_path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError) as exc:
+        raise ReleaseError(f"Cannot read {label}: {exc}") from exc
+    entries: dict[str, str] = {}
+    for line in lines:
+        match = re.fullmatch(r"([0-9a-f]{64})  ([^\r\n]+)", line)
+        if match is None:
+            raise ReleaseError(f"Malformed {label} entry")
+        expected, relative = match.groups()
+        path = PurePosixPath(relative)
+        if (
+            path.is_absolute()
+            or relative in {"", "."}
+            or ".." in path.parts
+            or str(path) != relative
+            or (basenames_only and path.name != relative)
+        ):
+            raise ReleaseError(f"Unsafe {label} entry: {relative}")
+        if relative in entries:
+            raise ReleaseError(f"Duplicate {label} entry: {relative}")
+        entries[relative] = expected
+    return entries
+
+
+def _public_payload_sources(bundle_root: Path) -> dict[str, Path]:
+    """Return the exact immutable primary assets exposed by a GitHub release."""
+
+    root = bundle_root.resolve()
+    distribution_root = root / "distributions"
+    wheels = sorted(distribution_root.glob("*.whl"))
+    sdists = sorted(distribution_root.glob("*.tar.gz"))
+    if len(wheels) != 1 or len(sdists) != 1:
+        raise ReleaseError(
+            "Public checksums require exactly one wheel and one source distribution"
+        )
+    paths = [wheels[0], sdists[0], *(root / name for name in PUBLIC_FIXED_PAYLOADS)]
+    sources: dict[str, Path] = {}
+    for path in paths:
+        if path.is_symlink() or not path.is_file():
+            raise ReleaseError(f"Public checksum payload is unavailable: {path.name}")
+        if path.name in sources:
+            raise ReleaseError(f"Public checksum payload name collides: {path.name}")
+        sources[path.name] = path
+    return sources
+
+
+def write_public_checksums(bundle_root: Path, output_path: Path) -> None:
+    """Write checksums for only the four immutable public primary assets."""
 
     root = bundle_root.resolve()
     output = output_path.resolve()
-    lines = []
-    for record in _artifact_records(root, {output}):
-        lines.append(f"{record['sha256']}  {record['path']}\n")
-    _write_bytes_atomic(output_path, "".join(lines).encode("utf-8"))
+    if output != (root / PUBLIC_CHECKSUM_FILENAME).resolve():
+        raise ReleaseError(
+            f"Public checksums must be named {PUBLIC_CHECKSUM_FILENAME}"
+        )
+    sources = _public_payload_sources(root)
+    lines = [
+        f"{sha256_file(path)}  {name}\n" for name, path in sorted(sources.items())
+    ]
+    _write_bytes_atomic(output, "".join(lines).encode("utf-8"))
 
 
-def verify_checksums(bundle_root: Path, checksums_path: Path) -> None:
-    """Verify a strict, duplicate-free SHA256SUMS file."""
+def verify_public_checksums(
+    checksums_path: Path,
+    *,
+    payloads: Mapping[str, Path],
+) -> dict[str, str]:
+    """Verify the exact public checksum allowlist against downloaded assets."""
 
-    seen = set()
-    for line in checksums_path.read_text(encoding="utf-8").splitlines():
-        match = re.fullmatch(r"([0-9a-f]{64})  (.+)", line)
-        if match is None:
-            raise ReleaseError("Malformed SHA256SUMS entry")
-        expected, relative = match.groups()
-        if relative in seen:
-            raise ReleaseError(f"Duplicate checksum entry: {relative}")
-        seen.add(relative)
-        if sha256_file(_safe_relative_file(bundle_root.resolve(), relative)) != expected:
-            raise ReleaseError(f"Checksum mismatch: {relative}")
-    observed = {
-        str(record["path"])
-        for record in _artifact_records(bundle_root.resolve(), {checksums_path.resolve()})
+    entries = _checksum_entries(
+        checksums_path, label=PUBLIC_CHECKSUM_FILENAME, basenames_only=True
+    )
+    expected = set(payloads)
+    if len(expected) != len(payloads) or set(entries) != expected:
+        raise ReleaseError(
+            f"{PUBLIC_CHECKSUM_FILENAME} payload set differs; "
+            f"missing={sorted(expected - set(entries))}, "
+            f"extra={sorted(set(entries) - expected)}"
+        )
+    for name, digest in entries.items():
+        path = Path(payloads[name])
+        if path.name != name or path.is_symlink() or not path.is_file():
+            raise ReleaseError(f"Public checksum payload is unavailable: {name}")
+        if sha256_file(path) != digest:
+            raise ReleaseError(f"Public checksum mismatch: {name}")
+    return entries
+
+
+def write_bundle_checksums(bundle_root: Path, output_path: Path) -> None:
+    """Write complete internal bundle checksums, including public SHA256SUMS."""
+
+    root = bundle_root.resolve()
+    output = output_path.resolve()
+    if output != (root / BUNDLE_CHECKSUM_FILENAME).resolve():
+        raise ReleaseError(
+            f"Bundle checksums must be named {BUNDLE_CHECKSUM_FILENAME}"
+        )
+    excluded = {output, (root / "publication-receipt.json").resolve()}
+    lines = [
+        f"{record['sha256']}  {record['path']}\n"
+        for record in _artifact_records(root, excluded)
+    ]
+    _write_bytes_atomic(output, "".join(lines).encode("utf-8"))
+
+
+def verify_bundle_checksums(bundle_root: Path, checksums_path: Path) -> None:
+    """Verify strict internal checksums against the exact complete bundle."""
+
+    root = bundle_root.resolve()
+    if checksums_path.resolve() != (root / BUNDLE_CHECKSUM_FILENAME).resolve():
+        raise ReleaseError(
+            f"Bundle checksums must be named {BUNDLE_CHECKSUM_FILENAME}"
+        )
+    entries = _checksum_entries(
+        checksums_path, label=BUNDLE_CHECKSUM_FILENAME, basenames_only=False
+    )
+    excluded = {
+        checksums_path.resolve(),
+        (root / "publication-receipt.json").resolve(),
     }
-    if seen != observed:
-        raise ReleaseError("SHA256SUMS does not cover the exact release bundle")
+    observed = {
+        str(record["path"]): str(record["sha256"])
+        for record in _artifact_records(root, excluded)
+    }
+    if set(entries) != set(observed):
+        raise ReleaseError(
+            f"{BUNDLE_CHECKSUM_FILENAME} does not cover the exact release bundle"
+        )
+    for relative, digest in entries.items():
+        if observed[relative] != digest:
+            raise ReleaseError(f"Bundle checksum mismatch: {relative}")
 
 
 def _new_receipt(plan: Mapping[str, Any]) -> dict[str, Any]:
@@ -1236,7 +1613,7 @@ def verify_github_release_assets(
     if plan_path.name != "release-plan.json":
         raise ReleaseError("GitHub release plan must be named release-plan.json")
     add_expected(plan_path.name, plan_path)
-    add_expected("SHA256SUMS", bundle_root / "SHA256SUMS")
+    add_expected(PUBLIC_CHECKSUM_FILENAME, bundle_root / PUBLIC_CHECKSUM_FILENAME)
 
     for channel in IMMUTABLE_CHANNELS:
         name = f"receipt-{channel}.json"
@@ -1317,6 +1694,21 @@ def verify_github_release_assets(
     for name, record in expected.items():
         if observed[name] != record:
             raise ReleaseError(f"Downloaded GitHub release asset differs: {name}")
+
+    public_sources = _public_payload_sources(bundle_root)
+    public_entries = verify_public_checksums(
+        downloaded_assets_dir / PUBLIC_CHECKSUM_FILENAME,
+        payloads={
+            name: downloaded_assets_dir / name for name in public_sources
+        },
+    )
+    expected_public_entries = {
+        name: sha256_file(path) for name, path in public_sources.items()
+    }
+    if public_entries != expected_public_entries:
+        raise ReleaseError(
+            f"{PUBLIC_CHECKSUM_FILENAME} differs from the approved public payloads"
+        )
 
     return {
         "status": "identical",
@@ -1508,6 +1900,30 @@ def inspect_docker(reference: str, expected_config_digest: str) -> dict[str, Any
     return docker_distribution_state(manifest, expected_config_digest)
 
 
+def validate_local_image_id(
+    plan: Mapping[str, Any], channel: str, observed_image_id: str
+) -> str:
+    """Bind a pulled local image to the config digest approved by the plan."""
+
+    if channel not in {"docker-cpu", "docker-gpu"}:
+        raise ReleaseError(f"Unsupported Docker image channel: {channel}")
+    subjects = plan.get("channel_subjects")
+    if not isinstance(subjects, Mapping):
+        raise ReleaseError("Release plan channel subjects are unavailable")
+    expected = _require_image_digest(
+        subjects.get(channel), f"Expected {channel} image config digest"
+    )
+    observed = _require_image_digest(
+        str(observed_image_id).strip().lower(), f"Observed {channel} local image ID"
+    )
+    if observed != expected:
+        raise ReleaseError(
+            f"Pulled {channel} image differs from the release plan: "
+            f"expected {expected}, observed {observed}"
+        )
+    return observed
+
+
 def _copy_missing_distributions(
     state: Mapping[str, Any], distributions: Sequence[Path], output_dir: Path
 ) -> None:
@@ -1568,11 +1984,16 @@ def _parse_args() -> argparse.Namespace:
     verify = subparsers.add_parser("verify")
     verify.add_argument("--plan", required=True)
     verify.add_argument("--bundle-root", required=True)
-    verify.add_argument("--checksums")
+    verify.add_argument("--bundle-checksums")
+    verify.add_argument("--public-checksums")
 
-    checksums = subparsers.add_parser("checksums")
-    checksums.add_argument("--bundle-root", required=True)
-    checksums.add_argument("--output", required=True)
+    bundle_checksums = subparsers.add_parser("bundle-checksums")
+    bundle_checksums.add_argument("--bundle-root", required=True)
+    bundle_checksums.add_argument("--output", required=True)
+
+    public_checksums = subparsers.add_parser("public-checksums")
+    public_checksums.add_argument("--bundle-root", required=True)
+    public_checksums.add_argument("--output", required=True)
 
     pypi = subparsers.add_parser("pypi-state")
     pypi.add_argument("--plan", required=True)
@@ -1585,6 +2006,13 @@ def _parse_args() -> argparse.Namespace:
     docker.add_argument("--channel", choices=("docker-cpu", "docker-gpu"), required=True)
     docker.add_argument("--reference", required=True)
     docker.add_argument("--output", required=True)
+
+    local_image = subparsers.add_parser("assert-local-image")
+    local_image.add_argument("--plan", required=True)
+    local_image.add_argument(
+        "--channel", choices=("docker-cpu", "docker-gpu"), required=True
+    )
+    local_image.add_argument("--image-id", required=True)
 
     record = subparsers.add_parser("record-channel")
     record.add_argument("--plan", required=True)
@@ -1655,11 +2083,21 @@ def main() -> int:
         return 0
     if args.command == "verify":
         verify_release_plan(Path(args.plan), Path(args.bundle_root))
-        if args.checksums:
-            verify_checksums(Path(args.bundle_root), Path(args.checksums))
+        if args.public_checksums:
+            verify_public_checksums(
+                Path(args.public_checksums),
+                payloads=_public_payload_sources(Path(args.bundle_root)),
+            )
+        if args.bundle_checksums:
+            verify_bundle_checksums(
+                Path(args.bundle_root), Path(args.bundle_checksums)
+            )
         return 0
-    if args.command == "checksums":
-        write_checksums(Path(args.bundle_root), Path(args.output))
+    if args.command == "bundle-checksums":
+        write_bundle_checksums(Path(args.bundle_root), Path(args.output))
+        return 0
+    if args.command == "public-checksums":
+        write_public_checksums(Path(args.bundle_root), Path(args.output))
         return 0
     if args.command == "pypi-state":
         plan = _load_plan_without_bundle(Path(args.plan))
@@ -1674,6 +2112,10 @@ def main() -> int:
         plan = _load_plan_without_bundle(Path(args.plan))
         state = inspect_docker(args.reference, plan["channel_subjects"][args.channel])
         _write_output(Path(args.output), state)
+        return 0
+    if args.command == "assert-local-image":
+        plan = _load_plan_without_bundle(Path(args.plan))
+        validate_local_image_id(plan, args.channel, args.image_id)
         return 0
     if args.command == "record-channel":
         plan = _load_plan_without_bundle(Path(args.plan))

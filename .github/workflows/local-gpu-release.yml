@@ -34,6 +34,7 @@ jobs:
           CONFIRMED: ${{ inputs.confirm_trusted_source }}
           INPUT_SOURCE_SHA: ${{ inputs.source_sha }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
+          SOURCE_REF_NAME: ${{ github.ref_name }}
           SOURCE_REF_PROTECTED: ${{ github.ref_protected }}
           WORKFLOW_SOURCE_SHA: ${{ github.sha }}
         run: |
@@ -46,8 +47,10 @@ jobs:
               raise SystemExit("source_sha must be a full lowercase commit SHA")
           if source != os.environ["WORKFLOW_SOURCE_SHA"]:
               raise SystemExit("source_sha must equal the workflow's exact source SHA")
+          if os.environ["SOURCE_REF_NAME"] != "main":
+              raise SystemExit("The workflow must be dispatched from main")
           if os.environ["SOURCE_REF_PROTECTED"] != "true":
-              raise SystemExit("The workflow must be dispatched from a protected ref")
+              raise SystemExit("The main release ref must remain protected")
           if os.environ["CONFIRMED"] != "true":
               raise SystemExit("Trusted-source confirmation is required")
           if os.environ["ACTOR"] != os.environ["REPOSITORY_OWNER"]:

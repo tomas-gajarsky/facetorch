@@ -6,7 +6,7 @@ downloader:
   path_local: ${facetorch.model_dir:}/exported/predictor/va/1/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-va-elim  # HuggingFace repo ID
   manifest_id: va-elim
-  revision: ff74558b4dbd972bd94cf6cc1eccb6f3601f2799
+  revision: 4e6f4909f9f36d5f0f807f2181093d03a494c5b8
   offline: ${offline}
   allow_legacy_models: ${allow_legacy_models}
   device: ${analyzer.device}

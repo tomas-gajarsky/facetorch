@@ -16,13 +16,17 @@ from scripts.release_transaction import (
     pypi_distribution_state,
     record_channel,
     run_publication_transaction,
+    validate_local_image_id,
+    validate_model_audit_report,
     validate_packaged_model_governance,
     validate_local_release_evidence,
-    verify_checksums,
+    verify_bundle_checksums,
     verify_github_release_assets,
+    verify_public_checksums,
     verify_publication_receipt,
     verify_release_plan,
-    write_checksums,
+    write_bundle_checksums,
+    write_public_checksums,
 )
 
 
@@ -31,6 +35,9 @@ MODEL_REVISION = "2" * 40
 MODEL_FILENAME = "manifests/approved-plan.json"
 CPU_IMAGE_DIGEST = "sha256:" + "3" * 64
 GPU_IMAGE_DIGEST = "sha256:" + "4" * 64
+METADATA_SHA256 = "9" * 64
+GOLDEN_REFERENCE_SHA256 = "a" * 64
+GOLDEN_REFERENCE_SIZE = 42
 
 
 def _sha256(path):
@@ -40,6 +47,35 @@ def _sha256(path):
 def _write_json(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _json_bytes(value):
+    return (json.dumps(value, sort_keys=True) + "\n").encode()
+
+
+def _model_manifest_data():
+    return {
+        "schema_version": 1,
+        "status": "approved",
+        "plan_id": "model-plan",
+        "models": [
+            {
+                "model_id": "detector",
+                "repo_id": "owner/detector",
+                "cohort": "2.6",
+                "revision": "5" * 40,
+                "artifact_filename": "model-torch2.6.pt2",
+                "artifact_sha256": "6" * 64,
+                "artifact_size_bytes": 123,
+                "metadata_filename": "model-torch2.6.pt2.meta.json",
+                "metadata_sha256": METADATA_SHA256,
+                "golden_reference_sha256": GOLDEN_REFERENCE_SHA256,
+                "golden_reference_size_bytes": GOLDEN_REFERENCE_SIZE,
+                "golden_reference_source_cohort": "2.6",
+                "required_devices": ["cpu", "cuda"],
+            }
+        ],
+    }
 
 
 def _git(repo, *arguments):
@@ -80,6 +116,11 @@ def _candidate_repo(tmp_path, version="1.0.0"):
         {
             "manifest_version": 1,
             "manifest_revision": MODEL_REVISION,
+            "manifest_repo_id": "owner/facetorch-model-manifest",
+            "manifest_filename": MODEL_FILENAME,
+            "manifest_sha256": hashlib.sha256(
+                _json_bytes(_model_manifest_data())
+            ).hexdigest(),
             "status": "approved",
             "compatibility_ref": "compatibility.json",
             "governance_ref": "governance.json",
@@ -105,6 +146,10 @@ def _candidate_repo(tmp_path, version="1.0.0"):
                             "schema_major": 8,
                             "schema_minor": 2,
                             "validation_metadata": "model-torch2.6.pt2.meta.json",
+                            "metadata_sha256": METADATA_SHA256,
+                            "golden_reference_sha256": GOLDEN_REFERENCE_SHA256,
+                            "golden_reference_size_bytes": GOLDEN_REFERENCE_SIZE,
+                            "golden_reference_source_cohort": "2.6",
                         }
                     ],
                 }
@@ -151,26 +196,7 @@ def _candidate_repo(tmp_path, version="1.0.0"):
 
 
 def _model_manifest(path):
-    _write_json(
-        path,
-        {
-            "schema_version": 1,
-            "status": "candidate",
-            "plan_id": "model-plan",
-            "models": [
-                {
-                    "model_id": "detector",
-                    "repo_id": "owner/detector",
-                    "cohort": "2.6",
-                    "revision": "5" * 40,
-                    "artifact_filename": "model-torch2.6.pt2",
-                    "artifact_sha256": "6" * 64,
-                    "artifact_size_bytes": 123,
-                    "required_devices": ["cpu", "cuda"],
-                }
-            ],
-        },
-    )
+    _write_json(path, _model_manifest_data())
 
 
 def _local_release_evidence(bundle, repo, source_sha):
@@ -181,7 +207,7 @@ def _local_release_evidence(bundle, repo, source_sha):
     _write_json(
         matrix,
         {
-            "schema_version": 1,
+            "schema_version": 2,
             "status": "ok",
             "release_approval_required": False,
             "required_devices": ["cpu", "cuda"],
@@ -289,6 +315,65 @@ def _local_release_evidence(bundle, repo, source_sha):
     )
 
 
+def _model_audit_evidence(bundle, repo, remote_manifest):
+    packaged_manifest = repo / "facetorch/models/manifest.json"
+    _write_json(
+        bundle / "evidence/model-manifest-audit.json",
+        {
+            "schema_version": 1,
+            "status": "ok",
+            "manifest_revision": MODEL_REVISION,
+            "packaged_manifest_sha256": _sha256(packaged_manifest),
+            "remote_manifest": {
+                "repo_id": "owner/facetorch-model-manifest",
+                "revision": MODEL_REVISION,
+                "filename": MODEL_FILENAME,
+                "sha256": _sha256(remote_manifest),
+                "plan_id": "model-plan",
+                "status": "approved",
+            },
+            "download_artifacts": True,
+            "require_current_metadata": True,
+            "verify_legal_documents": True,
+            "results": [
+                {
+                    "model_id": "detector",
+                    "repo_id": "owner/detector",
+                    "revision": "5" * 40,
+                    "status": "ok",
+                    "legal_documents": [
+                        {
+                            "filename": filename,
+                            "sha256": hashlib.sha256(filename.encode()).hexdigest(),
+                            "size_bytes": len(filename),
+                            "bytes_verified": True,
+                        }
+                        for filename in (
+                            "README.md",
+                            "LICENSE",
+                            "THIRD_PARTY_NOTICES.md",
+                        )
+                    ],
+                    "artifacts": [
+                        {
+                            "artifact_id": "detector-torch2.6",
+                            "filename": "model-torch2.6.pt2",
+                            "sha256": "6" * 64,
+                            "size_bytes": 123,
+                            "lfs_oid_verified": True,
+                            "downloaded_bytes_verified": True,
+                            "metadata_status": "current",
+                            "metadata_sha256_verified": True,
+                            "metadata_identity_verified": True,
+                        }
+                    ],
+                }
+            ],
+            "failures": [],
+        },
+    )
+
+
 def _bundle(tmp_path, repo=None, source_sha=None):
     bundle = tmp_path / "bundle"
     files = {
@@ -320,6 +405,7 @@ def _bundle(tmp_path, repo=None, source_sha=None):
         },
     )
     if repo is not None and source_sha is not None:
+        _model_audit_evidence(bundle, repo, manifest)
         _local_release_evidence(bundle, repo, source_sha)
     return bundle, manifest
 
@@ -345,10 +431,23 @@ def _release_plan(tmp_path, version="1.0.0", tag="v1.0.0"):
     return plan, plan_path, bundle
 
 
+def _public_payloads(bundle):
+    return {
+        "facetorch-1.0.0-py3-none-any.whl": (
+            bundle / "distributions/facetorch-1.0.0-py3-none-any.whl"
+        ),
+        "facetorch-1.0.0.tar.gz": (
+            bundle / "distributions/facetorch-1.0.0.tar.gz"
+        ),
+        "release-evidence.tar.zst": bundle / "release-evidence.tar.zst",
+        "release-plan.json": bundle / "release-plan.json",
+    }
+
+
 def _github_release_asset_fixture(tmp_path):
     plan, plan_path, bundle = _release_plan(tmp_path)
     checksums = bundle / "SHA256SUMS"
-    write_checksums(bundle, checksums)
+    write_public_checksums(bundle, checksums)
 
     receipts = tmp_path / "receipts"
     receipts.mkdir()
@@ -495,30 +594,134 @@ def test_release_plan_rejects_mismatched_manifest_report(tmp_path, field, value)
 
 
 @pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    ("field_path", "value"),
+    [
+        (("download_artifacts",), False),
+        (("verify_legal_documents",), False),
+        (("packaged_manifest_sha256",), "0" * 64),
+        (("remote_manifest", "revision"), "0" * 40),
+        (("results", 0, "revision"), "0" * 40),
+        (("results", 0, "legal_documents", 0, "bytes_verified"), False),
+        (("results", 0, "artifacts", 0, "downloaded_bytes_verified"), False),
+        (("results", 0, "artifacts", 0, "metadata_sha256_verified"), False),
+        (("results", 0, "artifacts", 0, "metadata_identity_verified"), False),
+    ],
+)
+def test_release_plan_rejects_incomplete_or_cross_release_model_audit(
+    tmp_path, field_path, value
+):
+    repo, source_sha = _candidate_repo(tmp_path)
+    bundle, _manifest = _bundle(tmp_path, repo, source_sha)
+    audit_path = bundle / "evidence/model-manifest-audit.json"
+    audit = json.loads(audit_path.read_text())
+    target = audit
+    for field in field_path[:-1]:
+        target = target[field]
+    target[field_path[-1]] = value
+    _write_json(audit_path, audit)
+    remote_manifest = json.loads(
+        (bundle / "evidence/model-manifest-report.json").read_text()
+    )
+
+    with pytest.raises(ReleaseError, match="Model audit"):
+        validate_model_audit_report(
+            repo,
+            audit_path,
+            remote_manifest=remote_manifest,
+        )
+
+
+@pytest.mark.release_blocker
 def test_release_plan_binds_every_artifact_and_detects_changed_bytes(tmp_path):
     plan, plan_path, bundle = _release_plan(tmp_path)
-    checksums = bundle / "SHA256SUMS"
-    write_checksums(bundle, checksums)
+    public_checksums = bundle / "SHA256SUMS"
+    bundle_checksums = bundle / "BUNDLE-SHA256SUMS"
+    write_public_checksums(bundle, public_checksums)
+    write_bundle_checksums(bundle, bundle_checksums)
 
     assert set(plan["channel_subjects"]) == set(IMMUTABLE_CHANNELS)
     assert plan["model_manifest"]["filename"] == MODEL_FILENAME
+    assert plan["model_audit"]["download_artifacts"] is True
+    assert plan["model_audit"]["model_count"] == 1
     assert verify_release_plan(plan_path, bundle) == plan
-    verify_checksums(bundle, checksums)
+    verify_public_checksums(
+        public_checksums,
+        payloads=_public_payloads(bundle),
+    )
+    verify_bundle_checksums(bundle, bundle_checksums)
 
     rogue = bundle / "distributions/unplanned.txt"
     rogue.write_bytes(b"not in the approved plan")
     with pytest.raises(ReleaseError, match="file set changed"):
         verify_release_plan(plan_path, bundle)
     with pytest.raises(ReleaseError, match="exact release bundle"):
-        verify_checksums(bundle, checksums)
+        verify_bundle_checksums(bundle, bundle_checksums)
     rogue.unlink()
 
     wheel = bundle / "distributions/facetorch-1.0.0-py3-none-any.whl"
     wheel.write_bytes(b"different wheel")
     with pytest.raises(ReleaseError, match="changed after planning"):
         verify_release_plan(plan_path, bundle)
-    with pytest.raises(ReleaseError, match="Checksum mismatch"):
-        verify_checksums(bundle, checksums)
+    with pytest.raises(ReleaseError, match="Public checksum mismatch"):
+        verify_public_checksums(
+            public_checksums,
+            payloads=_public_payloads(bundle),
+        )
+    with pytest.raises(ReleaseError, match="Bundle checksum mismatch"):
+        verify_bundle_checksums(bundle, bundle_checksums)
+
+
+@pytest.mark.release_blocker
+def test_internal_and_public_checksums_have_disjoint_explicit_scopes(tmp_path):
+    _plan, _plan_path, bundle = _release_plan(tmp_path)
+    public_path = bundle / "SHA256SUMS"
+    bundle_path = bundle / "BUNDLE-SHA256SUMS"
+
+    write_public_checksums(bundle, public_path)
+    write_bundle_checksums(bundle, bundle_path)
+
+    public_names = {
+        line.split("  ", 1)[1]
+        for line in public_path.read_text(encoding="utf-8").splitlines()
+    }
+    internal_names = {
+        line.split("  ", 1)[1]
+        for line in bundle_path.read_text(encoding="utf-8").splitlines()
+    }
+    assert public_names == set(_public_payloads(bundle))
+    assert "SHA256SUMS" in internal_names
+    assert "BUNDLE-SHA256SUMS" not in internal_names
+    assert "evidence/model-manifest.json" in internal_names
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    "mutation", ("missing", "extra", "duplicate", "renamed", "changed")
+)
+def test_public_checksum_verifier_rejects_contract_mutations(tmp_path, mutation):
+    _plan, _plan_path, bundle = _release_plan(tmp_path)
+    checksums = bundle / "SHA256SUMS"
+    write_public_checksums(bundle, checksums)
+    lines = checksums.read_text(encoding="utf-8").splitlines()
+
+    if mutation == "missing":
+        lines.pop(0)
+    elif mutation == "extra":
+        lines.append(f"{'0' * 64}  rogue.bin")
+    elif mutation == "duplicate":
+        lines.append(lines[0])
+    elif mutation == "renamed":
+        lines[0] = lines[0].replace(
+            "facetorch-1.0.0-py3-none-any.whl", "renamed.whl"
+        )
+    else:
+        digest, name = lines[0].split("  ", 1)
+        lines[0] = f"{'f' if digest[0] != 'f' else 'e'}{digest[1:]}  {name}"
+    checksums.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    with pytest.raises(ReleaseError, match="checksum|payload|Duplicate"):
+        verify_public_checksums(checksums, payloads=_public_payloads(bundle))
 
 
 @pytest.mark.release_blocker
@@ -677,6 +880,11 @@ def test_packaged_governance_requires_exact_hosted_digest_proof(
         ("required_devices", ["cpu"]),
         ("artifact_filename", "different.pt2"),
         ("artifact_sha256", "9" * 64),
+        ("metadata_filename", "different.meta.json"),
+        ("metadata_sha256", "b" * 64),
+        ("golden_reference_sha256", "b" * 64),
+        ("golden_reference_size_bytes", GOLDEN_REFERENCE_SIZE + 1),
+        ("golden_reference_source_cohort", "2.11"),
     ],
 )
 def test_model_governance_binds_every_remote_cohort_field(tmp_path, field, value):
@@ -780,6 +988,7 @@ def test_model_governance_rejects_swapped_cohort_labels(tmp_path):
             "artifact_filename": "model-torch2.11.pt2",
             "artifact_sha256": "9" * 64,
             "artifact_size_bytes": 456,
+            "metadata_filename": "model-torch2.11.pt2.meta.json",
         }
     )
     remote["models"].append(second_remote)
@@ -989,3 +1198,27 @@ def test_pypi_and_docker_reconciliation_are_fail_closed(tmp_path):
     assert docker_distribution_state(manifest, CPU_IMAGE_DIGEST)["status"] == "identical"
     with pytest.raises(ReleaseError, match="Registry image differs"):
         docker_distribution_state(manifest, GPU_IMAGE_DIGEST)
+
+
+@pytest.mark.release_blocker
+def test_local_image_binding_rejects_a_mutable_version_tag_race():
+    plan = {
+        "channel_subjects": {
+            "docker-cpu": CPU_IMAGE_DIGEST,
+            "docker-gpu": GPU_IMAGE_DIGEST,
+        }
+    }
+    initially_verified_remote = {"config": {"digest": CPU_IMAGE_DIGEST}}
+
+    assert (
+        docker_distribution_state(initially_verified_remote, CPU_IMAGE_DIGEST)[
+            "status"
+        ]
+        == "identical"
+    )
+    with pytest.raises(ReleaseError, match="differs from the release plan"):
+        validate_local_image_id(plan, "docker-cpu", GPU_IMAGE_DIGEST)
+
+    assert validate_local_image_id(plan, "docker-cpu", CPU_IMAGE_DIGEST) == (
+        CPU_IMAGE_DIGEST
+    )

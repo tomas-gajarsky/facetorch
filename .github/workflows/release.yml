@@ -103,6 +103,7 @@ jobs:
           INPUT_MODEL_FILENAME: ${{ inputs.model_manifest_filename }}
           INPUT_MODEL_SHA256: ${{ inputs.model_manifest_sha256 }}
           INPUT_DRY_RUN: ${{ inputs.dry_run }}
+          SOURCE_REF_NAME: ${{ github.ref_name }}
           SOURCE_REF_PROTECTED: ${{ github.ref_protected }}
           WORKFLOW_SOURCE_SHA: ${{ github.sha }}
         run: |
@@ -150,10 +151,12 @@ jobs:
               raise SystemExit("model manifest filename is unsafe")
           if values["dry_run"] not in {"true", "false"}:
               raise SystemExit("dry_run must be boolean")
+          if os.environ["SOURCE_REF_NAME"] != "main":
+              raise SystemExit("Release validation must be dispatched from main")
           if os.environ["SOURCE_REF_PROTECTED"] != "true":
-              raise SystemExit("Release validation must be dispatched from a protected ref")
+              raise SystemExit("The main release ref must remain protected")
           if values["source_sha"] != os.environ["WORKFLOW_SOURCE_SHA"]:
-              raise SystemExit("source_sha must equal the selected protected ref commit")
+              raise SystemExit("source_sha must equal the selected main commit")
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
               for name, value in values.items():
                   output.write(f"{name}={value}\n")
@@ -211,6 +214,40 @@ jobs:
         with:
           name: release-model-manifest-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/model-manifest-evidence
+          if-no-files-found: error
+          retention-days: 30
+
+  audit-model-release:
+    needs: [validate-inputs, resolve-candidate]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          clean: true
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12.12"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-model-manifest-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/model-manifest-evidence
+      - name: Audit every immutable model, metadata record, and artifact byte
+        run: |
+          python -m pip install "uv==$UV_VERSION"
+          uv sync --frozen
+          mkdir -p "$RUNNER_TEMP/model-audit-evidence"
+          uv run --frozen python scripts/audit_model_manifest_hf.py \
+            --manifest facetorch/models/manifest.json \
+            --remote-manifest "$RUNNER_TEMP/model-manifest-evidence/model-manifest.json" \
+            --download-artifacts \
+            --report "$RUNNER_TEMP/model-audit-evidence/model-manifest-audit.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-model-audit-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/model-audit-evidence/model-manifest-audit.json
           if-no-files-found: error
           retention-days: 30
 
@@ -471,6 +508,7 @@ jobs:
       - resolve-candidate
       - build-distributions
       - build-images
+      - audit-model-release
       - validate-exact-images-on-local-gpu
     runs-on: ubuntu-24.04
     timeout-minutes: 40
@@ -489,6 +527,10 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: release-model-manifest-${{ needs.validate-inputs.outputs.source_sha }}
+          path: ${{ runner.temp }}/release-bundle/evidence
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-model-audit-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/release-bundle/evidence
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
@@ -559,13 +601,17 @@ jobs:
             --cpu-image-digest "$(tr -d '\n' < "$RUNNER_TEMP/release-bundle/evidence/cpu-image-digest.txt")" \
             --gpu-image-digest "$(tr -d '\n' < "$RUNNER_TEMP/release-bundle/evidence/gpu-image-digest.txt")" \
             --output "$RUNNER_TEMP/release-bundle/release-plan.json" "${args[@]}"
-          python scripts/release_transaction.py checksums \
+          python scripts/release_transaction.py public-checksums \
             --bundle-root "$RUNNER_TEMP/release-bundle" \
             --output "$RUNNER_TEMP/release-bundle/SHA256SUMS"
+          python scripts/release_transaction.py bundle-checksums \
+            --bundle-root "$RUNNER_TEMP/release-bundle" \
+            --output "$RUNNER_TEMP/release-bundle/BUNDLE-SHA256SUMS"
           python scripts/release_transaction.py verify \
             --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
             --bundle-root "$RUNNER_TEMP/release-bundle" \
-            --checksums "$RUNNER_TEMP/release-bundle/SHA256SUMS"
+            --public-checksums "$RUNNER_TEMP/release-bundle/SHA256SUMS" \
+            --bundle-checksums "$RUNNER_TEMP/release-bundle/BUNDLE-SHA256SUMS"
           echo "plan_id=$(jq -r .plan_id "$RUNNER_TEMP/release-bundle/release-plan.json")" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -577,6 +623,7 @@ jobs:
             ${{ runner.temp }}/release-bundle/release-evidence.tar.zst
             ${{ runner.temp }}/release-bundle/release-plan.json
             ${{ runner.temp }}/release-bundle/SHA256SUMS
+            ${{ runner.temp }}/release-bundle/BUNDLE-SHA256SUMS
           if-no-files-found: error
           retention-days: 30
 
@@ -1109,11 +1156,29 @@ jobs:
           test "$(jq -r .status "$RUNNER_TEMP/cpu-versioned.json")" = "identical"
           test "$(jq -r .status "$RUNNER_TEMP/gpu-versioned.json")" = "identical"
           docker pull "$CPU_REPOSITORY:$VERSION_TAG"
-          docker tag "$CPU_REPOSITORY:$VERSION_TAG" docker.io/tomasgajarsky/facetorch:latest
+          cpu_image_id="$(docker image inspect --format '{{.Id}}' "$CPU_REPOSITORY:$VERSION_TAG")"
+          python scripts/release_transaction.py assert-local-image \
+            --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+            --channel docker-cpu --image-id "$cpu_image_id"
+          docker tag "$cpu_image_id" docker.io/tomasgajarsky/facetorch:latest
           docker push docker.io/tomasgajarsky/facetorch:latest
           docker pull "$GPU_REPOSITORY:$VERSION_TAG"
-          docker tag "$GPU_REPOSITORY:$VERSION_TAG" docker.io/tomasgajarsky/facetorch-gpu:latest
+          gpu_image_id="$(docker image inspect --format '{{.Id}}' "$GPU_REPOSITORY:$VERSION_TAG")"
+          python scripts/release_transaction.py assert-local-image \
+            --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+            --channel docker-gpu --image-id "$gpu_image_id"
+          docker tag "$gpu_image_id" docker.io/tomasgajarsky/facetorch-gpu:latest
           docker push docker.io/tomasgajarsky/facetorch-gpu:latest
+          python scripts/release_transaction.py docker-state \
+            --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+            --channel docker-cpu --reference docker.io/tomasgajarsky/facetorch:latest \
+            --output "$RUNNER_TEMP/cpu-latest.json"
+          python scripts/release_transaction.py docker-state \
+            --plan "$RUNNER_TEMP/release-bundle/release-plan.json" \
+            --channel docker-gpu --reference docker.io/tomasgajarsky/facetorch-gpu:latest \
+            --output "$RUNNER_TEMP/gpu-latest.json"
+          test "$(jq -r .status "$RUNNER_TEMP/cpu-latest.json")" = "identical"
+          test "$(jq -r .status "$RUNNER_TEMP/gpu-latest.json")" = "identical"
       - name: Mark the stable GitHub release latest after every channel succeeds
         env:
           GH_TOKEN: ${{ github.token }}

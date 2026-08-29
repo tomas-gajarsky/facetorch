@@ -1,4 +1,6 @@
 from abc import abstractmethod
+import math
+from numbers import Real
 from typing import List, Optional, Tuple, Union
 
 import torch
@@ -144,8 +146,17 @@ class PostSigmoidBinary(BasePredPostProcessor):
             labels (List[str]): List of labels.
             threshold (float): Probability threshold for positive class.
         """
+        if (
+            isinstance(threshold, bool)
+            or not isinstance(threshold, Real)
+            or not math.isfinite(float(threshold))
+            or not 0 <= float(threshold) <= 1
+        ):
+            raise ValueError("threshold must be a finite number between 0 and 1.")
+        if len(labels) != 2:
+            raise ValueError("PostSigmoidBinary requires exactly two labels.")
         super().__init__(transform, device, optimize_transform, labels)
-        self.threshold = threshold
+        self.threshold = float(threshold)
 
     @Timer(
         "PostSigmoidBinary.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug
@@ -163,9 +174,7 @@ class PostSigmoidBinary(BasePredPostProcessor):
             preds = preds[0]
 
         preds = torch.sigmoid(preds.squeeze(1))
-        preds_thresh = preds.where(preds >= self.threshold, torch.zeros_like(preds))
-        indices = torch.round(preds_thresh)
-        indices = indices.cpu().numpy().astype(int).tolist()
+        indices = (preds >= self.threshold).to(dtype=torch.int64).cpu().tolist()
         pred_list = self.create_pred_list(preds, indices)
 
         return pred_list
