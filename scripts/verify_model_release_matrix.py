@@ -12,6 +12,21 @@ from pathlib import Path
 import re
 from typing import Any, Mapping, Sequence
 
+if __package__:
+    from scripts.model_evidence_contract import (
+        ModelEvidenceContractError,
+        expected_metadata_identity,
+        validate_metadata_identity,
+        validate_summary_identity,
+    )
+else:
+    from model_evidence_contract import (
+        ModelEvidenceContractError,
+        expected_metadata_identity,
+        validate_metadata_identity,
+        validate_summary_identity,
+    )
+
 
 class ReleaseMatrixError(RuntimeError):
     """Raised when staged cohort evidence is incomplete or inconsistent."""
@@ -55,11 +70,14 @@ def _staged_path(staging_root: Path, value: Any, label: str) -> Path:
     return path
 
 
-def _referenced_json(manifest_path: Path, manifest: Mapping[str, Any], field: str):
+def _referenced_json(
+    manifest_path: Path, manifest: Mapping[str, Any], field: str
+) -> tuple[Path, Mapping[str, Any]]:
     filename = str(manifest.get(field, ""))
     if Path(filename).name != filename or not filename.endswith(".json"):
         raise ReleaseMatrixError(f"Manifest has invalid {field}: {filename!r}")
-    return _read_json(manifest_path.parent / filename)
+    path = (manifest_path.parent / filename).resolve()
+    return path, _read_json(path)
 
 
 def _require_approved_governance(
@@ -109,8 +127,12 @@ def verify_release_matrix(
     staging_root = staging_root.resolve()
     manifest_path = manifest_path.resolve()
     manifest = _read_json(manifest_path)
-    compatibility = _referenced_json(manifest_path, manifest, "compatibility_ref")
-    governance = _referenced_json(manifest_path, manifest, "governance_ref")
+    compatibility_path, compatibility = _referenced_json(
+        manifest_path, manifest, "compatibility_ref"
+    )
+    governance_path, governance = _referenced_json(
+        manifest_path, manifest, "governance_ref"
+    )
     if require_approval:
         _require_approved_governance(manifest, compatibility, governance)
 
@@ -129,8 +151,59 @@ def verify_release_matrix(
     required_devices = tuple(
         compatibility.get("platform_policy", {}).get("required_devices", [])
     )
-    if not required_devices:
-        raise ReleaseMatrixError("Compatibility matrix declares no required devices.")
+    if (
+        not required_devices
+        or any(
+            not isinstance(device, str) or not device
+            for device in required_devices
+        )
+        or len(set(required_devices)) != len(required_devices)
+    ):
+        raise ReleaseMatrixError(
+            "Compatibility matrix declares invalid required devices."
+        )
+
+    artifact_contracts: dict[tuple[str, str], Mapping[str, Any]] = {}
+    for model_id, model in models.items():
+        if not isinstance(model, Mapping):
+            raise ReleaseMatrixError(f"Manifest model is invalid: {model_id}.")
+        repo_id = model.get("repo_id")
+        if not isinstance(repo_id, str) or not repo_id:
+            raise ReleaseMatrixError(
+                f"Manifest repository is invalid for {model_id}."
+            )
+        artifacts = model.get("artifacts")
+        if not isinstance(artifacts, list):
+            raise ReleaseMatrixError(
+                f"Manifest artifacts are invalid for {model_id}."
+            )
+        pt2_artifacts = [
+            artifact
+            for artifact in artifacts
+            if isinstance(artifact, Mapping) and artifact.get("format") == "pt2"
+        ]
+        pt2_cohorts = [
+            str(artifact.get("torch_min", "")) for artifact in pt2_artifacts
+        ]
+        if (
+            len(pt2_artifacts) != len(expected_cohorts)
+            or len(set(pt2_cohorts)) != len(pt2_cohorts)
+            or set(pt2_cohorts) != expected_cohorts
+        ):
+            raise ReleaseMatrixError(
+                f"Manifest PT2 cohort coverage is not exact for {model_id}."
+            )
+        for cohort in expected_cohorts:
+            matching = [
+                artifact
+                for artifact in pt2_artifacts
+                if artifact.get("torch_min") == cohort
+            ]
+            if len(matching) != 1:
+                raise ReleaseMatrixError(
+                    f"Manifest must declare one PT2 artifact for {model_id}/{cohort}."
+                )
+            artifact_contracts[(str(model_id), cohort)] = matching[0]
     validation_policy = compatibility.get("validation_policy", {})
     golden_reference_cohort = str(validation_policy.get("golden_reference_cohort", ""))
     expected_batches = list(validation_policy.get("predictor_batch_sizes", []))
@@ -176,6 +249,9 @@ def verify_release_matrix(
         )
 
     lanes = []
+    matrix_records = []
+    source_commits = set()
+    summary_contracts = []
     golden_references: dict[str, tuple[str, int, Path]] = {}
     for cohort in sorted(
         expected_cohorts, key=lambda item: tuple(map(int, item.split(".")))
@@ -184,15 +260,23 @@ def verify_release_matrix(
         record = cohort_records[cohort]
         if summary.get("status") != "ok":
             raise ReleaseMatrixError(f"Torch {cohort} summary is not ok.")
-        if summary.get("runtime_torch_minor") != cohort:
-            raise ReleaseMatrixError(
-                f"Torch {cohort} artifact was validated on runtime "
-                f"{summary.get('runtime_torch_minor')!r}."
+        try:
+            summary_identity = validate_summary_identity(
+                summary,
+                expected_model_ids=sorted(expected_models),
+                expected_devices=required_devices,
             )
-        if set(summary.get("validate_devices", [])) != set(required_devices):
+        except ModelEvidenceContractError as exc:
             raise ReleaseMatrixError(
-                f"Torch {cohort} did not request every required device."
-            )
+                f"Torch {cohort} summary identity is invalid: {exc}."
+            ) from exc
+        summary_contracts.append(
+            {
+                "torch_minor": cohort,
+                "path": _summary_path.relative_to(staging_root).as_posix(),
+                "sha256": _sha256(_summary_path),
+            }
+        )
         for field, expected in (
             ("batch_sizes", expected_batches),
             ("seeds", expected_seeds),
@@ -203,7 +287,13 @@ def verify_release_matrix(
                     f"Torch {cohort} used an incomplete {field} validation matrix."
                 )
 
-        environment = summary.get("environment", {})
+        environment = summary_identity["environment"]
+        if str(environment.get("torch_version", "")).split("+", 1)[0] != str(
+            record.get("validated_patch", "")
+        ):
+            raise ReleaseMatrixError(
+                f"Torch {cohort} patch version disagrees with the matrix."
+            )
         expected_schema = record.get("export_schema")
         if environment.get("export_schema") != expected_schema:
             raise ReleaseMatrixError(
@@ -216,6 +306,7 @@ def verify_release_matrix(
             )
         if not allow_dirty_source and source_tree.get("clean") is not True:
             raise ReleaseMatrixError(f"Torch {cohort} was produced from a dirty tree.")
+        source_commits.add(str(source_tree["commit"]))
         lock = environment.get("environment_lock") or {}
         if not re.fullmatch(r"[0-9a-f]{64}", str(lock.get("sha256", ""))):
             raise ReleaseMatrixError(
@@ -259,6 +350,12 @@ def verify_release_matrix(
         lane_artifacts = []
         for model_id in sorted(expected_models):
             result = result_by_model[model_id]
+            model_record = models[model_id]
+            artifact_contract = artifact_contracts[(model_id, cohort)]
+            if result.get("repo_id") != model_record.get("repo_id"):
+                raise ReleaseMatrixError(
+                    f"Torch {cohort} model {model_id} result repository differs."
+                )
             if (
                 result.get("status") != "ok"
                 or result.get("validation_status") != "ok"
@@ -269,11 +366,38 @@ def verify_release_matrix(
                 )
             artifact = _staged_path(staging_root, result.get("artifact"), "Artifact")
             metadata_path = _staged_path(staging_root, result.get("meta"), "Metadata")
+            if artifact.name != artifact_contract.get("filename"):
+                raise ReleaseMatrixError(
+                    f"Torch {cohort} model {model_id} artifact filename differs."
+                )
+            if metadata_path.name != artifact_contract.get("validation_metadata"):
+                raise ReleaseMatrixError(
+                    f"Torch {cohort} model {model_id} metadata filename differs."
+                )
             if _sha256(artifact) != result.get("sha256"):
                 raise ReleaseMatrixError(
                     f"Torch {cohort} model {model_id} artifact digest changed."
                 )
+            if _sha256(metadata_path) != result.get("meta_sha256"):
+                raise ReleaseMatrixError(
+                    f"Torch {cohort} model {model_id} metadata digest changed."
+                )
             metadata = _read_json(metadata_path)
+            try:
+                expected_identity = expected_metadata_identity(
+                    summary_identity,
+                    model_id=model_id,
+                    repo_id=str(model_record["repo_id"]),
+                    artifact_filename=artifact.name,
+                )
+                normalized_identity = validate_metadata_identity(
+                    metadata, expected_identity
+                )
+            except ModelEvidenceContractError as exc:
+                raise ReleaseMatrixError(
+                    f"Torch {cohort} model {model_id} metadata identity is invalid: "
+                    f"{exc}."
+                ) from exc
             if (
                 metadata.get("artifact_sha256") != result.get("sha256")
                 or int(metadata.get("artifact_size_bytes", -1))
@@ -283,7 +407,6 @@ def verify_release_matrix(
                     f"Torch {cohort} model {model_id} metadata does not bind its artifact."
                 )
             source_artifact = metadata.get("source_artifact", {})
-            model_record = models[model_id]
             if source_artifact.get("revision") != model_record.get(
                 "revision"
             ) or source_artifact.get("sha256") != model_record.get(
@@ -366,9 +489,21 @@ def verify_release_matrix(
                 raise ReleaseMatrixError(
                     f"Torch {cohort} model {model_id} used the wrong golden policy."
                 )
-            device_records = {
-                item.get("device"): item for item in validation.get("devices", [])
-            }
+            devices = validation.get("devices")
+            if not isinstance(devices, list) or any(
+                not isinstance(item, Mapping) for item in devices
+            ):
+                raise ReleaseMatrixError(
+                    f"Torch {cohort} model {model_id} has invalid device coverage."
+                )
+            device_records = {item.get("device"): item for item in devices}
+            if (
+                len(device_records) != len(devices)
+                or set(device_records) != set(required_devices)
+            ):
+                raise ReleaseMatrixError(
+                    f"Torch {cohort} model {model_id} has non-exact device coverage."
+                )
             non_ok = [
                 device
                 for device in required_devices
@@ -467,6 +602,17 @@ def verify_release_matrix(
                     "golden_reference_size_bytes": golden_size,
                 }
             )
+            matrix_records.append(
+                {
+                    "model_id": model_id,
+                    "repo_id": str(model_record["repo_id"]),
+                    "cohort": cohort,
+                    "artifact_filename": artifact.name,
+                    "metadata_filename": metadata_path.name,
+                    "parent_revision": str(model_record["revision"]),
+                    "identity": normalized_identity,
+                }
+            )
 
         lanes.append(
             {
@@ -479,12 +625,37 @@ def verify_release_matrix(
             }
         )
 
+    if len(source_commits) != 1:
+        raise ReleaseMatrixError(
+            "Cohort summaries do not share one immutable source commit."
+        )
+
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "status": "ok",
         "release_approval_required": not require_approval,
         "manifest_revision": manifest.get("manifest_revision"),
         "required_devices": list(required_devices),
+        "source_commit": next(iter(source_commits)),
+        "contracts": {
+            "manifest": {
+                "path": str(manifest_path),
+                "sha256": _sha256(manifest_path),
+            },
+            "compatibility": {
+                "path": str(compatibility_path),
+                "sha256": _sha256(compatibility_path),
+            },
+            "governance": {
+                "path": str(governance_path),
+                "sha256": _sha256(governance_path),
+            },
+        },
+        "summaries": sorted(summary_contracts, key=lambda item: item["torch_minor"]),
+        "matrix": sorted(
+            matrix_records,
+            key=lambda item: (item["model_id"], item["cohort"]),
+        ),
         "lanes": lanes,
     }
 

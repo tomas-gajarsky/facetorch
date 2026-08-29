@@ -27,6 +27,7 @@ include scripts/export_model_cohorts_hf.py
 include scripts/audit_model_manifest_hf.py
 include scripts/render_model_cards.py
 include scripts/model_cohort_publication.py
+include scripts/model_evidence_contract.py
 include scripts/record_container_evidence.py
 include scripts/release_transaction.py
 include scripts/verify_model_release_matrix.py

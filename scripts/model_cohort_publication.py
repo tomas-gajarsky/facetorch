@@ -22,7 +22,35 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Sequence
 
-PLAN_SCHEMA_VERSION = 3
+if __package__:
+    from scripts.audit_model_manifest_hf import audit_remote_manifest
+    from scripts.model_evidence_contract import (
+        ModelEvidenceContractError,
+        expected_metadata_identity,
+        validate_metadata_identity,
+        validate_summary_identity,
+    )
+    from scripts.verify_model_release_matrix import (
+        ReleaseMatrixError,
+        verify_release_matrix,
+    )
+    from scripts.release_transaction import validate_packaged_model_governance
+    from scripts.render_model_cards import render_model_documents
+else:
+    from audit_model_manifest_hf import audit_remote_manifest
+    from model_evidence_contract import (
+        ModelEvidenceContractError,
+        expected_metadata_identity,
+        validate_metadata_identity,
+        validate_summary_identity,
+    )
+    from verify_model_release_matrix import ReleaseMatrixError, verify_release_matrix
+    from release_transaction import validate_packaged_model_governance
+    from render_model_cards import render_model_documents
+
+PLAN_SCHEMA_VERSION = 4
+LEGAL_PLAN_SCHEMA_VERSION = 1
+REVISION_MAP_SCHEMA_VERSION = 1
 APPROVAL_SCHEMA_VERSION = 1
 RECEIPT_SCHEMA_VERSION = 1
 _COMMIT_PATTERN = re.compile(r"[0-9a-f]{40}")
@@ -39,17 +67,21 @@ def _canonical_json_bytes(value: Any) -> bytes:
     ).encode("utf-8")
 
 
-def _write_json_atomic(path: Path, value: Any) -> None:
+def _write_bytes_atomic(path: Path, value: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     try:
         with temporary.open("wb") as output:
-            output.write(_canonical_json_bytes(value))
+            output.write(value)
             output.flush()
             os.fsync(output.fileno())
         os.replace(temporary, path)
     finally:
         temporary.unlink(missing_ok=True)
+
+
+def _write_json_atomic(path: Path, value: Any) -> None:
+    _write_bytes_atomic(path, _canonical_json_bytes(value))
 
 
 def _sha256(path: Path) -> str:
@@ -139,9 +171,37 @@ def _base_revision(
     return _require_commit(value, f"Parent revision for {model_id}")
 
 
+def _summary_identity(summary: Mapping[str, Any]) -> Dict[str, Any]:
+    try:
+        return validate_summary_identity(summary)
+    except ModelEvidenceContractError as exc:
+        raise PublicationError(f"Staging summary identity is inconsistent: {exc}") from exc
+
+
+def _metadata_identity(
+    metadata: Mapping[str, Any],
+    *,
+    summary_identity: Mapping[str, Any],
+    result: Mapping[str, Any],
+    artifact_filename: str,
+) -> None:
+    try:
+        expected = expected_metadata_identity(
+            summary_identity,
+            model_id=str(result.get("model_id", "")),
+            repo_id=str(result.get("repo_id", "")),
+            artifact_filename=artifact_filename,
+        )
+        validate_metadata_identity(metadata, expected)
+    except ModelEvidenceContractError as exc:
+        model_id = str(result.get("model_id", "")) or "unknown model"
+        raise PublicationError(f"Staged metadata identity disagrees for {model_id}: {exc}") from exc
+
+
 def _validated_model_record(
     staging_root: Path,
     summary: Mapping[str, Any],
+    summary_identity: Mapping[str, Any],
     result: Mapping[str, Any],
     base_revisions: Mapping[str, Any],
 ) -> Dict[str, Any]:
@@ -179,6 +239,12 @@ def _validated_model_record(
         raise PublicationError(f"Golden reference size changed for {model_id}")
 
     metadata_value = _read_json(metadata)
+    _metadata_identity(
+        metadata_value,
+        summary_identity=summary_identity,
+        result=result,
+        artifact_filename=artifact.name,
+    )
     validation = metadata_value.get("validation")
     if not isinstance(validation, dict) or validation.get("status") != "ok":
         raise PublicationError(f"Metadata validation is not ok for {model_id}")
@@ -644,14 +710,53 @@ def _plan_core(plan: Mapping[str, Any]) -> Dict[str, Any]:
         "cohorts": plan["cohorts"],
         "models": plan["models"],
         "cross_cohort_comparisons": plan["cross_cohort_comparisons"],
+        "matrix_authority": plan["matrix_authority"],
         "manifest_target": plan["manifest_target"],
     }
+
+
+def _matrix_authority(report: Mapping[str, Any]) -> Dict[str, Any]:
+    """Retain only deterministic authoritative matrix evidence in a plan."""
+
+    required = {
+        "schema_version",
+        "status",
+        "source_commit",
+        "required_devices",
+        "contracts",
+        "summaries",
+        "matrix",
+    }
+    if report.get("schema_version") != 2 or report.get("status") != "ok":
+        raise PublicationError("Authoritative model matrix verification did not pass")
+    if any(field not in report for field in required):
+        raise PublicationError("Authoritative model matrix report is incomplete")
+    return {field: report[field] for field in sorted(required)}
+
+
+def _run_matrix_authority(
+    *, staging_root: Path, summary_paths: Sequence[Path], manifest_path: Path
+) -> Dict[str, Any]:
+    try:
+        report = verify_release_matrix(
+            staging_root=staging_root,
+            summary_paths=summary_paths,
+            manifest_path=manifest_path,
+            allow_dirty_source=False,
+            require_approval=True,
+        )
+    except ReleaseMatrixError as exc:
+        raise PublicationError(
+            f"Authoritative model matrix verification failed: {exc}"
+        ) from exc
+    return _matrix_authority(report)
 
 
 def prepare_publication_plan(
     *,
     staging_root: Path,
     summary_paths: Sequence[Path],
+    manifest_path: Path,
     base_revisions: Mapping[str, Any],
     manifest_repo_id: str,
     manifest_base_revision: str,
@@ -667,6 +772,12 @@ def prepare_publication_plan(
     if not manifest_repo_id or "/" not in manifest_repo_id:
         raise PublicationError("A namespaced manifest repository ID is required")
 
+    authority = _run_matrix_authority(
+        staging_root=root,
+        summary_paths=summary_paths,
+        manifest_path=manifest_path.resolve(),
+    )
+
     records = []
     cohorts = set()
     seen = set()
@@ -675,7 +786,8 @@ def prepare_publication_plan(
         summary = _read_json(summary_path)
         if summary.get("status") != "ok":
             raise PublicationError(f"Staging summary is not ok: {summary_path}")
-        requested_ids = [str(value) for value in summary.get("requested_model_ids", [])]
+        summary_identity = _summary_identity(summary)
+        requested_ids = list(summary_identity["requested_model_ids"])
         results = summary.get("results", [])
         if not requested_ids or not isinstance(results, list):
             raise PublicationError(
@@ -694,11 +806,15 @@ def prepare_publication_plan(
             )
 
         cohort = str(summary.get("torch_minor", ""))
+        if cohort in cohorts:
+            raise PublicationError(f"Duplicate staging summary for cohort {cohort}")
         cohorts.add(cohort)
         for result in results:
             if not isinstance(result, dict):
                 raise PublicationError(f"Invalid staging result in {summary_path}")
-            record = _validated_model_record(root, summary, result, base_revisions)
+            record = _validated_model_record(
+                root, summary, summary_identity, result, base_revisions
+            )
             identity = (record["model_id"], record["cohort"])
             if identity in seen:
                 raise PublicationError(f"Duplicate staged model/cohort: {identity}")
@@ -706,12 +822,39 @@ def prepare_publication_plan(
             records.append(record)
 
     records.sort(key=lambda item: (item["model_id"], _cohort_key(item["cohort"])))
+    expected_matrix = {
+        (
+            item["model_id"],
+            item["repo_id"],
+            item["cohort"],
+            item["artifact_filename"],
+            item["metadata_filename"],
+            item["parent_revision"],
+        )
+        for item in authority["matrix"]
+    }
+    observed_matrix = {
+        (
+            item["model_id"],
+            item["repo_id"],
+            item["cohort"],
+            item["artifact_filename"],
+            item["metadata_filename"],
+            item["parent_revision"],
+        )
+        for item in records
+    }
+    if observed_matrix != expected_matrix:
+        raise PublicationError(
+            "Publication records differ from the authoritative model matrix"
+        )
     core = {
         "schema_version": PLAN_SCHEMA_VERSION,
         "staging_root": str(root),
         "cohorts": sorted(cohorts, key=_cohort_key),
         "models": records,
         "cross_cohort_comparisons": _cross_cohort_comparisons(records),
+        "matrix_authority": authority,
         "manifest_target": {
             "repo_id": manifest_repo_id,
             "parent_revision": _require_commit(
@@ -759,6 +902,42 @@ def verify_publication_plan(plan_path: Path) -> Dict[str, Any]:
     root = Path(str(plan.get("staging_root", "")))
     if not root.is_absolute() or not root.is_dir():
         raise PublicationError("Publication plan staging root is unavailable")
+    authority = plan.get("matrix_authority")
+    if not isinstance(authority, dict):
+        raise PublicationError("Publication plan lacks authoritative matrix evidence")
+    contracts = authority.get("contracts")
+    summaries = authority.get("summaries")
+    if not isinstance(contracts, dict) or not isinstance(summaries, list):
+        raise PublicationError("Publication matrix bindings are invalid")
+    manifest_record = contracts.get("manifest")
+    if not isinstance(manifest_record, dict):
+        raise PublicationError("Publication manifest binding is invalid")
+    for label in ("manifest", "compatibility", "governance"):
+        record = contracts.get(label)
+        if not isinstance(record, dict):
+            raise PublicationError(f"Publication {label} binding is invalid")
+        path = Path(str(record.get("path", "")))
+        if path.is_symlink() or not path.is_absolute() or not path.is_file():
+            raise PublicationError(f"Publication {label} contract is unavailable")
+        if _sha256(path) != record.get("sha256"):
+            raise PublicationError(f"Publication {label} contract changed")
+    bound_summaries = []
+    for record in summaries:
+        if not isinstance(record, dict):
+            raise PublicationError("Publication summary binding is invalid")
+        path = _safe_staged_file(root, record.get("path"), "staging summary")
+        if _sha256(path) != record.get("sha256"):
+            raise PublicationError("Publication staging summary changed")
+        bound_summaries.append(path)
+    observed_authority = _run_matrix_authority(
+        staging_root=root,
+        summary_paths=bound_summaries,
+        manifest_path=Path(str(manifest_record.get("path", ""))),
+    )
+    if observed_authority != authority:
+        raise PublicationError(
+            "Authoritative model matrix changed after publication planning"
+        )
     models = plan.get("models")
     if not isinstance(models, list) or not models:
         raise PublicationError("Publication plan contains no models")
@@ -1386,6 +1565,1058 @@ def publish_publication_plan(
     return receipt
 
 
+def _tree_sha256(tree: Mapping[str, Any]) -> str:
+    return _sha256_bytes(_canonical_json_bytes(dict(sorted(tree.items()))))
+
+
+def _legal_expected_documents(
+    manifest_path: Path,
+) -> Dict[str, Dict[str, bytes]]:
+    documents = render_model_documents(manifest_path)
+    expected_names = {"README.md", "LICENSE", "THIRD_PARTY_NOTICES.md"}
+    for model_id, model_documents in documents.items():
+        if set(model_documents) != expected_names or any(
+            not isinstance(value, bytes) or not value
+            for value in model_documents.values()
+        ):
+            raise PublicationError(
+                f"Generated legal document contract is incomplete for {model_id}"
+            )
+    return documents
+
+
+def _verify_parent_model_artifacts(
+    *,
+    download_fn: Any,
+    model_id: str,
+    model: Mapping[str, Any],
+    tree: Mapping[str, Any],
+) -> Dict[str, int]:
+    """Verify every protected artifact and metadata object at one parent."""
+
+    repo_id = str(model.get("repo_id", ""))
+    revision = _require_commit(
+        model.get("revision"), f"Legal parent revision for {model_id}"
+    )
+    artifacts = model.get("artifacts")
+    if not isinstance(artifacts, list) or not artifacts:
+        raise PublicationError(f"Model {model_id} has no protected artifacts")
+    metadata_count = 0
+    for artifact in artifacts:
+        if not isinstance(artifact, Mapping):
+            raise PublicationError(f"Model {model_id} has an invalid artifact")
+        filename = str(artifact.get("filename", ""))
+        observed = tree.get(filename)
+        if (
+            not filename
+            or not isinstance(observed, Mapping)
+            or observed.get("size_bytes") != artifact.get("size_bytes")
+            or observed.get("lfs_sha256") != artifact.get("sha256")
+        ):
+            raise PublicationError(
+                f"Protected artifact differs at {repo_id}@{revision}/{filename}"
+            )
+        metadata_filename = artifact.get("validation_metadata")
+        if metadata_filename is None:
+            continue
+        metadata_filename = str(metadata_filename)
+        metadata_entry = tree.get(metadata_filename)
+        if not isinstance(metadata_entry, Mapping):
+            raise PublicationError(
+                f"Protected metadata is missing at "
+                f"{repo_id}@{revision}/{metadata_filename}"
+            )
+        try:
+            metadata_path = Path(
+                download_fn(
+                    repo_id=repo_id,
+                    filename=metadata_filename,
+                    revision=revision,
+                )
+            )
+        except Exception as exc:
+            raise PublicationError(
+                f"Cannot download protected metadata for {model_id}"
+            ) from exc
+        if (
+            _sha256(metadata_path) != artifact.get("metadata_sha256")
+            or metadata_path.stat().st_size != metadata_entry.get("size_bytes")
+        ):
+            raise PublicationError(
+                f"Protected metadata differs at "
+                f"{repo_id}@{revision}/{metadata_filename}"
+            )
+        metadata_count += 1
+    return {"artifact_count": len(artifacts), "metadata_count": metadata_count}
+
+
+def _legal_plan_core(plan: Mapping[str, Any]) -> Dict[str, Any]:
+    return {
+        "schema_version": plan["schema_version"],
+        "kind": plan["kind"],
+        "repo_root": plan["repo_root"],
+        "source_contract": plan["source_contract"],
+        "models": plan["models"],
+        "manifest_target": plan["manifest_target"],
+    }
+
+
+def _legal_parent_audit_binding(
+    parent_audit: Mapping[str, Any],
+) -> Dict[str, Any]:
+    audit_results = parent_audit.get("results")
+    if (
+        parent_audit.get("status") != "ok"
+        or parent_audit.get("failures") != []
+        or parent_audit.get("verify_legal_documents") is not False
+        or not isinstance(audit_results, list)
+    ):
+        failures = parent_audit.get("failures")
+        detail = (
+            failures[0].get("error")
+            if isinstance(failures, list) and failures
+            else "unknown failure"
+        )
+        raise PublicationError(
+            f"Legal parent metadata identity audit failed: {detail}"
+        )
+    audited_artifacts = [
+        artifact
+        for result in audit_results
+        if isinstance(result, Mapping)
+        for artifact in result.get("artifacts", [])
+        if isinstance(artifact, Mapping)
+    ]
+    audited_metadata = [
+        artifact
+        for artifact in audited_artifacts
+        if artifact.get("metadata_status") != "not_applicable"
+    ]
+    if any(
+        artifact.get("lfs_oid_verified") is not True
+        for artifact in audited_artifacts
+    ) or any(
+        artifact.get("metadata_status") != "current"
+        or artifact.get("metadata_sha256_verified") is not True
+        or artifact.get("metadata_identity_verified") is not True
+        for artifact in audited_metadata
+    ):
+        raise PublicationError("Legal parent metadata identity audit is incomplete")
+    return {
+        "sha256": _sha256_bytes(_canonical_json_bytes(parent_audit)),
+        "packaged_manifest_sha256": parent_audit.get(
+            "packaged_manifest_sha256"
+        ),
+        "remote_manifest": parent_audit.get("remote_manifest"),
+        "model_count": len(audit_results),
+        "artifact_count": len(audited_artifacts),
+        "metadata_count": len(audited_metadata),
+    }
+
+
+def prepare_legal_finalization_plan(
+    *,
+    repo_root: Path,
+    manifest_path: Path,
+    remote_manifest_path: Path,
+    output_path: Path,
+    api: Any = None,
+    download_fn: Any = None,
+) -> Dict[str, Any]:
+    """Plan a document-only legal refresh over exact immutable parents."""
+
+    repo = repo_root.resolve()
+    packaged_path = manifest_path.resolve()
+    remote_path = remote_manifest_path.resolve()
+    if api is None or download_fn is None:
+        from huggingface_hub import HfApi, hf_hub_download
+
+        api = api or HfApi()
+        download_fn = download_fn or hf_hub_download
+    packaged = _read_json(packaged_path)
+    remote = _read_json(remote_path)
+    manifest_repo_id = str(packaged.get("manifest_repo_id", ""))
+    manifest_revision = _require_commit(
+        packaged.get("manifest_revision"), "Legal manifest parent revision"
+    )
+    manifest_filename = str(packaged.get("manifest_filename", ""))
+    manifest_sha256 = str(packaged.get("manifest_sha256", ""))
+    if _sha256(remote_path) != manifest_sha256:
+        raise PublicationError("Legal parent manifest digest disagrees with its pin")
+    validate_packaged_model_governance(
+        repo,
+        remote_manifest_path=remote_path,
+        remote_revision=manifest_revision,
+    )
+    parent_audit = audit_remote_manifest(
+        packaged_path,
+        download_artifacts=False,
+        require_current_metadata=True,
+        require_remote_manifest=True,
+        remote_manifest_path=remote_path,
+        verify_legal_documents=False,
+        api=api,
+        download_fn=download_fn,
+    )
+    parent_audit_binding = _legal_parent_audit_binding(parent_audit)
+    if remote.get("status") != "approved":
+        raise PublicationError("Legal parent manifest must be final and approved")
+    _verify_remote_commit(api, manifest_repo_id, manifest_revision)
+    manifest_parent_tree = _remote_tree(api, manifest_repo_id, manifest_revision)
+    remote_manifest_entry = manifest_parent_tree.get(manifest_filename)
+    if not isinstance(remote_manifest_entry, Mapping) or not _remote_file_matches(
+        remote_manifest_entry, _content_contract(remote_path)
+    ):
+        raise PublicationError("Legal parent manifest tree differs from its pin")
+
+    documents = _legal_expected_documents(packaged_path)
+    packaged_models = packaged.get("models")
+    if not isinstance(packaged_models, dict) or set(documents) != set(packaged_models):
+        raise PublicationError("Legal document coverage differs from the manifest")
+    model_plans = []
+    for model_id in sorted(packaged_models):
+        model = packaged_models[model_id]
+        if not isinstance(model, Mapping):
+            raise PublicationError(f"Packaged model is invalid for {model_id}")
+        repo_id = str(model.get("repo_id", ""))
+        parent_revision = _require_commit(
+            model.get("revision"), f"Legal parent revision for {model_id}"
+        )
+        _verify_remote_commit(api, repo_id, parent_revision)
+        parent_tree = _remote_tree(api, repo_id, parent_revision)
+        protected = _verify_parent_model_artifacts(
+            download_fn=download_fn,
+            model_id=model_id,
+            model=model,
+            tree=parent_tree,
+        )
+        document_contracts = {
+            filename: _content_contract(value)
+            for filename, value in sorted(documents[model_id].items())
+        }
+        changed_documents = sorted(
+            filename
+            for filename, contract in document_contracts.items()
+            if filename not in parent_tree
+            or not _remote_file_matches(parent_tree[filename], contract)
+        )
+        if not changed_documents:
+            raise PublicationError(
+                f"Model {model_id} already matches the legal document contract"
+            )
+        model_plans.append(
+            {
+                "model_id": model_id,
+                "repo_id": repo_id,
+                "parent_revision": parent_revision,
+                "parent_tree_sha256": _tree_sha256(parent_tree),
+                "documents": document_contracts,
+                "changed_documents": changed_documents,
+                "protected_artifacts": protected,
+            }
+        )
+
+    core = {
+        "schema_version": LEGAL_PLAN_SCHEMA_VERSION,
+        "kind": "legal-finalization",
+        "repo_root": str(repo),
+        "source_contract": {
+            "manifest_path": str(packaged_path),
+            "manifest_sha256": _sha256(packaged_path),
+            "remote_manifest_path": str(remote_path),
+            "remote_manifest_sha256": _sha256(remote_path),
+            "parent_metadata_audit": parent_audit_binding,
+        },
+        "models": model_plans,
+        "manifest_target": {
+            "repo_id": manifest_repo_id,
+            "parent_revision": manifest_revision,
+            "parent_filename": manifest_filename,
+            "parent_sha256": manifest_sha256,
+            "parent_tree_sha256": _tree_sha256(manifest_parent_tree),
+            "parent_payload": remote,
+        },
+    }
+    plan_id = _sha256_bytes(_canonical_json_bytes(core))
+    plan = {
+        **core,
+        "plan_id": plan_id,
+        "candidate_branch": f"facetorch-legal-{plan_id[:16]}",
+        "manifest_filename": f"manifests/{plan_id}.json",
+    }
+    _write_json_atomic(output_path, plan)
+    return plan
+
+
+def _load_legal_plan_identity(plan_path: Path) -> Dict[str, Any]:
+    """Validate the immutable plan envelope without consulting mutable sources."""
+
+    plan = _read_json(plan_path)
+    if (
+        plan.get("schema_version") != LEGAL_PLAN_SCHEMA_VERSION
+        or plan.get("kind") != "legal-finalization"
+    ):
+        raise PublicationError("Unsupported legal-finalization plan schema")
+    expected_id = _sha256_bytes(_canonical_json_bytes(_legal_plan_core(plan)))
+    if plan.get("plan_id") != expected_id:
+        raise PublicationError("Legal-finalization plan ID does not match its contents")
+    if plan.get("candidate_branch") != f"facetorch-legal-{expected_id[:16]}":
+        raise PublicationError("Legal-finalization candidate branch is not deterministic")
+    if plan.get("manifest_filename") != f"manifests/{expected_id}.json":
+        raise PublicationError("Legal-finalization manifest filename is not deterministic")
+
+    source = plan.get("source_contract")
+    if not isinstance(source, Mapping):
+        raise PublicationError("Legal-finalization source contract is invalid")
+    repo = Path(str(plan.get("repo_root", "")))
+    manifest_target = plan.get("manifest_target")
+    if not repo.is_absolute() or not isinstance(manifest_target, Mapping):
+        raise PublicationError("Legal-finalization repository or manifest is invalid")
+    models = plan.get("models")
+    if not isinstance(models, list) or not models:
+        raise PublicationError("Legal-finalization plan has no models")
+    return plan
+
+
+def verify_legal_finalization_plan(
+    plan_path: Path,
+    *,
+    api: Any = None,
+    verify_remote: bool = False,
+    download_fn: Any = None,
+) -> Dict[str, Any]:
+    """Recheck mutable source bytes and, optionally, every immutable parent tree."""
+
+    plan = _load_legal_plan_identity(plan_path)
+    source = plan["source_contract"]
+    manifest_path = Path(str(source.get("manifest_path", "")))
+    remote_path = Path(str(source.get("remote_manifest_path", "")))
+    if (
+        not manifest_path.is_absolute()
+        or not manifest_path.is_file()
+        or _sha256(manifest_path) != source.get("manifest_sha256")
+        or not remote_path.is_absolute()
+        or not remote_path.is_file()
+        or _sha256(remote_path) != source.get("remote_manifest_sha256")
+    ):
+        raise PublicationError("Legal-finalization source bytes changed")
+    if verify_remote and (api is None or download_fn is None):
+        from huggingface_hub import HfApi, hf_hub_download
+
+        api = api or HfApi()
+        download_fn = download_fn or hf_hub_download
+    repo = Path(plan["repo_root"])
+    manifest_target = plan["manifest_target"]
+    validate_packaged_model_governance(
+        repo,
+        remote_manifest_path=remote_path,
+        remote_revision=str(manifest_target.get("parent_revision", "")),
+    )
+    if (
+        manifest_target.get("parent_sha256") != _sha256(remote_path)
+        or manifest_target.get("parent_payload") != _read_json(remote_path)
+    ):
+        raise PublicationError("Legal-finalization parent manifest changed")
+    if verify_remote:
+        observed_parent_audit = audit_remote_manifest(
+            manifest_path,
+            download_artifacts=False,
+            require_current_metadata=True,
+            require_remote_manifest=True,
+            remote_manifest_path=remote_path,
+            verify_legal_documents=False,
+            api=api,
+            download_fn=download_fn,
+        )
+        if _legal_parent_audit_binding(observed_parent_audit) != source.get(
+            "parent_metadata_audit"
+        ):
+            raise PublicationError(
+                "Legal parent metadata audit changed after planning"
+            )
+
+    documents = _legal_expected_documents(manifest_path)
+    models = plan["models"]
+    seen = set()
+    for model in models:
+        if not isinstance(model, Mapping):
+            raise PublicationError("Legal-finalization model record is invalid")
+        model_id = str(model.get("model_id", ""))
+        if not model_id or model_id in seen or model_id not in documents:
+            raise PublicationError("Legal-finalization model coverage is invalid")
+        seen.add(model_id)
+        expected_documents = {
+            filename: _content_contract(value)
+            for filename, value in sorted(documents[model_id].items())
+        }
+        if model.get("documents") != expected_documents:
+            raise PublicationError(
+                f"Legal-finalization documents changed for {model_id}"
+            )
+        _require_commit(
+            model.get("parent_revision"), f"Legal parent revision for {model_id}"
+        )
+        if verify_remote:
+            repo_id = str(model.get("repo_id", ""))
+            revision = str(model.get("parent_revision", ""))
+            _verify_remote_commit(api, repo_id, revision)
+            if _tree_sha256(_remote_tree(api, repo_id, revision)) != model.get(
+                "parent_tree_sha256"
+            ):
+                raise PublicationError(f"Legal parent tree changed for {model_id}")
+    if set(documents) != seen:
+        raise PublicationError("Legal-finalization model coverage is incomplete")
+
+    if verify_remote:
+        manifest_repo_id = str(manifest_target.get("repo_id", ""))
+        manifest_revision = str(manifest_target.get("parent_revision", ""))
+        _verify_remote_commit(api, manifest_repo_id, manifest_revision)
+        if _tree_sha256(
+            _remote_tree(api, manifest_repo_id, manifest_revision)
+        ) != manifest_target.get("parent_tree_sha256"):
+            raise PublicationError("Legal manifest parent tree changed")
+    return plan
+
+
+def create_legal_approval_template(
+    plan_path: Path, output_path: Path
+) -> Dict[str, Any]:
+    plan = verify_legal_finalization_plan(plan_path)
+    approval = {
+        "schema_version": APPROVAL_SCHEMA_VERSION,
+        "status": "pending",
+        "scope": "legal-finalization-plan",
+        "plan_id": plan["plan_id"],
+        "plan_sha256": _sha256(plan_path),
+        "approved_by": "",
+        "approved_at_utc": "",
+        "notes": "",
+    }
+    _write_json_atomic(output_path, approval)
+    return approval
+
+
+def _validate_legal_approval(
+    plan_path: Path, plan: Mapping[str, Any], approval_path: Path
+) -> Dict[str, Any]:
+    approval = _read_json(approval_path)
+    if (
+        approval.get("schema_version") != APPROVAL_SCHEMA_VERSION
+        or approval.get("status") != "approved"
+        or approval.get("scope") != "legal-finalization-plan"
+        or approval.get("plan_id") != plan.get("plan_id")
+        or approval.get("plan_sha256") != _sha256(plan_path)
+        or not str(approval.get("approved_by", "")).strip()
+    ):
+        raise PublicationError("Legal-finalization approval is incomplete or mismatched")
+    approved_at = str(approval.get("approved_at_utc", ""))
+    try:
+        timestamp = datetime.fromisoformat(approved_at.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise PublicationError(
+            "Legal-finalization approval timestamp must be ISO 8601"
+        ) from exc
+    if timestamp.tzinfo is None:
+        raise PublicationError(
+            "Legal-finalization approval timestamp must include a timezone"
+        )
+    return approval
+
+
+def validate_legal_approval(
+    plan_path: Path, approval_path: Path
+) -> Dict[str, Any]:
+    plan = verify_legal_finalization_plan(plan_path)
+    return _validate_legal_approval(plan_path, plan, approval_path)
+
+
+def _new_legal_receipt(
+    plan: Mapping[str, Any], plan_path: Path
+) -> Dict[str, Any]:
+    return {
+        "schema_version": RECEIPT_SCHEMA_VERSION,
+        "kind": "legal-finalization",
+        "plan_id": plan["plan_id"],
+        "plan_sha256": _sha256(plan_path),
+        "candidate_branch": plan["candidate_branch"],
+        "status": "incomplete",
+        "models": {},
+        "manifest": None,
+    }
+
+
+def _load_legal_receipt(
+    receipt_path: Path, plan: Mapping[str, Any], plan_path: Path
+) -> Dict[str, Any]:
+    expected = _new_legal_receipt(plan, plan_path)
+    if not receipt_path.exists():
+        return expected
+    receipt = _read_json(receipt_path)
+    for key in (
+        "schema_version",
+        "kind",
+        "plan_id",
+        "plan_sha256",
+        "candidate_branch",
+    ):
+        if receipt.get(key) != expected[key]:
+            raise PublicationError(f"Legal receipt has mismatched {key}")
+    if not isinstance(receipt.get("models"), dict):
+        raise PublicationError("Legal receipt model state is invalid")
+    return receipt
+
+
+def _legal_manifest_payload(
+    plan: Mapping[str, Any], receipt: Mapping[str, Any]
+) -> Dict[str, Any]:
+    payload = json.loads(
+        json.dumps(plan["manifest_target"]["parent_payload"])
+    )
+    revisions = {
+        model_id: record["commit_revision"]
+        for model_id, record in receipt["models"].items()
+    }
+    for record in payload.get("models", []):
+        model_id = str(record.get("model_id", ""))
+        if model_id not in revisions:
+            raise PublicationError(
+                f"Legal receipt omits manifest model {model_id}"
+            )
+        record["revision"] = revisions[model_id]
+    if set(revisions) != {
+        str(record.get("model_id", "")) for record in payload.get("models", [])
+    }:
+        raise PublicationError("Legal receipt has extra model revisions")
+    payload["status"] = "approved"
+    payload["plan_id"] = plan["plan_id"]
+    return payload
+
+
+def _validate_complete_legal_receipt(
+    plan: Mapping[str, Any], receipt: Mapping[str, Any]
+) -> None:
+    """Require an exact, internally consistent publication result."""
+
+    expected_top_level = {
+        "schema_version",
+        "kind",
+        "plan_id",
+        "plan_sha256",
+        "candidate_branch",
+        "status",
+        "models",
+        "manifest",
+    }
+    if receipt.get("status") != "complete" or set(receipt) != expected_top_level:
+        raise PublicationError("A structurally complete legal receipt is required")
+
+    models = receipt.get("models")
+    planned_models = {
+        str(model.get("model_id", "")): model for model in plan["models"]
+    }
+    if not isinstance(models, Mapping) or set(models) != set(planned_models):
+        raise PublicationError("Legal receipt model coverage differs from the plan")
+    for model_id, model in planned_models.items():
+        record = models[model_id]
+        expected = {
+            "repo_id": model["repo_id"],
+            "parent_revision": model["parent_revision"],
+            "documents": {
+                filename: contract["sha256"]
+                for filename, contract in model["documents"].items()
+            },
+        }
+        if (
+            not isinstance(record, Mapping)
+            or set(record) != {*expected, "commit_revision"}
+            or any(record.get(key) != value for key, value in expected.items())
+        ):
+            raise PublicationError(
+                f"Legal receipt record differs from the plan for {model_id}"
+            )
+        revision = _require_commit(
+            record.get("commit_revision"),
+            f"Legal receipt revision for {model_id}",
+        )
+        if revision == model["parent_revision"]:
+            raise PublicationError(
+                f"Legal receipt did not advance the revision for {model_id}"
+            )
+
+    manifest = receipt.get("manifest")
+    target = plan["manifest_target"]
+    manifest_payload = _legal_manifest_payload(plan, receipt)
+    expected_manifest = {
+        "repo_id": target["repo_id"],
+        "parent_revision": target["parent_revision"],
+        "filename": plan["manifest_filename"],
+        "sha256": _sha256_bytes(_canonical_json_bytes(manifest_payload)),
+    }
+    if (
+        not isinstance(manifest, Mapping)
+        or set(manifest) != {*expected_manifest, "commit_revision"}
+        or any(
+            manifest.get(key) != value
+            for key, value in expected_manifest.items()
+        )
+    ):
+        raise PublicationError("Legal receipt manifest differs from the plan")
+    manifest_revision = _require_commit(
+        manifest.get("commit_revision"), "Legal manifest receipt revision"
+    )
+    if manifest_revision == target["parent_revision"]:
+        raise PublicationError("Legal receipt did not advance the manifest revision")
+
+
+def publish_legal_finalization_plan(
+    *,
+    plan_path: Path,
+    approval_path: Path,
+    receipt_path: Path,
+    token: Optional[str] = None,
+    api: Any = None,
+) -> Dict[str, Any]:
+    """Commit only approved legal bytes, then publish the final manifest last."""
+
+    plan = verify_legal_finalization_plan(plan_path)
+    _validate_legal_approval(plan_path, plan, approval_path)
+    if api is None:
+        if not token:
+            raise PublicationError("A Hugging Face token is required for publication")
+        from huggingface_hub import HfApi
+
+        api = HfApi(token=token)
+    plan = verify_legal_finalization_plan(plan_path, api=api, verify_remote=True)
+    try:
+        from huggingface_hub import CommitOperationAdd
+    except ImportError as exc:  # pragma: no cover
+        raise PublicationError("Hub commit operations are unavailable") from exc
+
+    receipt = _load_legal_receipt(receipt_path, plan, plan_path)
+    documents = _legal_expected_documents(
+        Path(plan["source_contract"]["manifest_path"])
+    )
+    branch = plan["candidate_branch"]
+    for model in plan["models"]:
+        model_id = model["model_id"]
+        expected_files = model["documents"]
+        completed = receipt["models"].get(model_id)
+        expected_receipt = {
+            "repo_id": model["repo_id"],
+            "parent_revision": model["parent_revision"],
+            "documents": {
+                filename: contract["sha256"]
+                for filename, contract in expected_files.items()
+            },
+        }
+        if completed is not None:
+            if any(
+                completed.get(key) != value
+                for key, value in expected_receipt.items()
+            ):
+                raise PublicationError(
+                    f"Legal receipt bytes do not match plan for {model_id}"
+                )
+            revision = _require_commit(
+                completed.get("commit_revision"),
+                f"Legal receipt revision for {model_id}",
+            )
+            _verify_remote_commit_contents(
+                api,
+                repo_id=model["repo_id"],
+                revision=revision,
+                parent_revision=model["parent_revision"],
+                expected_files=expected_files,
+                label=f"Recorded legal commit for {model_id}",
+            )
+            continue
+
+        operations = [
+            CommitOperationAdd(path_in_repo=filename, path_or_fileobj=value)
+            for filename, value in sorted(documents[model_id].items())
+        ]
+        try:
+            api.create_branch(
+                repo_id=model["repo_id"],
+                branch=branch,
+                revision=model["parent_revision"],
+                exist_ok=True,
+            )
+            revision = _reconcile_candidate_branch(
+                api,
+                repo_id=model["repo_id"],
+                branch=branch,
+                parent_revision=model["parent_revision"],
+                expected_files=expected_files,
+            )
+            if revision is None:
+                commit = api.create_commit(
+                    repo_id=model["repo_id"],
+                    operations=operations,
+                    revision=branch,
+                    parent_commit=model["parent_revision"],
+                    commit_message=(
+                        f"Finalize {model_id} legal documents for "
+                        f"{plan['plan_id'][:16]}"
+                    ),
+                    commit_description=(
+                        "Document-only legal finalization; model artifacts and "
+                        f"metadata are unchanged. Plan: {plan['plan_id']}"
+                    ),
+                )
+                revision = _commit_oid(commit)
+            _verify_remote_commit_contents(
+                api,
+                repo_id=model["repo_id"],
+                revision=revision,
+                parent_revision=model["parent_revision"],
+                expected_files=expected_files,
+                label=f"Legal commit for {model_id}",
+            )
+        except Exception:
+            receipt["status"] = "incomplete"
+            _write_json_atomic(receipt_path, receipt)
+            raise
+        receipt["models"][model_id] = {
+            **expected_receipt,
+            "commit_revision": revision,
+        }
+        _write_json_atomic(receipt_path, receipt)
+
+    manifest_payload = _legal_manifest_payload(plan, receipt)
+    manifest_bytes = _canonical_json_bytes(manifest_payload)
+    manifest_target = plan["manifest_target"]
+    manifest_filename = plan["manifest_filename"]
+    expected_manifest_files = {
+        manifest_filename: _content_contract(manifest_bytes)
+    }
+    existing = receipt.get("manifest")
+    expected_manifest_receipt = {
+        "repo_id": manifest_target["repo_id"],
+        "parent_revision": manifest_target["parent_revision"],
+        "filename": manifest_filename,
+        "sha256": _sha256_bytes(manifest_bytes),
+    }
+    if isinstance(existing, Mapping):
+        if any(
+            existing.get(key) != value
+            for key, value in expected_manifest_receipt.items()
+        ):
+            raise PublicationError("Legal manifest receipt bytes do not match plan")
+        revision = _require_commit(
+            existing.get("commit_revision"), "Legal manifest receipt revision"
+        )
+        _verify_remote_commit_contents(
+            api,
+            repo_id=manifest_target["repo_id"],
+            revision=revision,
+            parent_revision=manifest_target["parent_revision"],
+            expected_files=expected_manifest_files,
+            label="Recorded legal manifest commit",
+        )
+    else:
+        try:
+            api.create_branch(
+                repo_id=manifest_target["repo_id"],
+                branch=branch,
+                revision=manifest_target["parent_revision"],
+                exist_ok=True,
+            )
+            revision = _reconcile_candidate_branch(
+                api,
+                repo_id=manifest_target["repo_id"],
+                branch=branch,
+                parent_revision=manifest_target["parent_revision"],
+                expected_files=expected_manifest_files,
+            )
+            if revision is None:
+                commit = api.create_commit(
+                    repo_id=manifest_target["repo_id"],
+                    operations=[
+                        CommitOperationAdd(
+                            path_in_repo=manifest_filename,
+                            path_or_fileobj=manifest_bytes,
+                        )
+                    ],
+                    revision=branch,
+                    parent_commit=manifest_target["parent_revision"],
+                    commit_message=(
+                        f"Finalize legal manifest {plan['plan_id'][:16]}"
+                    ),
+                    commit_description=(
+                        "Final approved manifest created after every document-only "
+                        f"model commit succeeded. Plan: {plan['plan_id']}"
+                    ),
+                )
+                revision = _commit_oid(commit)
+            _verify_remote_commit_contents(
+                api,
+                repo_id=manifest_target["repo_id"],
+                revision=revision,
+                parent_revision=manifest_target["parent_revision"],
+                expected_files=expected_manifest_files,
+                label="Legal manifest commit",
+            )
+        except Exception:
+            receipt["status"] = "incomplete"
+            _write_json_atomic(receipt_path, receipt)
+            raise
+    receipt["manifest"] = {
+        **expected_manifest_receipt,
+        "commit_revision": revision,
+    }
+    receipt["status"] = "complete"
+    _validate_complete_legal_receipt(plan, receipt)
+    _write_json_atomic(receipt_path, receipt)
+    return receipt
+
+
+def verify_legal_finalization_receipt(
+    *,
+    plan_path: Path,
+    approval_path: Path,
+    receipt_path: Path,
+    api: Any = None,
+    verify_remote: bool = False,
+) -> Dict[str, Any]:
+    """Verify a completed transaction after its source pins were intentionally moved.
+
+    Pre-publication verification must continue to use
+    :func:`verify_legal_finalization_plan`, which rejects changed source files.
+    This receipt verifier instead proves the approved immutable plan, exact
+    complete receipt, direct-child remote commits, and manifest-last result without
+    depending on workspace paths that the approved revision map is meant to edit.
+    """
+
+    plan = _load_legal_plan_identity(plan_path)
+    _validate_legal_approval(plan_path, plan, approval_path)
+    receipt = _load_legal_receipt(receipt_path, plan, plan_path)
+    _validate_complete_legal_receipt(plan, receipt)
+    if not verify_remote:
+        return receipt
+    if api is None:
+        from huggingface_hub import HfApi
+
+        api = HfApi()
+
+    for model in plan["models"]:
+        model_id = str(model["model_id"])
+        recorded = receipt["models"][model_id]
+        _verify_remote_commit_contents(
+            api,
+            repo_id=str(model["repo_id"]),
+            revision=str(recorded["commit_revision"]),
+            parent_revision=str(model["parent_revision"]),
+            expected_files=model["documents"],
+            label=f"Completed legal commit for {model_id}",
+        )
+
+    manifest_target = plan["manifest_target"]
+    manifest_record = receipt["manifest"]
+    manifest_bytes = _canonical_json_bytes(_legal_manifest_payload(plan, receipt))
+    _verify_remote_commit_contents(
+        api,
+        repo_id=str(manifest_target["repo_id"]),
+        revision=str(manifest_record["commit_revision"]),
+        parent_revision=str(manifest_target["parent_revision"]),
+        expected_files={
+            str(plan["manifest_filename"]): _content_contract(manifest_bytes)
+        },
+        label="Completed legal manifest commit",
+    )
+    return receipt
+
+
+def _revision_bound_paths(repo_root: Path) -> Sequence[Path]:
+    repo = repo_root.resolve()
+    paths = {
+        repo / "facetorch/models/manifest.json",
+        repo / "facetorch/models/governance.json",
+        repo / "facetorch/models/compatibility.json",
+    }
+    for root in (repo / "conf", repo / "facetorch/configs"):
+        if root.is_dir():
+            paths.update(
+                path
+                for path in root.rglob("*")
+                if path.is_file() and path.suffix in {".json", ".yaml", ".yml"}
+            )
+    return sorted(paths)
+
+
+def create_legal_revision_map(
+    *,
+    plan_path: Path,
+    receipt_path: Path,
+    repo_root: Path,
+    output_path: Path,
+) -> Dict[str, Any]:
+    """Build an exact-old-value map for every release-bound local pin."""
+
+    plan = verify_legal_finalization_plan(plan_path)
+    receipt = _load_legal_receipt(receipt_path, plan, plan_path)
+    _validate_complete_legal_receipt(plan, receipt)
+    replacements = {}
+    for model in plan["models"]:
+        old_revision = model["parent_revision"]
+        new_revision = receipt["models"][model["model_id"]]["commit_revision"]
+        if old_revision in replacements and replacements[old_revision] != new_revision:
+            raise PublicationError(
+                "Shared old model revisions cannot map to different commits"
+            )
+        replacements[old_revision] = new_revision
+    manifest_target = plan["manifest_target"]
+    manifest_receipt = receipt["manifest"]
+    manifest_replacements = {
+        manifest_target["parent_revision"]: manifest_receipt["commit_revision"],
+        manifest_target["parent_filename"]: manifest_receipt["filename"],
+        manifest_target["parent_sha256"]: manifest_receipt["sha256"],
+    }
+    for old, new in manifest_replacements.items():
+        if old in replacements and replacements[old] != new:
+            raise PublicationError(
+                "A manifest pin collides with a model revision replacement"
+            )
+    file_records = []
+    for path in _revision_bound_paths(repo_root):
+        before = path.read_bytes()
+        after = before
+        applied = []
+        active = replacements
+        if path == repo_root.resolve() / "facetorch/models/manifest.json":
+            active = {**replacements, **manifest_replacements}
+        for old, new in sorted(active.items()):
+            count = after.count(old.encode("utf-8"))
+            if count:
+                after = after.replace(old.encode("utf-8"), new.encode("utf-8"))
+                applied.append({"old": old, "new": new, "count": count})
+        if applied:
+            file_records.append(
+                {
+                    "path": path.resolve().relative_to(repo_root.resolve()).as_posix(),
+                    "before_sha256": _sha256_bytes(before),
+                    "after_sha256": _sha256_bytes(after),
+                    "replacements": applied,
+                }
+            )
+    observed_old = {
+        replacement["old"]
+        for record in file_records
+        for replacement in record["replacements"]
+    }
+    required_old = set(replacements) | set(manifest_replacements)
+    if observed_old != required_old:
+        raise PublicationError(
+            "Revision map does not cover every old model and manifest pin"
+        )
+    core = {
+        "schema_version": REVISION_MAP_SCHEMA_VERSION,
+        "kind": "legal-finalization-revision-map",
+        "plan_id": plan["plan_id"],
+        "receipt_sha256": _sha256(receipt_path),
+        "models": {
+            model["model_id"]: {
+                "repo_id": model["repo_id"],
+                "old_revision": model["parent_revision"],
+                "new_revision": receipt["models"][model["model_id"]][
+                    "commit_revision"
+                ],
+            }
+            for model in plan["models"]
+        },
+        "manifest": {
+            "repo_id": manifest_target["repo_id"],
+            "old_revision": manifest_target["parent_revision"],
+            "new_revision": manifest_receipt["commit_revision"],
+            "old_filename": manifest_target["parent_filename"],
+            "new_filename": manifest_receipt["filename"],
+            "old_sha256": manifest_target["parent_sha256"],
+            "new_sha256": manifest_receipt["sha256"],
+        },
+        "files": file_records,
+        "github_variables": {
+            "FACETORCH_MODEL_MANIFEST_REPO": manifest_target["repo_id"],
+            "FACETORCH_MODEL_MANIFEST_REVISION": manifest_receipt[
+                "commit_revision"
+            ],
+            "FACETORCH_MODEL_MANIFEST_FILENAME": manifest_receipt["filename"],
+            "FACETORCH_MODEL_MANIFEST_SHA256": manifest_receipt["sha256"],
+        },
+    }
+    revision_map = {
+        **core,
+        "revision_map_id": _sha256_bytes(_canonical_json_bytes(core)),
+    }
+    _write_json_atomic(output_path, revision_map)
+    return revision_map
+
+
+def apply_legal_revision_map(
+    *, repo_root: Path, revision_map_path: Path
+) -> Dict[str, Any]:
+    """Apply a deterministic revision map only to its prehashed files."""
+
+    revision_map = _read_json(revision_map_path)
+    core = {
+        key: value
+        for key, value in revision_map.items()
+        if key != "revision_map_id"
+    }
+    if (
+        revision_map.get("schema_version") != REVISION_MAP_SCHEMA_VERSION
+        or revision_map.get("kind") != "legal-finalization-revision-map"
+        or revision_map.get("revision_map_id")
+        != _sha256_bytes(_canonical_json_bytes(core))
+    ):
+        raise PublicationError("Revision map identity is invalid")
+    repo = repo_root.resolve()
+    allowed = set(_revision_bound_paths(repo))
+    file_records = revision_map.get("files")
+    if not isinstance(file_records, list) or not file_records:
+        raise PublicationError("Revision map contains no files")
+    updates = []
+    seen_paths = set()
+    for record in file_records:
+        if not isinstance(record, Mapping):
+            raise PublicationError("Revision map file record is invalid")
+        relative = Path(str(record.get("path", "")))
+        path = (repo / relative).resolve()
+        if (
+            path in seen_paths
+            or path not in allowed
+            or not path.is_file()
+            or path.is_symlink()
+        ):
+            raise PublicationError(f"Revision map path is unsafe: {relative}")
+        seen_paths.add(path)
+        before = path.read_bytes()
+        if _sha256_bytes(before) != record.get("before_sha256"):
+            raise PublicationError(f"Revision-bound file changed: {relative}")
+        after = before
+        for replacement in record.get("replacements", []):
+            old = str(replacement.get("old", "")).encode("utf-8")
+            new = str(replacement.get("new", "")).encode("utf-8")
+            count = replacement.get("count")
+            if not old or after.count(old) != count:
+                raise PublicationError(
+                    f"Revision replacement count changed: {relative}"
+                )
+            after = after.replace(old, new)
+        if _sha256_bytes(after) != record.get("after_sha256"):
+            raise PublicationError(f"Revision map output differs: {relative}")
+        updates.append((path, before, after))
+    written = []
+    try:
+        for path, before, after in updates:
+            _write_bytes_atomic(path, after)
+            written.append((path, before))
+    except Exception:
+        for path, before in reversed(written):
+            _write_bytes_atomic(path, before)
+        raise
+    return revision_map
+
+
 def _load_revision_map(path: Path) -> Dict[str, Any]:
     value = _read_json(path)
     revisions = value.get("revisions", value)
@@ -1401,6 +2632,7 @@ def main() -> None:
     prepare = subparsers.add_parser("prepare", help="Build a deterministic plan")
     prepare.add_argument("--staging-root", required=True)
     prepare.add_argument("--summary", action="append", required=True)
+    prepare.add_argument("--manifest", required=True)
     prepare.add_argument("--base-revisions", required=True)
     prepare.add_argument("--manifest-repo-id", required=True)
     prepare.add_argument("--manifest-base-revision", required=True)
@@ -1417,12 +2649,60 @@ def main() -> None:
     publish.add_argument("--receipt", required=True)
     publish.add_argument("--hf-token-env", default="HF_TOKEN")
 
+    legal_prepare = subparsers.add_parser(
+        "legal-prepare", help="Build a document-only legal-finalization plan"
+    )
+    legal_prepare.add_argument("--repo-root", default=".")
+    legal_prepare.add_argument(
+        "--manifest", default="facetorch/models/manifest.json"
+    )
+    legal_prepare.add_argument("--remote-manifest", required=True)
+    legal_prepare.add_argument("--plan", required=True)
+    legal_prepare.add_argument("--approval-template")
+
+    legal_verify = subparsers.add_parser(
+        "legal-verify", help="Verify legal bytes, approval, and immutable parents"
+    )
+    legal_verify.add_argument("--plan", required=True)
+    legal_verify.add_argument("--approval", required=True)
+
+    legal_publish = subparsers.add_parser(
+        "legal-publish", help="Publish an approved legal-finalization plan"
+    )
+    legal_publish.add_argument("--plan", required=True)
+    legal_publish.add_argument("--approval", required=True)
+    legal_publish.add_argument("--receipt", required=True)
+    legal_publish.add_argument("--hf-token-env", default="HF_TOKEN")
+
+    legal_receipt_verify = subparsers.add_parser(
+        "legal-receipt-verify",
+        help="Verify the completed immutable legal transaction",
+    )
+    legal_receipt_verify.add_argument("--plan", required=True)
+    legal_receipt_verify.add_argument("--approval", required=True)
+    legal_receipt_verify.add_argument("--receipt", required=True)
+
+    revision_map = subparsers.add_parser(
+        "legal-revision-map", help="Generate exact local pin replacements"
+    )
+    revision_map.add_argument("--plan", required=True)
+    revision_map.add_argument("--receipt", required=True)
+    revision_map.add_argument("--repo-root", default=".")
+    revision_map.add_argument("--output", required=True)
+
+    apply_map = subparsers.add_parser(
+        "legal-apply-revision-map", help="Apply a verified local revision map"
+    )
+    apply_map.add_argument("--repo-root", default=".")
+    apply_map.add_argument("--revision-map", required=True)
+
     args = parser.parse_args()
     if args.command == "prepare":
         plan_path = Path(args.plan).resolve()
         prepare_publication_plan(
             staging_root=Path(args.staging_root),
             summary_paths=[Path(value) for value in args.summary],
+            manifest_path=Path(args.manifest),
             base_revisions=_load_revision_map(Path(args.base_revisions)),
             manifest_repo_id=args.manifest_repo_id,
             manifest_base_revision=args.manifest_base_revision,
@@ -1436,7 +2716,7 @@ def main() -> None:
     elif args.command == "verify":
         validate_approval(Path(args.plan), Path(args.approval))
         print("Publication plan, staged bytes, and approval are valid")
-    else:
+    elif args.command == "publish":
         token = os.getenv(args.hf_token_env)
         receipt = publish_publication_plan(
             plan_path=Path(args.plan),
@@ -1448,6 +2728,66 @@ def main() -> None:
             "Publication complete; immutable manifest revision: "
             f"{receipt['manifest']['commit_revision']}"
         )
+    elif args.command == "legal-prepare":
+        plan_path = Path(args.plan).resolve()
+        prepare_legal_finalization_plan(
+            repo_root=Path(args.repo_root),
+            manifest_path=Path(args.manifest),
+            remote_manifest_path=Path(args.remote_manifest),
+            output_path=plan_path,
+        )
+        print(f"Legal-finalization plan written to {plan_path}")
+        if args.approval_template:
+            approval_path = Path(args.approval_template).resolve()
+            create_legal_approval_template(plan_path, approval_path)
+            print(f"Pending legal approval template written to {approval_path}")
+    elif args.command == "legal-verify":
+        validate_legal_approval(Path(args.plan), Path(args.approval))
+        from huggingface_hub import HfApi
+
+        verify_legal_finalization_plan(
+            Path(args.plan), api=HfApi(), verify_remote=True
+        )
+        print("Legal-finalization bytes, approval, and parents are valid")
+    elif args.command == "legal-publish":
+        receipt = publish_legal_finalization_plan(
+            plan_path=Path(args.plan),
+            approval_path=Path(args.approval),
+            receipt_path=Path(args.receipt),
+            token=os.getenv(args.hf_token_env),
+        )
+        print(
+            "Legal finalization complete; immutable manifest revision: "
+            f"{receipt['manifest']['commit_revision']}"
+        )
+    elif args.command == "legal-receipt-verify":
+        from huggingface_hub import HfApi
+
+        receipt = verify_legal_finalization_receipt(
+            plan_path=Path(args.plan),
+            approval_path=Path(args.approval),
+            receipt_path=Path(args.receipt),
+            api=HfApi(),
+            verify_remote=True,
+        )
+        print(
+            "Completed legal transaction is valid; immutable manifest revision: "
+            f"{receipt['manifest']['commit_revision']}"
+        )
+    elif args.command == "legal-revision-map":
+        result = create_legal_revision_map(
+            plan_path=Path(args.plan),
+            receipt_path=Path(args.receipt),
+            repo_root=Path(args.repo_root),
+            output_path=Path(args.output),
+        )
+        print(f"Revision map written: {result['revision_map_id']}")
+    else:
+        apply_legal_revision_map(
+            repo_root=Path(args.repo_root),
+            revision_map_path=Path(args.revision_map),
+        )
+        print("Legal revision map applied")
 
 
 if __name__ == "__main__":

@@ -8,10 +8,17 @@ import pytest
 import scripts.model_cohort_publication as publication
 from scripts.model_cohort_publication import (
     PublicationError,
+    apply_legal_revision_map,
     create_approval_template,
+    create_legal_approval_template,
+    create_legal_revision_map,
+    prepare_legal_finalization_plan,
     prepare_publication_plan,
+    publish_legal_finalization_plan,
     publish_publication_plan,
     validate_approval,
+    verify_legal_finalization_plan,
+    verify_legal_finalization_receipt,
     verify_publication_plan,
 )
 
@@ -26,6 +33,16 @@ def _write_json(path, value):
 
 
 def _stage_summary(root, cohort, model_ids=("model-a", "model-b"), devices=("cpu",)):
+    environment = {
+        "source_tree": {"commit": "a" * 40, "clean": True},
+        "torch_version": f"{cohort}.0",
+    }
+    exporter_arguments = {
+        "mode": "export",
+        "artifact_cohort": cohort,
+        "validate_devices": list(devices),
+        "model_ids": list(model_ids),
+    }
     results = []
     for index, model_id in enumerate(model_ids, start=1):
         model_root = root / model_id
@@ -45,8 +62,14 @@ def _stage_summary(root, cohort, model_ids=("model-a", "model-b"), devices=("cpu
         ).hexdigest()
         metadata_value = {
             "schema_version": 2,
+            "mode": "export",
             "model_id": model_id,
             "repo_id": f"owner/{model_id}",
+            "torch_version": f"{cohort}.0",
+            "torch_minor": cohort,
+            "runtime_torch_minor": cohort,
+            "environment": environment,
+            "exporter_arguments": exporter_arguments,
             "artifact": artifact.name,
             "artifact_sha256": _sha256(artifact),
             "artifact_size_bytes": artifact.stat().st_size,
@@ -151,7 +174,12 @@ def _stage_summary(root, cohort, model_ids=("model-a", "model-b"), devices=("cpu
         {
             "schema_version": 2,
             "status": "ok",
+            "mode": "export",
+            "torch_version": f"{cohort}.0",
             "torch_minor": cohort,
+            "runtime_torch_minor": cohort,
+            "environment": environment,
+            "exporter_arguments": exporter_arguments,
             "validate_devices": list(devices),
             "requested_model_ids": list(model_ids),
             "results": results,
@@ -160,14 +188,149 @@ def _stage_summary(root, cohort, model_ids=("model-a", "model-b"), devices=("cpu
     return summary
 
 
+def _publication_contract(root, model_ids, cohorts):
+    contract_root = root / "publication-contract"
+    manifest = contract_root / "manifest.json"
+    compatibility = contract_root / "compatibility.json"
+    governance = contract_root / "governance.json"
+    revisions = {
+        model_id: f"{index:x}" * 40
+        for index, model_id in enumerate(model_ids, start=1)
+    }
+    _write_json(
+        manifest,
+        {
+            "status": "approved",
+            "compatibility_ref": compatibility.name,
+            "governance_ref": governance.name,
+            "models": {
+                model_id: {
+                    "repo_id": f"owner/{model_id}",
+                    "revision": revisions[model_id],
+                }
+                for model_id in model_ids
+            },
+        },
+    )
+    _write_json(
+        compatibility,
+        {
+            "status": "approved",
+            "torch": {"supported_minor_lines": list(cohorts)},
+        },
+    )
+    _write_json(
+        governance,
+        {
+            "status": "approved",
+            "models": {model_id: {"status": "approved"} for model_id in model_ids},
+        },
+    )
+    return manifest, revisions
+
+
+@pytest.fixture(autouse=True)
+def _stub_authoritative_matrix(monkeypatch):
+    def verify_matrix(
+        *,
+        staging_root,
+        summary_paths,
+        manifest_path,
+        allow_dirty_source,
+        require_approval,
+    ):
+        assert allow_dirty_source is False
+        assert require_approval is True
+        manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+        compatibility_path = Path(manifest_path).parent / manifest["compatibility_ref"]
+        governance_path = Path(manifest_path).parent / manifest["governance_ref"]
+        compatibility = json.loads(compatibility_path.read_text(encoding="utf-8"))
+        expected_models = set(manifest["models"])
+        expected_cohorts = set(compatibility["torch"]["supported_minor_lines"])
+        seen_cohorts = set()
+        matrix = []
+        summary_contracts = []
+        source_commits = set()
+        for summary_path in summary_paths:
+            path = Path(summary_path).resolve()
+            summary = json.loads(path.read_text(encoding="utf-8"))
+            cohort = summary["torch_minor"]
+            if cohort in seen_cohorts:
+                raise publication.ReleaseMatrixError(
+                    f"Duplicate summary for torch {cohort}."
+                )
+            seen_cohorts.add(cohort)
+            if set(summary["requested_model_ids"]) != expected_models:
+                raise publication.ReleaseMatrixError(
+                    "Summary model coverage differs from the manifest."
+                )
+            source = summary["environment"]["source_tree"]
+            if source.get("clean") is not True:
+                raise publication.ReleaseMatrixError("Summary source tree is dirty.")
+            source_commits.add(source["commit"])
+            summary_contracts.append(
+                {
+                    "torch_minor": cohort,
+                    "path": path.relative_to(Path(staging_root).resolve()).as_posix(),
+                    "sha256": _sha256(path),
+                }
+            )
+            for result in summary["results"]:
+                model = manifest["models"][result["model_id"]]
+                matrix.append(
+                    {
+                        "model_id": result["model_id"],
+                        "repo_id": result["repo_id"],
+                        "cohort": cohort,
+                        "artifact_filename": Path(result["artifact"]).name,
+                        "metadata_filename": Path(result["meta"]).name,
+                        "parent_revision": model["revision"],
+                        "identity": {},
+                    }
+                )
+        if seen_cohorts != expected_cohorts:
+            raise publication.ReleaseMatrixError(
+                "Cohort coverage differs from the compatibility contract."
+            )
+        if len(source_commits) != 1:
+            raise publication.ReleaseMatrixError(
+                "Cohort summaries do not share one source commit."
+            )
+        contracts = {}
+        for label, path in (
+            ("manifest", Path(manifest_path).resolve()),
+            ("compatibility", compatibility_path.resolve()),
+            ("governance", governance_path.resolve()),
+        ):
+            contracts[label] = {"path": str(path), "sha256": _sha256(path)}
+        return {
+            "schema_version": 2,
+            "status": "ok",
+            "source_commit": next(iter(source_commits)),
+            "required_devices": list(
+                json.loads(Path(summary_paths[0]).read_text())["validate_devices"]
+            ),
+            "contracts": contracts,
+            "summaries": sorted(
+                summary_contracts, key=lambda item: item["torch_minor"]
+            ),
+            "matrix": sorted(
+                matrix, key=lambda item: (item["model_id"], item["cohort"])
+            ),
+            "lanes": [],
+        }
+
+    monkeypatch.setattr(publication, "verify_release_matrix", verify_matrix)
+
+
 def _prepare(root, summaries, model_ids=("model-a", "model-b")):
     plan_path = root / "publication-plan.json"
-    revisions = {
-        model_id: f"{index:x}" * 40 for index, model_id in enumerate(model_ids, start=1)
-    }
+    cohorts = [json.loads(Path(path).read_text())["torch_minor"] for path in summaries]
+    manifest, revisions = _publication_contract(root, model_ids, cohorts)
     prepare_publication_plan(
         staging_root=root,
         summary_paths=summaries,
+        manifest_path=manifest,
         base_revisions=revisions,
         manifest_repo_id="owner/facetorch-model-manifest",
         manifest_base_revision="f" * 40,
@@ -267,6 +430,65 @@ class _FakeHubApi:
         if parent is not None:
             commits.append(SimpleNamespace(commit_id=parent))
         return commits
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    ("field_path", "mutated_value"),
+    [
+        pytest.param(("schema_version",), 1, id="schema-version"),
+        pytest.param(("mode",), "validate", id="mode"),
+        pytest.param(("model_id",), "model-b", id="model-id"),
+        pytest.param(("repo_id",), "owner/model-b", id="repository-id"),
+        pytest.param(("artifact",), "other.pt2", id="artifact-filename"),
+        pytest.param(("torch_version",), "2.11.1", id="torch-version"),
+        pytest.param(("torch_minor",), "2.6", id="artifact-cohort"),
+        pytest.param(("runtime_torch_minor",), "2.6", id="runtime-cohort"),
+        pytest.param(
+            ("environment", "source_tree", "commit"),
+            "b" * 40,
+            id="source-environment",
+        ),
+        pytest.param(
+            ("exporter_arguments", "artifact_cohort"),
+            "2.6",
+            id="exporter-arguments",
+        ),
+    ],
+)
+def test_plan_rejects_metadata_identity_mutations(
+    tmp_path, field_path, mutated_value
+):
+    summary = _stage_summary(tmp_path, "2.11", model_ids=("model-a",))
+    summary_value = json.loads(summary.read_text())
+    result = summary_value["results"][0]
+    metadata = Path(result["meta"])
+    metadata_value = json.loads(metadata.read_text())
+    target = metadata_value
+    for field in field_path[:-1]:
+        target = target[field]
+    target[field_path[-1]] = mutated_value
+    _write_json(metadata, metadata_value)
+    result["meta_sha256"] = _sha256(metadata)
+    _write_json(summary, summary_value)
+
+    with pytest.raises(PublicationError, match="metadata identity"):
+        _prepare(tmp_path, [summary], model_ids=("model-a",))
+
+
+@pytest.mark.release_blocker
+def test_plan_rejects_nonrectangular_model_cohort_coverage(tmp_path):
+    summary_26 = _stage_summary(
+        tmp_path, "2.6", model_ids=("model-a", "model-b")
+    )
+    summary_211 = _stage_summary(tmp_path, "2.11", model_ids=("model-a",))
+
+    with pytest.raises(PublicationError, match="model matrix verification"):
+        _prepare(
+            tmp_path,
+            [summary_26, summary_211],
+            model_ids=("model-a", "model-b"),
+        )
 
 
 @pytest.mark.release_blocker
@@ -388,6 +610,7 @@ def test_plan_is_deterministic_and_detects_staged_byte_changes(tmp_path):
     prepare_publication_plan(
         staging_root=tmp_path,
         summary_paths=[summary],
+        manifest_path=tmp_path / "publication-contract/manifest.json",
         base_revisions={"model-a": "1" * 40},
         manifest_repo_id="owner/facetorch-model-manifest",
         manifest_base_revision="f" * 40,
@@ -399,6 +622,30 @@ def test_plan_is_deterministic_and_detects_staged_byte_changes(tmp_path):
     (tmp_path / plan["models"][0]["artifact_path"]).write_bytes(b"changed")
     with pytest.raises(PublicationError, match="changed after planning"):
         verify_publication_plan(first)
+
+
+@pytest.mark.release_blocker
+def test_publish_rechecks_contract_bindings_before_any_hub_write(tmp_path):
+    summary = _stage_summary(tmp_path, "2.11", model_ids=("model-a",))
+    plan_path = _prepare(tmp_path, [summary], model_ids=("model-a",))
+    approval_path = tmp_path / "approval.json"
+    _approve(plan_path, approval_path)
+    compatibility = tmp_path / "publication-contract/compatibility.json"
+    compatibility_value = json.loads(compatibility.read_text(encoding="utf-8"))
+    compatibility_value["changed_after_approval"] = True
+    _write_json(compatibility, compatibility_value)
+    api = _FakeHubApi()
+
+    with pytest.raises(PublicationError, match="compatibility contract changed"):
+        publish_publication_plan(
+            plan_path=plan_path,
+            approval_path=approval_path,
+            receipt_path=tmp_path / "receipt.json",
+            api=api,
+        )
+
+    assert api.branches == []
+    assert api.commits == []
 
 
 @pytest.mark.release_blocker
@@ -912,3 +1159,507 @@ def test_cross_cohort_publish_requires_one_immutable_reference(tmp_path):
 
     with pytest.raises(PublicationError, match="immutable golden reference"):
         _prepare(tmp_path, [summary_26, summary_211], model_ids=("model-a",))
+
+
+class _LegalFakeHubApi(_FakeHubApi):
+    def list_repo_tree(self, *, repo_id, revision, recursive, expand):
+        observed = self.branch_heads.get((repo_id, revision), revision)
+        tree = self.trees.get((repo_id, observed), {})
+        entries = []
+        for path, value in sorted(tree.items()):
+            if isinstance(value, dict):
+                size = value["size_bytes"]
+                blob_id = value.get("blob_id", "0" * 40)
+                lfs = SimpleNamespace(sha256=value["lfs_sha256"])
+            else:
+                size = len(value)
+                blob_id = hashlib.sha1(
+                    f"blob {size}\0".encode("ascii") + value
+                ).hexdigest()
+                lfs = None
+            entries.append(
+                SimpleNamespace(
+                    path=path,
+                    size=size,
+                    blob_id=blob_id,
+                    lfs=lfs,
+                )
+            )
+        return entries
+
+
+def _legal_fixture(tmp_path, monkeypatch):
+    repo = tmp_path / "repo"
+    model_root = repo / "facetorch/models"
+    model_root.mkdir(parents=True)
+    (repo / "conf").mkdir()
+    model_revision = "1" * 40
+    manifest_revision = "2" * 40
+    artifact_sha = "3" * 64
+    metadata = tmp_path / "remote-metadata.json"
+    metadata.write_text('{"schema_version": 2}\n', encoding="utf-8")
+    metadata_sha = _sha256(metadata)
+    remote_manifest = {
+        "schema_version": 1,
+        "status": "approved",
+        "plan_id": "parent-model-plan",
+        "cohorts": ["2.6"],
+        "cross_cohort_comparisons": [],
+        "models": [
+            {
+                "model_id": "model-a",
+                "repo_id": "owner/model-a",
+                "cohort": "2.6",
+                "revision": model_revision,
+                "artifact_filename": "model-torch2.6.pt2",
+                "artifact_sha256": artifact_sha,
+                "artifact_size_bytes": 123,
+                "metadata_filename": "model-torch2.6.pt2.meta.json",
+                "metadata_sha256": metadata_sha,
+                "golden_reference_sha256": "4" * 64,
+                "golden_reference_size_bytes": 42,
+                "golden_reference_source_cohort": "2.6",
+                "required_devices": ["cpu", "cuda"],
+            }
+        ],
+    }
+    remote_manifest_path = tmp_path / "parent-manifest.json"
+    _write_json(remote_manifest_path, remote_manifest)
+    manifest_filename = "manifests/parent.json"
+    manifest = {
+        "manifest_version": 1,
+        "manifest_revision": manifest_revision,
+        "manifest_repo_id": "owner/model-manifest",
+        "manifest_filename": manifest_filename,
+        "manifest_sha256": _sha256(remote_manifest_path),
+        "status": "approved",
+        "compatibility_ref": "compatibility.json",
+        "governance_ref": "governance.json",
+        "models": {
+            "model-a": {
+                "repo_id": "owner/model-a",
+                "revision": model_revision,
+                "license_ref": (
+                    "https://huggingface.co/owner/model-a/blob/"
+                    f"{model_revision}/LICENSE"
+                ),
+                "artifacts": [
+                    {
+                        "id": "model-a-torch2.6",
+                        "filename": "model-torch2.6.pt2",
+                        "format": "pt2",
+                        "sha256": artifact_sha,
+                        "size_bytes": 123,
+                        "torch_min": "2.6",
+                        "torch_max_exclusive": "2.7",
+                        "devices": ["cpu", "cuda"],
+                        "validation_metadata": "model-torch2.6.pt2.meta.json",
+                        "metadata_sha256": metadata_sha,
+                        "golden_reference_sha256": "4" * 64,
+                        "golden_reference_size_bytes": 42,
+                        "golden_reference_source_cohort": "2.6",
+                    }
+                ],
+            }
+        },
+    }
+    manifest_path = model_root / "manifest.json"
+    _write_json(manifest_path, manifest)
+    _write_json(model_root / "compatibility.json", {"status": "approved"})
+    _write_json(
+        model_root / "governance.json",
+        {
+            "status": "approved",
+            "models": {
+                "model-a": {
+                    "hosted_model_card": (
+                        "https://huggingface.co/owner/model-a/blob/"
+                        f"{model_revision}/README.md"
+                    )
+                }
+            },
+        },
+    )
+    (repo / "conf/model.yaml").write_text(
+        f"revision: {model_revision}\n", encoding="utf-8"
+    )
+    documents = {
+        "model-a": {
+            "README.md": b"new readme\n",
+            "LICENSE": b"license\n",
+            "THIRD_PARTY_NOTICES.md": b"notices\n",
+        }
+    }
+    monkeypatch.setattr(
+        publication,
+        "render_model_documents",
+        lambda *_args, **_kwargs: documents,
+    )
+    monkeypatch.setattr(
+        publication,
+        "validate_packaged_model_governance",
+        lambda *_args, **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        publication,
+        "audit_remote_manifest",
+        lambda *_args, **_kwargs: {
+            "schema_version": 1,
+            "status": "ok",
+            "manifest_revision": manifest_revision,
+            "packaged_manifest_sha256": _sha256(manifest_path),
+            "remote_manifest": {
+                "repo_id": "owner/model-manifest",
+                "revision": manifest_revision,
+                "filename": manifest_filename,
+                "sha256": _sha256(remote_manifest_path),
+                "plan_id": "parent-model-plan",
+                "status": "approved",
+            },
+            "download_artifacts": False,
+            "require_current_metadata": True,
+            "verify_legal_documents": False,
+            "results": [
+                {
+                    "model_id": "model-a",
+                    "status": "ok",
+                    "artifacts": [
+                        {
+                            "lfs_oid_verified": True,
+                            "metadata_status": "current",
+                            "metadata_sha256_verified": True,
+                            "metadata_identity_verified": True,
+                        }
+                    ],
+                }
+            ],
+            "failures": [],
+        },
+    )
+    api = _LegalFakeHubApi()
+    api.trees[("owner/model-a", model_revision)] = {
+        "model-torch2.6.pt2": {
+            "size_bytes": 123,
+            "lfs_sha256": artifact_sha,
+        },
+        "model-torch2.6.pt2.meta.json": metadata.read_bytes(),
+        "README.md": b"old readme with eval\n",
+        "LICENSE": documents["model-a"]["LICENSE"],
+        "THIRD_PARTY_NOTICES.md": documents["model-a"][
+            "THIRD_PARTY_NOTICES.md"
+        ],
+        "unrelated.txt": b"must remain unchanged\n",
+    }
+    api.trees[("owner/model-manifest", manifest_revision)] = {
+        manifest_filename: remote_manifest_path.read_bytes(),
+        "README.md": b"manifest repository\n",
+    }
+
+    def download_fn(*, repo_id, filename, revision):
+        assert (repo_id, filename, revision) == (
+            "owner/model-a",
+            "model-torch2.6.pt2.meta.json",
+            model_revision,
+        )
+        return str(metadata)
+
+    return {
+        "repo": repo,
+        "manifest": manifest_path,
+        "remote_manifest": remote_manifest_path,
+        "api": api,
+        "download_fn": download_fn,
+        "model_revision": model_revision,
+        "manifest_revision": manifest_revision,
+    }
+
+
+def _prepare_legal(fixture, output):
+    return prepare_legal_finalization_plan(
+        repo_root=fixture["repo"],
+        manifest_path=fixture["manifest"],
+        remote_manifest_path=fixture["remote_manifest"],
+        output_path=output,
+        api=fixture["api"],
+        download_fn=fixture["download_fn"],
+    )
+
+
+def _approve_legal(plan_path, approval_path):
+    approval = create_legal_approval_template(plan_path, approval_path)
+    approval.update(
+        {
+            "status": "approved",
+            "approved_by": "independent-release-reviewer",
+            "approved_at_utc": "2026-08-28T12:00:00+00:00",
+        }
+    )
+    _write_json(approval_path, approval)
+
+
+@pytest.mark.release_blocker
+def test_legal_plan_is_deterministic_and_verifies_protected_parent_tree(
+    tmp_path, monkeypatch
+):
+    fixture = _legal_fixture(tmp_path, monkeypatch)
+    first = tmp_path / "legal-plan.json"
+    second = tmp_path / "legal-plan-second.json"
+    plan = _prepare_legal(fixture, first)
+    _prepare_legal(fixture, second)
+
+    assert first.read_bytes() == second.read_bytes()
+    assert plan["models"][0]["changed_documents"] == ["README.md"]
+    assert plan["models"][0]["protected_artifacts"] == {
+        "artifact_count": 1,
+        "metadata_count": 1,
+    }
+    assert verify_legal_finalization_plan(first) == plan
+
+    fixture["api"].trees[
+        ("owner/model-a", fixture["model_revision"])
+    ]["model-torch2.6.pt2"]["lfs_sha256"] = "0" * 64
+    with pytest.raises(PublicationError, match="Protected artifact differs"):
+        _prepare_legal(fixture, tmp_path / "rejected-plan.json")
+
+
+@pytest.mark.release_blocker
+def test_legal_publish_requires_approval_and_commits_only_documents_then_manifest(
+    tmp_path, monkeypatch
+):
+    fixture = _legal_fixture(tmp_path, monkeypatch)
+    plan_path = tmp_path / "legal-plan.json"
+    _prepare_legal(fixture, plan_path)
+    approval_path = tmp_path / "legal-approval.json"
+    create_legal_approval_template(plan_path, approval_path)
+
+    with pytest.raises(PublicationError, match="approval"):
+        publish_legal_finalization_plan(
+            plan_path=plan_path,
+            approval_path=approval_path,
+            receipt_path=tmp_path / "receipt.json",
+            api=fixture["api"],
+        )
+    assert fixture["api"].branches == []
+    assert fixture["api"].commits == []
+
+    _approve_legal(plan_path, approval_path)
+    receipt = publish_legal_finalization_plan(
+        plan_path=plan_path,
+        approval_path=approval_path,
+        receipt_path=tmp_path / "receipt.json",
+        api=fixture["api"],
+    )
+    assert receipt["status"] == "complete"
+    assert [call["repo_id"] for call in fixture["api"].commits] == [
+        "owner/model-a",
+        "owner/model-manifest",
+    ]
+    assert {
+        operation.path_in_repo
+        for operation in fixture["api"].commits[0]["operations"]
+    } == {"README.md", "LICENSE", "THIRD_PARTY_NOTICES.md"}
+    assert len(fixture["api"].commits[1]["operations"]) == 1
+    model_commit = receipt["models"]["model-a"]["commit_revision"]
+    committed_tree = fixture["api"].trees[("owner/model-a", model_commit)]
+    assert committed_tree["model-torch2.6.pt2"]["lfs_sha256"] == "3" * 64
+    assert committed_tree["unrelated.txt"] == b"must remain unchanged\n"
+
+
+@pytest.mark.release_blocker
+def test_legal_publish_resumes_models_before_creating_manifest(
+    tmp_path, monkeypatch
+):
+    fixture = _legal_fixture(tmp_path, monkeypatch)
+    plan_path = tmp_path / "legal-plan.json"
+    _prepare_legal(fixture, plan_path)
+    approval_path = tmp_path / "legal-approval.json"
+    receipt_path = tmp_path / "legal-receipt.json"
+    _approve_legal(plan_path, approval_path)
+    fixture["api"].fail_once_for = "owner/model-manifest"
+
+    with pytest.raises(RuntimeError, match="deliberate"):
+        publish_legal_finalization_plan(
+            plan_path=plan_path,
+            approval_path=approval_path,
+            receipt_path=receipt_path,
+            api=fixture["api"],
+        )
+    interrupted = json.loads(receipt_path.read_text())
+    assert set(interrupted["models"]) == {"model-a"}
+    assert interrupted["manifest"] is None
+
+    complete = publish_legal_finalization_plan(
+        plan_path=plan_path,
+        approval_path=approval_path,
+        receipt_path=receipt_path,
+        api=fixture["api"],
+    )
+    assert complete["status"] == "complete"
+    assert [call["repo_id"] for call in fixture["api"].commits] == [
+        "owner/model-a",
+        "owner/model-manifest",
+    ]
+
+
+@pytest.mark.release_blocker
+def test_legal_revision_map_exactly_updates_all_bound_local_pins(
+    tmp_path, monkeypatch
+):
+    fixture = _legal_fixture(tmp_path, monkeypatch)
+    plan_path = tmp_path / "legal-plan.json"
+    _prepare_legal(fixture, plan_path)
+    approval_path = tmp_path / "legal-approval.json"
+    receipt_path = tmp_path / "legal-receipt.json"
+    _approve_legal(plan_path, approval_path)
+    receipt = publish_legal_finalization_plan(
+        plan_path=plan_path,
+        approval_path=approval_path,
+        receipt_path=receipt_path,
+        api=fixture["api"],
+    )
+    revision_map_path = tmp_path / "revision-map.json"
+    revision_map = create_legal_revision_map(
+        plan_path=plan_path,
+        receipt_path=receipt_path,
+        repo_root=fixture["repo"],
+        output_path=revision_map_path,
+    )
+    original_files = {
+        record["path"]: (fixture["repo"] / record["path"]).read_bytes()
+        for record in revision_map["files"]
+    }
+    stale_path = fixture["repo"] / revision_map["files"][-1]["path"]
+    stale_path.write_bytes(stale_path.read_bytes() + b"stale\n")
+    with pytest.raises(PublicationError, match="Revision-bound file changed"):
+        apply_legal_revision_map(
+            repo_root=fixture["repo"], revision_map_path=revision_map_path
+        )
+    for relative, original in original_files.items():
+        if fixture["repo"] / relative != stale_path:
+            assert (fixture["repo"] / relative).read_bytes() == original
+    stale_path.write_bytes(original_files[revision_map["files"][-1]["path"]])
+    apply_legal_revision_map(
+        repo_root=fixture["repo"], revision_map_path=revision_map_path
+    )
+
+    model_revision = receipt["models"]["model-a"]["commit_revision"]
+    manifest_revision = receipt["manifest"]["commit_revision"]
+    assert model_revision in (fixture["repo"] / "conf/model.yaml").read_text()
+    assert model_revision in (
+        fixture["repo"] / "facetorch/models/governance.json"
+    ).read_text()
+    updated_manifest = json.loads(fixture["manifest"].read_text())
+    assert updated_manifest["models"]["model-a"]["revision"] == model_revision
+    assert updated_manifest["manifest_revision"] == manifest_revision
+    assert updated_manifest["manifest_filename"] == receipt["manifest"]["filename"]
+    assert updated_manifest["manifest_sha256"] == receipt["manifest"]["sha256"]
+    assert revision_map["github_variables"][
+        "FACETORCH_MODEL_MANIFEST_REVISION"
+    ] == manifest_revision
+
+
+@pytest.mark.release_blocker
+def test_completed_legal_receipt_survives_the_approved_source_pin_rewrite(
+    tmp_path, monkeypatch
+):
+    fixture = _legal_fixture(tmp_path, monkeypatch)
+    plan_path = tmp_path / "legal-plan.json"
+    _prepare_legal(fixture, plan_path)
+    approval_path = tmp_path / "legal-approval.json"
+    receipt_path = tmp_path / "legal-receipt.json"
+    _approve_legal(plan_path, approval_path)
+    receipt = publish_legal_finalization_plan(
+        plan_path=plan_path,
+        approval_path=approval_path,
+        receipt_path=receipt_path,
+        api=fixture["api"],
+    )
+    revision_map_path = tmp_path / "revision-map.json"
+    create_legal_revision_map(
+        plan_path=plan_path,
+        receipt_path=receipt_path,
+        repo_root=fixture["repo"],
+        output_path=revision_map_path,
+    )
+    apply_legal_revision_map(
+        repo_root=fixture["repo"], revision_map_path=revision_map_path
+    )
+
+    with pytest.raises(PublicationError, match="source bytes changed"):
+        verify_legal_finalization_plan(plan_path)
+    verified = verify_legal_finalization_receipt(
+        plan_path=plan_path,
+        approval_path=approval_path,
+        receipt_path=receipt_path,
+        api=fixture["api"],
+        verify_remote=True,
+    )
+
+    assert verified == receipt
+    model_revision = receipt["models"]["model-a"]["commit_revision"]
+    fixture["api"].trees[("owner/model-a", model_revision)][
+        "README.md"
+    ] = b"tampered after completion\n"
+    with pytest.raises(PublicationError, match="does not match the approved plan"):
+        verify_legal_finalization_receipt(
+            plan_path=plan_path,
+            approval_path=approval_path,
+            receipt_path=receipt_path,
+            api=fixture["api"],
+            verify_remote=True,
+        )
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    ("mutate", "error"),
+    [
+        (
+            lambda receipt: receipt["models"].update(
+                {
+                    "unexpected-model": {
+                        **receipt["models"]["model-a"],
+                        "repo_id": "owner/unexpected-model",
+                    }
+                }
+            ),
+            "model coverage",
+        ),
+        (
+            lambda receipt: receipt["models"]["model-a"].update(
+                {"repo_id": "owner/tampered-model"}
+            ),
+            "model-a",
+        ),
+        (
+            lambda receipt: receipt["manifest"].update({"sha256": "0" * 64}),
+            "manifest",
+        ),
+    ],
+)
+def test_legal_revision_map_rejects_tampered_complete_receipt(
+    tmp_path, monkeypatch, mutate, error
+):
+    fixture = _legal_fixture(tmp_path, monkeypatch)
+    plan_path = tmp_path / "legal-plan.json"
+    _prepare_legal(fixture, plan_path)
+    approval_path = tmp_path / "legal-approval.json"
+    receipt_path = tmp_path / "legal-receipt.json"
+    _approve_legal(plan_path, approval_path)
+    publish_legal_finalization_plan(
+        plan_path=plan_path,
+        approval_path=approval_path,
+        receipt_path=receipt_path,
+        api=fixture["api"],
+    )
+    receipt = json.loads(receipt_path.read_text())
+    mutate(receipt)
+    _write_json(receipt_path, receipt)
+
+    with pytest.raises(PublicationError, match=error):
+        create_legal_revision_map(
+            plan_path=plan_path,
+            receipt_path=receipt_path,
+            repo_root=fixture["repo"],
+            output_path=tmp_path / "revision-map.json",
+        )

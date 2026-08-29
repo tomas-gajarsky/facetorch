@@ -151,6 +151,54 @@ def test_stable_alias_mutation_is_serialized_and_monotonic():
 
 
 @pytest.mark.release_blocker
+def test_stable_aliases_are_tagged_from_verified_local_image_ids():
+    workflow = _workflow(REPO_ROOT / ".github" / "workflows" / "release.yml")
+    commands = _commands(workflow["jobs"]["promote-stable-aliases"])
+
+    for flavor, repository in (
+        ("cpu", "$CPU_REPOSITORY"),
+        ("gpu", "$GPU_REPOSITORY"),
+    ):
+        pull = f'docker pull "{repository}:$VERSION_TAG"'
+        inspect = (
+            f'{flavor}_image_id="$(docker image inspect --format '
+            f"'{{{{.Id}}}}' \"{repository}:$VERSION_TAG\")\""
+        )
+        assertion = f"--channel docker-{flavor} --image-id \"${flavor}_image_id\""
+        tag = f'docker tag "${flavor}_image_id"'
+        push = (
+            "docker push docker.io/tomasgajarsky/facetorch:latest"
+            if flavor == "cpu"
+            else "docker push docker.io/tomasgajarsky/facetorch-gpu:latest"
+        )
+        assert pull in commands
+        assert inspect in commands
+        assert assertion in commands
+        assert tag in commands
+        assert commands.index(pull) < commands.index(inspect)
+        assert commands.index(inspect) < commands.index(assertion)
+        assert commands.index(assertion) < commands.index(tag)
+        assert commands.index(tag) < commands.index(push)
+        assert f'docker tag "{repository}:$VERSION_TAG"' not in commands
+
+    cpu_push = commands.index(
+        "docker push docker.io/tomasgajarsky/facetorch:latest"
+    )
+    gpu_push = commands.index(
+        "docker push docker.io/tomasgajarsky/facetorch-gpu:latest"
+    )
+    cpu_recheck = commands.rindex(
+        "--reference docker.io/tomasgajarsky/facetorch:latest"
+    )
+    gpu_recheck = commands.rindex(
+        "--reference docker.io/tomasgajarsky/facetorch-gpu:latest"
+    )
+    mark_latest = commands.index('gh release edit "$TAG" --latest')
+    assert cpu_push < cpu_recheck < mark_latest
+    assert gpu_push < gpu_recheck < mark_latest
+
+
+@pytest.mark.release_blocker
 def test_finalization_revalidates_versioned_docker_tags_immediately_before_publish():
     workflow = _workflow(REPO_ROOT / ".github" / "workflows" / "release.yml")
     finalize = workflow["jobs"]["finalize-github-release"]
@@ -205,6 +253,64 @@ def test_release_pipeline_has_a_no_publish_dry_run():
         encoding="utf-8"
     )
     assert re.search(r"(?m)^\s+dry_run:\s*$", manual_workflow)
+
+
+@pytest.mark.release_blocker
+def test_release_plan_requires_the_exact_full_byte_model_audit():
+    workflow = _workflow(REPO_ROOT / ".github" / "workflows" / "release.yml")
+    audit = workflow["jobs"]["audit-model-release"]
+    audit_commands = _commands(audit)
+    assemble = workflow["jobs"]["assemble-candidate"]
+
+    assert _needs(audit) == {"validate-inputs", "resolve-candidate"}
+    assert "--remote-manifest" in audit_commands
+    assert "--download-artifacts" in audit_commands
+    assert "model-manifest-audit.json" in audit_commands
+    assert "audit-model-release" in _needs(assemble)
+    audit_downloads = [
+        step
+        for step in assemble["steps"]
+        if str(step.get("uses", "")).startswith("actions/download-artifact@")
+        and str(step.get("with", {}).get("name", "")).startswith(
+            "release-model-audit-"
+        )
+    ]
+    assert len(audit_downloads) == 1
+    assert audit_downloads[0]["with"]["path"] == (
+        "${{ runner.temp }}/release-bundle/evidence"
+    )
+
+
+@pytest.mark.release_blocker
+def test_release_workflow_keeps_internal_and_public_checksum_scopes_separate():
+    workflow = _workflow(REPO_ROOT / ".github" / "workflows" / "release.yml")
+    assemble = workflow["jobs"]["assemble-candidate"]
+    commands = _commands(assemble)
+    public_index = commands.index("release_transaction.py public-checksums")
+    bundle_index = commands.index("release_transaction.py bundle-checksums")
+    verify_index = commands.index("release_transaction.py verify")
+
+    assert public_index < bundle_index < verify_index
+    assert '--output "$RUNNER_TEMP/release-bundle/SHA256SUMS"' in commands
+    assert '--output "$RUNNER_TEMP/release-bundle/BUNDLE-SHA256SUMS"' in commands
+    assert '--public-checksums "$RUNNER_TEMP/release-bundle/SHA256SUMS"' in commands
+    assert (
+        '--bundle-checksums "$RUNNER_TEMP/release-bundle/BUNDLE-SHA256SUMS"'
+        in commands
+    )
+
+    metadata_upload = next(
+        step
+        for step in assemble["steps"]
+        if str(step.get("uses", "")).startswith("actions/upload-artifact@")
+    )
+    internal_paths = str(metadata_upload["with"]["path"])
+    assert "release-bundle/SHA256SUMS" in internal_paths
+    assert "release-bundle/BUNDLE-SHA256SUMS" in internal_paths
+
+    draft_commands = _commands(workflow["jobs"]["create-github-draft"])
+    assert '"$RUNNER_TEMP/release-bundle/SHA256SUMS"' in draft_commands
+    assert '"$RUNNER_TEMP/release-bundle/BUNDLE-SHA256SUMS"' not in draft_commands
 
 
 @pytest.mark.release_blocker
@@ -349,13 +455,28 @@ def test_release_source_is_the_selected_protected_ref_and_tools_are_bounded():
     )
 
     validate = _commands(workflow["jobs"]["validate-inputs"])
+    assert "SOURCE_REF_NAME" in validate
     assert "SOURCE_REF_PROTECTED" in validate
     assert "WORKFLOW_SOURCE_SHA" in workflow_text
-    assert "source_sha must equal the selected protected ref commit" in validate
+    assert 'os.environ["SOURCE_REF_NAME"] != "main"' in validate
+    assert "source_sha must equal the selected main commit" in validate
     assert "runs-on: ubuntu-latest" not in workflow_text
     assert 'python-version: "3.12.12"' in workflow_text
     assert release_inputs["tools"]["build_python"] == "3.12.12"
     assert release_inputs["tools"]["github_runner"] == "ubuntu-24.04"
+
+
+@pytest.mark.release_blocker
+def test_local_gpu_release_is_authorized_only_from_protected_main():
+    workflow = _workflow(
+        REPO_ROOT / ".github" / "workflows" / "local-gpu-release.yml"
+    )
+    commands = _commands(workflow["jobs"]["authorize-candidate"])
+
+    assert "SOURCE_REF_NAME" in commands
+    assert "SOURCE_REF_PROTECTED" in commands
+    assert 'os.environ["SOURCE_REF_NAME"] != "main"' in commands
+    assert "The main release ref must remain protected" in commands
 
 
 @pytest.mark.release_blocker

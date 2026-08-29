@@ -78,14 +78,14 @@ class Location:
 
         if height > width:
             diff = height - width
-            self.x1 = self.x1 - int(diff / 2)
-            self.x2 = self.x2 + int(diff / 2)
+            low = diff // 2
+            self.x1 -= low
+            self.x2 += diff - low
         elif height < width:
             diff = width - height
-            self.y1 = self.y1 - int(diff / 2)
-            self.y2 = self.y2 + int(diff / 2)
-        else:
-            pass
+            low = diff // 2
+            self.y1 -= low
+            self.y2 += diff - low
 
     def expand(self, amount: float) -> None:
         """Expand the location while keeping the center.

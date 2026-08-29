@@ -115,8 +115,11 @@ Review the complete plan, validation summaries, provenance/rights evidence, and
 artifact costs. Change the generated approval document from `pending` to
 `approved`, identify the reviewer, and add a timezone-qualified ISO 8601 approval
 time. Do not change its plan ID or plan SHA-256. A changed plan or staged byte
-invalidates the approval. The final release still requires the independent-human
-approval defined by the project release policy; an AI review is supplementary.
+invalidates the approval. The final release still requires the approval defined by
+the project release policy. Independent human approval is preferred; for
+`1.0.0rc1` through `1.0.0`, D20 permits `tomas-gajarsky` to approve as owner under
+the documented bounded exception. Record that basis in the approval notes and do
+not describe it as independent review. An AI review is supplementary.
 
 Verify locally before granting network credentials:
 
@@ -150,25 +153,89 @@ those later promotion steps must consume the reviewed immutable revision.
 
 ## 5. Finalize legal contracts and package pins
 
-The artifact-only commits are not the final model revisions. Derive a candidate
-package manifest from the completed receipt, render `README.md`, `LICENSE`, and
-`THIRD_PARTY_NOTICES.md`, and commit those three deterministic files together on
-each plan-specific candidate branch. Use the artifact commit as `parent_commit` and
-record every resulting immutable revision in a resumable finalization receipt.
+Legal finalization is a second, separately approved transaction. First fetch the
+currently packaged remote manifest at its exact revision and digest. The prepare
+command is read-only: it verifies every model parent tree, all artifact LFS
+identities and sizes, every metadata digest, and the generated legal bytes. It
+then records exactly which of `README.md`, `LICENSE`, and
+`THIRD_PARTY_NOTICES.md` would change.
 
-After all model legal commits succeed, update the remote manifest records to those
-final model revisions and commit that manifest last. Bind the packaged
-`manifest_revision` to this final remote-manifest commit, update every model/config
-revision plus `license_ref` and `hosted_model_card`, and retain the clean export
-commit in each model's `export_commit`. Rendering is non-circular: cards contain
-the artifact contract but do not embed Hub revision fields.
+```bash
+PYTHONPATH=. python scripts/model_cohort_publication.py legal-prepare \
+  --repo-root . \
+  --manifest facetorch/models/manifest.json \
+  --remote-manifest /secure/review/current-model-manifest.json \
+  --plan /secure/review/legal-finalization-plan.json \
+  --approval-template /secure/review/legal-finalization-approval.json
+```
+
+A human release authority must review the complete plan and change only the
+generated approval status, reviewer identity, timestamp, and notes. Independent
+review is preferred. For `1.0.0rc1` through `1.0.0`, the bounded D20 exception
+allows owner `tomas-gajarsky` to approve; the notes must identify it as owner
+self-approval, not independent review. Verify the digest-bound approval and
+recheck all immutable parents before supplying write credentials:
+
+```bash
+PYTHONPATH=. python scripts/model_cohort_publication.py legal-verify \
+  --plan /secure/review/legal-finalization-plan.json \
+  --approval /secure/review/legal-finalization-approval.json
+```
+
+```bash
+HF_TOKEN=... PYTHONPATH=. python scripts/model_cohort_publication.py legal-publish \
+  --plan /secure/review/legal-finalization-plan.json \
+  --approval /secure/review/legal-finalization-approval.json \
+  --receipt /secure/review/legal-finalization-receipt.json
+```
+
+Each model commit is a direct child of its reviewed immutable parent and contains
+operations only for the three legal documents; artifact and metadata paths must
+remain byte-identical. The atomic receipt makes retries resumable. The final
+`approved` manifest is created as a direct child of the reviewed current manifest
+revision only after every model succeeds.
+
+Generate one deterministic exact-old-value map from the completed receipt, inspect
+it, and apply it to the packaged manifest, governance links, and source/packaged
+configuration files. The map also emits the four exact
+`FACETORCH_MODEL_MANIFEST_*` repository-variable values; update those variables
+only after the local changes are accepted.
+
+```bash
+PYTHONPATH=. python scripts/model_cohort_publication.py legal-revision-map \
+  --plan /secure/review/legal-finalization-plan.json \
+  --receipt /secure/review/legal-finalization-receipt.json \
+  --repo-root . --output /secure/review/legal-revision-map.json
+
+PYTHONPATH=. python scripts/model_cohort_publication.py legal-apply-revision-map \
+  --repo-root . --revision-map /secure/review/legal-revision-map.json
+
+PYTHONPATH=. python scripts/model_cohort_publication.py legal-receipt-verify \
+  --plan /secure/review/legal-finalization-plan.json \
+  --approval /secure/review/legal-finalization-approval.json \
+  --receipt /secure/review/legal-finalization-receipt.json
+```
+
+The pre-publication `legal-verify` command intentionally fails after the approved
+revision map changes its source pins. `legal-receipt-verify` is the durable
+post-publication proof: it validates the exact plan and approval digests, complete
+receipt coverage, every direct-child model commit, unchanged non-document paths,
+and the manifest-last commit without trusting workspace files that the transaction
+was designed to rewrite.
+
+Retain the clean export commit in each model's `export_commit`. Rendering is
+non-circular: cards contain the artifact contract but do not embed Hub revision
+fields.
 
 Run the strict audit without `--allow-legacy-metadata`; for the release evidence
 run, also use `--download-artifacts` so the downloaded bytes are checked in
 addition to LFS object IDs:
 
 ```bash
-PYTHONPATH=. python scripts/audit_model_manifest_hf.py --download-artifacts
+PYTHONPATH=. python scripts/audit_model_manifest_hf.py \
+  --remote-manifest /secure/review/final-model-manifest.json \
+  --download-artifacts \
+  --report /secure/review/model-manifest-audit.json
 ```
 
 Only a zero-exit audit may supply the manifest repository, final revision,
