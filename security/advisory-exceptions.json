@@ -87,6 +87,114 @@
       ],
       "upstream_constraint": "The advisory currently names no patched Torch release for this affected range.",
       "removal_condition": "Remove when Torch 2.6 is dropped, an upstream patch is validated, or a replacement CUDA 12.4-compatible cohort is released."
+    },
+    {
+      "vulnerability_id": "CVE-2025-2953",
+      "aliases": ["GHSA-3749-ghw9-m3mg"],
+      "package": "torch",
+      "versions": ["2.6.0", "2.6.0+cpu", "2.6.0+cu124"],
+      "profiles": ["torch-2.6-cpu", "torch-2.6-cu124"],
+      "status": "approved",
+      "approved_on": "2026-08-30",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "The local denial-of-service advisory affects torch.mkldnn_max_pool2d. Facetorch does not call that API; Torch 2.6 remains the validated CUDA 12.4 production cohort.",
+      "mitigations": [
+        "Release contracts reject any Facetorch production-source use of torch.mkldnn_max_pool2d while this exception exists.",
+        "The public analyzer does not accept executable operator graphs from image inputs.",
+        "The exception is restricted to the exact Torch 2.6 CPU and CUDA 12.4 release profiles."
+      ],
+      "upstream_constraint": "The first patched release is Torch 2.7.1-rc1, which is not a validated Facetorch cohort.",
+      "removal_condition": "Remove when Torch 2.6 is dropped, an upstream backport is validated, or a replacement CUDA 12.4-compatible cohort is released."
+    },
+    {
+      "vulnerability_id": "CVE-2025-2148",
+      "aliases": ["GHSA-c678-jfcj-6jmf"],
+      "package": "torch",
+      "versions": ["2.6.0", "2.6.0+cpu", "2.6.0+cu124"],
+      "profiles": ["torch-2.6-cpu", "torch-2.6-cu124"],
+      "status": "approved",
+      "approved_on": "2026-08-30",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "The memory-corruption advisory affects torch.ops.profiler._call_end_callbacks_on_jit_fut. Facetorch does not call that internal profiler API or expose it through analyzer inputs.",
+      "mitigations": [
+        "Release contracts reject any Facetorch production-source use of _call_end_callbacks_on_jit_fut while this exception exists.",
+        "Profiling callbacks are not part of the public analyzer execution path.",
+        "The exception is restricted to the exact Torch 2.6 CPU and CUDA 12.4 release profiles."
+      ],
+      "upstream_constraint": "The advisory currently names no patched Torch release for this affected range.",
+      "removal_condition": "Remove when Torch 2.6 is dropped, an upstream patch is validated, or a replacement CUDA 12.4-compatible cohort is released."
+    },
+    {
+      "vulnerability_id": "CVE-2025-3001",
+      "aliases": ["GHSA-qfhq-4f3w-5fph"],
+      "package": "torch",
+      "versions": ["2.6.0", "2.6.0+cpu", "2.6.0+cu124"],
+      "profiles": ["torch-2.6-cpu", "torch-2.6-cu124"],
+      "status": "approved",
+      "approved_on": "2026-08-30",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "The local memory-corruption advisory affects torch.lstm_cell. Facetorch does not call that API and none of its default analyzer components is an LSTM.",
+      "mitigations": [
+        "Release contracts reject any Facetorch production-source use of torch.lstm_cell while this exception exists.",
+        "Default models are selected from digest-pinned manifest entries and do not accept executable user graphs.",
+        "The exception is restricted to the exact Torch 2.6 CPU and CUDA 12.4 release profiles."
+      ],
+      "upstream_constraint": "The first patched release is Torch 2.10, which is not the validated CUDA 12.4 cohort.",
+      "removal_condition": "Remove when Torch 2.6 is dropped, an upstream backport is validated, or a replacement CUDA 12.4-compatible cohort is released."
+    },
+    {
+      "vulnerability_id": "CVE-2025-2149",
+      "aliases": ["GHSA-x3gm-94wq-g975"],
+      "package": "torch",
+      "versions": ["2.6.0", "2.6.0+cpu", "2.6.0+cu124"],
+      "profiles": ["torch-2.6-cpu", "torch-2.6-cu124"],
+      "status": "approved",
+      "approved_on": "2026-08-30",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "The improper-initialization advisory affects the quantized nnq_Sigmoid operator. Facetorch does not call that operator and its approved model artifacts are not quantized models.",
+      "mitigations": [
+        "Release contracts reject any Facetorch production-source use of nnq_Sigmoid while this exception exists.",
+        "Approved PT2 model artifacts are byte-pinned and validated on CPU and CUDA before release.",
+        "The exception is restricted to the exact Torch 2.6 CPU and CUDA 12.4 release profiles."
+      ],
+      "upstream_constraint": "The advisory currently names no patched Torch release for this affected range.",
+      "removal_condition": "Remove when Torch 2.6 is dropped, an upstream patch is validated, or a replacement CUDA 12.4-compatible cohort is released."
+    },
+    {
+      "vulnerability_id": "CVE-2025-3000",
+      "aliases": ["GHSA-rrmf-rvhw-rf47"],
+      "package": "torch",
+      "versions": [
+        "2.6.0",
+        "2.6.0+cpu",
+        "2.6.0+cu124",
+        "2.11.0",
+        "2.11.0+cpu",
+        "2.11.0+cu130"
+      ],
+      "profiles": [
+        "root",
+        "torch-2.6-cpu",
+        "torch-2.6-cu124",
+        "torch-2.11-cpu",
+        "torch-2.11-cu130"
+      ],
+      "status": "approved",
+      "approved_on": "2026-08-30",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "The local memory-corruption advisory requires scripting a class with a bare list or tuple value annotation. Facetorch calls torch.jit.script only on a locally constructed nn.Sequential of packaged transform modules and does not compile user-provided source or class declarations.",
+      "mitigations": [
+        "Release contracts pin the sole torch.jit.script call to the controlled transform-sequence helper and reject decorator-style scripted classes.",
+        "Official configurations contain packaged transform graphs; image and tensor inputs cannot supply executable Python definitions.",
+        "All supported Torch cohorts execute the full source, wheel, and production-image smoke suites before release."
+      ],
+      "upstream_constraint": "The first patched release is Torch 2.13, beyond the currently exported and validated Torch 2.11 model cohort.",
+      "removal_condition": "Remove after a validated Torch 2.13 cohort replaces affected versions or an upstream backport is validated."
     }
   ]
 }

@@ -22,7 +22,7 @@ jobs:
       - uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
         with:
           fail-on-severity: moderate
-          allow-ghsas: GHSA-h35f-9h28-mq5c,GHSA-887c-mr87-cxwp,GHSA-vgrw-7cvw-pwgx,GHSA-f4hp-rmr7-r7v8
+          allow-ghsas: GHSA-h35f-9h28-mq5c,GHSA-887c-mr87-cxwp,GHSA-vgrw-7cvw-pwgx,GHSA-f4hp-rmr7-r7v8,GHSA-3749-ghw9-m3mg,GHSA-c678-jfcj-6jmf,GHSA-qfhq-4f3w-5fph,GHSA-x3gm-94wq-g975,GHSA-rrmf-rvhw-rf47
 
   secret-scan:
     runs-on: ubuntu-latest

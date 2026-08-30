@@ -289,7 +289,7 @@ def test_advisory_gate_emits_sboms_and_requires_bounded_approved_exceptions():
 
 
 @pytest.mark.release_blocker
-def test_torch_26_advisory_exceptions_are_exact_scoped_and_unused():
+def test_torch_advisory_exceptions_are_exact_scoped_and_mitigated():
     policy = json.loads(
         (REPO_ROOT / "security" / "advisory-exceptions.json").read_text(
             encoding="utf-8"
@@ -300,26 +300,70 @@ def test_torch_26_advisory_exceptions_are_exact_scoped_and_unused():
         for exception in policy["exceptions"]
         if exception["package"] == "torch"
     }
-    affected_apis = {
+    unused_affected_apis = {
         "CVE-2025-3730": ("GHSA-887c-mr87-cxwp", "ctc_loss"),
         "CVE-2025-2999": ("GHSA-vgrw-7cvw-pwgx", "unpack_sequence"),
         "CVE-2025-2998": ("GHSA-f4hp-rmr7-r7v8", "pad_packed_sequence"),
+        "CVE-2025-2953": ("GHSA-3749-ghw9-m3mg", "torch.mkldnn_max_pool2d"),
+        "CVE-2025-2148": (
+            "GHSA-c678-jfcj-6jmf",
+            "_call_end_callbacks_on_jit_fut",
+        ),
+        "CVE-2025-3001": ("GHSA-qfhq-4f3w-5fph", "torch.lstm_cell"),
+        "CVE-2025-2149": ("GHSA-x3gm-94wq-g975", "nnq_Sigmoid"),
     }
-    assert set(torch_exceptions) == set(affected_apis)
+    jit_vulnerability = "CVE-2025-3000"
+    assert set(torch_exceptions) == {*unused_affected_apis, jit_vulnerability}
 
     production_source = "\n".join(
         path.read_text(encoding="utf-8")
         for path in sorted((REPO_ROOT / "facetorch").rglob("*.py"))
     )
-    for vulnerability_id, (ghsa, affected_api) in affected_apis.items():
+    original_exceptions = {
+        "CVE-2025-3730",
+        "CVE-2025-2999",
+        "CVE-2025-2998",
+    }
+    for vulnerability_id, (ghsa, affected_api) in unused_affected_apis.items():
         exception = torch_exceptions[vulnerability_id]
         assert exception["aliases"] == [ghsa]
         assert exception["versions"] == ["2.6.0", "2.6.0+cpu", "2.6.0+cu124"]
         assert exception["profiles"] == ["torch-2.6-cpu", "torch-2.6-cu124"]
         assert exception["status"] == "approved"
-        assert exception["approved_on"] == "2026-08-22"
+        expected_date = (
+            "2026-08-22" if vulnerability_id in original_exceptions else "2026-08-30"
+        )
+        assert exception["approved_on"] == expected_date
         assert exception["expires_on"] == "2026-11-20"
         assert affected_api not in production_source
+
+    jit_exception = torch_exceptions[jit_vulnerability]
+    assert jit_exception["aliases"] == ["GHSA-rrmf-rvhw-rf47"]
+    assert jit_exception["versions"] == [
+        "2.6.0",
+        "2.6.0+cpu",
+        "2.6.0+cu124",
+        "2.11.0",
+        "2.11.0+cpu",
+        "2.11.0+cu130",
+    ]
+    assert jit_exception["profiles"] == [
+        "root",
+        "torch-2.6-cpu",
+        "torch-2.6-cu124",
+        "torch-2.11-cpu",
+        "torch-2.11-cu130",
+    ]
+    assert jit_exception["status"] == "approved"
+    assert jit_exception["approved_on"] == "2026-08-30"
+    assert jit_exception["expires_on"] == "2026-11-20"
+    transform_source = (REPO_ROOT / "facetorch" / "transforms.py").read_text(
+        encoding="utf-8"
+    )
+    assert transform_source.count("torch.jit.script(") == 1
+    assert "torch.nn.Sequential(*transform.transforms)" in transform_source
+    assert "torch.jit.script(transform_seq)" in transform_source
+    assert "@torch.jit.script" not in production_source
 
 
 @pytest.mark.release_blocker
