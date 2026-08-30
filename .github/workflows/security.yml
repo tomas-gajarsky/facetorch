@@ -19,7 +19,7 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: moderate
           allow-ghsas: GHSA-h35f-9h28-mq5c,GHSA-887c-mr87-cxwp,GHSA-vgrw-7cvw-pwgx,GHSA-f4hp-rmr7-r7v8,GHSA-3749-ghw9-m3mg,GHSA-c678-jfcj-6jmf,GHSA-qfhq-4f3w-5fph,GHSA-x3gm-94wq-g975,GHSA-rrmf-rvhw-rf47
@@ -30,10 +30,10 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ github.token }}
