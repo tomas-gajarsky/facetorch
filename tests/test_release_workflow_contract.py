@@ -130,6 +130,61 @@ def test_release_image_smokes_use_valid_explicit_profiles():
 
 
 @pytest.mark.release_blocker
+def test_precompressed_images_use_direct_digest_checked_artifact_transfer():
+    workflow = _workflow(REPO_ROOT / ".github" / "workflows" / "release.yml")
+    jobs = workflow["jobs"]
+    build_steps = jobs["build-images"]["steps"]
+    direct_uploads = [
+        step
+        for step in build_steps
+        if str(step.get("uses", "")).startswith("actions/upload-artifact@")
+        and step.get("with", {}).get("archive") is False
+    ]
+    metadata_uploads = [
+        step
+        for step in build_steps
+        if str(step.get("uses", "")).startswith("actions/upload-artifact@")
+        and str(step.get("with", {}).get("name", "")).startswith("release-")
+    ]
+
+    assert len(direct_uploads) == 1
+    assert direct_uploads[0]["with"]["path"] == (
+        "${{ runner.temp }}/image-part/images/" "facetorch-${{ matrix.flavor }}.tar.zst"
+    )
+    assert direct_uploads[0]["with"]["if-no-files-found"] == "error"
+    assert len(metadata_uploads) == 1
+    metadata_paths = str(metadata_uploads[0]["with"]["path"])
+    assert "image-part/evidence" in metadata_paths
+    assert "image-part/sboms" in metadata_paths
+    assert "image-part/images" not in metadata_paths
+
+    expected_direct_downloads = {
+        "validate-exact-images-on-local-gpu": {
+            "facetorch-cpu.tar.zst": "${{ runner.temp }}/release-cpu-image/images",
+            "facetorch-gpu.tar.zst": "${{ runner.temp }}/release-gpu-image/images",
+        },
+        "assemble-candidate": {
+            "facetorch-cpu.tar.zst": "${{ runner.temp }}/release-bundle/images",
+            "facetorch-gpu.tar.zst": "${{ runner.temp }}/release-bundle/images",
+        },
+        "publish-images": {
+            "facetorch-${{ matrix.flavor }}.tar.zst": (
+                "${{ runner.temp }}/image-part/images"
+            ),
+        },
+    }
+    for job_name, expected in expected_direct_downloads.items():
+        observed = {
+            str(step.get("with", {}).get("name")): str(step.get("with", {}).get("path"))
+            for step in jobs[job_name]["steps"]
+            if str(step.get("uses", "")).startswith("actions/download-artifact@")
+            and str(step.get("with", {}).get("name", "")).endswith(".tar.zst")
+            and step.get("with", {}).get("digest-mismatch") == "error"
+        }
+        assert observed == expected
+
+
+@pytest.mark.release_blocker
 def test_stable_alias_mutation_is_serialized_and_monotonic():
     workflow = _workflow(REPO_ROOT / ".github" / "workflows" / "release.yml")
     job = workflow["jobs"]["promote-stable-aliases"]
