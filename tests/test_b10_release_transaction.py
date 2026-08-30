@@ -38,6 +38,19 @@ GPU_IMAGE_DIGEST = "sha256:" + "4" * 64
 METADATA_SHA256 = "9" * 64
 GOLDEN_REFERENCE_SHA256 = "a" * 64
 GOLDEN_REFERENCE_SIZE = 42
+ALIGNMENT_METADATA_REPORT = {
+    "schema_version": 1,
+    "status": "ok",
+    "artifact_id": "align-3dmm-metadata-v1",
+    "source": "gdrive",
+    "downloader": "facetorch.downloader.DownloaderGDrive",
+    "file_id": "alignment-file-id",
+    "revision": "gdrive-file-alignment-file-id",
+    "expected_format": "torch_data",
+    "staged_path": "runtime-inputs/3dmm/meta.pt",
+    "size_bytes": 12345,
+    "sha256": "b" * 64,
+}
 
 
 def _sha256(path):
@@ -111,6 +124,10 @@ def _candidate_repo(tmp_path, version="1.0.0"):
     lock = repo / "environments" / "torch-2.6-cu124" / "uv.lock"
     lock.parent.mkdir(parents=True)
     lock.write_text("version = 1\n", encoding="utf-8")
+    _write_json(
+        repo / "security/release-inputs.json",
+        {"schema_version": 1, "alignment_metadata": ALIGNMENT_METADATA_REPORT},
+    )
     _write_json(
         models / "manifest.json",
         {
@@ -223,6 +240,8 @@ def _local_release_evidence(bundle, repo, source_sha):
     default_smoke = root / "default-analyzer-cuda-smoke.json"
     notebook_report = root / "facetorch-notebook-report.json"
     notebook = root / "facetorch-notebook-executed.ipynb"
+    alignment_metadata = root / "alignment-metadata-report.json"
+    _write_json(alignment_metadata, ALIGNMENT_METADATA_REPORT)
     _write_json(
         default_smoke,
         {"schema_version": 1, "status": "ok", "device": "cuda", "legacy_fallback": False},
@@ -273,6 +292,7 @@ def _local_release_evidence(bundle, repo, source_sha):
                 }
             ],
             "matrix_report_sha256": _sha256(matrix),
+            "alignment_metadata_report_sha256": _sha256(alignment_metadata),
             "default_analyzer_smoke_sha256": _sha256(default_smoke),
             "notebook_report_sha256": _sha256(notebook_report),
             "executed_notebook_sha256": _sha256(notebook),
@@ -1024,6 +1044,39 @@ def test_local_gpu_evidence_binds_exact_source_images_and_reports(tmp_path):
         gpu_image_digest=GPU_IMAGE_DIGEST,
     )
     assert validated["status"] == "verified"
+    assert validated["alignment_metadata_report_sha256"] == _sha256(
+        evidence / "alignment-metadata-report.json"
+    )
+
+    alignment = evidence / "alignment-metadata-report.json"
+    value = json.loads(alignment.read_text(encoding="utf-8"))
+    value["file_id"] = "substituted-file-id"
+    value["revision"] = "gdrive-file-substituted-file-id"
+    _write_json(alignment, value)
+    runner = evidence / "local-cuda-runner-report.json"
+    runner_value = json.loads(runner.read_text(encoding="utf-8"))
+    runner_value["alignment_metadata_report_sha256"] = _sha256(alignment)
+    _write_json(runner, runner_value)
+    container = evidence / "container-evidence.json"
+    container_value = json.loads(container.read_text(encoding="utf-8"))
+    container_value["runner_report_sha256"] = _sha256(runner)
+    _write_json(container, container_value)
+    with pytest.raises(
+        ReleaseError, match="Alignment metadata evidence is incomplete or mismatched"
+    ):
+        validate_local_release_evidence(
+            repo,
+            evidence,
+            source_sha=source_sha,
+            cpu_image_digest=CPU_IMAGE_DIGEST,
+            gpu_image_digest=GPU_IMAGE_DIGEST,
+        )
+
+    _write_json(alignment, ALIGNMENT_METADATA_REPORT)
+    runner_value["alignment_metadata_report_sha256"] = _sha256(alignment)
+    _write_json(runner, runner_value)
+    container_value["runner_report_sha256"] = _sha256(runner)
+    _write_json(container, container_value)
 
     smoke = evidence / "container-reports/gpu-image-smoke.json"
     value = json.loads(smoke.read_text(encoding="utf-8"))

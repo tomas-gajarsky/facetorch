@@ -102,6 +102,35 @@ def test_distribution_docs_use_the_reviewed_build_python():
 
 
 @pytest.mark.release_blocker
+def test_alignment_metadata_release_contract_matches_packaged_configuration():
+    release_inputs = json.loads(
+        (REPO_ROOT / "security" / "release-inputs.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    descriptor = yaml.safe_load(
+        (
+            REPO_ROOT
+            / "facetorch/configs/analyzer/utilizer/align/lmk3d_mesh_pose.yaml"
+        ).read_text(encoding="utf-8")
+    )["downloader_meta"]
+
+    assert release_inputs["alignment_metadata"] == {
+        "schema_version": 1,
+        "status": "ok",
+        "artifact_id": "align-3dmm-metadata-v1",
+        "source": "gdrive",
+        "downloader": descriptor["_target_"],
+        "file_id": descriptor["file_id"],
+        "revision": descriptor["revision"],
+        "expected_format": descriptor["expected_format"],
+        "staged_path": "runtime-inputs/3dmm/meta.pt",
+        "size_bytes": descriptor["size_bytes"],
+        "sha256": descriptor["sha256"],
+    }
+
+
+@pytest.mark.release_blocker
 def test_conda_candidate_smokes_the_rc1_distribution():
     commands = _workflow_commands(WORKFLOW_ROOT / "conda-env.yml")
 

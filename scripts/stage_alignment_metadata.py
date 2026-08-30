@@ -20,6 +20,19 @@ import facetorch
 ARTIFACT_ID = "align-3dmm-metadata-v1"
 STAGED_RELATIVE_PATH = Path("runtime-inputs/3dmm/meta.pt")
 REPORT_RELATIVE_PATH = Path("alignment-metadata-report.json")
+REPORT_KEYS = {
+    "schema_version",
+    "status",
+    "artifact_id",
+    "source",
+    "downloader",
+    "file_id",
+    "revision",
+    "expected_format",
+    "staged_path",
+    "size_bytes",
+    "sha256",
+}
 
 
 def _sha256(path: Path) -> str:
@@ -68,6 +81,15 @@ def _restore_environment(name: str, previous: str | None) -> None:
         os.environ[name] = previous
 
 
+def _alignment_metadata_contract() -> dict[str, Any]:
+    inputs_path = Path(__file__).resolve().parents[1] / "security/release-inputs.json"
+    inputs = json.loads(inputs_path.read_text(encoding="utf-8"))
+    contract = inputs.get("alignment_metadata")
+    if not isinstance(contract, dict) or set(contract) != REPORT_KEYS:
+        raise RuntimeError("Alignment metadata release contract is invalid")
+    return contract
+
+
 def stage_alignment_metadata(staging_root: Path) -> tuple[Path, Path]:
     """Download one pinned metadata object into a bounded, traversable location."""
     root = staging_root.resolve(strict=True)
@@ -99,6 +121,23 @@ def stage_alignment_metadata(staging_root: Path) -> tuple[Path, Path]:
             raise RuntimeError(
                 "Alignment metadata downloader is not the pinned provider"
             )
+        report = {
+            "schema_version": 1,
+            "status": "ok",
+            "artifact_id": ARTIFACT_ID,
+            "source": "gdrive",
+            "downloader": downloader_target,
+            "file_id": str(descriptor.file_id),
+            "revision": str(descriptor.revision),
+            "expected_format": str(descriptor.expected_format),
+            "staged_path": STAGED_RELATIVE_PATH.as_posix(),
+            "size_bytes": expected_size,
+            "sha256": expected_sha256,
+        }
+        if report != _alignment_metadata_contract():
+            raise RuntimeError(
+                "Candidate alignment metadata differs from the reviewed release contract"
+            )
         downloader = instantiate(descriptor)
         downloaded_path = Path(str(downloader.run()))
         if downloaded_path.is_symlink():
@@ -123,19 +162,6 @@ def stage_alignment_metadata(staging_root: Path) -> tuple[Path, Path]:
     downloaded.chmod(0o644)
 
     report_path = root / REPORT_RELATIVE_PATH
-    report = {
-        "schema_version": 1,
-        "status": "ok",
-        "artifact_id": ARTIFACT_ID,
-        "source": "gdrive",
-        "downloader": downloader_target,
-        "file_id": str(descriptor.file_id),
-        "revision": str(descriptor.revision),
-        "expected_format": str(descriptor.expected_format),
-        "staged_path": STAGED_RELATIVE_PATH.as_posix(),
-        "size_bytes": expected_size,
-        "sha256": expected_sha256,
-    }
     _write_json_atomic(report_path, report)
     return downloaded, report_path
 
