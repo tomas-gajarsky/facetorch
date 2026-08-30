@@ -492,6 +492,7 @@ jobs:
           path: |
             ${{ env.FACETORCH_STAGING }}/candidate-matrix-report.json
             ${{ env.FACETORCH_STAGING }}/local-cuda-runner-report.json
+            ${{ env.FACETORCH_STAGING }}/alignment-metadata-report.json
             ${{ env.FACETORCH_STAGING }}/default-analyzer-cuda-smoke.json
             ${{ env.FACETORCH_STAGING }}/facetorch-notebook-report.json
             ${{ env.FACETORCH_STAGING }}/facetorch-notebook-executed.ipynb

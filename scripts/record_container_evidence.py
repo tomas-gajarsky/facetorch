@@ -124,6 +124,10 @@ def main() -> int:
             or report.get("uid") != 10001
         ):
             raise RuntimeError(f"{device} image smoke report is not successful")
+        if "align-3dmm-metadata-v1" not in report.get("active_artifacts", []):
+            raise RuntimeError(
+                f"{device} image did not consume the staged alignment metadata"
+            )
     runner_report = _read_json(resolved["runner"])
     if (
         runner_report.get("status") != "ok"

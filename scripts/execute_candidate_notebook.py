@@ -132,7 +132,7 @@ _facetorch_manifest, _facetorch_paths = _facetorch_candidate_manifest(
 _facetorch_profile = "gpu" if _facetorch_device == "cuda" else "cpu"
 _facetorch_config = _facetorch_package.load_config(_facetorch_profile, offline=True)
 _facetorch_prepare_cache(
-    _facetorch_repo,
+    _facetorch_staging,
     _facetorch_config,
     _facetorch_manifest,
     _facetorch_paths,
