@@ -6,13 +6,11 @@
 [![PyPI - License](https://img.shields.io/pypi/l/facetorch)](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/LICENSE)
 <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
-  <a href="https://huggingface.co/spaces/tomas-gajarsky/facetorch-app">
-    <img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue" alt="Hugging Face Spaces">
-  </a> <a target="_blank" href="https://colab.research.google.com/github/tomas-gajarsky/facetorch/blob/main/notebooks/facetorch_notebook_demo.ipynb">
+  <a target="_blank" href="https://colab.research.google.com/github/tomas-gajarsky/facetorch/blob/main/notebooks/facetorch_notebook_demo.ipynb">
 <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
-[User Guide](https://medium.com/@gajarsky.tomas/facetorch-user-guide-a0e9fd2a5552), [Documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html), [ChatGPT facetorch guide](https://chat.openai.com/g/g-q8HWAkG4u-facetorch-guide)
+[API documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html), [v0.6.x migration guide](docs/migration-v1.md), [model compatibility](docs/model-compatibility.md)
  
 [Docker Hub](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch) [(GPU)](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch-gpu)
 
@@ -25,7 +23,10 @@
 
 3. **Portable Models:** Models are serialized with `torch.export` (`.pt2` format) — no model source code needed at inference time, with dynamic batch support and `torch.compile` compatibility.
 
-4. **Simple Extensibility:** Extend the library by uploading your model file to Hugging Face Hub and adding a corresponding configuration YAML file to the repository.
+4. **Governed Extensibility:** Custom readers, processors, and configurations can
+   be supplied directly. Adding a hosted model to the built-in defaults also
+   requires an immutable manifest entry, validation evidence, provenance, and
+   model-rights approval.
 
 5. **Deterministic Input:** Accepts local paths, tensors, NumPy arrays, PIL images,
    and bytes through one canonical pipeline. Remote input requires an explicit,
@@ -37,6 +38,8 @@ Facetorch provides an efficient, scalable, and user-friendly solution for facial
 
 * Python >= 3.10 and < 3.13
 * PyTorch 2.6.x or 2.11.x; other minors are rejected before model download
+* Linux x86-64 is the official v1 candidate platform; Windows, macOS, ARM, and
+  Apple MPS are experimental
 
 The exact candidate matrix, named CUDA pairs, experimental platforms, and current
 model-rights gates are documented in
@@ -46,21 +49,50 @@ Please use this library responsibly and with caution. Adhere to the [European Co
 
 
 ## Install
-[PyPI](https://pypi.org/project/facetorch/)
+
+> [!IMPORTANT]
+> This documentation targets **`1.0.0rc1` (Beta)**. Install the exact candidate
+> only after it appears on [PyPI](https://pypi.org/project/facetorch/). Bare
+> `pip install facetorch` and Docker `latest` remain on the stable `0.6.2` line
+> during the RC soak. Conda-forge is asynchronous and must be verified separately.
+> None of those unpinned routes can be assumed to provide the v1 API shown below.
+
+Use a virtual environment and install the supported CPU PyTorch cohort first.
+This avoids pip selecting a multi-gigabyte CUDA dependency graph on a CPU host:
+
 ```bash
-pip install facetorch
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install --index-url https://download.pytorch.org/whl/cpu \
+  "torch==2.11.0+cpu" "torchvision==0.26.0+cpu"
+python -m pip install "facetorch==1.0.0rc1"
 ```
-[Conda](https://anaconda.org/conda-forge/facetorch)
+
+For the validated CUDA 13.0 cohort, use a compatible NVIDIA host and replace the
+PyTorch install above with:
+
 ```bash
-conda install -c conda-forge facetorch
+python -m pip install --index-url https://download.pytorch.org/whl/cu130 \
+  "torch==2.11.0+cu130" "torchvision==0.26.0+cu130"
 ```
+
+Torch 2.6 CPU/CUDA 12.4 is also supported; see the exact
+[compatibility matrix](docs/model-compatibility.md). The default model selection
+then needs approximately 1.2 GB of cache data and at least 2 GB of free cache
+space while downloads are staged.
+
+[Conda-forge](https://anaconda.org/conda-forge/facetorch) remains an asynchronous
+channel. Do not use its unversioned install command for the RC; wait until the
+feedstock displays `1.0.0rc1`, then pin that exact version.
+
 ## Usage
 
-### Prerequisites
-* [Docker](https://docs.docker.com/get-docker/)
-* [Docker Compose](https://docs.docker.com/compose/install/)
+### Docker option
 
-Docker Compose provides an easy way of building a working facetorch environment with a single command.
+Docker is optional for the Python API. With [Docker](https://docs.docker.com/get-docker/)
+and [Docker Compose](https://docs.docker.com/compose/install/), use the immutable
+RC image tag rather than `latest`:
 
 ### Run docker example
 
@@ -68,13 +100,27 @@ The production image contains the example script. Compose mounts `data/input`
 read-only and keeps generated images in the `facetorch-output` volume, so the
 non-root container never needs write access to the source checkout.
 
-* CPU: ```docker compose run --rm facetorch python /opt/facetorch/example.py /workspace/data/input/test.jpg --output /workspace/data/output/test.png```
-* GPU: ```docker compose run --rm facetorch-gpu python /opt/facetorch/example.py /workspace/data/input/test.jpg --profile gpu --output /workspace/data/output/test-gpu.png```
+CPU:
+
+```bash
+FACETORCH_DOCKER_TAG=1.0.0-rc.1 docker compose run --rm facetorch \
+  python /opt/facetorch/example.py /workspace/data/input/test.jpg \
+  --output /workspace/data/output/test.png
+```
+
+GPU:
+
+```bash
+FACETORCH_DOCKER_TAG=1.0.0-rc.1 docker compose run --rm facetorch-gpu \
+  python /opt/facetorch/example.py /workspace/data/input/test.jpg \
+  --profile gpu --output /workspace/data/output/test-gpu.png
+```
 
 Copy a result from the persistent volume into the checkout when needed:
 
 ```bash
-docker compose run --rm -T facetorch cat /workspace/data/output/test.png > data/output/test.png
+FACETORCH_DOCKER_TAG=1.0.0-rc.1 docker compose run --rm -T facetorch \
+  cat /workspace/data/output/test.png > data/output/test.png
 ```
 
 Check *data/output* for the copied image with bounding boxes and facial 3D landmarks.

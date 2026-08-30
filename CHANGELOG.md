@@ -86,7 +86,10 @@ when the immutable v1.0.0-rc.1 tag and all publication receipts have been verifi
   multi-image batching remains outside the v1 API
 * GPU environment updated from CUDA 11.2 to CUDA 12.4+
 * Development status remains Beta through the approved release-candidate soak
-* Google Colab notebook updated to v1.0.0 (uses `image_source`, removes pinned torch versions)
+* Google Colab notebook updated to the exact v1.0.0rc1 contract and immutable
+  source tag
+* RC onboarding now separates stable and prerelease channels, preinstalls an
+  explicit CPU/GPU PyTorch cohort, and pins immutable Docker image tags
 
 ### Fixed
 * Model-cache locks publish complete ownership records atomically before they
