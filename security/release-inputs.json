@@ -15,16 +15,16 @@
     "sha256": "db957f82e4c85884c3d9bb4e49469e3caf1e5b488c4cb3b72888e75a71c77890"
   },
   "github_actions": {
-    "actions/attest-build-provenance": "977bb373ede98d70efdf65b84cb5f73e068dcc2a",
+    "actions/attest-build-provenance": "4d101475d8b20a2381f78447822ac1eab6504dd8",
     "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
-    "actions/dependency-review-action": "2031cfc080254a8a887f58cffee85186f0e49e48",
+    "actions/dependency-review-action": "a1d282b36b6f3519aa1f3fc636f609c47dddb294",
     "actions/download-artifact": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
     "actions/setup-python": "5fda3b95a4ea91299a34e894583c3862153e4b97",
     "actions/upload-artifact": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
-    "anchore/sbom-action": "e22c389904149dbc22b58101806040fa8d37a610",
-    "conda-incubator/setup-miniconda": "fc2d68f6413eb2d87b895e92f8584b5b94a10167",
+    "anchore/sbom-action": "aa80c8c5bd439a416a62804f2151ab38c671a638",
+    "conda-incubator/setup-miniconda": "8ee1f361103df19b6f8c8655fd3967a8ecb162d5",
     "docker/setup-buildx-action": "37fe631027851001ddb9b187196cc803df7f5f0e",
-    "gitleaks/gitleaks-action": "ff98106e4c7b2bc287b24eaf42907196329070c7",
+    "gitleaks/gitleaks-action": "e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e",
     "pypa/gh-action-pypi-publish": "dc37677b2e1c63e2034f94d8a5b11f265b73ba33"
   },
   "container_inputs": {
