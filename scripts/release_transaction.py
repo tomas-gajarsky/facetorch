@@ -44,6 +44,19 @@ PUBLICATION_ORDER = (
 BUNDLE_CHECKSUM_FILENAME = "BUNDLE-SHA256SUMS"
 PUBLIC_CHECKSUM_FILENAME = "SHA256SUMS"
 PUBLIC_FIXED_PAYLOADS = ("release-evidence.tar.zst", "release-plan.json")
+ALIGNMENT_METADATA_REPORT_KEYS = {
+    "schema_version",
+    "status",
+    "artifact_id",
+    "source",
+    "downloader",
+    "file_id",
+    "revision",
+    "expected_format",
+    "staged_path",
+    "size_bytes",
+    "sha256",
+}
 
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -283,6 +296,32 @@ def _validated_manifest_filename(value: Any) -> str:
     ):
         raise ReleaseError("Model manifest filename must be a safe relative path")
     return filename
+
+
+def _alignment_metadata_contract(repo_root: Path) -> dict[str, Any]:
+    inputs = _read_json(
+        _safe_relative_file(repo_root, "security/release-inputs.json")
+    )
+    contract = inputs.get("alignment_metadata")
+    if (
+        not isinstance(contract, dict)
+        or set(contract) != ALIGNMENT_METADATA_REPORT_KEYS
+        or contract.get("schema_version") != 1
+        or contract.get("status") != "ok"
+        or contract.get("artifact_id") != "align-3dmm-metadata-v1"
+        or contract.get("source") != "gdrive"
+        or contract.get("downloader") != "facetorch.downloader.DownloaderGDrive"
+        or contract.get("expected_format") != "torch_data"
+        or contract.get("staged_path") != "runtime-inputs/3dmm/meta.pt"
+        or not isinstance(contract.get("file_id"), str)
+        or not contract["file_id"]
+        or contract.get("revision") != f"gdrive-file-{contract.get('file_id', '')}"
+        or not isinstance(contract.get("size_bytes"), int)
+        or contract["size_bytes"] <= 0
+        or _SHA256_RE.fullmatch(str(contract.get("sha256", ""))) is None
+    ):
+        raise ReleaseError("Alignment metadata release contract is invalid")
+    return contract
 
 
 def validate_model_manifest(
@@ -855,6 +894,9 @@ def validate_local_release_evidence(
 
     runner_path = _safe_relative_file(root, "local-cuda-runner-report.json")
     matrix_path = _safe_relative_file(root, "candidate-matrix-report.json")
+    alignment_metadata_path = _safe_relative_file(
+        root, "alignment-metadata-report.json"
+    )
     default_smoke_path = _safe_relative_file(
         root, "default-analyzer-cuda-smoke.json"
     )
@@ -889,6 +931,16 @@ def validate_local_release_evidence(
     for field, path in source_records.items():
         if runner.get(field) != sha256_file(path):
             raise ReleaseError(f"Local CUDA evidence has a different {field}")
+
+    alignment_metadata = _read_json(alignment_metadata_path)
+    if (
+        runner.get("alignment_metadata_report_sha256")
+        != sha256_file(alignment_metadata_path)
+        or alignment_metadata != _alignment_metadata_contract(repo)
+    ):
+        raise ReleaseError(
+            "Alignment metadata evidence is incomplete or mismatched"
+        )
 
     compatibility = _read_json(model_root / "compatibility.json")
     supported_cohorts = {
@@ -1004,6 +1056,9 @@ def validate_local_release_evidence(
         "source_sha": source,
         "runner_report_sha256": sha256_file(runner_path),
         "matrix_report_sha256": sha256_file(matrix_path),
+        "alignment_metadata_report_sha256": sha256_file(
+            alignment_metadata_path
+        ),
         "container_evidence_sha256": sha256_file(container_path),
         "cpu_image_digest": cpu_digest,
         "gpu_image_digest": gpu_digest,

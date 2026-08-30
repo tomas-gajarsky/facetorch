@@ -1,6 +1,19 @@
 {
   "schema_version": 1,
-  "reviewed_on": "2026-08-22",
+  "reviewed_on": "2026-08-30",
+  "alignment_metadata": {
+    "schema_version": 1,
+    "status": "ok",
+    "artifact_id": "align-3dmm-metadata-v1",
+    "source": "gdrive",
+    "downloader": "facetorch.downloader.DownloaderGDrive",
+    "file_id": "11tdAcFuSXqCCf58g52WT1Rpa8KuQwe2o",
+    "revision": "gdrive-file-11tdAcFuSXqCCf58g52WT1Rpa8KuQwe2o",
+    "expected_format": "torch_data",
+    "staged_path": "runtime-inputs/3dmm/meta.pt",
+    "size_bytes": 33211475,
+    "sha256": "db957f82e4c85884c3d9bb4e49469e3caf1e5b488c4cb3b72888e75a71c77890"
+  },
   "github_actions": {
     "actions/attest-build-provenance": "977bb373ede98d70efdf65b84cb5f73e068dcc2a",
     "actions/checkout": "11d5960a326750d5838078e36cf38b85af677262",

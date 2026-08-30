@@ -5,7 +5,10 @@ from types import SimpleNamespace
 
 import pytest
 
-from scripts.run_local_cuda_release_matrix import _ensure_evidence_root
+from scripts.run_local_cuda_release_matrix import (
+    _ensure_evidence_root,
+    _release_subprocess_environment,
+)
 import scripts.stage_alignment_metadata as alignment_metadata
 from scripts.smoke_staged_default_analyzer import _staged_alignment_metadata
 
@@ -33,6 +36,20 @@ def test_existing_evidence_root_with_wrong_mode_fails_closed(tmp_path):
         _ensure_evidence_root(staging_root)
 
     assert staging_root.stat().st_mode & 0o777 == 0o700
+
+
+@pytest.mark.release_blocker
+def test_release_smoke_environment_scrubs_external_metadata_routing(monkeypatch):
+    monkeypatch.setenv("PYTHONPATH", "/external/source")
+    monkeypatch.setenv("FACETORCH_METADATA_DIR", "/external/metadata")
+    monkeypatch.setenv("FACETORCH_TEST_SENTINEL", "preserved")
+
+    environment = _release_subprocess_environment()
+
+    assert "PYTHONPATH" not in environment
+    assert "FACETORCH_METADATA_DIR" not in environment
+    assert environment["FACETORCH_TEST_SENTINEL"] == "preserved"
+    assert os.environ["FACETORCH_METADATA_DIR"] == "/external/metadata"
 
 
 @pytest.mark.release_blocker
@@ -76,21 +93,7 @@ def test_alignment_metadata_is_staged_and_attested_for_offline_smokes(
                 output.write(payload)
             return self.path
 
-    monkeypatch.setenv("FACETORCH_METADATA_DIR", "preserved-value")
-    monkeypatch.setattr(alignment_metadata.facetorch, "load_config", fake_load_config)
-    monkeypatch.setattr(
-        alignment_metadata, "instantiate", lambda value: FakeDownloader(value)
-    )
-
-    staged, report_path = alignment_metadata.stage_alignment_metadata(staging_root)
-
-    assert os.environ["FACETORCH_METADATA_DIR"] == "preserved-value"
-    assert staged == staging_root / "runtime-inputs" / "3dmm" / "meta.pt"
-    assert staged.read_bytes() == payload
-    assert staged.stat().st_mode & 0o777 == 0o644
-    assert staged.parent.stat().st_mode & 0o777 == 0o755
-    report = json.loads(report_path.read_text(encoding="utf-8"))
-    assert report == {
+    expected_report = {
         "schema_version": 1,
         "status": "ok",
         "artifact_id": "align-3dmm-metadata-v1",
@@ -103,6 +106,27 @@ def test_alignment_metadata_is_staged_and_attested_for_offline_smokes(
         "size_bytes": len(payload),
         "sha256": digest,
     }
+
+    monkeypatch.setenv("FACETORCH_METADATA_DIR", "preserved-value")
+    monkeypatch.setattr(alignment_metadata.facetorch, "load_config", fake_load_config)
+    monkeypatch.setattr(
+        alignment_metadata, "instantiate", lambda value: FakeDownloader(value)
+    )
+    monkeypatch.setattr(
+        alignment_metadata,
+        "_alignment_metadata_contract",
+        lambda: expected_report,
+    )
+
+    staged, report_path = alignment_metadata.stage_alignment_metadata(staging_root)
+
+    assert os.environ["FACETORCH_METADATA_DIR"] == "preserved-value"
+    assert staged == staging_root / "runtime-inputs" / "3dmm" / "meta.pt"
+    assert staged.read_bytes() == payload
+    assert staged.stat().st_mode & 0o777 == 0o644
+    assert staged.parent.stat().st_mode & 0o777 == 0o755
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report == expected_report
     descriptor = fake_load_config(
         "cpu", offline=False
     ).analyzer.utilizer.align.downloader_meta

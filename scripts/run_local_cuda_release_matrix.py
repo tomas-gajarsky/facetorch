@@ -101,6 +101,14 @@ def _ensure_evidence_root(path: Path) -> None:
         )
 
 
+def _release_subprocess_environment() -> dict[str, str]:
+    """Return an isolated child environment for candidate-wheel release smokes."""
+    environment = os.environ.copy()
+    environment.pop("PYTHONPATH", None)
+    environment.pop("FACETORCH_METADATA_DIR", None)
+    return environment
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path, default=Path("."))
@@ -298,8 +306,7 @@ def main() -> int:
     ]
     _run(install_command, cwd=staging_root)
     commands.append(install_command)
-    smoke_environment = os.environ.copy()
-    smoke_environment.pop("PYTHONPATH", None)
+    smoke_environment = _release_subprocess_environment()
     alignment_metadata_report = staging_root / "alignment-metadata-report.json"
     stage_metadata_command = [
         str(production_python),
