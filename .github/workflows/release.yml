@@ -289,7 +289,7 @@ jobs:
           uv run --frozen --extra release python scripts/audit_dependencies.py \
             --output-dir "$RUNNER_TEMP/distribution-part/evidence/dependency-audit"
       - name: Generate distribution SBOM
-        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        uses: anchore/sbom-action@aa80c8c5bd439a416a62804f2151ab38c671a638 # v0.24.1
         with:
           path: ${{ runner.temp }}/distribution-part/distributions
           format: spdx-json
@@ -347,7 +347,7 @@ jobs:
             --entrypoint python "facetorch:${FLAVOR}-${SOURCE_SHA}" -c \
             "import facetorch, os; assert os.getuid() != 0; facetorch.load_config('${CONFIG_NAME}', offline=True)"
       - name: Generate ${{ matrix.flavor }} image SBOM
-        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        uses: anchore/sbom-action@aa80c8c5bd439a416a62804f2151ab38c671a638 # v0.24.1
         with:
           image: facetorch:${{ matrix.flavor }}-${{ needs.validate-inputs.outputs.source_sha }}
           format: spdx-json
@@ -887,7 +887,7 @@ jobs:
               output.write(f"remote_digest={digests.pop()}\n")
           PY
       - name: Attest the versioned image manifest
-        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-name: ${{ matrix.repository }}
           subject-digest: ${{ steps.publish.outputs.remote_digest }}
@@ -962,7 +962,7 @@ jobs:
             echo "publish=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Attest exact Python distributions
-        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: ${{ runner.temp }}/release-bundle/distributions/*
       - name: Publish only missing files with PyPI trusted publishing
