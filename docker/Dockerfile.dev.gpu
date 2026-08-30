@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
+FROM nvidia/cuda:13.3.1-runtime-ubuntu22.04
 
 # Set working directory
 ENV WORKDIR=/opt/facetorch
