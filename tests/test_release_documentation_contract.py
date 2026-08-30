@@ -62,6 +62,26 @@ def test_v1_migration_guide_documents_compatibility_and_cache_rollback():
 
 
 @pytest.mark.release_blocker
+def test_rc_onboarding_selects_exact_candidate_channels():
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    migration = (REPO_ROOT / "docs" / "migration-v1.md").read_text(encoding="utf-8")
+    compose = (REPO_ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+
+    combined = f"{readme}\n{migration}"
+    assert '"facetorch==1.0.0rc1"' in combined
+    assert '"torch==2.11.0+cpu"' in combined
+    assert '"torch==2.11.0+cu130"' in combined
+    assert "FACETORCH_DOCKER_TAG=1.0.0-rc.1" in combined
+    assert "${FACETORCH_DOCKER_TAG:-1.0.0-rc.1}" in compose
+    assert "facetorch:latest" not in compose
+    assert "facetorch-gpu:latest" not in compose
+    assert "pip install facetorch\n" not in readme
+    assert "conda install -c conda-forge facetorch" not in readme
+    assert "facetorch-user-guide-a0e9fd2a5552" not in readme
+    assert "facetorch-app" not in readme
+
+
+@pytest.mark.release_blocker
 def test_security_policy_defines_private_contact_and_response_targets():
     security = REPO_ROOT / "SECURITY.md"
     assert security.is_file()
