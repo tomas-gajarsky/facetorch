@@ -413,12 +413,21 @@ def test_local_cuda_release_runner_is_explicit_and_manually_gated():
     runner = (REPO_ROOT / "scripts" / "run_local_cuda_release_matrix.py").read_text(
         encoding="utf-8"
     )
+    smoke = (REPO_ROOT / "scripts" / "smoke_staged_default_analyzer.py").read_text(
+        encoding="utf-8"
+    )
     assert "--golden-reference-root" in runner
     assert 'golden_reference_cohort = "2.6"' in runner
     assert '"record" if cohort == golden_reference_cohort else "reuse"' in runner
+    assert "stage_alignment_metadata.py" in runner
+    assert 'Path("runtime-inputs/3dmm/meta.pt")' in smoke
+    assert 'repo_root / "data" / "3dmm" / "meta.pt"' not in smoke
     assert "--network none --read-only" in content
     assert "--gpus all" in content
     assert "record_container_evidence.py" in content
+    for workflow_name in ("local-gpu-release.yml", "release.yml"):
+        workflow = (WORKFLOW_ROOT / workflow_name).read_text(encoding="utf-8")
+        assert "alignment-metadata-report.json" in workflow
 
 
 @pytest.mark.release_blocker
@@ -598,6 +607,9 @@ def test_container_evidence_requires_linux_amd64_non_root_image(monkeypatch):
         REPO_ROOT / "scripts" / "smoke_staged_default_analyzer.py"
     ).read_text(encoding="utf-8")
     assert 'report.get("uid") != 10001' in recorder_source
+    assert '"align-3dmm-metadata-v1" not in report.get("active_artifacts", [])' in (
+        recorder_source
+    )
     assert '"uid": os.getuid()' in smoke_source
 
 

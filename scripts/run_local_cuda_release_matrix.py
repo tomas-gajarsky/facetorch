@@ -298,9 +298,19 @@ def main() -> int:
     ]
     _run(install_command, cwd=staging_root)
     commands.append(install_command)
-    smoke_report = staging_root / "default-analyzer-cuda-smoke.json"
     smoke_environment = os.environ.copy()
     smoke_environment.pop("PYTHONPATH", None)
+    alignment_metadata_report = staging_root / "alignment-metadata-report.json"
+    stage_metadata_command = [
+        str(production_python),
+        str(repo_root / "scripts" / "stage_alignment_metadata.py"),
+        "--staging-root",
+        str(staging_root),
+    ]
+    _run(stage_metadata_command, cwd=staging_root, environment=smoke_environment)
+    commands.append(stage_metadata_command)
+
+    smoke_report = staging_root / "default-analyzer-cuda-smoke.json"
     smoke_command = [
         str(production_python),
         str(repo_root / "scripts" / "smoke_staged_default_analyzer.py"),
@@ -377,6 +387,7 @@ def main() -> int:
         ],
         "matrix_report_sha256": _sha256(matrix_report),
         "wheel": {"filename": wheels[0].name, "sha256": _sha256(wheels[0])},
+        "alignment_metadata_report_sha256": _sha256(alignment_metadata_report),
         "default_analyzer_smoke_sha256": _sha256(smoke_report),
         "notebook_report_sha256": _sha256(notebook_report),
         "executed_notebook_sha256": _sha256(notebook_path),

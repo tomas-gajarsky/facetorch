@@ -18,6 +18,10 @@ import torch
 import facetorch
 from facetorch.artifacts import ArtifactManifest, verify_artifact
 
+ALIGNMENT_METADATA_ID = "align-3dmm-metadata-v1"
+ALIGNMENT_METADATA_RELATIVE_PATH = Path("runtime-inputs/3dmm/meta.pt")
+ALIGNMENT_METADATA_REPORT = Path("alignment-metadata-report.json")
+
 
 def _read_json(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"))
@@ -160,8 +164,64 @@ def _promote_candidate(source: Path, target: Path, descriptor) -> None:
             temporary.unlink(missing_ok=True)
 
 
+def _staged_alignment_metadata(staging_root: Path, descriptor) -> Path:
+    report_path = _bounded_file(
+        staging_root,
+        ALIGNMENT_METADATA_REPORT,
+        ALIGNMENT_METADATA_REPORT,
+    )
+    report = _read_json(report_path)
+    expected_sha256 = str(descriptor.sha256)
+    expected_size = int(descriptor.size_bytes)
+    expected = {
+        "schema_version": 1,
+        "status": "ok",
+        "artifact_id": ALIGNMENT_METADATA_ID,
+        "source": "gdrive",
+        "downloader": str(descriptor._target_),
+        "file_id": str(descriptor.file_id),
+        "revision": str(descriptor.revision),
+        "expected_format": str(descriptor.expected_format),
+        "staged_path": ALIGNMENT_METADATA_RELATIVE_PATH.as_posix(),
+        "size_bytes": expected_size,
+        "sha256": expected_sha256,
+    }
+    if report != expected:
+        raise RuntimeError("Staged alignment metadata report is not canonical")
+    source = _bounded_file(
+        staging_root,
+        report["staged_path"],
+        ALIGNMENT_METADATA_RELATIVE_PATH,
+    )
+    if source.stat().st_size != expected_size or _sha256(source) != expected_sha256:
+        raise RuntimeError("Staged alignment metadata failed its byte binding")
+    return source
+
+
+def _promote_metadata(source: Path, target: Path, descriptor) -> None:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.expanduser().absolute() == source:
+        return
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=target.parent, delete=False) as output:
+            temporary = Path(output.name)
+            with source.open("rb") as input_file:
+                shutil.copyfileobj(input_file, output, length=1024 * 1024)
+            output.flush()
+            os.fsync(output.fileno())
+        if temporary.stat().st_size != int(descriptor.size_bytes) or _sha256(
+            temporary
+        ) != str(descriptor.sha256):
+            raise RuntimeError("Copied alignment metadata failed its byte binding")
+        os.replace(temporary, target)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
 def _prepare_cache(
-    repo_root: Path,
+    staging_root: Path,
     config,
     manifest: ArtifactManifest,
     staged_paths: Mapping[str, Path],
@@ -183,15 +243,10 @@ def _prepare_cache(
         artifact_ids.append(descriptor.artifact_id)
 
     metadata = config.analyzer.utilizer.align.downloader_meta
-    metadata_source = repo_root / "data" / "3dmm" / "meta.pt"
+    metadata_source = _staged_alignment_metadata(staging_root, metadata)
     metadata_target = Path(str(metadata.path_local))
-    if (
-        metadata_source.stat().st_size != int(metadata.size_bytes)
-        or _sha256(metadata_source) != str(metadata.sha256)
-    ):
-        raise RuntimeError("Packaged 3D alignment metadata failed its binding")
-    metadata_target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(metadata_source, metadata_target)
+    _promote_metadata(metadata_source, metadata_target, metadata)
+    artifact_ids.append(ALIGNMENT_METADATA_ID)
     return artifact_ids
 
 
@@ -235,7 +290,7 @@ def main() -> int:
     profile = "gpu" if args.device == "cuda" else "cpu"
     config = facetorch.load_config(profile, offline=True)
     artifact_ids = _prepare_cache(
-        repo_root, config, manifest, staged_paths, args.device
+        staging_root, config, manifest, staged_paths, args.device
     )
 
     import facetorch.downloader as downloader_module
