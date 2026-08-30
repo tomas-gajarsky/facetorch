@@ -256,6 +256,24 @@ def test_release_pipeline_has_a_no_publish_dry_run():
 
 
 @pytest.mark.release_blocker
+def test_automatic_dry_run_has_the_reusable_workflow_permission_envelope():
+    auto_path = REPO_ROOT / ".github" / "workflows" / "auto-release.yml"
+    auto_text = auto_path.read_text(encoding="utf-8")
+    auto = _workflow(auto_path)
+    coordinated = auto["jobs"]["coordinated-dry-run"]
+
+    assert auto["permissions"] == {"actions": "read", "contents": "read"}
+    assert coordinated["permissions"] == {
+        "actions": "read",
+        "attestations": "write",
+        "contents": "write",
+        "id-token": "write",
+    }
+    assert coordinated["with"]["dry_run"] is True
+    assert '      - ".github/workflows/auto-release.yml"' in auto_text
+
+
+@pytest.mark.release_blocker
 def test_release_plan_requires_the_exact_full_byte_model_audit():
     workflow = _workflow(REPO_ROOT / ".github" / "workflows" / "release.yml")
     audit = workflow["jobs"]["audit-model-release"]

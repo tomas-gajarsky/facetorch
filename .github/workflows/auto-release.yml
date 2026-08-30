@@ -7,6 +7,7 @@ on:
       - "pyproject.toml"
       - "CHANGELOG.md"
       - "facetorch/models/**"
+      - ".github/workflows/auto-release.yml"
       - ".github/workflows/release.yml"
 
 permissions:
@@ -98,6 +99,15 @@ jobs:
   coordinated-dry-run:
     if: needs.resolve-dry-run-inputs.outputs.configured == 'true'
     needs: resolve-dry-run-inputs
+    # Reusable workflows cannot request more than the caller's permission
+    # envelope. Publication jobs in release.yml need these scopes when invoked
+    # manually with dry_run=false; the automatic call remains dry-run-only, and
+    # every write-capable nested job is conditionally excluded in that mode.
+    permissions:
+      actions: read
+      attestations: write
+      contents: write
+      id-token: write
     uses: ./.github/workflows/release.yml
     with:
       source_sha: ${{ needs.resolve-dry-run-inputs.outputs.source_sha }}
