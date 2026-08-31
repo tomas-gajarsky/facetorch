@@ -68,6 +68,34 @@ dependent utilizer runs only after all of its declared predictors succeed. A
 selected predictor requires a configured face unifier, including with
 `skip_detector=True`; use `include_predictors=[]` for predictor-free processing.
 
+## Custom predictor and detector migration
+
+The v1 model manifest governs only models shipped as facetorch defaults. It does
+not prevent applications from installing their own predictor or detector. An
+already constructed component can be assigned through
+`analyzer.predictors["name"]` or `analyzer.detector`; this path does not require a
+facetorch manifest entry.
+
+For a custom Hugging Face artifact configured through facetorch's downloader,
+omit `manifest_id` and provide the real filename, immutable 40-character Hub
+commit, SHA-256, byte size, expected format, and device. A built-in config does
+the opposite: it uses its approved `manifest_id` and must agree with the packaged
+repository and revision. Do not add a private model to facetorch's manifest just
+to make an application config load.
+
+External Hydra deployments should migrate from source-relative
+`OmegaConf.load("conf/config.yaml")` calls to `load_config_from_path()`. Custom
+classes referenced by `_target_` must be importable from the installed
+environment, and their constructors must explicitly declare every configured
+option. Legacy custom TorchScript files require `allow_legacy_models=True`; new
+extensions should use digest-pinned `.pt2` artifacts validated on the exact Torch
+minor and device they claim.
+
+See the [custom predictor and detector guide](custom-components.md) for runnable
+component injection, direct-artifact YAML, detector coordinate responsibilities,
+cohort guidance, and the separate process for contributing an officially shipped
+model.
+
 ## Models, cache, and offline deployment
 
 v1 selects one digest-pinned artifact for the active PyTorch/device cohort.
