@@ -3266,6 +3266,9 @@ class InputSpec:
     Fields may be omitted in ``coerce`` mode. In ``strict`` mode, callers must
     declare any representation that differs from the source-specific exact
     defaults: uint8 RGB, CHW for Torch, and HWC for NumPy.
+
+    NumPy arrays that look channel-first or are plausible under both conventions
+    require an explicit ``CHW``/``BCHW`` or ``HWC``/``BHWC`` layout.
     &#34;&#34;&#34;
 
     layout: Optional[InputLayout] = None
@@ -3307,7 +3310,9 @@ class InputSpec:
 <div class="desc"><p>Explicitly describes an array or tensor image representation.</p>
 <p>Fields may be omitted in <code>coerce</code> mode. In <code>strict</code> mode, callers must
 declare any representation that differs from the source-specific exact
-defaults: uint8 RGB, CHW for Torch, and HWC for NumPy.</p></div>
+defaults: uint8 RGB, CHW for Torch, and HWC for NumPy.</p>
+<p>NumPy arrays that look channel-first or are plausible under both conventions
+require an explicit <code>CHW</code>/<code>BCHW</code> or <code>HWC</code>/<code>BHWC</code> layout.</p></div>
 <h3>Instance variables</h3>
 <dl>
 <dt id="facetorch.InputSpec.layout"><code class="name">var <span class="ident">layout</span> : Literal['HW', 'CHW', 'HWC', 'BCHW', 'BHWC'] | None</code></dt>

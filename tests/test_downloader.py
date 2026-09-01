@@ -19,6 +19,7 @@ from facetorch.downloader import (
     _DirectoryLock,
     _atomic_promote,
     _ensure_directory,
+    _fsync_directory,
     _quarantine,
 )
 from facetorch.exceptions import (
@@ -731,12 +732,54 @@ def test_atomic_promotion_renames_same_filesystem_candidate(tmp_path):
     descriptor = _manifest(candidate).descriptor("toy-torch2.11")
     target = tmp_path / descriptor.filename
 
-    with patch("facetorch.downloader.shutil.copyfileobj") as copy:
+    with (
+        patch("facetorch.downloader.shutil.copyfileobj") as copy,
+        patch("facetorch.downloader._fsync_directory") as sync_directory,
+    ):
         _atomic_promote(candidate, target, descriptor)
 
     copy.assert_not_called()
+    sync_directory.assert_called_once_with(target.parent)
     assert target.is_file()
     assert not candidate.exists()
+
+
+@pytest.mark.unit
+@pytest.mark.downloader
+def test_directory_fsync_closes_descriptor_when_sync_fails(tmp_path):
+    if os.name == "nt":
+        pytest.skip("Directory fsync is not available on Windows.")
+
+    with (
+        patch("facetorch.downloader.os.open", return_value=41) as open_directory,
+        patch("facetorch.downloader.os.fsync", side_effect=OSError("sync failed")),
+        patch("facetorch.downloader.os.close") as close_directory,
+    ):
+        with pytest.raises(OSError, match="sync failed"):
+            _fsync_directory(tmp_path)
+
+    open_directory.assert_called_once_with(
+        os.fspath(tmp_path), os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+    )
+    close_directory.assert_called_once_with(41)
+
+
+@pytest.mark.unit
+@pytest.mark.downloader
+def test_atomic_promotion_surfaces_directory_sync_failure_after_publish(tmp_path):
+    candidate = _make_export(tmp_path / "candidate.pt2")
+    descriptor = _manifest(candidate).descriptor("toy-torch2.11")
+    target = tmp_path / descriptor.filename
+
+    with patch(
+        "facetorch.downloader._fsync_directory",
+        side_effect=OSError("directory sync failed"),
+    ):
+        with pytest.raises(OSError, match="directory sync failed"):
+            _atomic_promote(candidate, target, descriptor)
+
+    assert target.is_file()
+    assert detect_model_format(target) == "pt2"
 
 
 @pytest.mark.unit

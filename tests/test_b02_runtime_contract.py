@@ -163,6 +163,40 @@ def test_torch_hwc_requires_an_explicit_layout():
 
 
 @pytest.mark.parametrize(
+    ("source", "layout", "expected_shape"),
+    [
+        (np.zeros((3, 8, 9), dtype=np.uint8), "CHW", (1, 3, 8, 9)),
+        (np.zeros((1, 3, 8, 9), dtype=np.uint8), "BCHW", (1, 3, 8, 9)),
+    ],
+)
+def test_numpy_channel_first_requires_an_explicit_layout(
+    source, layout, expected_shape
+):
+    reader = UniversalReader(None, torch.device("cpu"), False)
+    with pytest.raises(InputError, match=rf'InputSpec\(layout="{layout}"\)'):
+        reader.run(source)
+
+    result = reader.run(source, input_spec=InputSpec(layout=layout))
+    assert result.tensor.shape == expected_shape
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        np.zeros((3, 8, 3), dtype=np.uint8),
+        np.zeros((3, 224, 4), dtype=np.uint8),
+    ],
+)
+def test_numpy_layout_ambiguity_requires_an_explicit_layout(source):
+    reader = UniversalReader(None, torch.device("cpu"), False)
+    with pytest.raises(InputError, match="layout-ambiguous"):
+        reader.run(source)
+
+    result = reader.run(source, input_spec=InputSpec(layout="CHW"))
+    assert result.tensor.shape == (1, *source.shape)
+
+
+@pytest.mark.parametrize(
     "source",
     [
         torch.zeros((2, 3, 8, 9), dtype=torch.uint8),
@@ -190,14 +224,29 @@ def test_invalid_numeric_inputs_are_rejected(source):
         reader.run(source)
 
 
+def test_inferred_integer_range_error_does_not_blame_input_spec():
+    reader = TensorReader(None, torch.device("cpu"), False)
+    source = torch.full((3, 8, 9), -5, dtype=torch.int8)
+
+    with pytest.warns(InputCoercionWarning):
+        with pytest.raises(InputError, match="Integer image range") as exc_info:
+            reader.run(source)
+
+    assert "InputSpec declares" not in str(exc_info.value)
+    with pytest.raises(InputError, match="InputSpec declares 0..255"):
+        reader.run(source, input_spec=InputSpec(value_range="0_255"))
+
+
 @pytest.mark.parametrize("width", [1, 3, 4])
-def test_small_spatial_dimensions_do_not_change_source_layout_conventions(width):
+def test_small_spatial_dimensions_support_an_explicit_numpy_layout(width):
     reader = UniversalReader(None, torch.device("cpu"), False)
     torch_chw = torch.zeros((3, 4, width), dtype=torch.uint8)
     numpy_hwc = np.zeros((4, width, 3), dtype=np.uint8)
 
     assert reader.run(torch_chw).tensor.shape == (1, 3, 4, width)
-    assert reader.run(numpy_hwc).tensor.shape == (1, 3, 4, width)
+    assert reader.run(
+        numpy_hwc, input_spec=InputSpec(layout="HWC")
+    ).tensor.shape == (1, 3, 4, width)
 
 
 def test_contradictory_input_spec_is_actionable():
@@ -779,6 +828,19 @@ def test_default_detector_bounds_large_input_and_restores_source_coordinates():
     ]
     assert result.faces[0].loc == Location(x1=20, y1=40, x2=100, y2=200)
     assert torch.equal(result.faces[0].tensor, raw[0, :, 40:200, 20:100])
+
+
+def test_detector_coordinate_scaling_dealiases_boxes_from_dets():
+    dets = torch.tensor([[10.0, 20.0, 30.0, 40.0, 0.9]])
+    data = ImageData(det=Detection(dets=dets, boxes=dets[:, :4]))
+
+    FaceDetector._scale_detection_geometry(data, 2.0, 2.0)
+
+    assert data.det.dets[0, :4].tolist() == [20.0, 40.0, 60.0, 80.0]
+    assert data.det.boxes[0].tolist() == [20.0, 40.0, 60.0, 80.0]
+    dets_before = data.det.dets.clone()
+    data.det.boxes.zero_()
+    assert torch.equal(data.det.dets, dets_before)
 
 
 def test_detector_defensively_clones_for_custom_preprocessor():

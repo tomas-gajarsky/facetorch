@@ -23,6 +23,9 @@ class InputSpec:
     Fields may be omitted in ``coerce`` mode. In ``strict`` mode, callers must
     declare any representation that differs from the source-specific exact
     defaults: uint8 RGB, CHW for Torch, and HWC for NumPy.
+
+    NumPy arrays that look channel-first or are plausible under both conventions
+    require an explicit ``CHW``/``BCHW`` or ``HWC``/``BHWC`` layout.
     """
 
     layout: Optional[InputLayout] = None
@@ -157,6 +160,23 @@ def canonicalize_image_tensor(
         raise InputError(f"Unsupported image dtype {tensor.dtype}.")
 
     layout = spec.layout or _default_layout(tensor, source_kind)
+    if spec.layout is None and source_kind == "numpy" and tensor.ndim in {3, 4}:
+        channel_axis = int(tensor.shape[1] if tensor.ndim == 4 else tensor.shape[0])
+        trailing_axis = int(tensor.shape[-1])
+        if channel_axis in {1, 3, 4}:
+            channel_first = "BCHW" if tensor.ndim == 4 else "CHW"
+            channel_last = "BHWC" if tensor.ndim == 4 else "HWC"
+            if trailing_axis not in {1, 3, 4}:
+                raise InputError(
+                    f"NumPy input shape {tuple(tensor.shape)} looks like "
+                    f'{channel_first}; pass InputSpec(layout="{channel_first}") '
+                    "explicitly."
+                )
+            raise InputError(
+                f"NumPy input shape {tuple(tensor.shape)} is layout-ambiguous; "
+                f'pass InputSpec(layout="{channel_last}") or '
+                f'InputSpec(layout="{channel_first}") explicitly.'
+            )
     if (
         spec.layout is None
         and source_kind == "torch"
@@ -208,6 +228,7 @@ def canonicalize_image_tensor(
     maximum = float(bounds.max().item())
     del bounds
 
+    value_range_declared = spec.value_range is not None
     value_range = spec.value_range
     if value_range is None:
         if policy == "strict":
@@ -254,8 +275,15 @@ def canonicalize_image_tensor(
         numeric = numeric.to(torch.float32) * 255.0
     else:
         if minimum < 0.0 or maximum > 255.0:
+            if value_range_declared:
+                raise InputError(
+                    f"InputSpec declares 0..255 but observed range "
+                    f"[{minimum}, {maximum}]."
+                )
             raise InputError(
-                f"InputSpec declares 0..255 but observed range [{minimum}, {maximum}]."
+                f"Integer image range [{minimum}, {maximum}] is unsupported; "
+                "expected 0..255. Declare InputSpec.value_range if the input "
+                "uses a different convention."
             )
         numeric = numeric.to(torch.float32)
 

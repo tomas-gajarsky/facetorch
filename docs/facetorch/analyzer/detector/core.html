@@ -145,18 +145,24 @@ el.replaceWith(d);
         if scale_x == 1.0 and scale_y == 1.0:
             return
         if data.det.dets.numel() &gt; 0 and data.det.dets.ndim == 2:
-            data.det.dets[:, 0].mul_(scale_x)
-            data.det.dets[:, 2].mul_(scale_x)
-            data.det.dets[:, 1].mul_(scale_y)
-            data.det.dets[:, 3].mul_(scale_y)
+            dets = data.det.dets.clone()
+            dets[:, 0].mul_(scale_x)
+            dets[:, 2].mul_(scale_x)
+            dets[:, 1].mul_(scale_y)
+            dets[:, 3].mul_(scale_y)
+            data.det.dets = dets
         if data.det.boxes.numel() &gt; 0 and data.det.boxes.ndim == 2:
-            data.det.boxes[:, 0].mul_(scale_x)
-            data.det.boxes[:, 2].mul_(scale_x)
-            data.det.boxes[:, 1].mul_(scale_y)
-            data.det.boxes[:, 3].mul_(scale_y)
+            boxes = data.det.boxes.clone()
+            boxes[:, 0].mul_(scale_x)
+            boxes[:, 2].mul_(scale_x)
+            boxes[:, 1].mul_(scale_y)
+            boxes[:, 3].mul_(scale_y)
+            data.det.boxes = boxes
         if data.det.landmarks.numel() &gt; 0 and data.det.landmarks.ndim == 2:
-            data.det.landmarks[:, 0::2].mul_(scale_x)
-            data.det.landmarks[:, 1::2].mul_(scale_y)
+            landmarks = data.det.landmarks.clone()
+            landmarks[:, 0::2].mul_(scale_x)
+            landmarks[:, 1::2].mul_(scale_y)
+            data.det.landmarks = landmarks
 
     @staticmethod
     def _clamp_detection_geometry(
