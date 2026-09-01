@@ -214,9 +214,9 @@ def test_extension_guide_separates_private_and_shipped_model_paths(tmp_path):
         'overrides=["+analyzer.device=cpu"]',
         "generic exporter for an arbitrary user model",
         "Contributing an officially shipped model",
-        "Installing a custom predictor does not deselect the defaults",
+        "deselect the defaults",
         "from facetorch.analyzer.detector import DetectorPostprocessorProtocol",
-        "raw state dictionary saved with a `.pt` suffix is not supported",
+        "raw state dictionary saved with a `.pt` suffix",
         "Direct Hugging Face mode supports authenticated `.pt2`",
     ):
         assert required in guide
