@@ -275,6 +275,18 @@ def _ensure_directory(path: Path) -> None:
         ) from exc
 
 
+def _fsync_directory(path: Path) -> None:
+    """Persist a completed directory-entry update on supported platforms."""
+    if os.name == "nt":
+        return
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+    directory_fd = os.open(os.fspath(path), flags)
+    try:
+        os.fsync(directory_fd)
+    finally:
+        os.close(directory_fd)
+
+
 def _quarantine(path: Path, reason: str) -> Optional[Path]:
     """Atomically retain an invalid cache entry under a visible quarantine name."""
     if not path.exists():
@@ -325,6 +337,7 @@ def _atomic_promote(
                 os.fsync(staging.fileno())
         verify_artifact(staging_path, descriptor)
         os.replace(staging_path, target)
+        _fsync_directory(target.parent)
     finally:
         if staging_path is not None:
             staging_path.unlink(missing_ok=True)

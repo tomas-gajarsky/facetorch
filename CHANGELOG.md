@@ -95,6 +95,14 @@ when the immutable v1.0.0-rc.1 tag and all publication receipts have been verifi
   explicit CPU/GPU PyTorch cohort, and pins immutable Docker image tags
 
 ### Fixed
+* NumPy arrays that look CHW/BCHW or are plausible under both channel-first and
+  channel-last conventions now require an explicit layout instead of guessing
+* Inferred signed-integer range failures no longer claim that the caller supplied
+  an `InputSpec`
+* Detector coordinate restoration no longer applies the resize scale twice when
+  custom postprocessors expose `boxes` as a view of `dets`
+* Atomic model-cache promotion fsyncs the parent directory after publishing the
+  verified artifact
 * Model-cache locks publish complete ownership records atomically before they
   become visible to competing downloaders
 * URLReader charges DNS resolution against its total deadline and rejects
