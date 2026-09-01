@@ -189,6 +189,28 @@ def tag_for_project_version(version: str) -> str:
     return f"v{match.group('base')}{suffix}"
 
 
+def release_notes_for_version(changelog: str, version: str) -> str:
+    """Extract one non-empty Markdown changelog section for a release."""
+
+    heading = re.compile(
+        rf"^##[ \t]+{re.escape(str(version).strip())}(?:[ \t].*)?$",
+        re.MULTILINE,
+    )
+    matches = list(heading.finditer(changelog))
+    if not matches:
+        raise ReleaseError(f"CHANGELOG.md has no section for version {version}")
+    if len(matches) != 1:
+        raise ReleaseError(f"CHANGELOG.md has duplicate sections for version {version}")
+
+    start = matches[0].end()
+    following = re.search(r"^##[ \t]+", changelog[start:], re.MULTILINE)
+    end = len(changelog) if following is None else start + following.start()
+    notes = changelog[start:end].strip()
+    if not notes:
+        raise ReleaseError("Release changelog section is empty")
+    return notes + "\n"
+
+
 def _run_git(repo_root: Path, *arguments: str, check: bool = True) -> str:
     result = subprocess.run(
         ["git", *arguments],
@@ -2007,6 +2029,11 @@ def _parse_args() -> argparse.Namespace:
     tag = subparsers.add_parser("tag-for-version")
     tag.add_argument("version")
 
+    release_notes = subparsers.add_parser("release-notes")
+    release_notes.add_argument("--changelog", required=True)
+    release_notes.add_argument("--version", required=True)
+    release_notes.add_argument("--output", required=True)
+
     fetch = subparsers.add_parser("fetch-model-manifest")
     fetch.add_argument("--repo", required=True)
     fetch.add_argument("--revision", required=True)
@@ -2100,6 +2127,12 @@ def main() -> int:
     args = _parse_args()
     if args.command == "tag-for-version":
         print(tag_for_project_version(args.version))
+        return 0
+    if args.command == "release-notes":
+        notes = release_notes_for_version(
+            Path(args.changelog).read_text(encoding="utf-8"), args.version
+        )
+        _write_bytes_atomic(Path(args.output), notes.encode("utf-8"))
         return 0
     if args.command == "fetch-model-manifest":
         report = fetch_model_manifest(

@@ -51,7 +51,7 @@ Please use this library responsibly and with caution. Adhere to the [European Co
 ## Install
 
 > [!IMPORTANT]
-> This documentation targets **`1.0.0rc1` (Beta)**. Install the exact candidate
+> This documentation targets **`1.0.0rc2` (Beta)**. Install the exact candidate
 > only after it appears on [PyPI](https://pypi.org/project/facetorch/). Bare
 > `pip install facetorch` and Docker `latest` remain on the stable `0.6.2` line
 > during the RC soak. Conda-forge is asynchronous and must be verified separately.
@@ -66,7 +66,7 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install --index-url https://download.pytorch.org/whl/cpu \
   "torch==2.11.0+cpu" "torchvision==0.26.0+cpu"
-python -m pip install "facetorch==1.0.0rc1"
+python -m pip install "facetorch==1.0.0rc2"
 ```
 
 For the validated CUDA 13.0 cohort, use a compatible NVIDIA host and replace the
@@ -84,7 +84,7 @@ space while downloads are staged.
 
 [Conda-forge](https://anaconda.org/conda-forge/facetorch) remains an asynchronous
 channel. Do not use its unversioned install command for the RC; wait until the
-feedstock displays `1.0.0rc1`, then pin that exact version.
+feedstock displays `1.0.0rc2`, then pin that exact version.
 
 ## Usage
 
@@ -103,7 +103,7 @@ non-root container never needs write access to the source checkout.
 CPU:
 
 ```bash
-FACETORCH_DOCKER_TAG=1.0.0-rc.1 docker compose run --rm facetorch \
+FACETORCH_DOCKER_TAG=1.0.0-rc.2 docker compose run --rm facetorch \
   python /opt/facetorch/example.py /workspace/data/input/test.jpg \
   --output /workspace/data/output/test.png
 ```
@@ -111,7 +111,7 @@ FACETORCH_DOCKER_TAG=1.0.0-rc.1 docker compose run --rm facetorch \
 GPU:
 
 ```bash
-FACETORCH_DOCKER_TAG=1.0.0-rc.1 docker compose run --rm facetorch-gpu \
+FACETORCH_DOCKER_TAG=1.0.0-rc.2 docker compose run --rm facetorch-gpu \
   python /opt/facetorch/example.py /workspace/data/input/test.jpg \
   --profile gpu --output /workspace/data/output/test-gpu.png
 ```
@@ -119,7 +119,7 @@ FACETORCH_DOCKER_TAG=1.0.0-rc.1 docker compose run --rm facetorch-gpu \
 Copy a result from the persistent volume into the checkout when needed:
 
 ```bash
-FACETORCH_DOCKER_TAG=1.0.0-rc.1 docker compose run --rm -T facetorch \
+FACETORCH_DOCKER_TAG=1.0.0-rc.2 docker compose run --rm -T facetorch \
   cat /workspace/data/output/test.png > data/output/test.png
 ```
 

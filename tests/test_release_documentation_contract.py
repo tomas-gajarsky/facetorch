@@ -53,7 +53,7 @@ def test_unpublished_v1_changelog_is_not_marked_as_released():
 
 
 @pytest.mark.release_blocker
-def test_rc1_identity_and_model_governance_prose_are_consistent():
+def test_current_rc_identity_and_model_governance_prose_are_consistent():
     project = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
     changelog = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
     readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
@@ -61,8 +61,8 @@ def test_rc1_identity_and_model_governance_prose_are_consistent():
         encoding="utf-8"
     )
 
-    assert 'version = "1.0.0rc1"' in project
-    assert "v1.0.0-rc.1" in changelog
+    assert 'version = "1.0.0rc2"' in project
+    assert "v1.0.0-rc.2" in changelog
     assert "release_eligible: false" not in compatibility
     assert "governance is still incomplete" not in compatibility
     assert "all ten records are release-eligible" in readme.lower()
@@ -92,11 +92,11 @@ def test_rc_onboarding_selects_exact_candidate_channels():
     compose = (REPO_ROOT / "docker-compose.yml").read_text(encoding="utf-8")
 
     combined = f"{readme}\n{migration}"
-    assert '"facetorch==1.0.0rc1"' in combined
+    assert '"facetorch==1.0.0rc2"' in combined
     assert '"torch==2.11.0+cpu"' in combined
     assert '"torch==2.11.0+cu130"' in combined
-    assert "FACETORCH_DOCKER_TAG=1.0.0-rc.1" in combined
-    assert "${FACETORCH_DOCKER_TAG:-1.0.0-rc.1}" in compose
+    assert "FACETORCH_DOCKER_TAG=1.0.0-rc.2" in combined
+    assert "${FACETORCH_DOCKER_TAG:-1.0.0-rc.2}" in compose
     assert "facetorch:latest" not in compose
     assert "facetorch-gpu:latest" not in compose
     assert "pip install facetorch\n" not in readme

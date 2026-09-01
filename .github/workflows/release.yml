@@ -703,22 +703,9 @@ jobs:
           TAG: ${{ needs.validate-inputs.outputs.tag }}
           VERSION: ${{ needs.resolve-candidate.outputs.version }}
         run: |
-          python - <<'PY'
-          import os
-          from pathlib import Path
-          import re
-
-          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
-          version = re.escape(os.environ["VERSION"])
-          match = re.search(
-              rf"(?ms)^##\s+{version}(?:\s.*)?$\n(.*?)(?=^##\s|\Z)", changelog
-          )
-          if match is None or not match.group(1).strip():
-              raise SystemExit("Release changelog section is empty")
-          Path(os.environ["RUNNER_TEMP"], "release-notes.md").write_text(
-              match.group(1).strip() + "\n", encoding="utf-8"
-          )
-          PY
+          python scripts/release_transaction.py release-notes \
+            --changelog CHANGELOG.md --version "$VERSION" \
+            --output "$RUNNER_TEMP/release-notes.md"
           if gh release view "$TAG" --json tagName,isDraft,isPrerelease,name,body > "$RUNNER_TEMP/release.json" 2>/dev/null; then
             test "$(jq -r .tagName "$RUNNER_TEMP/release.json")" = "$TAG"
             test "$(jq -r .isDraft "$RUNNER_TEMP/release.json")" = "true"

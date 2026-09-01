@@ -15,6 +15,7 @@ from scripts.release_transaction import (
     prepare_release_plan,
     pypi_distribution_state,
     record_channel,
+    release_notes_for_version,
     run_publication_transaction,
     validate_local_image_id,
     validate_model_audit_report,
@@ -544,6 +545,44 @@ def test_release_tag_parser_rejects_shell_text_and_normalizes_rc():
     ):
         with pytest.raises(ReleaseError):
             parse_release_tag(unsafe)
+
+
+@pytest.mark.release_blocker
+def test_release_notes_extractor_keeps_heading_suffix_on_one_line():
+    changelog = """# Change Log
+
+## 1.0.0rc2 (Unreleased)
+
+Candidate release notes.
+
+### Fixed
+
+* Release gate repaired.
+
+## 0.6.2
+
+Older release notes.
+"""
+
+    assert release_notes_for_version(changelog, "1.0.0rc2") == (
+        "Candidate release notes.\n\n### Fixed\n\n* Release gate repaired.\n"
+    )
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    "changelog",
+    (
+        "# Change Log\n\n## 0.6.2\n\nOlder release.\n",
+        "# Change Log\n\n## 1.0.0rc2 (Unreleased)\n\n## 0.6.2\n",
+        "# Change Log\n\n## 1.0.0rc2\n\nOne.\n\n## 1.0.0rc2\n\nTwo.\n",
+    ),
+)
+def test_release_notes_extractor_rejects_missing_empty_or_duplicate_sections(
+    changelog,
+):
+    with pytest.raises(ReleaseError):
+        release_notes_for_version(changelog, "1.0.0rc2")
 
 
 @pytest.mark.release_blocker
