@@ -117,10 +117,13 @@ assert "mean_intensity" in analyzer.loaded_predictors
 ```
 <!-- facetorch-extension-runtime-example:end -->
 
-Runtime installation replaces a configured component with the supplied object.
-It is not lazy with respect to construction performed by the application, but
-the analyzer still runs only predictors selected through `include_predictors`
-or not removed through `exclude_predictors`.
+Assigning an existing detector or predictor name replaces that configured
+component with the supplied object. Assigning a new predictor name adds it and
+leaves every built-in predictor configured. Installing a custom predictor does
+not deselect the defaults: pass `include_predictors=[...]` or
+`exclude_predictors=[...]` on `run()` to prevent the unwanted built-ins from
+being constructed and downloaded. Runtime installation is not lazy with respect
+to construction already performed by the application.
 
 ### Custom predictor contract
 
@@ -159,7 +162,13 @@ responsibilities:
 
 For stronger guardrails, build on `FaceDetector` with a custom preprocessor and
 postprocessor instead of replacing the entire detector. Its public
-`DetectorPostprocessorProtocol` requires `run(data, logits) -> ImageData`.
+`DetectorPostprocessorProtocol` requires `run(data, logits) -> ImageData` and is
+available from:
+
+```python
+from facetorch.analyzer.detector import DetectorPostprocessorProtocol
+```
+
 `FaceDetector` retains the source tensor, clamps public geometry, and recrops
 faces produced by a custom postprocessor. With facetorch's
 `DetectorPreProcessor`, it also maps resized detector coordinates back to the
@@ -169,6 +178,11 @@ coordinate transform. Facetorch's private resize-scale handoff is not a stable
 extension API. A postprocessor may alternatively expose `extract_faces(data)`;
 that hook is called after the source tensor and any configured coordinate scale
 have been restored.
+
+A fully custom detector may leave `data.det` empty when only face crops are
+needed. Analysis still succeeds, but `include_tensors=True` returns empty public
+detection tensors and the `draw_boxes` and `draw_landmarks` utilizers have no
+geometry to draw.
 
 A custom detector preprocessor is assumed capable of mutating its input, so the
 wrapper keeps a defensive source copy by default. Do not set
@@ -185,7 +199,6 @@ from facetorch import FaceAnalyzer, load_config_from_path
 
 cfg = load_config_from_path(
     "/srv/my-application/facetorch-config/config.yaml",
-    profile="cpu",
 )
 analyzer = FaceAnalyzer(cfg.analyzer)
 ```
@@ -194,6 +207,12 @@ The parent of `config.yaml` becomes Hydra's configuration root. Its `defaults`
 list and sibling groups compose normally. Relative paths are resolved from the
 caller's working directory before composition. Use `load_config_from_path()`;
 plain `OmegaConf.load()` does not compose Hydra defaults.
+
+The `profile=`, `offline=`, and `allow_legacy_models=` arguments become Hydra
+overrides. They therefore require an external root config that already defines
+`analyzer.device`, `offline`, and `allow_legacy_models`, respectively. Omit an
+argument when its key is absent, or add the key explicitly through an override
+such as `overrides=["+analyzer.device=cpu"]`.
 
 Every `_target_` must be importable in the installed environment. Keep custom
 Python classes in the application package rather than in the configuration
@@ -259,8 +278,14 @@ postprocessor:
 ```
 <!-- facetorch-direct-artifact-yaml:end -->
 
-`file_id` is retained for downloader API compatibility and may equal `repo_id`.
-There is intentionally no `manifest_id` in this direct external configuration.
+`file_id` is retained for downloader API compatibility and should equal
+`repo_id` in a new Hugging Face configuration. Some shipped configurations keep
+legacy Google Drive IDs in this inert field for source compatibility; do not
+copy those values into a new Hugging Face config. There is intentionally no
+`manifest_id` in this direct external configuration. `path_local` selects the
+cache directory; its basename is ignored and the artifact is always stored under
+the authenticated `filename`.
+
 The `revision` must be the Hub commit produced after upload, not `main`, a branch,
 or a tag. `filename`, `sha256`, and `size_bytes` must all describe that commit's
 same file. On the officially supported Linux platform, obtain local values with:
@@ -288,11 +313,16 @@ bytes.
 
 An application may implement `BaseDownloader.run()` and point `path_local` at a
 model it manages itself. `BaseModel` can load an exported `.pt2`, a legacy
-TorchScript `.pt`, or a `.pt`/`.pth` state dictionary when `native_model_class`
-names the matching `torch.nn.Module` class. This bypasses the built-in remote
-integrity policy when `verify_on_use` is false, so the application must
-authenticate the source and verify bytes before constructing the predictor or
-detector. Prefer direct Hugging Face mode when facetorch can perform those
+TorchScript `.pt`, a raw `.pth` state dictionary when `native_model_class` names
+the matching `torch.nn.Module`, or a state dictionary extracted from a
+TorchScript `.pt` module. A raw state dictionary saved with a `.pt` suffix is not
+supported. This path bypasses the built-in remote integrity policy when
+`verify_on_use` is false, so the application must authenticate the source and
+verify bytes before constructing the predictor or detector.
+
+Direct Hugging Face mode supports authenticated `.pt2` and verified TorchScript
+`.pt` artifacts only. It cannot carry an executable `.pth` state dictionary;
+state dictionaries must use the application's own downloader and integrity
 checks.
 
 Legacy `.pt` selection is explicit. Direct remote TorchScript requires
@@ -338,10 +368,12 @@ Adding a model to facetorch's defaults is intentionally more demanding than
 using one in an application. Start with a fork and treat the model as a new
 release asset:
 
-1. Add an export-only architecture definition and register a complete model
-   specification in `scripts/export_model_cohorts_hf.py`.
+1. Add an export-only architecture definition under `model_defs/` and register a
+   complete model specification in `scripts/export_model_cohorts_hf.py`.
 2. Prepare the pinned source checkpoint and validate `.pt2` artifacts for every
-   supported Torch/device cohort claimed by the release.
+   supported Torch/device cohort claimed by the release. Use the script's
+   `validate` subcommand with explicit `--cohort`, `--model-ids`, batch sizes,
+   seeds, and scales to revalidate existing artifacts.
 3. Add immutable artifact records to `facetorch/models/manifest.json`, including
    real filenames, Hub commits, byte sizes, SHA-256 values, runtime bounds,
    devices, validation metadata, export provenance, and license references.
@@ -352,10 +384,29 @@ release asset:
    `facetorch/configs/`. Implement or select preprocessors and postprocessors
    that match the artifact's real input and output contract.
 6. Add numerical, batch, device, configuration, cache, and failure-path tests.
-   Update the public model table, model card material, and changelog.
+   Wire default-cohort coverage through `tests/conftest.py` and the matching
+   `conf/tests.config.N.yaml` files. Update the public model table, model card
+   material, and changelog.
 7. Follow the [model publication runbook](model-publication.md). The export
    command stages evidence but never uploads; reviewed publication is a separate,
    digest-bound transaction.
+8. Run the repository lint contract with
+   `uv run --frozen --extra dev flake8 --config=.flake8` and the relevant test
+   cohorts before requesting review.
+
+For example, revalidate one registered model without exporting or uploading:
+
+```bash
+PYTHONPATH=. python scripts/export_model_cohorts_hf.py validate \
+  --repo-root . \
+  --artifacts-root /secure/staging/torch-2.11 \
+  --cohort 2.11 \
+  --model-ids MODEL_ID \
+  --batch-sizes 1,2,4,8 \
+  --seeds 0,17 \
+  --scales 1.0,0.25 \
+  --validate-devices cpu,cuda
+```
 
 Do not copy direct external metadata into a packaged built-in YAML. Once a model
 is shipped by facetorch, the packaged manifest is the sole artifact identity
