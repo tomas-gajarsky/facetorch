@@ -1,9 +1,11 @@
 # Change Log
 
-## 1.0.0rc1 (Unreleased)
+## 1.0.0rc2 (Unreleased)
 
 This is the v1 release candidate change set. The section becomes released only
-when the immutable v1.0.0-rc.1 tag and all publication receipts have been verified.
+when the immutable v1.0.0-rc.2 tag and all publication receipts have been verified.
+The `v1.0.0-rc.1` tag is retained as an unpublished, aborted candidate: its
+release-note gate failed before a GitHub draft or any external registry write.
 
 ### Breaking Changes
 * Minimum Python version raised from 3.8 to 3.10
@@ -89,12 +91,15 @@ when the immutable v1.0.0-rc.1 tag and all publication receipts have been verifi
   multi-image batching remains outside the v1 API
 * GPU environment updated from CUDA 11.2 to CUDA 12.4+
 * Development status remains Beta through the approved release-candidate soak
-* Google Colab notebook updated to the exact v1.0.0rc1 contract and immutable
+* Google Colab notebook updated to the exact 1.0.0rc2 contract and immutable
   source tag
 * RC onboarding now separates stable and prerelease channels, preinstalls an
   explicit CPU/GPU PyTorch cohort, and pins immutable Docker image tags
 
 ### Fixed
+* Release-note extraction now confines an optional heading suffix to one line and
+  has release-blocker coverage, preventing a non-empty candidate section from
+  being misread as empty
 * NumPy arrays that look CHW/BCHW or are plausible under both channel-first and
   channel-last conventions now require an explicit layout instead of guessing
 * Inferred signed-integer range failures no longer claim that the caller supplied

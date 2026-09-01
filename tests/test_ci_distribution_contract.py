@@ -131,10 +131,10 @@ def test_alignment_metadata_release_contract_matches_packaged_configuration():
 
 
 @pytest.mark.release_blocker
-def test_conda_candidate_smokes_the_rc1_distribution():
+def test_conda_candidate_smokes_the_current_rc_distribution():
     commands = _workflow_commands(WORKFLOW_ROOT / "conda-env.yml")
 
-    assert commands.count('version("facetorch") == "1.0.0rc1"') == 2
+    assert commands.count('version("facetorch") == "1.0.0rc2"') == 2
     assert 'version("facetorch") == "1.0.0"' not in commands
 
 

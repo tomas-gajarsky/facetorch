@@ -105,6 +105,16 @@ def test_github_release_is_draft_until_external_publication_succeeds():
 
 
 @pytest.mark.release_blocker
+def test_github_draft_uses_the_tested_release_notes_extractor():
+    workflow = _workflow(REPO_ROOT / ".github" / "workflows" / "release.yml")
+    commands = _commands(workflow["jobs"]["create-github-draft"])
+
+    assert "release_transaction.py release-notes" in commands
+    assert "--changelog CHANGELOG.md" in commands
+    assert '--version "$VERSION"' in commands
+
+
+@pytest.mark.release_blocker
 def test_latest_alias_is_promoted_only_after_immutable_artifacts():
     violations = []
     for path in RELEASE_WORKFLOWS:

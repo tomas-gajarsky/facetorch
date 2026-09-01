@@ -32,9 +32,9 @@ def test_notebook_is_clean_and_uses_candidate_public_contract():
     for cell in code_cells:
         ast.parse("".join(cell.get("source", [])))
 
-    assert "facetorch==1.0.0rc1" in combined
-    assert "v1.0.0-rc.1" in combined
-    assert "v1.0.0rc1" not in combined
+    assert "facetorch==1.0.0rc2" in combined
+    assert "v1.0.0-rc.2" in combined
+    assert "v1.0.0rc2" not in combined
     assert "/main/" not in combined
     assert "load_config(" in combined
     assert "include_tensors=True" in combined
