@@ -543,15 +543,17 @@ def run(self) -&gt; Optional[str]:
         - **Exported Program** (.pt2): Modern portable format via ``torch.export``.
           Loaded with ``torch.export.load()`` — no model source code needed.
         - **Native + state_dict**: ``native_model_class`` specifies the ``nn.Module``
-          class; weights are extracted from the TorchScript file&#39;s state_dict.
+          class; weights come from a raw ``.pth`` state dictionary or are extracted
+          from a TorchScript ``.pt`` module.
 
         Args:
             downloader (BaseDownloader): Downloader for the model.
             device (torch.device): Torch device cpu or cuda.
             native_model_class (Optional[str]): Fully qualified class name of a native
-                PyTorch nn.Module to use instead of TorchScript. The TorchScript file is
-                loaded to extract the state_dict, which is then loaded into an instance of
-                this class. Ignored when loading .pt2 files. Default: None.
+                PyTorch nn.Module. A raw ``.pth`` state dictionary is loaded directly;
+                a TorchScript ``.pt`` module is loaded to extract its state_dict. Raw
+                state dictionaries saved with a ``.pt`` suffix are unsupported. Ignored
+                when loading ``.pt2`` files. Default: None.
             compile_model (bool): If True, wraps the model with ``torch.compile()``
                 for optimized inference. Default: False.
             compile_options (Optional[dict]): Keyword arguments passed to
@@ -581,6 +583,7 @@ def run(self) -&gt; Optional[str]:
         Loading strategy by file extension:
 
         - ``.pt2``: ``torch.export.load()`` — portable exported program
+        - ``.pth`` with ``native_model_class``: native nn.Module + raw state_dict
         - ``.pt`` with ``native_model_class``: native nn.Module + state_dict from TorchScript
         - ``.pt`` without ``native_model_class``: ``torch.jit.load()`` (legacy TorchScript)
 
@@ -820,7 +823,8 @@ All subclass should overwrite:</p>
 <li><strong>Exported Program</strong> (.pt2): Modern portable format via <code>torch.export</code>.
 Loaded with <code>torch.export.load()</code> — no model source code needed.</li>
 <li><strong>Native + state_dict</strong>: <code>native_model_class</code> specifies the <code>nn.Module</code>
-class; weights are extracted from the TorchScript file's state_dict.</li>
+class; weights come from a raw <code>.pth</code> state dictionary or are extracted
+from a TorchScript <code>.pt</code> module.</li>
 </ul>
 <dl>
 <dt>Args</dt>
@@ -831,9 +835,10 @@ class; weights are extracted from the TorchScript file's state_dict.</li>
 <dd>Torch device cpu or cuda.</dd>
 <dt><strong><code>native_model_class</code></strong> :&ensp;<code>Optional[str]</code></dt>
 <dd>Fully qualified class name of a native
-PyTorch nn.Module to use instead of TorchScript. The TorchScript file is
-loaded to extract the state_dict, which is then loaded into an instance of
-this class. Ignored when loading .pt2 files. Default: None.</dd>
+PyTorch nn.Module. A raw <code>.pth</code> state dictionary is loaded directly;
+a TorchScript <code>.pt</code> module is loaded to extract its state_dict. Raw
+state dictionaries saved with a <code>.pt</code> suffix are unsupported. Ignored
+when loading <code>.pt2</code> files. Default: None.</dd>
 <dt><strong><code>compile_model</code></strong> :&ensp;<code>bool</code></dt>
 <dd>If True, wraps the model with <code>torch.compile()</code>
 for optimized inference. Default: False.</dd>
@@ -867,6 +872,7 @@ def load_model(self) -&gt; torch.nn.Module:
     Loading strategy by file extension:
 
     - ``.pt2``: ``torch.export.load()`` — portable exported program
+    - ``.pth`` with ``native_model_class``: native nn.Module + raw state_dict
     - ``.pt`` with ``native_model_class``: native nn.Module + state_dict from TorchScript
     - ``.pt`` without ``native_model_class``: ``torch.jit.load()`` (legacy TorchScript)
 
@@ -944,6 +950,7 @@ def load_model(self) -&gt; torch.nn.Module:
 <p>Loading strategy by file extension:</p>
 <ul>
 <li><code>.pt2</code>: <code>torch.export.load()</code> — portable exported program</li>
+<li><code>.pth</code> with <code>native_model_class</code>: native nn.Module + raw state_dict</li>
 <li><code>.pt</code> with <code>native_model_class</code>: native nn.Module + state_dict from TorchScript</li>
 <li><code>.pt</code> without <code>native_model_class</code>: <code>torch.jit.load()</code> (legacy TorchScript)</li>
 </ul>

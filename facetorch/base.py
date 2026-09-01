@@ -221,15 +221,17 @@ class BaseModel(object, metaclass=ABCMeta):
         - **Exported Program** (.pt2): Modern portable format via ``torch.export``.
           Loaded with ``torch.export.load()`` — no model source code needed.
         - **Native + state_dict**: ``native_model_class`` specifies the ``nn.Module``
-          class; weights are extracted from the TorchScript file's state_dict.
+          class; weights come from a raw ``.pth`` state dictionary or are extracted
+          from a TorchScript ``.pt`` module.
 
         Args:
             downloader (BaseDownloader): Downloader for the model.
             device (torch.device): Torch device cpu or cuda.
             native_model_class (Optional[str]): Fully qualified class name of a native
-                PyTorch nn.Module to use instead of TorchScript. The TorchScript file is
-                loaded to extract the state_dict, which is then loaded into an instance of
-                this class. Ignored when loading .pt2 files. Default: None.
+                PyTorch nn.Module. A raw ``.pth`` state dictionary is loaded directly;
+                a TorchScript ``.pt`` module is loaded to extract its state_dict. Raw
+                state dictionaries saved with a ``.pt`` suffix are unsupported. Ignored
+                when loading ``.pt2`` files. Default: None.
             compile_model (bool): If True, wraps the model with ``torch.compile()``
                 for optimized inference. Default: False.
             compile_options (Optional[dict]): Keyword arguments passed to
@@ -259,6 +261,7 @@ class BaseModel(object, metaclass=ABCMeta):
         Loading strategy by file extension:
 
         - ``.pt2``: ``torch.export.load()`` — portable exported program
+        - ``.pth`` with ``native_model_class``: native nn.Module + raw state_dict
         - ``.pt`` with ``native_model_class``: native nn.Module + state_dict from TorchScript
         - ``.pt`` without ``native_model_class``: ``torch.jit.load()`` (legacy TorchScript)
 

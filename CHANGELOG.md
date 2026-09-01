@@ -22,6 +22,9 @@ when the immutable v1.0.0-rc.1 tag and all publication receipts have been verifi
 * Grayscale image handling: automatic conversion of single-channel and RGBA inputs to RGB across all input paths
 * `__call__` methods on `FaceAnalyzer`, `BaseProcessor`, `BaseDownloader`, and `BaseModel` (delegates to `run()`)
 * Optional logger configuration: `FaceAnalyzer` falls back to `logging.getLogger("facetorch")` when no logger is configured
+* A custom-component guide separating runtime predictor/detector injection,
+  digest-pinned external artifacts, and the governed built-in model contribution
+  process
 * Robust input routing in `FaceAnalyzer.run()` — tensor, numpy array, PIL Image, bytes, and file path inputs work with any reader type
 * All .pt2 models uploaded to Hugging Face Hub with model cards
 * Versioned model-artifact manifest with immutable Hub revisions, byte sizes,
