@@ -1,16 +1,16 @@
-# ![](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/data/facetorch-logo-42.png "facetorch logo") facetorch
+# ![](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/55fa112fce2708fdc1bee318e06dfd0e9758f612/data/facetorch-logo-42.png "facetorch logo") facetorch
 ![build](https://github.com/tomas-gajarsky/facetorch/actions/workflows/build.yml/badge.svg?branch=main)
 ![lint](https://github.com/tomas-gajarsky/facetorch/actions/workflows/lint.yml/badge.svg?branch=main)
 [![PyPI](https://img.shields.io/pypi/v/facetorch)](https://pypi.org/project/facetorch/)
 [![Conda (channel only)](https://img.shields.io/conda/vn/conda-forge/facetorch)](https://anaconda.org/conda-forge/facetorch)
-[![PyPI - License](https://img.shields.io/pypi/l/facetorch)](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/main/LICENSE)
+[![PyPI - License](https://img.shields.io/pypi/l/facetorch)](https://raw.githubusercontent.com/tomas-gajarsky/facetorch/55fa112fce2708fdc1bee318e06dfd0e9758f612/LICENSE)
 <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
   <a target="_blank" href="https://colab.research.google.com/github/tomas-gajarsky/facetorch/blob/main/notebooks/facetorch_notebook_demo.ipynb">
 <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
-[API documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html), [v0.6.x migration guide](docs/migration-v1.md), [model compatibility](docs/model-compatibility.md)
+[API documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html), [extension guide](https://github.com/tomas-gajarsky/facetorch/blob/55fa112fce2708fdc1bee318e06dfd0e9758f612/docs/custom-components.md), [v0.6.x migration guide](https://github.com/tomas-gajarsky/facetorch/blob/55fa112fce2708fdc1bee318e06dfd0e9758f612/docs/migration-v1.md), [model compatibility](https://github.com/tomas-gajarsky/facetorch/blob/55fa112fce2708fdc1bee318e06dfd0e9758f612/docs/model-compatibility.md)
  
 [Docker Hub](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch) [(GPU)](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch-gpu)
 
@@ -43,7 +43,7 @@ Facetorch provides an efficient, scalable, and user-friendly solution for facial
 
 The exact candidate matrix, named CUDA pairs, experimental platforms, and current
 model-rights gates are documented in
-[Model compatibility and governance](docs/model-compatibility.md).
+[Model compatibility and governance](https://github.com/tomas-gajarsky/facetorch/blob/55fa112fce2708fdc1bee318e06dfd0e9758f612/docs/model-compatibility.md).
 
 Please use this library responsibly and with caution. Adhere to the [European Commission's Ethics Guidelines for Trustworthy AI](https://ec.europa.eu/futurium/en/ai-alliance-consultation.1.html) to ensure ethical and fair usage. Keep in mind that the models may have limitations and potential biases, so it is crucial to evaluate their outputs critically and consider their impact.
 
@@ -78,7 +78,7 @@ python -m pip install --index-url https://download.pytorch.org/whl/cu130 \
 ```
 
 Torch 2.6 CPU/CUDA 12.4 is also supported; see the exact
-[compatibility matrix](docs/model-compatibility.md). The default model selection
+[compatibility matrix](https://github.com/tomas-gajarsky/facetorch/blob/55fa112fce2708fdc1bee318e06dfd0e9758f612/docs/model-compatibility.md). The default model selection
 then needs approximately 1.2 GB of cache data and at least 2 GB of free cache
 space while downloads are staged.
 
@@ -341,7 +341,7 @@ analyzer
 The source links below are the original repositories already used by Facetorch.
 The weight-license column reflects the artifact-specific review approved on
 2026-08-23 and recorded, with checkpoint hashes and mapping methods, in
-[`facetorch/models/governance.json`](facetorch/models/governance.json). MIT and
+[`facetorch/models/governance.json`](https://github.com/tomas-gajarsky/facetorch/blob/55fa112fce2708fdc1bee318e06dfd0e9758f612/facetorch/models/governance.json). MIT and
 Apache-2.0 are preserved as received; neither license was converted into the
 other. These licenses do not grant rights to upstream training datasets.
 
@@ -555,7 +555,7 @@ resumable receipt. Each model's artifact and metadata are committed together to 
 candidate branch; the initial immutable manifest commit is created only after every
 model repository succeeds. Deterministically rendered legal documents are then
 committed and a final manifest binds those resulting immutable revisions. See
-[the model publication runbook](docs/model-publication.md).
+[the model publication runbook](https://github.com/tomas-gajarsky/facetorch/blob/55fa112fce2708fdc1bee318e06dfd0e9758f612/docs/model-publication.md).
 
 #### Why exported models?
 
@@ -573,7 +573,7 @@ moderate, affected-API-specific exceptions documented in
 Validation uses immutable CPU golden references for both CPU and CUDA artifacts,
 with TensorFloat-32 disabled and the numeric policy recorded. Predictor batch
 sizes refer only to faces from one input image; multi-image batching is not
-supported in v1. See [model compatibility and governance](docs/model-compatibility.md)
+supported in v1. See [model compatibility and governance](https://github.com/tomas-gajarsky/facetorch/blob/55fa112fce2708fdc1bee318e06dfd0e9758f612/docs/model-compatibility.md)
 for the exact candidate evidence and remaining blockers.
 
 
@@ -619,90 +619,30 @@ Run the Docker container:
 * CPU: ```docker compose -f docker-compose.dev.yml run facetorch-dev```
 * GPU: ```docker compose -f docker-compose.dev.yml run facetorch-dev-gpu```
 
-### Add predictor
-#### Prerequisites
-1. Exported `.pt2` model file (see below)
-2. Repository on Hugging Face Hub for hosting the model
-3. facetorch [fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
+### Extend facetorch
 
-Facetorch uses models exported with [torch.export](https://pytorch.org/docs/stable/export.html) (`.pt2` format). Export your model with dynamic batch support:
+Custom predictors and detectors remain first-class in v1. The packaged model
+manifest secures the models shipped by facetorch; it is not an allow-list for
+application extensions.
 
-```python
-import torch
+There are three deliberately separate paths:
 
-model.eval()
-batch = torch.export.Dim("batch", min=1, max=64)
-ep = torch.export.export(model, (dummy_input,), dynamic_shapes={"x": {0: batch}})
-torch.export.save(ep, "model.pt2")
-```
+1. Install an already constructed predictor or detector directly on a
+   `FaceAnalyzer`.
+2. Use an external Hydra tree with a custom component and a digest-pinned model.
+3. Contribute a model to facetorch's built-in defaults and complete the full
+   artifact, compatibility, provenance, rights, and release-evidence process.
 
-Verify that the exported model produces the same outputs as the original. Models are hosted on [Hugging Face Hub](https://huggingface.co/tomas-gajarsky).
+Private and third-party Hugging Face models use direct external mode: omit
+`manifest_id` and declare the exact filename, immutable Hub commit, SHA-256,
+byte size, format, and device in the application configuration. Only an
+officially shipped model belongs in `facetorch/models/manifest.json`.
 
-For broader PyTorch compatibility, publish recommended version cohorts in the same repo:
-
-- `model-torch2.6.pt2`
-- `model-torch2.11.pt2`
-
-From a source checkout, stage and validate the current runtime cohort locally:
-
-```bash
-PYTHONPATH=. python scripts/export_model_cohorts_hf.py export \
-  --repo-root . \
-  --out-root /tmp/model-cohort-exports \
-  --validate-devices cpu,cuda
-```
-
-To re-validate existing artifacts against reference models on multiple inputs and batch sizes:
-
-```bash
-PYTHONPATH=. python scripts/export_model_cohorts_hf.py validate \
-  --repo-root . \
-  --artifacts-root /tmp/model-cohort-exports/upload26 \
-  --validate-devices cpu,cuda \
-  --cohort 2.6 \
-  --batch-sizes 1,2,4,8 \
-  --seeds 0,17 \
-  --scales 1.0,0.25
-```
-
-Use `--model-ids` (for example `--model-ids verify-magface`) to process only a subset.
-The script writes canonical `.meta.json` evidence next to each artifact and fails
-on drift, non-finite output, schema/invariant violations, an incomplete batch or
-shape matrix, or any requested device that is not `ok`. It never uploads. Follow
-the [model publication runbook](docs/model-publication.md) only after all required
-cohorts are staged and reviewed.
-Export-only architecture definitions live in `model_defs/`; they are included for reproducible re-exporting, but they are not required for normal `.pt2` inference.
-
-#### Configuration
-##### Create yaml file
-1. Create new folder with a short name of the task in predictor configuration directory 
-```/conf/analyzer/predictor/``` following the FER example in ```/conf/analyzer/predictor/fer/```
-2. Copy the yaml file ```/conf/analyzer/predictor/fer/efficientnet_b2_8.yaml``` to the new folder 
-```/conf/analyzer/predictor/<predictor_name>/```
-3. Change the yaml file name to the model you want to use: 
-```/conf/analyzer/predictor/<predictor_name>/<model_name>.yaml```
-
-##### Edit yaml file
-1. Set up the downloader configuration:
-   - For Hugging Face Hub (recommended): specify the `repo_id`, immutable `revision`, and packaged `manifest_id`; do not duplicate a filename, size, or SHA-256 in manifest-bound downloader YAML
-   - For exported `.pt2` models, add immutable revision, size, SHA-256, schema, runtime range, validation metadata, and provenance references to the packaged artifact manifest; the runtime selects the cohort filename from that manifest and filenames are never synthesized
-   - For legacy Google Drive (deprecated): specify the Google Drive file ID
-2. Select the preprocessor (or implement a new one based on BasePredPreProcessor) and specify its parameters e.g. image size and normalization in the yaml file 
-to match the requirements of the new model.
-3. Select the postprocessor (or implement a new one based on BasePredPostProcessor) and specify its parameters e.g. labels in the yaml file to match 
-the requirements of the new model.
-4. (Optional) Add BaseUtilizer derivative that uses output of your model to perform some additional actions.
-
-##### Configure tests
-1. Add a new predictor to the main *config.yaml* and all *tests.config.n.yaml* files. Alternatively, create a new config file e.g. 
-*tests.config.n.yaml* and add it to the ```/tests/conftest.py``` file.
-2. Write a test for the new predictor in ```/tests/test_<predictor_name>.py```
-
-#### Test and submit
-1. Run linting: ```black facetorch```
-2. Add the new predictor to the README model table.
-3. Update CHANGELOG and version
-4. Submit a pull request to the repository
+The complete [custom predictor and detector guide](https://github.com/tomas-gajarsky/facetorch/blob/55fa112fce2708fdc1bee318e06dfd0e9758f612/docs/custom-components.md)
+contains a runnable no-download example, the predictor and detector contracts,
+a direct immutable Hugging Face YAML example, external configuration guidance,
+Torch cohort responsibilities, testing guidance, and the separate checklist for
+contributing an officially governed built-in model.
 
 
 ### Update environment
