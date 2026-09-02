@@ -119,7 +119,9 @@ def audit_remote_manifest(
             filename = str(manifest.get("manifest_filename", ""))
             expected_digest = str(manifest.get("manifest_sha256", ""))
             if re.fullmatch(r"[^/\s]+/[^/\s]+", repo_id) is None:
-                raise HubManifestError("Packaged remote manifest repository is invalid.")
+                raise HubManifestError(
+                    "Packaged remote manifest repository is invalid."
+                )
             if re.fullmatch(r"[0-9a-f]{40}", revision) is None:
                 raise HubManifestError("Packaged remote manifest revision is invalid.")
             if (
@@ -145,18 +147,23 @@ def audit_remote_manifest(
                 raise HubManifestError("Fetched remote manifest digest disagrees.")
             remote = _read_json(fetched_path)
             if remote.get("schema_version") != 1 or remote.get("status") != "approved":
-                raise HubManifestError("Remote model manifest is not final and approved.")
+                raise HubManifestError(
+                    "Remote model manifest is not final and approved."
+                )
             for record in remote.get("models", []):
                 if not isinstance(record, Mapping):
                     raise HubManifestError("Remote model manifest record is invalid.")
-                identity = (str(record.get("model_id", "")), str(record.get("cohort", "")))
+                identity = (
+                    str(record.get("model_id", "")),
+                    str(record.get("cohort", "")),
+                )
                 if not all(identity) or identity in remote_records:
                     raise HubManifestError(
                         f"Remote model manifest identity is invalid: {identity}."
                     )
                 remote_records[identity] = record
             expected_remote_identities = {
-                (str(model_id), str(artifact.get("torch_min", "")))
+                (str(model_id), str(artifact.get("artifact_cohort", "")))
                 for model_id, model in manifest.get("models", {}).items()
                 for artifact in model.get("artifacts", [])
                 if isinstance(artifact, Mapping) and artifact.get("format") == "pt2"
@@ -223,7 +230,7 @@ def audit_remote_manifest(
     results = []
     failures = []
     cohort_records = {
-        str(record.get("torch_minor", "")): record
+        str(record.get("artifact_cohort", "")): record
         for record in compatibility.get("cohorts", [])
         if isinstance(record, Mapping)
     }
@@ -253,9 +260,7 @@ def audit_remote_manifest(
                     raise HubManifestError(
                         f"No generated legal contract for {model_id}."
                     )
-                for filename, expected_bytes in sorted(
-                    model_legal_documents.items()
-                ):
+                for filename, expected_bytes in sorted(model_legal_documents.items()):
                     sibling = siblings.get(filename)
                     if sibling is None:
                         raise HubManifestError(
@@ -348,7 +353,7 @@ def audit_remote_manifest(
                         )
                     )
                     metadata = _read_json(metadata_path)
-                    cohort = str(artifact.get("torch_min", ""))
+                    cohort = str(artifact.get("artifact_cohort", ""))
                     remote_record = remote_records.get((model_id, cohort))
                     if require_remote_manifest:
                         if remote_record is None:
@@ -442,8 +447,7 @@ def audit_remote_manifest(
                                 isinstance(value, str) and value
                                 for value in argument_model_ids
                             )
-                            and len(set(argument_model_ids))
-                            == len(argument_model_ids)
+                            and len(set(argument_model_ids)) == len(argument_model_ids)
                             and set(argument_model_ids) == set(expected_model_ids)
                         )
                         source_tree = environment.get("source_tree", {})
@@ -560,9 +564,7 @@ def audit_remote_manifest(
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--manifest", default="facetorch/models/manifest.json"
-    )
+    parser.add_argument("--manifest", default="facetorch/models/manifest.json")
     parser.add_argument(
         "--remote-manifest",
         help="Already fetched exact remote manifest; otherwise download its packaged pin.",

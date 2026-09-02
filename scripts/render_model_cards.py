@@ -9,7 +9,6 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CATALOG_PATH = REPO_ROOT / "model_cards" / "catalog.json"
 MANIFEST_PATH = REPO_ROOT / "facetorch" / "models" / "manifest.json"
@@ -104,9 +103,7 @@ def _source_notice_bytes(source: Mapping[str, Any]) -> bytes | None:
         )
     revision = str(source.get("revision", ""))
     source_url = str(source.get("url", "")).rstrip("/")
-    if not str(source["notice_url"]).startswith(
-        f"{source_url}/blob/{revision}/"
-    ):
+    if not str(source["notice_url"]).startswith(f"{source_url}/blob/{revision}/"):
         raise ModelCardError(
             "Upstream NOTICE URL is not bound to its source and revision"
         )
@@ -162,9 +159,7 @@ def _validate_model_governance(
         )
     for name in ("redistribution", "attribution", "owner_approval"):
         if rights[name] != "approved":
-            raise ModelCardError(
-                f"Model {model_id} rights.{name} must be approved"
-            )
+            raise ModelCardError(f"Model {model_id} rights.{name} must be approved")
 
     sources = governance["upstream_sources"]
     if not isinstance(sources, list) or not sources:
@@ -201,9 +196,7 @@ def _validate_model_governance(
         "verification_result",
     }
     if not isinstance(checkpoint, Mapping):
-        raise ModelCardError(
-            f"Model {model_id} source_checkpoint must be an object"
-        )
+        raise ModelCardError(f"Model {model_id} source_checkpoint must be an object")
     missing_checkpoint = sorted(required_checkpoint - set(checkpoint))
     if missing_checkpoint:
         raise ModelCardError(
@@ -222,9 +215,7 @@ def _validate_model_governance(
     for name in ("intended_use", "limitations"):
         values = governance[name]
         if not isinstance(values, list) or not values:
-            raise ModelCardError(
-                f"Model {model_id} {name} must be a non-empty list"
-            )
+            raise ModelCardError(f"Model {model_id} {name} must be a non-empty list")
 
 
 def _license_bytes(governance: Mapping[str, Any]) -> bytes:
@@ -363,8 +354,9 @@ def _render_card(
         "",
         *_artifact_table(manifest_model),
         "",
-        "Facetorch v1 supports the Torch 2.6 and 2.11 cohort files listed in "
-        "its manifest. The legacy TorchScript object is CPU-only and requires "
+        "Facetorch v1 routes supported Torch 2.6-2.13 runtimes through the "
+        "2.6 and 2.11 artifact cohort files listed in its manifest. The legacy "
+        "TorchScript object is CPU-only and requires "
         "the explicit legacy opt-in. Files from unsupported cohorts are not part "
         "of the v1 release contract.",
         "",
@@ -513,7 +505,9 @@ def render_model_documents(
             "Catalog and governance do not cover the requested manifest models"
         )
     if governance.get("status") != "approved":
-        raise ModelCardError("Model cards may be published only from approved governance")
+        raise ModelCardError(
+            "Model cards may be published only from approved governance"
+        )
     license_policy = governance.get("license_policy")
     if (
         not isinstance(license_policy, Mapping)
@@ -539,9 +533,7 @@ def render_model_documents(
                 approved_on,
             ).encode("utf-8"),
             "LICENSE": _license_bytes(record),
-            "THIRD_PARTY_NOTICES.md": _render_notices(
-                model_id, record
-            ).encode("utf-8"),
+            "THIRD_PARTY_NOTICES.md": _render_notices(model_id, record).encode("utf-8"),
         }
         rendered[model_id] = values
     return rendered

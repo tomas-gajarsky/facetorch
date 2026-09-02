@@ -47,9 +47,12 @@ def test_unpublished_v1_changelog_is_not_marked_as_released():
         return
 
     changelog = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-    v1_section = changelog.split("## 0.6.2", 1)[0]
-    assert "Released on" not in v1_section
-    assert "Unreleased" in v1_section or "release candidate" in v1_section.lower()
+    current_section = changelog.split("## 1.0.0rc3", 1)[1].split("\n## ", 1)[0]
+    assert "Released on" not in current_section
+    assert (
+        "Unreleased" in changelog.splitlines()[2]
+        or "release candidate" in current_section.lower()
+    )
 
 
 @pytest.mark.release_blocker
@@ -61,8 +64,8 @@ def test_current_rc_identity_and_model_governance_prose_are_consistent():
         encoding="utf-8"
     )
 
-    assert 'version = "1.0.0rc2"' in project
-    assert "v1.0.0-rc.2" in changelog
+    assert 'version = "1.0.0rc3"' in project
+    assert "v1.0.0-rc.3" in changelog
     assert "release_eligible: false" not in compatibility
     assert "governance is still incomplete" not in compatibility
     assert "all ten records are release-eligible" in readme.lower()
@@ -92,11 +95,11 @@ def test_rc_onboarding_selects_exact_candidate_channels():
     compose = (REPO_ROOT / "docker-compose.yml").read_text(encoding="utf-8")
 
     combined = f"{readme}\n{migration}"
-    assert '"facetorch==1.0.0rc2"' in combined
-    assert '"torch==2.11.0+cpu"' in combined
-    assert '"torch==2.11.0+cu130"' in combined
-    assert "FACETORCH_DOCKER_TAG=1.0.0-rc.2" in combined
-    assert "${FACETORCH_DOCKER_TAG:-1.0.0-rc.2}" in compose
+    assert '"facetorch==1.0.0rc3"' in combined
+    assert '"torch==2.13.0+cpu"' in combined
+    assert '"torch==2.13.0+cu130"' in combined
+    assert "FACETORCH_DOCKER_TAG=1.0.0-rc.3" in combined
+    assert "${FACETORCH_DOCKER_TAG:-1.0.0-rc.3}" in compose
     assert "facetorch:latest" not in compose
     assert "facetorch-gpu:latest" not in compose
     assert "pip install facetorch\n" not in readme

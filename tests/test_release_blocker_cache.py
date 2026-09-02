@@ -9,9 +9,7 @@ import pytest
 import torch
 
 from facetorch.artifacts import detect_model_format, get_model_manifest
-from facetorch.exceptions import ModelCompatibilityError
 from facetorch.model_cache import inspect_legacy_cache
-
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -107,13 +105,20 @@ def test_legacy_models_require_explicit_opt_in_and_cpu_eligibility():
     )
     assert all(candidate.format == "pt2" for candidate in default_candidates)
 
-    with pytest.raises(ModelCompatibilityError):
-        manifest.candidates(
-            "au-opengraph",
-            torch_version="2.10.0",
-            device="cuda",
-            allow_legacy_models=True,
-        )
+    cpu_candidates = manifest.candidates(
+        "au-opengraph",
+        torch_version="2.10.0",
+        device="cpu",
+        allow_legacy_models=True,
+    )
+    cuda_candidates = manifest.candidates(
+        "au-opengraph",
+        torch_version="2.10.0",
+        device="cuda",
+        allow_legacy_models=True,
+    )
+    assert any(candidate.format == "torchscript" for candidate in cpu_candidates)
+    assert all(candidate.format == "pt2" for candidate in cuda_candidates)
 
 
 @pytest.mark.release_blocker

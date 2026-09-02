@@ -1,9 +1,32 @@
 # Change Log
 
-## 1.0.0rc2 (Unreleased)
+## 1.0.0rc3 (Unreleased)
 
-This is the v1 release candidate change set. The section becomes released only
-when the immutable v1.0.0-rc.2 tag and all publication receipts have been verified.
+This candidate officially expands the tested PyTorch runtime range while reusing
+the immutable model artifacts published for RC2. The section becomes released
+only when the `v1.0.0-rc.3` tag and all publication receipts are verified.
+
+### Added
+* Official PyTorch 2.6-2.13 support with exact matching torchvision pairs
+* Reproducible CPU and CUDA lock profiles for every supported PyTorch minor line
+* Cross-runtime release validation that proves all eight runtime lines execute the
+  same two digest-pinned artifact cohorts on CPU and CUDA
+
+### Changed
+* Package bounds expanded to `torch>=2.6,<2.14` and
+  `torchvision>=0.21,<0.29`
+* Torch 2.6 artifacts now route to runtimes 2.6-2.8; Torch 2.11 artifacts route
+  to runtimes 2.9-2.13
+* CPU CI and dependency auditing now cover every supported runtime profile
+
+### Known limitations
+* PyTorch 2.8 emits an upstream deprecation warning when loading the older PT2
+  archive container; loading and inference remain within the approved tolerances
+
+## 1.0.0rc2
+
+Released on September 1, 2026.
+
 The `v1.0.0-rc.1` tag is retained as an unpublished, aborted candidate: its
 release-note gate failed before a GitHub draft or any external registry write.
 

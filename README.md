@@ -10,7 +10,7 @@
 <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
-[API documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html), [extension guide](https://github.com/tomas-gajarsky/facetorch/blob/55fa112fce2708fdc1bee318e06dfd0e9758f612/docs/custom-components.md), [v0.6.x migration guide](https://github.com/tomas-gajarsky/facetorch/blob/55fa112fce2708fdc1bee318e06dfd0e9758f612/docs/migration-v1.md), [model compatibility](https://github.com/tomas-gajarsky/facetorch/blob/55fa112fce2708fdc1bee318e06dfd0e9758f612/docs/model-compatibility.md)
+[API documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html), [extension guide](https://github.com/tomas-gajarsky/facetorch/blob/v1.0.0-rc.3/docs/custom-components.md), [v0.6.x migration guide](https://github.com/tomas-gajarsky/facetorch/blob/v1.0.0-rc.3/docs/migration-v1.md), [model compatibility](https://github.com/tomas-gajarsky/facetorch/blob/v1.0.0-rc.3/docs/model-compatibility.md)
  
 [Docker Hub](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch) [(GPU)](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch-gpu)
 
@@ -37,13 +37,13 @@ Facetorch provides an efficient, scalable, and user-friendly solution for facial
 ### Requirements
 
 * Python >= 3.10 and < 3.13
-* PyTorch 2.6.x or 2.11.x; other minors are rejected before model download
+* PyTorch 2.6.x through 2.13.x with the matching torchvision minor
 * Linux x86-64 is the official v1 candidate platform; Windows, macOS, ARM, and
   Apple MPS are experimental
 
 The exact candidate matrix, named CUDA pairs, experimental platforms, and current
 model-rights gates are documented in
-[Model compatibility and governance](https://github.com/tomas-gajarsky/facetorch/blob/55fa112fce2708fdc1bee318e06dfd0e9758f612/docs/model-compatibility.md).
+[Model compatibility and governance](https://github.com/tomas-gajarsky/facetorch/blob/v1.0.0-rc.3/docs/model-compatibility.md).
 
 Please use this library responsibly and with caution. Adhere to the [European Commission's Ethics Guidelines for Trustworthy AI](https://ec.europa.eu/futurium/en/ai-alliance-consultation.1.html) to ensure ethical and fair usage. Keep in mind that the models may have limitations and potential biases, so it is crucial to evaluate their outputs critically and consider their impact.
 
@@ -51,7 +51,7 @@ Please use this library responsibly and with caution. Adhere to the [European Co
 ## Install
 
 > [!IMPORTANT]
-> This documentation targets **`1.0.0rc2` (Beta)**. Install the exact candidate
+> This documentation targets **`1.0.0rc3` (Beta)**. Install the exact candidate
 > only after it appears on [PyPI](https://pypi.org/project/facetorch/). Bare
 > `pip install facetorch` and Docker `latest` remain on the stable `0.6.2` line
 > during the RC soak. Conda-forge is asynchronous and must be verified separately.
@@ -65,8 +65,8 @@ python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install --index-url https://download.pytorch.org/whl/cpu \
-  "torch==2.11.0+cpu" "torchvision==0.26.0+cpu"
-python -m pip install "facetorch==1.0.0rc2"
+  "torch==2.13.0+cpu" "torchvision==0.28.0+cpu"
+python -m pip install "facetorch==1.0.0rc3"
 ```
 
 For the validated CUDA 13.0 cohort, use a compatible NVIDIA host and replace the
@@ -74,17 +74,18 @@ PyTorch install above with:
 
 ```bash
 python -m pip install --index-url https://download.pytorch.org/whl/cu130 \
-  "torch==2.11.0+cu130" "torchvision==0.26.0+cu130"
+  "torch==2.13.0+cu130" "torchvision==0.28.0+cu130"
 ```
 
-Torch 2.6 CPU/CUDA 12.4 is also supported; see the exact
-[compatibility matrix](https://github.com/tomas-gajarsky/facetorch/blob/55fa112fce2708fdc1bee318e06dfd0e9758f612/docs/model-compatibility.md). The default model selection
+Every matching pair from Torch 2.6/torchvision 0.21 through Torch
+2.13/torchvision 0.28 is supported; see the exact
+[compatibility matrix](https://github.com/tomas-gajarsky/facetorch/blob/v1.0.0-rc.3/docs/model-compatibility.md). The default model selection
 then needs approximately 1.2 GB of cache data and at least 2 GB of free cache
 space while downloads are staged.
 
 [Conda-forge](https://anaconda.org/conda-forge/facetorch) remains an asynchronous
 channel. Do not use its unversioned install command for the RC; wait until the
-feedstock displays `1.0.0rc2`, then pin that exact version.
+feedstock displays `1.0.0rc3`, then pin that exact version.
 
 ## Usage
 
@@ -103,7 +104,7 @@ non-root container never needs write access to the source checkout.
 CPU:
 
 ```bash
-FACETORCH_DOCKER_TAG=1.0.0-rc.2 docker compose run --rm facetorch \
+FACETORCH_DOCKER_TAG=1.0.0-rc.3 docker compose run --rm facetorch \
   python /opt/facetorch/example.py /workspace/data/input/test.jpg \
   --output /workspace/data/output/test.png
 ```
@@ -111,7 +112,7 @@ FACETORCH_DOCKER_TAG=1.0.0-rc.2 docker compose run --rm facetorch \
 GPU:
 
 ```bash
-FACETORCH_DOCKER_TAG=1.0.0-rc.2 docker compose run --rm facetorch-gpu \
+FACETORCH_DOCKER_TAG=1.0.0-rc.3 docker compose run --rm facetorch-gpu \
   python /opt/facetorch/example.py /workspace/data/input/test.jpg \
   --profile gpu --output /workspace/data/output/test-gpu.png
 ```
@@ -119,7 +120,7 @@ FACETORCH_DOCKER_TAG=1.0.0-rc.2 docker compose run --rm facetorch-gpu \
 Copy a result from the persistent volume into the checkout when needed:
 
 ```bash
-FACETORCH_DOCKER_TAG=1.0.0-rc.2 docker compose run --rm -T facetorch \
+FACETORCH_DOCKER_TAG=1.0.0-rc.3 docker compose run --rm -T facetorch \
   cat /workspace/data/output/test.png > data/output/test.png
 ```
 
@@ -341,7 +342,7 @@ analyzer
 The source links below are the original repositories already used by Facetorch.
 The weight-license column reflects the artifact-specific review approved on
 2026-08-23 and recorded, with checkpoint hashes and mapping methods, in
-[`facetorch/models/governance.json`](https://github.com/tomas-gajarsky/facetorch/blob/55fa112fce2708fdc1bee318e06dfd0e9758f612/facetorch/models/governance.json). MIT and
+[`facetorch/models/governance.json`](https://github.com/tomas-gajarsky/facetorch/blob/v1.0.0-rc.3/facetorch/models/governance.json). MIT and
 Apache-2.0 are preserved as received; neither license was converted into the
 other. These licenses do not grant rights to upstream training datasets.
 
@@ -408,7 +409,7 @@ other. These licenses do not grant rights to upstream training datasets.
     * checkpoint and primary code: [OpenGraphAU](https://github.com/lingjivoo/OpenGraphAU)
     * related code with preserved MIT attribution: [ME-GraphAU](https://github.com/CVI-SZU/ME-GraphAU)
     * paper: [Luo et al. - Learning Multi-dimensional Edge Feature-based AU Relation Graph for Facial Action Unit Recognition](https://arxiv.org/abs/2205.01782)
-    * Note: The v1 candidate uses torch.export artifacts for the explicit Torch 2.6 / 2.11 cohorts; release CPU/CUDA evidence is tracked separately.
+    * Note: The v1 candidate reuses two explicit torch.export artifact cohorts across the validated Torch 2.6-2.13 runtime range; release CPU/CUDA evidence is tracked separately.
 
 #### Facial Valence Arousal (va)
 
@@ -555,7 +556,7 @@ resumable receipt. Each model's artifact and metadata are committed together to 
 candidate branch; the initial immutable manifest commit is created only after every
 model repository succeeds. Deterministically rendered legal documents are then
 committed and a final manifest binds those resulting immutable revisions. See
-[the model publication runbook](https://github.com/tomas-gajarsky/facetorch/blob/55fa112fce2708fdc1bee318e06dfd0e9758f612/docs/model-publication.md).
+[the model publication runbook](https://github.com/tomas-gajarsky/facetorch/blob/v1.0.0-rc.3/docs/model-publication.md).
 
 #### Why exported models?
 
@@ -563,9 +564,11 @@ Facetorch v1 moved default model artifacts from TorchScript (`.pt`) to `torch.ex
 
 `torch.export` serialization is tied to PyTorch's exported-program schema, so one
 `.pt2` file is not guaranteed to load across future or older PyTorch minors. The
-approved manifest has exact cohorts for Torch 2.6 and 2.11. Package metadata uses
-the same bounded, disjoint set. Torch 2.3-2.5 and 2.7-2.10 are unsupported and fail
-before download; no schema-major or numeric fallback is attempted. Torch 2.3 was
+approved manifest has artifact cohorts exported with Torch 2.6 and 2.11. The 2.6
+artifacts serve runtimes 2.6-2.8, while the 2.11 artifacts serve runtimes
+2.9-2.13. Package metadata accepts that contiguous, bounded range. Torch 2.3-2.5
+and 2.14 or newer fail before download; no schema-major or numeric fallback is
+attempted. Torch 2.3 was
 dropped because its affected `torch.load(weights_only=True)` path has a critical
 remote-code-execution advisory. Torch 2.6 is temporarily retained under three
 moderate, affected-API-specific exceptions documented in
@@ -573,7 +576,7 @@ moderate, affected-API-specific exceptions documented in
 Validation uses immutable CPU golden references for both CPU and CUDA artifacts,
 with TensorFloat-32 disabled and the numeric policy recorded. Predictor batch
 sizes refer only to faces from one input image; multi-image batching is not
-supported in v1. See [model compatibility and governance](https://github.com/tomas-gajarsky/facetorch/blob/55fa112fce2708fdc1bee318e06dfd0e9758f612/docs/model-compatibility.md)
+supported in v1. See [model compatibility and governance](https://github.com/tomas-gajarsky/facetorch/blob/v1.0.0-rc.3/docs/model-compatibility.md)
 for the exact candidate evidence and remaining blockers.
 
 
@@ -638,7 +641,7 @@ Private and third-party Hugging Face models use direct external mode: omit
 byte size, format, and device in the application configuration. Only an
 officially shipped model belongs in `facetorch/models/manifest.json`.
 
-The complete [custom predictor and detector guide](https://github.com/tomas-gajarsky/facetorch/blob/55fa112fce2708fdc1bee318e06dfd0e9758f612/docs/custom-components.md)
+The complete [custom predictor and detector guide](https://github.com/tomas-gajarsky/facetorch/blob/v1.0.0-rc.3/docs/custom-components.md)
 contains a runnable no-download example, the predictor and detector contracts,
 a direct immutable Hugging Face YAML example, external configuration guidance,
 Torch cohort responsibilities, testing guidance, and the separate checklist for
@@ -651,7 +654,7 @@ contributing an officially governed built-in model.
 * `pyproject.toml` is the packaging source of truth for PyPI releases and pip/uv installs (including Docker build paths using uv).
 * Conda package publishing (`conda-forge/facetorch`) is maintained outside this repository in conda-forge feedstock workflows.
 * `environment.yml` and `gpu.environment.yml` are conda environment baselines for conda users.
-* `environments/` contains four exact release profiles: Torch 2.6 and 2.11 on CPU, plus Torch 2.6/CUDA 12.4 and 2.11/CUDA 13.0. Each profile has its own `pyproject.toml`, `uv.lock`, and explicit official PyTorch index.
+* `environments/` contains exact CPU and CUDA release profiles for every supported Torch line from 2.6 through 2.13. Each profile has its own `pyproject.toml`, `uv.lock`, and explicit official PyTorch index.
 * The production CPU image uses the exact Torch 2.6 CPU profile. The production GPU image uses the exact Torch 2.6/CUDA 12.4 profile; neither image upgrades Torch after resolution.
 * The GPU conda baseline is deliberately only a Python 3.12/CUDA 12.4 system layer. Its Python packages come from `environments/torch-2.6-cu124/uv.lock`, because conda-forge's current Torch 2.6 GPU solve requires a newer CUDA line than the validated v1 pair.
 * uv uses PyPI for normal packages and explicit named PyTorch indexes only for `torch` and `torchvision`, avoiding global extra-index resolution drift.

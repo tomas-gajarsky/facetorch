@@ -19,8 +19,20 @@ WORKFLOW_ROOT = REPO_ROOT / ".github" / "workflows"
 DEPENDENCY_PROFILES = {
     "torch-2.6-cpu": ("2.6.0", "0.21.0", "/whl/cpu"),
     "torch-2.6-cu124": ("2.6.0", "0.21.0", "/whl/cu124"),
+    "torch-2.7-cpu": ("2.7.1", "0.22.1", "/whl/cpu"),
+    "torch-2.7-cu126": ("2.7.1", "0.22.1", "/whl/cu126"),
+    "torch-2.8-cpu": ("2.8.0", "0.23.0", "/whl/cpu"),
+    "torch-2.8-cu126": ("2.8.0", "0.23.0", "/whl/cu126"),
+    "torch-2.9-cpu": ("2.9.1", "0.24.1", "/whl/cpu"),
+    "torch-2.9-cu130": ("2.9.1", "0.24.1", "/whl/cu130"),
+    "torch-2.10-cpu": ("2.10.0", "0.25.0", "/whl/cpu"),
+    "torch-2.10-cu130": ("2.10.0", "0.25.0", "/whl/cu130"),
     "torch-2.11-cpu": ("2.11.0", "0.26.0", "/whl/cpu"),
     "torch-2.11-cu130": ("2.11.0", "0.26.0", "/whl/cu130"),
+    "torch-2.12-cpu": ("2.12.1", "0.27.1", "/whl/cpu"),
+    "torch-2.12-cu130": ("2.12.1", "0.27.1", "/whl/cu130"),
+    "torch-2.13-cpu": ("2.13.0", "0.28.0", "/whl/cpu"),
+    "torch-2.13-cu130": ("2.13.0", "0.28.0", "/whl/cu130"),
 }
 
 
@@ -104,14 +116,11 @@ def test_distribution_docs_use_the_reviewed_build_python():
 @pytest.mark.release_blocker
 def test_alignment_metadata_release_contract_matches_packaged_configuration():
     release_inputs = json.loads(
-        (REPO_ROOT / "security" / "release-inputs.json").read_text(
-            encoding="utf-8"
-        )
+        (REPO_ROOT / "security" / "release-inputs.json").read_text(encoding="utf-8")
     )
     descriptor = yaml.safe_load(
         (
-            REPO_ROOT
-            / "facetorch/configs/analyzer/utilizer/align/lmk3d_mesh_pose.yaml"
+            REPO_ROOT / "facetorch/configs/analyzer/utilizer/align/lmk3d_mesh_pose.yaml"
         ).read_text(encoding="utf-8")
     )["downloader_meta"]
 
@@ -134,7 +143,7 @@ def test_alignment_metadata_release_contract_matches_packaged_configuration():
 def test_conda_candidate_smokes_the_current_rc_distribution():
     commands = _workflow_commands(WORKFLOW_ROOT / "conda-env.yml")
 
-    assert commands.count('version("facetorch") == "1.0.0rc2"') == 2
+    assert commands.count('version("facetorch") == "1.0.0rc3"') == 2
     assert 'version("facetorch") == "1.0.0"' not in commands
 
 
@@ -217,7 +226,8 @@ def test_configuration_dependency_floors_match_used_apis_and_are_smoked():
 def test_cpu_ci_has_an_explicit_supported_torch_cohort_matrix():
     workflow_path = WORKFLOW_ROOT / "cpu-cohorts.yml"
     workflow = workflow_path.read_text(encoding="utf-8")
-    for cohort in ("2.6", "2.11"):
+    supported = ("2.6", "2.7", "2.8", "2.9", "2.10", "2.11", "2.12", "2.13")
+    for cohort in supported:
         assert f'torch-cohort: "{cohort}"' in workflow
         assert f"profile: environments/torch-{cohort}-cpu" in workflow
     assert 'torch-cohort: "2.3"' not in workflow
@@ -226,10 +236,10 @@ def test_cpu_ci_has_an_explicit_supported_torch_cohort_matrix():
 
     matrix = yaml.safe_load(workflow)["jobs"]["cpu-cohort"]["strategy"]["matrix"]
     lanes = {
-        (lane["torch-cohort"], lane["python-version"])
-        for lane in matrix["include"]
+        (lane["torch-cohort"], lane["python-version"]) for lane in matrix["include"]
     }
-    assert {("2.6", "3.10"), ("2.11", "3.10"), ("2.6", "3.11")} <= lanes
+    assert {(cohort, "3.10") for cohort in supported} <= lanes
+    assert ("2.6", "3.11") in lanes
 
 
 @pytest.mark.release_blocker

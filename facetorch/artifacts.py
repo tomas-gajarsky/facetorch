@@ -18,7 +18,6 @@ from facetorch.exceptions import (
     ModelCompatibilityError,
 )
 
-
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _REVISION_RE = re.compile(r"^[0-9a-f]{40}$")
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)")
@@ -46,14 +45,11 @@ def normalize_device(value: Any) -> str:
     return device
 
 
-def incompatibility_key(
-    manifest_revision: str, torch_version: str, device: Any
-) -> str:
+def incompatibility_key(manifest_revision: str, torch_version: str, device: Any) -> str:
     """Return the shared runtime key used by incompatibility sidecars."""
     runtime = parse_runtime_version(torch_version)
     return (
-        f"{manifest_revision}|{runtime[0]}.{runtime[1]}|"
-        f"{normalize_device(device)}"
+        f"{manifest_revision}|{runtime[0]}.{runtime[1]}|" f"{normalize_device(device)}"
     )
 
 
@@ -69,16 +65,12 @@ def read_incompatible_artifact_ids(path: str | Path, key: str) -> set[str]:
             f"Invalid incompatibility sidecar {sidecar}."
         ) from exc
     if not isinstance(raw, Mapping):
-        raise ArtifactIntegrityError(
-            f"Invalid incompatibility sidecar {sidecar}."
-        )
+        raise ArtifactIntegrityError(f"Invalid incompatibility sidecar {sidecar}.")
     values = raw.get(key, [])
     if not isinstance(values, list) or not all(
         isinstance(value, str) and value for value in values
     ):
-        raise ArtifactIntegrityError(
-            f"Invalid incompatibility sidecar {sidecar}."
-        )
+        raise ArtifactIntegrityError(f"Invalid incompatibility sidecar {sidecar}.")
     return set(values)
 
 
@@ -98,6 +90,7 @@ class ArtifactDescriptor:
     revision: str
     filename: str
     format: str
+    artifact_cohort: Optional[str]
     sha256: str
     size_bytes: int
     torch_min: Optional[str]
@@ -128,6 +121,7 @@ class ArtifactDescriptor:
                 revision=str(model["revision"]),
                 filename=str(raw["filename"]),
                 format=str(raw["format"]),
+                artifact_cohort=raw.get("artifact_cohort", raw.get("torch_min")),
                 sha256=str(raw["sha256"]).lower(),
                 size_bytes=int(raw["size_bytes"]),
                 torch_min=raw.get("torch_min"),
@@ -167,7 +161,9 @@ class ArtifactDescriptor:
             raise ConfigurationError(
                 f"Artifact {self.artifact_id!r} needs a valid SHA-256 and size."
             )
-        if not self.devices or any(item not in {"cpu", "cuda"} for item in self.devices):
+        if not self.devices or any(
+            item not in {"cpu", "cuda"} for item in self.devices
+        ):
             raise ConfigurationError(
                 f"Artifact {self.artifact_id!r} has invalid device eligibility."
             )
@@ -180,6 +176,16 @@ class ArtifactDescriptor:
         if self.format == "pt2" and not self.filename.endswith(".pt2"):
             raise ConfigurationError(
                 f"Export artifact {self.artifact_id!r} must preserve .pt2."
+            )
+        if self.format == "pt2" and (
+            (self.torch_min is not None or self.torch_max_exclusive is not None)
+            and (
+                self.artifact_cohort is None
+                or _VERSION_RE.fullmatch(str(self.artifact_cohort)) is None
+            )
+        ):
+            raise ConfigurationError(
+                f"Export artifact {self.artifact_id!r} needs a canonical cohort."
             )
         if self.format == "torchscript" and not self.filename.endswith(".pt"):
             raise ConfigurationError(
@@ -215,9 +221,7 @@ class ModelGovernance:
     limitations: tuple[str, ...]
 
     @classmethod
-    def from_mapping(
-        cls, model_id: str, raw: Mapping[str, Any]
-    ) -> "ModelGovernance":
+    def from_mapping(cls, model_id: str, raw: Mapping[str, Any]) -> "ModelGovernance":
         try:
             record = cls(
                 model_id=model_id,
@@ -270,8 +274,7 @@ class ModelGovernance:
         return (
             self.status == "approved"
             and self.release_eligible
-            and self.source_checkpoint.get("upstream_checkpoint_mapping")
-            == "verified"
+            and self.source_checkpoint.get("upstream_checkpoint_mapping") == "verified"
             and self.source_checkpoint.get("hosted_sha256_verified") is True
             and self.rights.get("weights_license") not in {None, "unverified"}
             and self.rights.get("redistribution") == "approved"
@@ -397,7 +400,8 @@ class ArtifactManifest:
             supported_torch_minors: tuple[str, ...] = ()
             required_devices: tuple[str, ...] = ()
             if compatibility is not None:
-                if int(compatibility["schema_version"]) != 1:
+                compatibility_schema = int(compatibility["schema_version"])
+                if compatibility_schema not in {1, 2}:
                     raise ConfigurationError("Unsupported compatibility schema.")
                 compatibility_status = str(compatibility["status"])
                 if compatibility_status not in _COMPATIBILITY_STATUSES:
@@ -415,12 +419,60 @@ class ArtifactManifest:
                 )
                 if (
                     not supported_torch_minors
-                    or len(set(supported_torch_minors))
-                    != len(supported_torch_minors)
+                    or len(set(supported_torch_minors)) != len(supported_torch_minors)
                     or not required_devices
                     or any(item not in {"cpu", "cuda"} for item in required_devices)
                 ):
                     raise ConfigurationError("Compatibility matrix is incomplete.")
+                if compatibility_schema == 2:
+                    cohort_records = compatibility.get("cohorts")
+                    runtime_lanes = compatibility.get("runtime_lanes")
+                    if not isinstance(cohort_records, list) or not isinstance(
+                        runtime_lanes, list
+                    ):
+                        raise ConfigurationError(
+                            "Compatibility matrix needs artifact cohorts and runtime lanes."
+                        )
+                    artifact_cohorts = {
+                        str(record.get("artifact_cohort"))
+                        for record in cohort_records
+                        if isinstance(record, Mapping)
+                    }
+                    lane_minors = [
+                        str(record.get("torch_minor"))
+                        for record in runtime_lanes
+                        if isinstance(record, Mapping)
+                    ]
+                    if (
+                        len(artifact_cohorts) != len(cohort_records)
+                        or len(lane_minors) != len(runtime_lanes)
+                        or len(set(lane_minors)) != len(lane_minors)
+                        or set(lane_minors) != set(supported_torch_minors)
+                    ):
+                        raise ConfigurationError(
+                            "Compatibility artifact cohorts or runtime lanes are inconsistent."
+                        )
+                    cohort_ranges = {}
+                    for record in cohort_records:
+                        cohort = str(record.get("artifact_cohort"))
+                        lower = parse_runtime_version(str(record.get("torch_min")))
+                        upper = parse_runtime_version(
+                            str(record.get("torch_max_exclusive"))
+                        )
+                        if lower >= upper:
+                            raise ConfigurationError(
+                                f"Compatibility artifact cohort {cohort!r} has an empty range."
+                            )
+                        cohort_ranges[cohort] = (lower, upper)
+                    for record in runtime_lanes:
+                        lane = str(record.get("torch_minor"))
+                        cohort = str(record.get("artifact_cohort"))
+                        runtime = parse_runtime_version(lane)
+                        bounds = cohort_ranges.get(cohort)
+                        if bounds is None or not bounds[0] <= runtime < bounds[1]:
+                            raise ConfigurationError(
+                                f"Compatibility runtime lane {lane!r} has no valid artifact route."
+                            )
 
             governance_status = "unspecified"
             governance_records: dict[str, ModelGovernance] = {}
@@ -533,7 +585,9 @@ class ArtifactManifest:
         if legacy and not allow_legacy_models:
             remedy = " Set allow_legacy_models=True to use an eligible verified legacy artifact."
         else:
-            remedy = " Install a documented supported runtime or publish a validated cohort."
+            remedy = (
+                " Install a documented supported runtime or publish a validated cohort."
+            )
         raise ModelCompatibilityError(
             f"No compatible artifact for {model_id!r} with torch {runtime_label} "
             f"on {device_family}.{remedy}"
@@ -554,12 +608,16 @@ def get_model_manifest() -> ArtifactManifest:
     def referenced_json(field: str) -> Mapping[str, Any]:
         filename = str(raw[field])
         if Path(filename).name != filename or not filename.endswith(".json"):
-            raise ConfigurationError(f"Invalid manifest resource reference: {filename!r}")
+            raise ConfigurationError(
+                f"Invalid manifest resource reference: {filename!r}"
+            )
         value = json.loads(
             model_resources.joinpath(filename).read_text(encoding="utf-8")
         )
         if not isinstance(value, Mapping):
-            raise ConfigurationError(f"Manifest resource {filename!r} is not an object.")
+            raise ConfigurationError(
+                f"Manifest resource {filename!r} is not an object."
+            )
         return value
 
     return ArtifactManifest.from_mapping(

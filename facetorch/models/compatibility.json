@@ -1,15 +1,16 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "status": "approved",
-  "approved_on": "2026-08-25",
+  "approved_on": "2026-09-02",
   "python": {
     "specifier": ">=3.10,<3.13",
     "minor_lines": ["3.10", "3.11", "3.12"]
   },
   "torch": {
-    "specifier": ">=2.6,<2.12,!=2.7.*,!=2.8.*,!=2.9.*,!=2.10.*",
-    "supported_minor_lines": ["2.6", "2.11"],
-    "explicitly_unsupported_minor_lines": ["2.3", "2.4", "2.5", "2.7", "2.8", "2.9", "2.10"]
+    "specifier": ">=2.6,<2.14",
+    "torchvision_specifier": ">=0.21,<0.29",
+    "supported_minor_lines": ["2.6", "2.7", "2.8", "2.9", "2.10", "2.11", "2.12", "2.13"],
+    "explicitly_unsupported_minor_lines": ["2.3", "2.4", "2.5"]
   },
   "platform_policy": {
     "official_system": "Linux",
@@ -58,9 +59,27 @@
     "publication_plan_id": "4c23beba6fc44f5688adbb468584ef5c5f23ddd52c42263e9f3490a0dd0ad63d",
     "manifest_revision": "f40a1f4cc5ea9006d88296e9db74dc3756ff89b5",
     "release_limitations": [
-      "The coordinated RC1 release still requires its separate dry run from the exact final protected source commit.",
+      "Every package release still requires its separate dry run from the exact final protected source commit.",
       "The published artifact metadata binds the clean export commit above; later documentation-only source commits do not rewrite immutable model bytes.",
       "The AU cohorts preserve digest-pinned published programs because the current native forward definition does not reproduce the legacy reference, even though the upstream checkpoint tensors are mapped."
+    ]
+  },
+  "runtime_compatibility_evidence": {
+    "status": "validated_existing_rc2_artifacts",
+    "date": "2026-09-01",
+    "package_version": "1.0.0rc2",
+    "package_wheel_sha256": "463ad8f5db3699ce921e126edb73df3c7e8a2a2526486b0c37aa4882a8789e65",
+    "manifest_revision": "f95f0743df8d4d3277fb7850a32d22ea755fb785",
+    "platform": {"system": "Linux", "machine": "x86_64"},
+    "python_version": "3.10.12",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "driver_version": "595.71.05",
+    "runtime_lanes": 8,
+    "models_per_lane": 10,
+    "devices_per_lane": ["cpu", "cuda"],
+    "limitations": [
+      "The compatibility probe exercised one real four-face image rather than the complete synthetic release matrix.",
+      "The exact RC3 source commit must pass the repository CPU lanes, local CUDA release matrix, dependency audit, and container smokes before publication."
     ]
   },
   "cohorts": [
@@ -69,6 +88,8 @@
       "validated_patch": "2.6.0",
       "torchvision_patch": "0.21.0",
       "artifact_cohort": "2.6",
+      "torch_min": "2.6",
+      "torch_max_exclusive": "2.9",
       "export_schema": {"major": 8, "minor": 2},
       "cpu": {"runtime": "cpu", "evidence_status": "validated_clean_commit"},
       "cuda": {"runtime": "12.4", "evidence_status": "validated_clean_commit_local_rtx3090"}
@@ -78,9 +99,21 @@
       "validated_patch": "2.11.0",
       "torchvision_patch": "0.26.0",
       "artifact_cohort": "2.11",
+      "torch_min": "2.9",
+      "torch_max_exclusive": "2.14",
       "export_schema": {"major": 8, "minor": 17},
       "cpu": {"runtime": "cpu", "evidence_status": "validated_clean_commit"},
       "cuda": {"runtime": "13.0", "evidence_status": "validated_clean_commit_local_rtx3090"}
     }
+  ],
+  "runtime_lanes": [
+    {"torch_minor": "2.6", "validated_patch": "2.6.0", "torchvision_patch": "0.21.0", "artifact_cohort": "2.6", "cpu": {"runtime": "cpu", "evidence_status": "validated_rc2_artifact_probe"}, "cuda": {"runtime": "12.4", "evidence_status": "validated_rc2_artifact_probe_local_rtx3090"}},
+    {"torch_minor": "2.7", "validated_patch": "2.7.1", "torchvision_patch": "0.22.1", "artifact_cohort": "2.6", "cpu": {"runtime": "cpu", "evidence_status": "validated_rc2_artifact_probe"}, "cuda": {"runtime": "12.6", "evidence_status": "validated_rc2_artifact_probe_local_rtx3090"}},
+    {"torch_minor": "2.8", "validated_patch": "2.8.0", "torchvision_patch": "0.23.0", "artifact_cohort": "2.6", "warnings": ["PyTorch emits a deprecation warning while loading the legacy PT2 archive container."], "cpu": {"runtime": "cpu", "evidence_status": "validated_rc2_artifact_probe_with_warning"}, "cuda": {"runtime": "12.6", "evidence_status": "validated_rc2_artifact_probe_with_warning_local_rtx3090"}},
+    {"torch_minor": "2.9", "validated_patch": "2.9.1", "torchvision_patch": "0.24.1", "artifact_cohort": "2.11", "cpu": {"runtime": "cpu", "evidence_status": "validated_rc2_artifact_probe"}, "cuda": {"runtime": "13.0", "evidence_status": "validated_rc2_artifact_probe_local_rtx3090"}},
+    {"torch_minor": "2.10", "validated_patch": "2.10.0", "torchvision_patch": "0.25.0", "artifact_cohort": "2.11", "cpu": {"runtime": "cpu", "evidence_status": "validated_rc2_artifact_probe"}, "cuda": {"runtime": "13.0", "evidence_status": "validated_rc2_artifact_probe_local_rtx3090"}},
+    {"torch_minor": "2.11", "validated_patch": "2.11.0", "torchvision_patch": "0.26.0", "artifact_cohort": "2.11", "cpu": {"runtime": "cpu", "evidence_status": "validated_rc2_artifact_probe"}, "cuda": {"runtime": "13.0", "evidence_status": "validated_rc2_artifact_probe_local_rtx3090"}},
+    {"torch_minor": "2.12", "validated_patch": "2.12.1", "torchvision_patch": "0.27.1", "artifact_cohort": "2.11", "cpu": {"runtime": "cpu", "evidence_status": "validated_rc2_artifact_probe"}, "cuda": {"runtime": "13.0", "evidence_status": "validated_rc2_artifact_probe_local_rtx3090"}},
+    {"torch_minor": "2.13", "validated_patch": "2.13.0", "torchvision_patch": "0.28.0", "artifact_cohort": "2.11", "cpu": {"runtime": "cpu", "evidence_status": "validated_rc2_artifact_probe"}, "cuda": {"runtime": "13.0", "evidence_status": "validated_rc2_artifact_probe_local_rtx3090"}}
   ]
 }

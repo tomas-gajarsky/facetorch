@@ -27,9 +27,39 @@ PROFILE_SPECS = {
         "torchvision": "0.21.0",
         "index": "https://download.pytorch.org/whl/cpu",
     },
+    "torch-2.7-cpu": {
+        "torch": "2.7.1",
+        "torchvision": "0.22.1",
+        "index": "https://download.pytorch.org/whl/cpu",
+    },
+    "torch-2.8-cpu": {
+        "torch": "2.8.0",
+        "torchvision": "0.23.0",
+        "index": "https://download.pytorch.org/whl/cpu",
+    },
+    "torch-2.9-cpu": {
+        "torch": "2.9.1",
+        "torchvision": "0.24.1",
+        "index": "https://download.pytorch.org/whl/cpu",
+    },
+    "torch-2.10-cpu": {
+        "torch": "2.10.0",
+        "torchvision": "0.25.0",
+        "index": "https://download.pytorch.org/whl/cpu",
+    },
     "torch-2.11-cpu": {
         "torch": "2.11.0",
         "torchvision": "0.26.0",
+        "index": "https://download.pytorch.org/whl/cpu",
+    },
+    "torch-2.12-cpu": {
+        "torch": "2.12.1",
+        "torchvision": "0.27.1",
+        "index": "https://download.pytorch.org/whl/cpu",
+    },
+    "torch-2.13-cpu": {
+        "torch": "2.13.0",
+        "torchvision": "0.28.0",
         "index": "https://download.pytorch.org/whl/cpu",
     },
     "torch-2.6-cu124": {
@@ -37,9 +67,39 @@ PROFILE_SPECS = {
         "torchvision": "0.21.0",
         "index": "https://download.pytorch.org/whl/cu124",
     },
+    "torch-2.7-cu126": {
+        "torch": "2.7.1",
+        "torchvision": "0.22.1",
+        "index": "https://download.pytorch.org/whl/cu126",
+    },
+    "torch-2.8-cu126": {
+        "torch": "2.8.0",
+        "torchvision": "0.23.0",
+        "index": "https://download.pytorch.org/whl/cu126",
+    },
+    "torch-2.9-cu130": {
+        "torch": "2.9.1",
+        "torchvision": "0.24.1",
+        "index": "https://download.pytorch.org/whl/cu130",
+    },
+    "torch-2.10-cu130": {
+        "torch": "2.10.0",
+        "torchvision": "0.25.0",
+        "index": "https://download.pytorch.org/whl/cu130",
+    },
     "torch-2.11-cu130": {
         "torch": "2.11.0",
         "torchvision": "0.26.0",
+        "index": "https://download.pytorch.org/whl/cu130",
+    },
+    "torch-2.12-cu130": {
+        "torch": "2.12.1",
+        "torchvision": "0.27.1",
+        "index": "https://download.pytorch.org/whl/cu130",
+    },
+    "torch-2.13-cu130": {
+        "torch": "2.13.0",
+        "torchvision": "0.28.0",
         "index": "https://download.pytorch.org/whl/cu130",
     },
 }
@@ -117,6 +177,7 @@ def _verify_public_matrix(
     python_spec = metadata["requires-python"]
     matrix_python = compatibility["python"]["specifier"]
     matrix_torch = compatibility["torch"]["specifier"]
+    matrix_torchvision = compatibility["torch"]["torchvision_specifier"]
     if _normalize_spec(matrix_python) != _normalize_spec(python_spec):
         errors.append(
             "compatibility.json: Python spec does not match pyproject.toml "
@@ -127,15 +188,45 @@ def _verify_public_matrix(
             "compatibility.json: Torch spec does not match pyproject.toml "
             f"({matrix_torch} != {dependencies['torch']})"
         )
+    if str(SpecifierSet(matrix_torchvision)) != str(
+        SpecifierSet(dependencies["torchvision"])
+    ):
+        errors.append(
+            "compatibility.json: Torchvision spec does not match pyproject.toml "
+            f"({matrix_torchvision} != {dependencies['torchvision']})"
+        )
 
     torch_specifier = SpecifierSet(matrix_torch)
     supported = compatibility["torch"]["supported_minor_lines"]
     unsupported = compatibility["torch"]["explicitly_unsupported_minor_lines"]
-    cohorts = {item["torch_minor"] for item in compatibility["cohorts"]}
-    if set(supported) != cohorts:
+    runtime_lanes = compatibility.get("runtime_lanes", [])
+    lane_minors = [item.get("torch_minor") for item in runtime_lanes]
+    if set(supported) != set(lane_minors) or len(lane_minors) != len(set(lane_minors)):
         errors.append(
-            "compatibility.json: supported Torch lines and cohort records differ"
+            "compatibility.json: supported Torch lines and runtime lanes differ"
         )
+    artifact_cohorts = {
+        item.get("artifact_cohort"): item for item in compatibility.get("cohorts", [])
+    }
+    if None in artifact_cohorts or len(artifact_cohorts) != len(
+        compatibility.get("cohorts", [])
+    ):
+        errors.append("compatibility.json: artifact cohorts are invalid or duplicated")
+    for lane in runtime_lanes:
+        minor = lane.get("torch_minor")
+        cohort = artifact_cohorts.get(lane.get("artifact_cohort"))
+        if cohort is None:
+            errors.append(
+                f"compatibility.json: Torch {minor} references an unknown artifact cohort"
+            )
+            continue
+        runtime = Version(f"{minor}.0")
+        lower = Version(f"{cohort['torch_min']}.0")
+        upper = Version(f"{cohort['torch_max_exclusive']}.0")
+        if not lower <= runtime < upper:
+            errors.append(
+                f"compatibility.json: Torch {minor} is outside its artifact route"
+            )
     for minor in supported:
         if Version(f"{minor}.0") not in torch_specifier:
             errors.append(
@@ -194,7 +285,9 @@ def _verify_profile(
                 f"{profile_name}: {dependency} does not match the public requirement"
             )
     if set(profile_dependencies) != set(public_dependencies):
-        errors.append(f"{profile_name}: runtime dependency names differ from pyproject.toml")
+        errors.append(
+            f"{profile_name}: runtime dependency names differ from pyproject.toml"
+        )
     if profile_test != public_dev:
         errors.append(f"{profile_name}: test dependencies differ from the dev extra")
     if profile_release != public_release:
@@ -214,7 +307,9 @@ def _verify_profile(
         index_name = sources.get(dependency, {}).get("index")
         index = index_by_name.get(index_name, {})
         if index.get("url") != expected["index"] or index.get("explicit") is not True:
-            errors.append(f"{profile_name}: {dependency} index is not exact and explicit")
+            errors.append(
+                f"{profile_name}: {dependency} index is not exact and explicit"
+            )
 
     lock = _load_toml(lock_path)
     if _normalize_spec(lock.get("requires-python")) != _normalize_spec(
@@ -222,7 +317,9 @@ def _verify_profile(
     ):
         errors.append(f"{profile_name}: uv.lock Python support is stale")
     for dependency in ("torch", "torchvision"):
-        locked = [item for item in lock.get("package", []) if item["name"] == dependency]
+        locked = [
+            item for item in lock.get("package", []) if item["name"] == dependency
+        ]
         base_versions = {item["version"].split("+", 1)[0] for item in locked}
         registries = {item.get("source", {}).get("registry") for item in locked}
         if base_versions != {expected[dependency]}:

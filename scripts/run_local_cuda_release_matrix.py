@@ -17,9 +17,19 @@ from pathlib import Path
 from typing import Any, Mapping
 
 UV_VERSION = "0.9.14"
-CUDA_PROFILES = {
+ARTIFACT_COHORT_PROFILES = {
     "2.6": "environments/torch-2.6-cu124",
     "2.11": "environments/torch-2.11-cu130",
+}
+CUDA_RUNTIME_PROFILES = {
+    "2.6": ("environments/torch-2.6-cu124", "2.6"),
+    "2.7": ("environments/torch-2.7-cu126", "2.6"),
+    "2.8": ("environments/torch-2.8-cu126", "2.6"),
+    "2.9": ("environments/torch-2.9-cu130", "2.11"),
+    "2.10": ("environments/torch-2.10-cu130", "2.11"),
+    "2.11": ("environments/torch-2.11-cu130", "2.11"),
+    "2.12": ("environments/torch-2.12-cu130", "2.11"),
+    "2.13": ("environments/torch-2.13-cu130", "2.11"),
 }
 
 
@@ -182,13 +192,15 @@ def main() -> int:
         raise RuntimeError("No NVIDIA GPU attestation was returned")
 
     _ensure_evidence_root(staging_root)
-    summaries = []
+    artifact_summaries = []
+    runtime_summaries = []
     commands = []
+    synced_profiles = set()
     golden_reference_cohort = "2.6"
     golden_reference_root = staging_root / "golden-references"
     source_environment = os.environ.copy()
     source_environment["PYTHONPATH"] = str(repo_root)
-    for cohort, profile_relative in CUDA_PROFILES.items():
+    for cohort, profile_relative in ARTIFACT_COHORT_PROFILES.items():
         profile = repo_root / profile_relative
         lock_relative = f"{profile_relative}/uv.lock"
         sync_command = [
@@ -204,6 +216,7 @@ def main() -> int:
             sync_command.extend(["--extra", "release"])
         _run(sync_command, cwd=repo_root)
         commands.append(sync_command)
+        synced_profiles.add(profile_relative)
         cohort_python = profile / ".venv" / "bin" / "python"
         inventory = staging_root / f"source-inventory-torch{cohort}.json"
         prepare_command = [
@@ -243,7 +256,7 @@ def main() -> int:
         ]
         _run(export_command, cwd=repo_root, environment=source_environment)
         commands.append(export_command)
-        summaries.append(cohort_root / f"summary-torch{cohort}.json")
+        artifact_summaries.append(cohort_root / f"summary-torch{cohort}.json")
 
     matrix_report = staging_root / "candidate-matrix-report.json"
     verify_command = [
@@ -252,13 +265,77 @@ def main() -> int:
         "--staging-root",
         str(staging_root),
     ]
-    for summary in summaries:
+    for summary in artifact_summaries:
         verify_command.extend(["--summary", str(summary)])
     if args.candidate_evidence:
         verify_command.append("--candidate-evidence")
     verify_command.extend(["--report", str(matrix_report)])
     _run(verify_command, cwd=repo_root, environment=source_environment)
     commands.append(verify_command)
+
+    for runtime, (profile_relative, artifact_cohort) in CUDA_RUNTIME_PROFILES.items():
+        profile = repo_root / profile_relative
+        lock_relative = f"{profile_relative}/uv.lock"
+        if profile_relative not in synced_profiles:
+            sync_command = [
+                "uv",
+                "sync",
+                "--project",
+                str(profile),
+                "--frozen",
+                "--python",
+                args.python,
+            ]
+            _run(sync_command, cwd=repo_root)
+            commands.append(sync_command)
+            synced_profiles.add(profile_relative)
+        runtime_python = profile / ".venv" / "bin" / "python"
+        report_root = staging_root / "runtime-validation" / f"torch-{runtime}"
+        validate_command = [
+            str(runtime_python),
+            str(repo_root / "scripts" / "export_model_cohorts_hf.py"),
+            "validate",
+            "--repo-root",
+            str(repo_root),
+            "--cohort",
+            artifact_cohort,
+            "--artifacts-root",
+            str(staging_root / f"torch-{artifact_cohort}"),
+            "--report-root",
+            str(report_root),
+            "--environment-lock",
+            lock_relative,
+            "--validate-devices",
+            "cpu,cuda",
+            "--golden-reference-root",
+            str(golden_reference_root),
+            "--golden-reference-mode",
+            "reuse",
+            "--golden-reference-cohort",
+            golden_reference_cohort,
+        ]
+        _run(validate_command, cwd=repo_root, environment=source_environment)
+        commands.append(validate_command)
+        runtime_summaries.append(
+            report_root
+            / f"validation-summary-torch{runtime}-artifact{artifact_cohort}.json"
+        )
+
+    runtime_matrix_report = staging_root / "runtime-compatibility-report.json"
+    runtime_verify_command = [
+        sys.executable,
+        str(repo_root / "scripts" / "verify_runtime_compatibility_matrix.py"),
+        "--staging-root",
+        str(staging_root),
+        "--manifest",
+        str(repo_root / "facetorch" / "models" / "manifest.json"),
+        "--report",
+        str(runtime_matrix_report),
+    ]
+    for summary in runtime_summaries:
+        runtime_verify_command.extend(["--summary", str(summary)])
+    _run(runtime_verify_command, cwd=repo_root, environment=source_environment)
+    commands.append(runtime_verify_command)
 
     packaging_residue = [
         path
@@ -287,7 +364,7 @@ def main() -> int:
     wheels = list(distributions.glob("facetorch-*.whl"))
     if len(wheels) != 1:
         raise RuntimeError("Expected exactly one candidate wheel")
-    production_profile = repo_root / CUDA_PROFILES["2.6"]
+    production_profile = repo_root / ARTIFACT_COHORT_PROFILES["2.6"]
     production_python = production_profile / ".venv" / "bin" / "python"
     wheel_check_command = [
         str(production_profile / ".venv" / "bin" / "check-wheel-contents"),
@@ -386,13 +463,18 @@ def main() -> int:
                 "path": f"{profile}/uv.lock",
                 "sha256": _sha256(repo_root / profile / "uv.lock"),
             }
-            for cohort, profile in CUDA_PROFILES.items()
+            for cohort, (profile, _artifact_cohort) in CUDA_RUNTIME_PROFILES.items()
         },
         "summaries": [
             {"path": str(path.relative_to(staging_root)), "sha256": _sha256(path)}
-            for path in summaries
+            for path in runtime_summaries
+        ],
+        "artifact_summaries": [
+            {"path": str(path.relative_to(staging_root)), "sha256": _sha256(path)}
+            for path in artifact_summaries
         ],
         "matrix_report_sha256": _sha256(matrix_report),
+        "runtime_matrix_report_sha256": _sha256(runtime_matrix_report),
         "wheel": {"filename": wheels[0].name, "sha256": _sha256(wheels[0])},
         "alignment_metadata_report_sha256": _sha256(alignment_metadata_report),
         "default_analyzer_smoke_sha256": _sha256(smoke_report),

@@ -1,7 +1,7 @@
 services:
 
   facetorch:
-    image: "tomasgajarsky/facetorch:${FACETORCH_DOCKER_TAG:-1.0.0-rc.2}"
+    image: "tomasgajarsky/facetorch:${FACETORCH_DOCKER_TAG:-1.0.0-rc.3}"
     platform: linux/amd64
     build:
       context: .
@@ -14,7 +14,7 @@ services:
       FACETORCH_CACHE_DIR: /var/cache/facetorch
 
   facetorch-gpu:
-    image: "tomasgajarsky/facetorch-gpu:${FACETORCH_DOCKER_TAG:-1.0.0-rc.2}"
+    image: "tomasgajarsky/facetorch-gpu:${FACETORCH_DOCKER_TAG:-1.0.0-rc.3}"
     platform: linux/amd64
     build:
       context: .
@@ -34,7 +34,7 @@ services:
               capabilities: [gpu]
 
   facetorch-gpu-no-device:
-    image: "tomasgajarsky/facetorch-gpu:${FACETORCH_DOCKER_TAG:-1.0.0-rc.2}"
+    image: "tomasgajarsky/facetorch-gpu:${FACETORCH_DOCKER_TAG:-1.0.0-rc.3}"
     platform: linux/amd64
     build:
       context: .

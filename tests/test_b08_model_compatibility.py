@@ -32,8 +32,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = REPO_ROOT / "facetorch" / "models" / "manifest.json"
 COMPATIBILITY_PATH = REPO_ROOT / "facetorch" / "models" / "compatibility.json"
 GOVERNANCE_PATH = REPO_ROOT / "facetorch" / "models" / "governance.json"
-SUPPORTED_TORCH = {"2.6", "2.11"}
-UNSUPPORTED_TORCH = {"2.3", "2.4", "2.5", "2.7", "2.8", "2.9", "2.10"}
+SUPPORTED_TORCH = {"2.6", "2.7", "2.8", "2.9", "2.10", "2.11", "2.12", "2.13"}
+ARTIFACT_COHORTS = {"2.6", "2.11"}
+UNSUPPORTED_TORCH = {"2.3", "2.4", "2.5"}
 CUDA_ENVIRONMENT_LOCKS = {
     "2.6": "environments/torch-2.6-cu124/uv.lock",
     "2.11": "environments/torch-2.11-cu130/uv.lock",
@@ -84,15 +85,62 @@ def test_package_metadata_exactly_matches_the_candidate_torch_matrix():
 @pytest.mark.release_blocker
 def test_every_model_has_exactly_one_current_metadata_artifact_per_cohort():
     manifest = get_model_manifest()
-    assert manifest.supported_torch_minors == ("2.6", "2.11")
+    assert set(manifest.supported_torch_minors) == SUPPORTED_TORCH
     for model_id, artifacts in manifest.models.items():
         exports = [item for item in artifacts if item.format == "pt2"]
         assert len(exports) == 2, model_id
-        assert {item.torch_min for item in exports} == SUPPORTED_TORCH, model_id
+        assert {item.artifact_cohort for item in exports} == ARTIFACT_COHORTS, model_id
+        assert {
+            (item.artifact_cohort, item.torch_min, item.torch_max_exclusive)
+            for item in exports
+        } == {
+            ("2.6", "2.6", "2.9"),
+            ("2.11", "2.9", "2.14"),
+        }, model_id
         assert all(
             item.validation_metadata == f"{item.filename}.meta.json" for item in exports
         )
         assert all(item.torch_min != "2.3" for item in artifacts), model_id
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize(
+    ("runtime", "artifact_cohort"),
+    [
+        ("2.6.0", "2.6"),
+        ("2.7.1", "2.6"),
+        ("2.8.0", "2.6"),
+        ("2.9.1", "2.11"),
+        ("2.10.0", "2.11"),
+        ("2.11.0", "2.11"),
+        ("2.12.1", "2.11"),
+        ("2.13.0", "2.11"),
+    ],
+)
+@pytest.mark.parametrize("device", ["cpu", "cuda"])
+def test_every_supported_runtime_routes_to_one_declared_artifact_cohort(
+    runtime, artifact_cohort, device
+):
+    manifest = get_model_manifest()
+    for model_id in manifest.models:
+        candidates = manifest.candidates(
+            model_id,
+            torch_version=runtime,
+            device=device,
+        )
+        assert len(candidates) == 1, model_id
+        assert candidates[0].artifact_cohort == artifact_cohort, model_id
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize("runtime", ["2.5.1", "2.14.0"])
+def test_runtimes_outside_the_official_matrix_fail_before_download(runtime):
+    with pytest.raises(ModelCompatibilityError, match="no model download"):
+        get_model_manifest().candidates(
+            "fer-efficientnet-b0",
+            torch_version=runtime,
+            device="cpu",
+        )
 
 
 @pytest.mark.release_blocker
@@ -139,9 +187,7 @@ def test_provenance_and_matrix_approve_every_published_model():
 
     assert manifest_raw["status"] == "approved"
     assert compatibility["status"] == "approved"
-    assert compatibility["candidate_evidence"]["status"] == (
-        "validated_clean_commit"
-    )
+    assert compatibility["candidate_evidence"]["status"] == ("validated_clean_commit")
     manifest = ArtifactManifest.from_mapping(
         manifest_raw,
         compatibility=compatibility,
@@ -149,8 +195,7 @@ def test_provenance_and_matrix_approve_every_published_model():
     )
     assert manifest.status == "approved"
     assert all(
-        descriptor.export_commit
-        == compatibility["candidate_evidence"]["source_commit"]
+        descriptor.export_commit == compatibility["candidate_evidence"]["source_commit"]
         for descriptor in manifest.iter_descriptors()
     )
 
@@ -296,13 +341,9 @@ def _stage_candidate_matrix(tmp_path):
             "batch_sizes": policy["predictor_batch_sizes"],
             "seeds": policy["seeds"],
             "scales": policy["scales"],
-            "validate_devices": compatibility["platform_policy"][
-                "required_devices"
-            ],
+            "validate_devices": compatibility["platform_policy"]["required_devices"],
             "golden_reference_mode": (
-                "record"
-                if cohort == policy["golden_reference_cohort"]
-                else "reuse"
+                "record" if cohort == policy["golden_reference_cohort"] else "reuse"
             ),
             "golden_reference_cohort": policy["golden_reference_cohort"],
             "model_ids": list(manifest["models"]),
@@ -473,7 +514,7 @@ def test_candidate_matrix_requires_every_cohort_model_and_device(tmp_path):
         require_approval=False,
     )
     assert report["status"] == "ok"
-    assert len(report["lanes"]) == len(SUPPORTED_TORCH)
+    assert len(report["lanes"]) == len(ARTIFACT_COHORTS)
     assert all(len(lane["artifacts"]) == 10 for lane in report["lanes"])
 
     first_summary = _json(summaries[0])
@@ -817,7 +858,7 @@ def _exact_remote_audit_fixture(tmp_path):
         artifact = next(
             item
             for item in model["artifacts"]
-            if item.get("format") == "pt2" and item.get("torch_min") == cohort
+            if item.get("format") == "pt2" and item.get("artifact_cohort") == cohort
         )
         metadata["artifact"] = artifact["filename"]
         metadata["artifact_sha256"] = artifact["sha256"]
@@ -852,9 +893,7 @@ def _exact_remote_audit_fixture(tmp_path):
                 "metadata_filename": artifact["validation_metadata"],
                 "metadata_sha256": metadata_digest,
                 "golden_reference_sha256": artifact["golden_reference_sha256"],
-                "golden_reference_size_bytes": artifact[
-                    "golden_reference_size_bytes"
-                ],
+                "golden_reference_size_bytes": artifact["golden_reference_size_bytes"],
                 "golden_reference_source_cohort": artifact[
                     "golden_reference_source_cohort"
                 ],
@@ -956,8 +995,7 @@ def test_exact_hub_audit_binds_remote_metadata_digest_and_identity(tmp_path):
     )
     assert report["status"] == "ok"
     assert all(
-        artifact["metadata_sha256_verified"]
-        and artifact["metadata_identity_verified"]
+        artifact["metadata_sha256_verified"] and artifact["metadata_identity_verified"]
         for artifact in report["results"][0]["artifacts"]
         if artifact["metadata_status"] != "not_applicable"
     )

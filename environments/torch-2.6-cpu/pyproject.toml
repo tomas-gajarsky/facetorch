@@ -27,7 +27,6 @@ test = [
     "pip>=25.0",
     "pytest>=6.0.0",
     "pytest-cov>=2.10.0",
-    "setuptools==81.0.0",
     "snakeviz>=2.1.0",
     "twine>=3.2.0",
 ]

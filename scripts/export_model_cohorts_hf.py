@@ -2357,7 +2357,16 @@ def _run_for_specs(
                 "validation": validation,
             }
 
-            meta_path = artifact_path.with_suffix(artifact_path.suffix + ".meta.json")
+            if mode == "export":
+                meta_path = artifact_path.with_suffix(
+                    artifact_path.suffix + ".meta.json"
+                )
+            else:
+                report_dir = out_root / spec["id"]
+                _ensure_runtime_directory(report_dir)
+                meta_path = report_dir / (
+                    f"validation-torch{runtime_torch_minor}-artifact{cohort}.meta.json"
+                )
             _write_json_atomic(meta_path, meta)
 
             if validation["status"] != "ok":
@@ -2507,9 +2516,14 @@ def main():
     add_common_args(p_validate)
     p_validate.add_argument("--artifacts-root", required=True)
     p_validate.add_argument(
+        "--report-root",
+        default=None,
+        help="Write validation metadata outside the immutable artifact root.",
+    )
+    p_validate.add_argument(
         "--cohort",
         default=None,
-        help="Explicit cohort (e.g. 2.3/2.6/2.11). Default: current torch minor.",
+        help="Explicit artifact cohort (2.6 or 2.11). Default: current torch minor.",
     )
 
     args = parser.parse_args()
@@ -2596,12 +2610,16 @@ def main():
         summary_path = out_root / f"summary-torch{cohort}.json"
     else:
         artifacts_root = Path(args.artifacts_root).resolve()
+        report_root = (
+            Path(args.report_root).resolve() if args.report_root else artifacts_root
+        )
+        _ensure_runtime_directory(report_root)
         summary, failures = _run_for_specs(
             specs=specs,
             mode="validate",
             repo_root=repo_root,
             cohort=cohort,
-            out_root=artifacts_root,
+            out_root=report_root,
             artifacts_root=artifacts_root,
             upload=False,
             hf_token_env="HF_TOKEN",
@@ -2614,7 +2632,9 @@ def main():
             golden_reference_mode=args.golden_reference_mode,
             golden_reference_cohort=args.golden_reference_cohort,
         )
-        summary_path = artifacts_root / f"validation-summary-torch{cohort}.json"
+        summary_path = report_root / (
+            f"validation-summary-torch{torch_minor}-artifact{cohort}.json"
+        )
 
     _write_json_atomic(summary_path, summary)
 

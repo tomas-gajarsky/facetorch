@@ -141,22 +141,28 @@ def verify_release_matrix(
         raise ReleaseMatrixError("Manifest has no models.")
     expected_models = set(models)
     cohort_records = {
-        str(item["torch_minor"]): item for item in compatibility.get("cohorts", [])
+        str(item["artifact_cohort"]): item for item in compatibility.get("cohorts", [])
     }
-    expected_cohorts = set(
+    expected_cohorts = set(cohort_records)
+    supported_runtimes = set(
         compatibility.get("torch", {}).get("supported_minor_lines", [])
     )
-    if not expected_cohorts or expected_cohorts != set(cohort_records):
+    runtime_records = {
+        str(item["torch_minor"]): item
+        for item in compatibility.get("runtime_lanes", [])
+    }
+    if (
+        not expected_cohorts
+        or not supported_runtimes
+        or supported_runtimes != set(runtime_records)
+    ):
         raise ReleaseMatrixError("Compatibility cohort declarations are inconsistent.")
     required_devices = tuple(
         compatibility.get("platform_policy", {}).get("required_devices", [])
     )
     if (
         not required_devices
-        or any(
-            not isinstance(device, str) or not device
-            for device in required_devices
-        )
+        or any(not isinstance(device, str) or not device for device in required_devices)
         or len(set(required_devices)) != len(required_devices)
     ):
         raise ReleaseMatrixError(
@@ -164,26 +170,37 @@ def verify_release_matrix(
         )
 
     artifact_contracts: dict[tuple[str, str], Mapping[str, Any]] = {}
+    route_cohorts = {
+        (
+            str(record.get("torch_min", "")),
+            str(record.get("torch_max_exclusive", "")),
+        ): cohort
+        for cohort, record in cohort_records.items()
+    }
+    if len(route_cohorts) != len(cohort_records):
+        raise ReleaseMatrixError("Compatibility artifact routes are duplicated.")
     for model_id, model in models.items():
         if not isinstance(model, Mapping):
             raise ReleaseMatrixError(f"Manifest model is invalid: {model_id}.")
         repo_id = model.get("repo_id")
         if not isinstance(repo_id, str) or not repo_id:
-            raise ReleaseMatrixError(
-                f"Manifest repository is invalid for {model_id}."
-            )
+            raise ReleaseMatrixError(f"Manifest repository is invalid for {model_id}.")
         artifacts = model.get("artifacts")
         if not isinstance(artifacts, list):
-            raise ReleaseMatrixError(
-                f"Manifest artifacts are invalid for {model_id}."
-            )
+            raise ReleaseMatrixError(f"Manifest artifacts are invalid for {model_id}.")
         pt2_artifacts = [
             artifact
             for artifact in artifacts
             if isinstance(artifact, Mapping) and artifact.get("format") == "pt2"
         ]
         pt2_cohorts = [
-            str(artifact.get("torch_min", "")) for artifact in pt2_artifacts
+            route_cohorts.get(
+                (
+                    str(artifact.get("torch_min", "")),
+                    str(artifact.get("torch_max_exclusive", "")),
+                )
+            )
+            for artifact in pt2_artifacts
         ]
         if (
             len(pt2_artifacts) != len(expected_cohorts)
@@ -197,13 +214,36 @@ def verify_release_matrix(
             matching = [
                 artifact
                 for artifact in pt2_artifacts
-                if artifact.get("torch_min") == cohort
+                if route_cohorts.get(
+                    (
+                        str(artifact.get("torch_min", "")),
+                        str(artifact.get("torch_max_exclusive", "")),
+                    )
+                )
+                == cohort
             ]
             if len(matching) != 1:
                 raise ReleaseMatrixError(
                     f"Manifest must declare one PT2 artifact for {model_id}/{cohort}."
                 )
             artifact_contracts[(str(model_id), cohort)] = matching[0]
+        for runtime, lane in runtime_records.items():
+            routed_cohort = str(lane.get("artifact_cohort", ""))
+            matching = [
+                artifact
+                for artifact in pt2_artifacts
+                if route_cohorts.get(
+                    (
+                        str(artifact.get("torch_min", "")),
+                        str(artifact.get("torch_max_exclusive", "")),
+                    )
+                )
+                == routed_cohort
+            ]
+            if len(matching) != 1:
+                raise ReleaseMatrixError(
+                    f"Manifest has no exact route for {model_id}/torch {runtime}."
+                )
     validation_policy = compatibility.get("validation_policy", {})
     golden_reference_cohort = str(validation_policy.get("golden_reference_cohort", ""))
     expected_batches = list(validation_policy.get("predictor_batch_sizes", []))
@@ -497,9 +537,8 @@ def verify_release_matrix(
                     f"Torch {cohort} model {model_id} has invalid device coverage."
                 )
             device_records = {item.get("device"): item for item in devices}
-            if (
-                len(device_records) != len(devices)
-                or set(device_records) != set(required_devices)
+            if len(device_records) != len(devices) or set(device_records) != set(
+                required_devices
             ):
                 raise ReleaseMatrixError(
                     f"Torch {cohort} model {model_id} has non-exact device coverage."

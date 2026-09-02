@@ -538,7 +538,7 @@ wheels = [
 
 [[package]]
 name = "facetorch"
-version = "1.0.0rc2"
+version = "1.0.0rc3"
 source = { editable = "." }
 dependencies = [
     { name = "codetiming" },
@@ -569,7 +569,6 @@ dev = [
     { name = "pip" },
     { name = "pytest" },
     { name = "pytest-cov" },
-    { name = "setuptools" },
     { name = "snakeviz" },
     { name = "twine" },
 ]
@@ -605,11 +604,10 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=2.10.0" },
     { name = "python-json-logger", specifier = ">=2.0.0" },
     { name = "requests", specifier = ">=2.20.0" },
-    { name = "setuptools", marker = "extra == 'dev'", specifier = "==81.0.0" },
     { name = "snakeviz", marker = "extra == 'dev'", specifier = ">=2.1.0" },
     { name = "timm", specifier = ">=0.6.0" },
-    { name = "torch", specifier = ">=2.6,!=2.7.*,!=2.8.*,!=2.9.*,!=2.10.*,<2.12", index = "https://download.pytorch.org/whl/cpu" },
-    { name = "torchvision", specifier = ">=0.21,<0.27", index = "https://download.pytorch.org/whl/cpu" },
+    { name = "torch", specifier = ">=2.6,<2.14", index = "https://download.pytorch.org/whl/cpu" },
+    { name = "torchvision", specifier = ">=0.21,<0.29", index = "https://download.pytorch.org/whl/cpu" },
     { name = "twine", marker = "extra == 'dev'", specifier = ">=3.2.0" },
 ]
 provides-extras = ["dev", "release"]

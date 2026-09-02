@@ -44,8 +44,9 @@ to equal the repository owner before the local runner is selected.
 The workflow rejects reused or incorrectly provisioned execution by requiring the
 ephemeral attestation, an exact clean checkout, the expected uv version, and no
 persistent publication credential variables. It validates all ten models on CPU
-and CUDA for Torch 2.6/CUDA 12.4 and Torch 2.11/CUDA 13.0;
-runs every cohort against the single Torch 2.6 CPU golden-reference bundle;
+and CUDA for every Torch runtime from 2.6 through 2.13, routed through the
+existing 2.6 and 2.11 artifact cohorts; runs every lane against the single Torch
+2.6 CPU golden-reference bundle;
 runs the exact wheel and public notebook; and smokes both production images with
 networking disabled and a read-only root filesystem. The retained evidence binds
 the source SHA, dependency-lock hashes, manifest/governance hashes, GPU/runtime,

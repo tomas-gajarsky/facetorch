@@ -432,7 +432,6 @@ jobs:
             --extra test --extra release --python 3.10
           environments/torch-2.6-cu124/.venv/bin/python scripts/check_dependency_sync.py
           environments/torch-2.6-cu124/.venv/bin/python scripts/audit_dependencies.py \
-            --profile torch-2.6-cu124 \
             --output-dir "$FACETORCH_STAGING/dependency-audit"
       - name: Export and validate all exact CUDA cohorts
         run: |
@@ -510,12 +509,14 @@ jobs:
           name: release-local-gpu-evidence-${{ needs.validate-inputs.outputs.source_sha }}
           path: |
             ${{ env.FACETORCH_STAGING }}/candidate-matrix-report.json
+            ${{ env.FACETORCH_STAGING }}/runtime-compatibility-report.json
             ${{ env.FACETORCH_STAGING }}/local-cuda-runner-report.json
             ${{ env.FACETORCH_STAGING }}/alignment-metadata-report.json
             ${{ env.FACETORCH_STAGING }}/default-analyzer-cuda-smoke.json
             ${{ env.FACETORCH_STAGING }}/facetorch-notebook-report.json
             ${{ env.FACETORCH_STAGING }}/facetorch-notebook-executed.ipynb
             ${{ env.FACETORCH_STAGING }}/torch-*/summary-torch*.json
+            ${{ env.FACETORCH_STAGING }}/runtime-validation/torch-*/validation-summary-*.json
             ${{ env.FACETORCH_STAGING }}/container-reports/*.json
             ${{ env.FACETORCH_STAGING }}/container-evidence.json
             ${{ env.FACETORCH_STAGING }}/dependency-audit/**

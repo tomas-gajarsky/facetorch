@@ -7,7 +7,6 @@ import json
 import re
 from typing import Any, Mapping, Sequence
 
-
 SUMMARY_SCHEMA_VERSION = 2
 METADATA_SCHEMA_VERSION = 2
 _TORCH_MINOR_RE = re.compile(r"^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$")
@@ -56,6 +55,8 @@ def validate_summary_identity(
     *,
     expected_model_ids: Sequence[str] | None = None,
     expected_devices: Sequence[str] | None = None,
+    expected_mode: str = "export",
+    require_native_runtime: bool = True,
 ) -> dict[str, Any]:
     """Normalize one self-consistent exporter summary identity."""
 
@@ -63,31 +64,31 @@ def validate_summary_identity(
         raise ModelEvidenceContractError(
             f"summary schema_version must be {SUMMARY_SCHEMA_VERSION}"
         )
-    if summary.get("mode") != "export":
-        raise ModelEvidenceContractError("summary mode must be export")
+    if expected_mode not in {"export", "validate"}:
+        raise ModelEvidenceContractError("expected summary mode is invalid")
+    if summary.get("mode") != expected_mode:
+        raise ModelEvidenceContractError(f"summary mode must be {expected_mode}")
     cohort = _text(summary.get("torch_minor"), "summary torch_minor")
     if _TORCH_MINOR_RE.fullmatch(cohort) is None:
         raise ModelEvidenceContractError("summary torch_minor is not canonical")
     runtime_minor = _text(
         summary.get("runtime_torch_minor"), "summary runtime_torch_minor"
     )
-    if runtime_minor != cohort:
+    if require_native_runtime and runtime_minor != cohort:
         raise ModelEvidenceContractError(
             "summary runtime_torch_minor disagrees with torch_minor"
         )
     torch_version = _text(summary.get("torch_version"), "summary torch_version")
     version_match = _TORCH_VERSION_RE.fullmatch(torch_version)
-    if version_match is None or version_match.group("minor") != cohort:
+    if version_match is None or version_match.group("minor") != runtime_minor:
         raise ModelEvidenceContractError(
-            "summary torch_version disagrees with torch_minor"
+            "summary torch_version disagrees with runtime_torch_minor"
         )
 
     model_ids = _unique_texts(
         summary.get("requested_model_ids"), "summary requested_model_ids"
     )
-    devices = _unique_texts(
-        summary.get("validate_devices"), "summary validate_devices"
-    )
+    devices = _unique_texts(summary.get("validate_devices"), "summary validate_devices")
     if expected_model_ids is not None and set(model_ids) != set(expected_model_ids):
         raise ModelEvidenceContractError(
             "summary model coverage differs from the authoritative manifest"
@@ -108,23 +109,17 @@ def validate_summary_identity(
 
     exporter_arguments = summary.get("exporter_arguments")
     if not isinstance(exporter_arguments, Mapping) or not exporter_arguments:
-        raise ModelEvidenceContractError(
-            "summary exporter_arguments must be an object"
-        )
-    normalized_arguments = _json_value(
-        exporter_arguments, "summary exporter_arguments"
-    )
+        raise ModelEvidenceContractError("summary exporter_arguments must be an object")
+    normalized_arguments = _json_value(exporter_arguments, "summary exporter_arguments")
     expected_arguments = {
-        "mode": "export",
+        "mode": expected_mode,
         "artifact_cohort": cohort,
         "validate_devices": devices,
         "model_ids": model_ids,
     }
     for field in ("batch_sizes", "seeds", "scales"):
         if field in summary:
-            expected_arguments[field] = _json_value(
-                summary[field], f"summary {field}"
-            )
+            expected_arguments[field] = _json_value(summary[field], f"summary {field}")
     differing = sorted(
         field
         for field, expected in expected_arguments.items()
@@ -137,7 +132,7 @@ def validate_summary_identity(
 
     return {
         "schema_version": SUMMARY_SCHEMA_VERSION,
-        "mode": "export",
+        "mode": expected_mode,
         "torch_version": torch_version,
         "torch_minor": cohort,
         "runtime_torch_minor": runtime_minor,
@@ -159,7 +154,7 @@ def expected_metadata_identity(
 
     return {
         "schema_version": METADATA_SCHEMA_VERSION,
-        "mode": "export",
+        "mode": summary_identity.get("mode", "export"),
         "model_id": _text(model_id, "model_id"),
         "repo_id": _text(repo_id, "repo_id"),
         "torch_version": summary_identity["torch_version"],

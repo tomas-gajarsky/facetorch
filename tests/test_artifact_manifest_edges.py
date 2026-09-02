@@ -289,7 +289,7 @@ def test_manifest_mapping_rejects_incomplete_compatibility_and_governance():
         ArtifactManifest.from_mapping(_manifest_raw(models={"probe": empty_model}))
     with pytest.raises(ConfigurationError, match="Unsupported compatibility schema"):
         ArtifactManifest.from_mapping(
-            _manifest_raw(), compatibility=_compatibility(schema_version=2)
+            _manifest_raw(), compatibility=_compatibility(schema_version=3)
         )
     with pytest.raises(ConfigurationError, match="Invalid compatibility status"):
         ArtifactManifest.from_mapping(
