@@ -10,7 +10,7 @@
 <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
-[API documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html), [extension guide](https://github.com/tomas-gajarsky/facetorch/blob/v1.0.0-rc.3/docs/custom-components.md), [v0.6.x migration guide](https://github.com/tomas-gajarsky/facetorch/blob/v1.0.0-rc.3/docs/migration-v1.md), [model compatibility](https://github.com/tomas-gajarsky/facetorch/blob/v1.0.0-rc.3/docs/model-compatibility.md)
+[API documentation](https://tomas-gajarsky.github.io/facetorch/facetorch/index.html), [extension guide](https://github.com/tomas-gajarsky/facetorch/blob/38f42b63e2a6b85c43de45618a0e220b86840025/docs/custom-components.md), [v0.6.x migration guide](https://github.com/tomas-gajarsky/facetorch/blob/38f42b63e2a6b85c43de45618a0e220b86840025/docs/migration-v1.md), [model compatibility](https://github.com/tomas-gajarsky/facetorch/blob/38f42b63e2a6b85c43de45618a0e220b86840025/docs/model-compatibility.md)
  
 [Docker Hub](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch) [(GPU)](https://hub.docker.com/repository/docker/tomasgajarsky/facetorch-gpu)
 
@@ -43,7 +43,7 @@ Facetorch provides an efficient, scalable, and user-friendly solution for facial
 
 The exact candidate matrix, named CUDA pairs, experimental platforms, and current
 model-rights gates are documented in
-[Model compatibility and governance](https://github.com/tomas-gajarsky/facetorch/blob/v1.0.0-rc.3/docs/model-compatibility.md).
+[Model compatibility and governance](https://github.com/tomas-gajarsky/facetorch/blob/38f42b63e2a6b85c43de45618a0e220b86840025/docs/model-compatibility.md).
 
 Please use this library responsibly and with caution. Adhere to the [European Commission's Ethics Guidelines for Trustworthy AI](https://ec.europa.eu/futurium/en/ai-alliance-consultation.1.html) to ensure ethical and fair usage. Keep in mind that the models may have limitations and potential biases, so it is crucial to evaluate their outputs critically and consider their impact.
 
@@ -79,7 +79,7 @@ python -m pip install --index-url https://download.pytorch.org/whl/cu130 \
 
 Every matching pair from Torch 2.6/torchvision 0.21 through Torch
 2.13/torchvision 0.28 is supported; see the exact
-[compatibility matrix](https://github.com/tomas-gajarsky/facetorch/blob/v1.0.0-rc.3/docs/model-compatibility.md). The default model selection
+[compatibility matrix](https://github.com/tomas-gajarsky/facetorch/blob/38f42b63e2a6b85c43de45618a0e220b86840025/docs/model-compatibility.md). The default model selection
 then needs approximately 1.2 GB of cache data and at least 2 GB of free cache
 space while downloads are staged.
 
@@ -342,7 +342,7 @@ analyzer
 The source links below are the original repositories already used by Facetorch.
 The weight-license column reflects the artifact-specific review approved on
 2026-08-23 and recorded, with checkpoint hashes and mapping methods, in
-[`facetorch/models/governance.json`](https://github.com/tomas-gajarsky/facetorch/blob/v1.0.0-rc.3/facetorch/models/governance.json). MIT and
+[`facetorch/models/governance.json`](https://github.com/tomas-gajarsky/facetorch/blob/38f42b63e2a6b85c43de45618a0e220b86840025/facetorch/models/governance.json). MIT and
 Apache-2.0 are preserved as received; neither license was converted into the
 other. These licenses do not grant rights to upstream training datasets.
 
@@ -556,7 +556,7 @@ resumable receipt. Each model's artifact and metadata are committed together to 
 candidate branch; the initial immutable manifest commit is created only after every
 model repository succeeds. Deterministically rendered legal documents are then
 committed and a final manifest binds those resulting immutable revisions. See
-[the model publication runbook](https://github.com/tomas-gajarsky/facetorch/blob/v1.0.0-rc.3/docs/model-publication.md).
+[the model publication runbook](https://github.com/tomas-gajarsky/facetorch/blob/38f42b63e2a6b85c43de45618a0e220b86840025/docs/model-publication.md).
 
 #### Why exported models?
 
@@ -576,7 +576,7 @@ moderate, affected-API-specific exceptions documented in
 Validation uses immutable CPU golden references for both CPU and CUDA artifacts,
 with TensorFloat-32 disabled and the numeric policy recorded. Predictor batch
 sizes refer only to faces from one input image; multi-image batching is not
-supported in v1. See [model compatibility and governance](https://github.com/tomas-gajarsky/facetorch/blob/v1.0.0-rc.3/docs/model-compatibility.md)
+supported in v1. See [model compatibility and governance](https://github.com/tomas-gajarsky/facetorch/blob/38f42b63e2a6b85c43de45618a0e220b86840025/docs/model-compatibility.md)
 for the exact candidate evidence and remaining blockers.
 
 
@@ -641,7 +641,7 @@ Private and third-party Hugging Face models use direct external mode: omit
 byte size, format, and device in the application configuration. Only an
 officially shipped model belongs in `facetorch/models/manifest.json`.
 
-The complete [custom predictor and detector guide](https://github.com/tomas-gajarsky/facetorch/blob/v1.0.0-rc.3/docs/custom-components.md)
+The complete [custom predictor and detector guide](https://github.com/tomas-gajarsky/facetorch/blob/38f42b63e2a6b85c43de45618a0e220b86840025/docs/custom-components.md)
 contains a runnable no-download example, the predictor and detector contracts,
 a direct immutable Hugging Face YAML example, external configuration guidance,
 Torch cohort responsibilities, testing guidance, and the separate checklist for
