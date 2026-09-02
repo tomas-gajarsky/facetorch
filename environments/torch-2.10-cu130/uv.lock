@@ -588,6 +588,7 @@ test = [
     { name = "pip" },
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "setuptools" },
     { name = "snakeviz" },
     { name = "twine" },
 ]
@@ -616,6 +617,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=2.10.0" },
     { name = "python-json-logger", specifier = ">=2.0.0" },
     { name = "requests", specifier = ">=2.20.0" },
+    { name = "setuptools", marker = "extra == 'test'", specifier = ">=77.0.3" },
     { name = "snakeviz", marker = "extra == 'test'", specifier = ">=2.1.0" },
     { name = "timm", specifier = ">=0.6.0" },
     { name = "torch", specifier = "==2.10.0", index = "https://download.pytorch.org/whl/cu130" },
