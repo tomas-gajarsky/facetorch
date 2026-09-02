@@ -72,6 +72,9 @@ Homepage = "https://github.com/tomas-gajarsky/facetorch"
 Download = "https://pypi.org/project/facetorch/"
 Documentation = "https://tomas-gajarsky.github.io/facetorch/facetorch/index.html"
 
+[tool.uv]
+required-environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
+
 [tool.uv.sources]
 torch = { index = "pytorch-cpu" }
 torchvision = { index = "pytorch-cpu" }

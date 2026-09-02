@@ -9,6 +9,9 @@ resolution-markers = [
     "python_full_version == '3.11.*' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux'",
     "python_full_version < '3.11' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux'",
 ]
+required-markers = [
+    "platform_machine == 'x86_64' and sys_platform == 'linux'",
+]
 
 [[package]]
 name = "annotated-types"

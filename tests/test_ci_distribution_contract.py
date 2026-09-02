@@ -34,6 +34,7 @@ DEPENDENCY_PROFILES = {
     "torch-2.13-cpu": ("2.13.0", "0.28.0", "/whl/cpu"),
     "torch-2.13-cu130": ("2.13.0", "0.28.0", "/whl/cu130"),
 }
+REQUIRED_LOCK_ENVIRONMENT = "sys_platform == 'linux' and platform_machine == 'x86_64'"
 
 
 def _workflow_commands(path):
@@ -256,15 +257,20 @@ def test_every_supported_torch_device_pair_has_an_exact_uv_lock():
     ) in DEPENDENCY_PROFILES.items():
         root = profile_root / name
         with (root / "pyproject.toml").open("rb") as project_file:
-            project = tomllib.load(project_file)["project"]
+            profile = tomllib.load(project_file)
+        project = profile["project"]
         with (root / "uv.lock").open("rb") as lock_file:
             lock = tomllib.load(lock_file)
+        lock_text = (root / "uv.lock").read_text(encoding="utf-8")
         requirements = {
             Requirement(raw).name: Requirement(raw) for raw in project["dependencies"]
         }
         assert str(requirements["torch"].specifier) == f"=={torch_version}"
         assert str(requirements["torchvision"].specifier) == f"=={vision_version}"
         assert project["requires-python"] == public["requires-python"]
+        assert profile["tool"]["uv"]["required-environments"] == [
+            REQUIRED_LOCK_ENVIRONMENT
+        ]
         assert (
             project["optional-dependencies"]["release"]
             == public["optional-dependencies"]["release"]
@@ -276,6 +282,20 @@ def test_every_supported_torch_device_pair_has_an_exact_uv_lock():
         assert locked_vision["version"].split("+", 1)[0] == vision_version
         assert locked_torch["source"]["registry"].endswith(index_suffix)
         assert locked_vision["source"]["registry"].endswith(index_suffix)
+        build_suffix = index_suffix.removeprefix("/whl/")
+        assert f"torch-{torch_version}%2B{build_suffix}-cp310-cp310-" in lock_text
+        assert (
+            f"torchvision-{vision_version}%2B{build_suffix}-cp310-cp310-" in lock_text
+        )
+        assert "x86_64.whl" in lock_text
+
+
+@pytest.mark.release_blocker
+def test_root_lock_preserves_the_official_linux_x86_target():
+    with (REPO_ROOT / "pyproject.toml").open("rb") as project_file:
+        project = tomllib.load(project_file)
+
+    assert project["tool"]["uv"]["required-environments"] == [REQUIRED_LOCK_ENVIRONMENT]
 
 
 @pytest.mark.release_blocker
