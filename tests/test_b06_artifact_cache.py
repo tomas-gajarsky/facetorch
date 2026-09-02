@@ -168,6 +168,9 @@ def test_prefetch_plan_uses_composed_utilizer_dependency_graph():
 def test_prefetch_plan_uses_the_runtime_incompatibility_selection(
     tmp_path, monkeypatch
 ):
+    # Exercise the final runtime where both the modern export and the bounded
+    # legacy fallback are intentionally eligible.
+    monkeypatch.setattr(torch, "__version__", "2.11.0+cpu")
     model_root = tmp_path / "models"
     monkeypatch.setenv("FACETORCH_MODEL_DIR", str(model_root))
     manifest = get_model_manifest()
