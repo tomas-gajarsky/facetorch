@@ -91,12 +91,16 @@ def get_model_manifest() -&gt; ArtifactManifest:
     def referenced_json(field: str) -&gt; Mapping[str, Any]:
         filename = str(raw[field])
         if Path(filename).name != filename or not filename.endswith(&#34;.json&#34;):
-            raise ConfigurationError(f&#34;Invalid manifest resource reference: {filename!r}&#34;)
+            raise ConfigurationError(
+                f&#34;Invalid manifest resource reference: {filename!r}&#34;
+            )
         value = json.loads(
             model_resources.joinpath(filename).read_text(encoding=&#34;utf-8&#34;)
         )
         if not isinstance(value, Mapping):
-            raise ConfigurationError(f&#34;Manifest resource {filename!r} is not an object.&#34;)
+            raise ConfigurationError(
+                f&#34;Manifest resource {filename!r} is not an object.&#34;
+            )
         return value
 
     return ArtifactManifest.from_mapping(
@@ -206,7 +210,7 @@ def get_model_manifest() -&gt; ArtifactManifest:
 <dl>
 <dt id="facetorch.artifacts.ArtifactDescriptor"><code class="flex name class">
 <span>class <span class="ident">ArtifactDescriptor</span></span>
-<span>(</span><span>artifact_id: str,<br>model_id: str,<br>task: str,<br>source: str,<br>repo_id: str,<br>revision: str,<br>filename: str,<br>format: str,<br>sha256: str,<br>size_bytes: int,<br>torch_min: Optional[str],<br>torch_max_exclusive: Optional[str],<br>devices: tuple[str, ...],<br>schema_major: Optional[int],<br>schema_minor: Optional[int],<br>validation_metadata: Optional[str],<br>source_weight_sha256: Optional[str],<br>export_commit: Optional[str],<br>license_ref: Optional[str],<br>priority: int = 0)</span>
+<span>(</span><span>artifact_id: str,<br>model_id: str,<br>task: str,<br>source: str,<br>repo_id: str,<br>revision: str,<br>filename: str,<br>format: str,<br>artifact_cohort: Optional[str],<br>sha256: str,<br>size_bytes: int,<br>torch_min: Optional[str],<br>torch_max_exclusive: Optional[str],<br>devices: tuple[str, ...],<br>schema_major: Optional[int],<br>schema_minor: Optional[int],<br>validation_metadata: Optional[str],<br>source_weight_sha256: Optional[str],<br>export_commit: Optional[str],<br>license_ref: Optional[str],<br>priority: int = 0)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -225,6 +229,7 @@ class ArtifactDescriptor:
     revision: str
     filename: str
     format: str
+    artifact_cohort: Optional[str]
     sha256: str
     size_bytes: int
     torch_min: Optional[str]
@@ -255,6 +260,7 @@ class ArtifactDescriptor:
                 revision=str(model[&#34;revision&#34;]),
                 filename=str(raw[&#34;filename&#34;]),
                 format=str(raw[&#34;format&#34;]),
+                artifact_cohort=raw.get(&#34;artifact_cohort&#34;, raw.get(&#34;torch_min&#34;)),
                 sha256=str(raw[&#34;sha256&#34;]).lower(),
                 size_bytes=int(raw[&#34;size_bytes&#34;]),
                 torch_min=raw.get(&#34;torch_min&#34;),
@@ -294,7 +300,9 @@ class ArtifactDescriptor:
             raise ConfigurationError(
                 f&#34;Artifact {self.artifact_id!r} needs a valid SHA-256 and size.&#34;
             )
-        if not self.devices or any(item not in {&#34;cpu&#34;, &#34;cuda&#34;} for item in self.devices):
+        if not self.devices or any(
+            item not in {&#34;cpu&#34;, &#34;cuda&#34;} for item in self.devices
+        ):
             raise ConfigurationError(
                 f&#34;Artifact {self.artifact_id!r} has invalid device eligibility.&#34;
             )
@@ -307,6 +315,16 @@ class ArtifactDescriptor:
         if self.format == &#34;pt2&#34; and not self.filename.endswith(&#34;.pt2&#34;):
             raise ConfigurationError(
                 f&#34;Export artifact {self.artifact_id!r} must preserve .pt2.&#34;
+            )
+        if self.format == &#34;pt2&#34; and (
+            (self.torch_min is not None or self.torch_max_exclusive is not None)
+            and (
+                self.artifact_cohort is None
+                or _VERSION_RE.fullmatch(str(self.artifact_cohort)) is None
+            )
+        ):
+            raise ConfigurationError(
+                f&#34;Export artifact {self.artifact_id!r} needs a canonical cohort.&#34;
             )
         if self.format == &#34;torchscript&#34; and not self.filename.endswith(&#34;.pt&#34;):
             raise ConfigurationError(
@@ -367,6 +385,10 @@ class ArtifactDescriptor:
 <div class="desc"></div>
 </dd>
 <dt id="facetorch.artifacts.ArtifactDescriptor.format"><code class="name">var <span class="ident">format</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="facetorch.artifacts.ArtifactDescriptor.artifact_cohort"><code class="name">var <span class="ident">artifact_cohort</span> : str | None</code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -448,7 +470,9 @@ class ArtifactDescriptor:
         raise ConfigurationError(
             f&#34;Artifact {self.artifact_id!r} needs a valid SHA-256 and size.&#34;
         )
-    if not self.devices or any(item not in {&#34;cpu&#34;, &#34;cuda&#34;} for item in self.devices):
+    if not self.devices or any(
+        item not in {&#34;cpu&#34;, &#34;cuda&#34;} for item in self.devices
+    ):
         raise ConfigurationError(
             f&#34;Artifact {self.artifact_id!r} has invalid device eligibility.&#34;
         )
@@ -461,6 +485,16 @@ class ArtifactDescriptor:
     if self.format == &#34;pt2&#34; and not self.filename.endswith(&#34;.pt2&#34;):
         raise ConfigurationError(
             f&#34;Export artifact {self.artifact_id!r} must preserve .pt2.&#34;
+        )
+    if self.format == &#34;pt2&#34; and (
+        (self.torch_min is not None or self.torch_max_exclusive is not None)
+        and (
+            self.artifact_cohort is None
+            or _VERSION_RE.fullmatch(str(self.artifact_cohort)) is None
+        )
+    ):
+        raise ConfigurationError(
+            f&#34;Export artifact {self.artifact_id!r} needs a canonical cohort.&#34;
         )
     if self.format == &#34;torchscript&#34; and not self.filename.endswith(&#34;.pt&#34;):
         raise ConfigurationError(
@@ -630,7 +664,8 @@ class ArtifactDescriptor:
             supported_torch_minors: tuple[str, ...] = ()
             required_devices: tuple[str, ...] = ()
             if compatibility is not None:
-                if int(compatibility[&#34;schema_version&#34;]) != 1:
+                compatibility_schema = int(compatibility[&#34;schema_version&#34;])
+                if compatibility_schema not in {1, 2}:
                     raise ConfigurationError(&#34;Unsupported compatibility schema.&#34;)
                 compatibility_status = str(compatibility[&#34;status&#34;])
                 if compatibility_status not in _COMPATIBILITY_STATUSES:
@@ -648,12 +683,60 @@ class ArtifactDescriptor:
                 )
                 if (
                     not supported_torch_minors
-                    or len(set(supported_torch_minors))
-                    != len(supported_torch_minors)
+                    or len(set(supported_torch_minors)) != len(supported_torch_minors)
                     or not required_devices
                     or any(item not in {&#34;cpu&#34;, &#34;cuda&#34;} for item in required_devices)
                 ):
                     raise ConfigurationError(&#34;Compatibility matrix is incomplete.&#34;)
+                if compatibility_schema == 2:
+                    cohort_records = compatibility.get(&#34;cohorts&#34;)
+                    runtime_lanes = compatibility.get(&#34;runtime_lanes&#34;)
+                    if not isinstance(cohort_records, list) or not isinstance(
+                        runtime_lanes, list
+                    ):
+                        raise ConfigurationError(
+                            &#34;Compatibility matrix needs artifact cohorts and runtime lanes.&#34;
+                        )
+                    artifact_cohorts = {
+                        str(record.get(&#34;artifact_cohort&#34;))
+                        for record in cohort_records
+                        if isinstance(record, Mapping)
+                    }
+                    lane_minors = [
+                        str(record.get(&#34;torch_minor&#34;))
+                        for record in runtime_lanes
+                        if isinstance(record, Mapping)
+                    ]
+                    if (
+                        len(artifact_cohorts) != len(cohort_records)
+                        or len(lane_minors) != len(runtime_lanes)
+                        or len(set(lane_minors)) != len(lane_minors)
+                        or set(lane_minors) != set(supported_torch_minors)
+                    ):
+                        raise ConfigurationError(
+                            &#34;Compatibility artifact cohorts or runtime lanes are inconsistent.&#34;
+                        )
+                    cohort_ranges = {}
+                    for record in cohort_records:
+                        cohort = str(record.get(&#34;artifact_cohort&#34;))
+                        lower = parse_runtime_version(str(record.get(&#34;torch_min&#34;)))
+                        upper = parse_runtime_version(
+                            str(record.get(&#34;torch_max_exclusive&#34;))
+                        )
+                        if lower &gt;= upper:
+                            raise ConfigurationError(
+                                f&#34;Compatibility artifact cohort {cohort!r} has an empty range.&#34;
+                            )
+                        cohort_ranges[cohort] = (lower, upper)
+                    for record in runtime_lanes:
+                        lane = str(record.get(&#34;torch_minor&#34;))
+                        cohort = str(record.get(&#34;artifact_cohort&#34;))
+                        runtime = parse_runtime_version(lane)
+                        bounds = cohort_ranges.get(cohort)
+                        if bounds is None or not bounds[0] &lt;= runtime &lt; bounds[1]:
+                            raise ConfigurationError(
+                                f&#34;Compatibility runtime lane {lane!r} has no valid artifact route.&#34;
+                            )
 
             governance_status = &#34;unspecified&#34;
             governance_records: dict[str, ModelGovernance] = {}
@@ -766,7 +849,9 @@ class ArtifactDescriptor:
         if legacy and not allow_legacy_models:
             remedy = &#34; Set allow_legacy_models=True to use an eligible verified legacy artifact.&#34;
         else:
-            remedy = &#34; Install a documented supported runtime or publish a validated cohort.&#34;
+            remedy = (
+                &#34; Install a documented supported runtime or publish a validated cohort.&#34;
+            )
         raise ModelCompatibilityError(
             f&#34;No compatible artifact for {model_id!r} with torch {runtime_label} &#34;
             f&#34;on {device_family}.{remedy}&#34;
@@ -879,7 +964,9 @@ class ArtifactDescriptor:
     if legacy and not allow_legacy_models:
         remedy = &#34; Set allow_legacy_models=True to use an eligible verified legacy artifact.&#34;
     else:
-        remedy = &#34; Install a documented supported runtime or publish a validated cohort.&#34;
+        remedy = (
+            &#34; Install a documented supported runtime or publish a validated cohort.&#34;
+        )
     raise ModelCompatibilityError(
         f&#34;No compatible artifact for {model_id!r} with torch {runtime_label} &#34;
         f&#34;on {device_family}.{remedy}&#34;
@@ -989,6 +1076,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="facetorch.artifacts.ArtifactDescriptor.revision" href="#facetorch.artifacts.ArtifactDescriptor.revision">revision</a></code></li>
 <li><code><a title="facetorch.artifacts.ArtifactDescriptor.filename" href="#facetorch.artifacts.ArtifactDescriptor.filename">filename</a></code></li>
 <li><code><a title="facetorch.artifacts.ArtifactDescriptor.format" href="#facetorch.artifacts.ArtifactDescriptor.format">format</a></code></li>
+<li><code><a title="facetorch.artifacts.ArtifactDescriptor.artifact_cohort" href="#facetorch.artifacts.ArtifactDescriptor.artifact_cohort">artifact_cohort</a></code></li>
 <li><code><a title="facetorch.artifacts.ArtifactDescriptor.sha256" href="#facetorch.artifacts.ArtifactDescriptor.sha256">sha256</a></code></li>
 <li><code><a title="facetorch.artifacts.ArtifactDescriptor.size_bytes" href="#facetorch.artifacts.ArtifactDescriptor.size_bytes">size_bytes</a></code></li>
 <li><code><a title="facetorch.artifacts.ArtifactDescriptor.torch_min" href="#facetorch.artifacts.ArtifactDescriptor.torch_min">torch_min</a></code></li>
