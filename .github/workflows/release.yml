@@ -289,7 +289,7 @@ jobs:
           uv run --frozen --extra release python scripts/audit_dependencies.py \
             --output-dir "$RUNNER_TEMP/distribution-part/evidence/dependency-audit"
       - name: Generate distribution SBOM
-        uses: anchore/sbom-action@aa80c8c5bd439a416a62804f2151ab38c671a638 # v0.24.1
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:
           path: ${{ runner.temp }}/distribution-part/distributions
           format: spdx-json
@@ -347,7 +347,7 @@ jobs:
             --entrypoint python "facetorch:${FLAVOR}-${SOURCE_SHA}" -c \
             "import facetorch, os; assert os.getuid() != 0; facetorch.load_config('${CONFIG_NAME}', offline=True)"
       - name: Generate ${{ matrix.flavor }} image SBOM
-        uses: anchore/sbom-action@aa80c8c5bd439a416a62804f2151ab38c671a638 # v0.24.1
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:
           image: facetorch:${{ matrix.flavor }}-${{ needs.validate-inputs.outputs.source_sha }}
           format: spdx-json
