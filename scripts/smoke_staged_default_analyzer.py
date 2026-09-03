@@ -92,13 +92,41 @@ def _write_json_atomic(path: Path, value: Mapping[str, Any]) -> None:
 
 
 def _candidate_manifest(
-    repo_root: Path, staging_root: Path, summary: Mapping[str, Any]
+    repo_root: Path,
+    staging_root: Path,
+    summary: Mapping[str, Any],
+    *,
+    pinned_artifacts_root: Path | None = None,
 ) -> tuple[ArtifactManifest, dict[str, Path]]:
+    staging_root = staging_root.resolve(strict=True)
     manifest_path = repo_root / "facetorch" / "models" / "manifest.json"
     manifest = _read_json(manifest_path)
     compatibility = _read_json(manifest_path.parent / manifest["compatibility_ref"])
     governance = _read_json(manifest_path.parent / manifest["governance_ref"])
     cohort = str(summary["torch_minor"])
+    pinned = pinned_artifacts_root is not None
+    if pinned_artifacts_root is None:
+        artifact_root_relative = Path(f"torch-{cohort}")
+    else:
+        supplied_root = Path(pinned_artifacts_root)
+        try:
+            artifact_root_relative = (
+                supplied_root.relative_to(staging_root)
+                if supplied_root.is_absolute()
+                else supplied_root
+            )
+        except ValueError as exc:
+            raise RuntimeError(
+                "Pinned artifact root must remain inside the staging root"
+            ) from exc
+        if (
+            artifact_root_relative.is_absolute()
+            or ".." in artifact_root_relative.parts
+            or artifact_root_relative.name != f"torch-{cohort}"
+        ):
+            raise RuntimeError(
+                "Pinned artifact root does not match the selected artifact cohort"
+            )
     results = {str(result["model_id"]): result for result in summary.get("results", [])}
     if set(results) != set(manifest["models"]):
         raise RuntimeError(
@@ -120,16 +148,17 @@ def _candidate_manifest(
         if len(matching) != 1:
             raise RuntimeError(f"Manifest cohort selection is ambiguous: {model_id}")
         descriptor = matching[0]
-        cohort_root = Path(f"torch-{cohort}") / model_id
+        cohort_root = artifact_root_relative / model_id
         artifact_path = _bounded_file(
             staging_root,
             result["artifact"],
             cohort_root / str(descriptor["filename"]),
         )
+        metadata_relative = cohort_root / str(descriptor["validation_metadata"])
         metadata_path = _bounded_file(
             staging_root,
-            result["meta"],
-            cohort_root / str(descriptor["validation_metadata"]),
+            metadata_relative if pinned else result["meta"],
+            metadata_relative,
         )
         metadata = _read_json(metadata_path)
         if (
@@ -138,8 +167,18 @@ def _candidate_manifest(
             or metadata.get("artifact_size_bytes") != artifact_path.stat().st_size
         ):
             raise RuntimeError(f"Staged artifact binding failed: {model_id}")
-        descriptor["sha256"] = result["sha256"]
-        descriptor["size_bytes"] = artifact_path.stat().st_size
+        if pinned:
+            if (
+                result.get("sha256") != descriptor.get("sha256")
+                or result.get("size_bytes") != descriptor.get("size_bytes")
+                or _sha256(metadata_path) != descriptor.get("metadata_sha256")
+            ):
+                raise RuntimeError(
+                    f"Pinned manifest artifact binding failed: {model_id}"
+                )
+        else:
+            descriptor["sha256"] = result["sha256"]
+            descriptor["size_bytes"] = artifact_path.stat().st_size
         staged_paths[model_id] = artifact_path
 
     candidate = ArtifactManifest.from_mapping(
@@ -260,6 +299,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--staging-root", type=Path, required=True)
     parser.add_argument("--summary", type=Path, required=True)
+    parser.add_argument(
+        "--pinned-artifacts-root",
+        type=Path,
+        help="Exact digest-bound artifact cohort staged beneath --staging-root",
+    )
     parser.add_argument("--image", type=Path, default=Path("data/input/test.jpg"))
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cuda")
     parser.add_argument("--cache-root", type=Path)
@@ -287,7 +331,12 @@ def main() -> int:
         else staging_root / f"runtime-cache-{args.device}"
     )
     os.environ["FACETORCH_CACHE_DIR"] = str(cache_root)
-    manifest, staged_paths = _candidate_manifest(repo_root, staging_root, summary)
+    manifest, staged_paths = _candidate_manifest(
+        repo_root,
+        staging_root,
+        summary,
+        pinned_artifacts_root=args.pinned_artifacts_root,
+    )
     profile = "gpu" if args.device == "cuda" else "cpu"
     config = facetorch.load_config(profile, offline=True)
     artifact_ids = _prepare_cache(
@@ -342,6 +391,7 @@ def main() -> int:
         "status": "ok",
         "uid": os.getuid(),
         "device": args.device,
+        "pinned_manifest_artifacts": args.pinned_artifacts_root is not None,
         "torch_version": str(torch.__version__),
         "cuda_runtime": str(torch.version.cuda),
         "gpu": torch.cuda.get_device_name(0) if args.device == "cuda" else None,

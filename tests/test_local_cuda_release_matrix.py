@@ -10,6 +10,7 @@ from scripts.run_local_cuda_release_matrix import (
     _release_subprocess_environment,
 )
 import scripts.stage_alignment_metadata as alignment_metadata
+import scripts.smoke_staged_default_analyzer as analyzer_smoke
 from scripts.smoke_staged_default_analyzer import _staged_alignment_metadata
 
 
@@ -50,6 +51,105 @@ def test_release_smoke_environment_scrubs_external_metadata_routing(monkeypatch)
     assert "FACETORCH_METADATA_DIR" not in environment
     assert environment["FACETORCH_TEST_SENTINEL"] == "preserved"
     assert os.environ["FACETORCH_METADATA_DIR"] == "/external/metadata"
+
+
+@pytest.mark.release_blocker
+def test_candidate_smoke_uses_exact_pinned_artifact_root(tmp_path, monkeypatch):
+    repo_root = tmp_path / "repo"
+    model_root = repo_root / "facetorch/models"
+    model_root.mkdir(parents=True)
+    staging_root = tmp_path / "evidence"
+    pinned_root = staging_root / "pinned-artifacts/torch-2.6"
+    pinned_model_root = pinned_root / "test-model"
+    pinned_model_root.mkdir(parents=True)
+    artifact = pinned_model_root / "model-torch2.6.pt2"
+    artifact.write_bytes(b"exact published artifact")
+    artifact_sha256 = hashlib.sha256(artifact.read_bytes()).hexdigest()
+    metadata_value = {
+        "model_id": "test-model",
+        "artifact_sha256": artifact_sha256,
+        "artifact_size_bytes": artifact.stat().st_size,
+    }
+    metadata = pinned_model_root / "model-torch2.6.pt2.meta.json"
+    metadata.write_text(
+        json.dumps(metadata_value, sort_keys=True),
+        encoding="utf-8",
+    )
+    metadata_sha256 = hashlib.sha256(metadata.read_bytes()).hexdigest()
+
+    decoy_root = staging_root / "torch-2.6/test-model"
+    decoy_root.mkdir(parents=True)
+    (decoy_root / artifact.name).write_bytes(b"fresh nondeterministic export")
+    (decoy_root / metadata.name).write_text("{}", encoding="utf-8")
+    manifest = {
+        "compatibility_ref": "compatibility.json",
+        "governance_ref": "governance.json",
+        "models": {
+            "test-model": {
+                "artifacts": [
+                    {
+                        "format": "pt2",
+                        "artifact_cohort": "2.6",
+                        "filename": artifact.name,
+                        "validation_metadata": metadata.name,
+                        "sha256": artifact_sha256,
+                        "size_bytes": artifact.stat().st_size,
+                        "metadata_sha256": metadata_sha256,
+                    }
+                ]
+            }
+        },
+    }
+    for filename, value in (
+        ("manifest.json", manifest),
+        ("compatibility.json", {}),
+        ("governance.json", {}),
+    ):
+        (model_root / filename).write_text(json.dumps(value), encoding="utf-8")
+    summary = {
+        "torch_minor": "2.6",
+        "results": [
+            {
+                "model_id": "test-model",
+                "status": "ok",
+                "validation_status": "ok",
+                "artifact": (
+                    "/different/runner/evidence/pinned-artifacts/torch-2.6/"
+                    "test-model/model-torch2.6.pt2"
+                ),
+                "meta": (
+                    "/different/runner/evidence/runtime-validation/torch-2.6/"
+                    "test-model/validation.meta.json"
+                ),
+                "sha256": artifact_sha256,
+                "size_bytes": artifact.stat().st_size,
+            }
+        ],
+    }
+    monkeypatch.setattr(
+        analyzer_smoke,
+        "ArtifactManifest",
+        SimpleNamespace(from_mapping=lambda value, **_kwargs: value),
+    )
+
+    candidate, staged_paths = analyzer_smoke._candidate_manifest(
+        repo_root,
+        staging_root,
+        summary,
+        pinned_artifacts_root=pinned_root,
+    )
+
+    assert candidate == manifest
+    assert staged_paths == {"test-model": artifact.resolve()}
+    metadata_value["substituted"] = True
+    metadata.write_text(json.dumps(metadata_value, sort_keys=True), encoding="utf-8")
+    with pytest.raises(RuntimeError, match="Pinned manifest artifact binding failed"):
+        analyzer_smoke._candidate_manifest(
+            repo_root,
+            staging_root,
+            summary,
+            pinned_artifacts_root=pinned_root,
+        )
 
 
 @pytest.mark.release_blocker

@@ -4,7 +4,8 @@
 The script supports two workflows:
 
 1) Export + validate into local staging for the *current* torch runtime.
-2) Validate previously exported artifacts against reference models.
+2) Stage immutable, digest-bound artifacts from their pinned Hub revisions.
+3) Validate previously exported artifacts against reference models.
 
 Publication is deliberately separate. After every requested cohort passes and the
 staging report is reviewed, use ``scripts/model_cohort_publication.py`` to build a
@@ -19,6 +20,11 @@ Examples:
   PYTHONPATH=. python scripts/export_model_cohorts_hf.py export \
     --repo-root . \
     --out-root /tmp/model-cohort-exports/staging
+
+  # Stage the exact published bytes selected by the manifest
+  PYTHONPATH=. python scripts/export_model_cohorts_hf.py stage-artifacts \
+    --repo-root . --cohort 2.6 \
+    --out-root /tmp/model-cohort-exports/pinned
 
   # Validate existing artifacts for a specific cohort (no export/upload)
   PYTHONPATH=. python scripts/export_model_cohorts_hf.py validate \
@@ -1647,6 +1653,147 @@ def _prepare_model_sources(
     }
 
 
+def _stage_pinned_artifacts(
+    specs: Sequence[Dict[str, Any]],
+    *,
+    repo_root: Path,
+    cohort: str,
+    out_root: Path,
+    offline: bool = False,
+    force_download: bool = False,
+    download_fn=None,
+) -> Dict[str, Any]:
+    """Stage the exact PT2 and metadata bytes selected by the manifest."""
+
+    if download_fn is None:
+        from huggingface_hub import hf_hub_download
+
+        download_fn = hf_hub_download
+
+    manifest_path = repo_root / "facetorch" / "models" / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest_models = manifest.get("models", {})
+    _ensure_runtime_directory(out_root)
+    staged = []
+
+    for spec in specs:
+        model_id = spec["id"]
+        try:
+            model = manifest_models[model_id]
+        except KeyError as exc:
+            raise RuntimeError(f"No packaged manifest record for {model_id}") from exc
+
+        repo_id = str(model.get("repo_id", ""))
+        revision = str(model.get("revision", ""))
+        if repo_id != spec["repo_id"] or re.fullmatch(r"[0-9a-f]{40}", revision) is None:
+            raise RuntimeError(f"Invalid pinned repository identity for {model_id}")
+
+        artifacts = [
+            item
+            for item in model.get("artifacts", [])
+            if isinstance(item, Mapping)
+            and item.get("format") == "pt2"
+            and str(item.get("artifact_cohort", "")) == cohort
+        ]
+        if len(artifacts) != 1:
+            raise RuntimeError(
+                f"Expected one pinned PT2 artifact for {model_id}/torch {cohort}"
+            )
+        artifact = artifacts[0]
+        filename = str(artifact.get("filename", ""))
+        expected_sha256 = str(artifact.get("sha256", ""))
+        expected_size = int(artifact.get("size_bytes", -1))
+        if (
+            Path(filename).name != filename
+            or not filename.endswith(".pt2")
+            or re.fullmatch(r"[0-9a-f]{64}", expected_sha256) is None
+            or expected_size <= 0
+        ):
+            raise RuntimeError(f"Invalid pinned artifact contract for {model_id}")
+
+        downloaded = Path(
+            download_fn(
+                repo_id=repo_id,
+                filename=filename,
+                revision=revision,
+                local_files_only=offline,
+                force_download=force_download,
+            )
+        )
+        target = out_root / model_id / filename
+        _ensure_runtime_directory(target.parent)
+        _copy_verified_source(
+            downloaded,
+            target,
+            expected_sha256=expected_sha256,
+            expected_size=expected_size,
+        )
+
+        metadata_filename = str(artifact.get("validation_metadata", ""))
+        metadata_sha256 = str(artifact.get("metadata_sha256", ""))
+        if (
+            Path(metadata_filename).name != metadata_filename
+            or metadata_filename != f"{filename}.meta.json"
+            or re.fullmatch(r"[0-9a-f]{64}", metadata_sha256) is None
+        ):
+            raise RuntimeError(f"Invalid pinned metadata contract for {model_id}")
+        downloaded_metadata = Path(
+            download_fn(
+                repo_id=repo_id,
+                filename=metadata_filename,
+                revision=revision,
+                local_files_only=offline,
+                force_download=force_download,
+            )
+        )
+        if _sha256(downloaded_metadata) != metadata_sha256:
+            raise RuntimeError(f"Downloaded metadata integrity mismatch for {model_id}")
+        metadata_target = out_root / model_id / metadata_filename
+        _copy_verified_source(
+            downloaded_metadata,
+            metadata_target,
+            expected_sha256=metadata_sha256,
+            expected_size=downloaded_metadata.stat().st_size,
+        )
+        try:
+            metadata = json.loads(metadata_target.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise RuntimeError(f"Pinned metadata is invalid for {model_id}") from exc
+        if (
+            not isinstance(metadata, Mapping)
+            or metadata.get("model_id") != model_id
+            or metadata.get("repo_id") != repo_id
+            or metadata.get("artifact") != filename
+            or metadata.get("artifact_sha256") != expected_sha256
+            or metadata.get("artifact_size_bytes") != expected_size
+        ):
+            raise RuntimeError(f"Pinned metadata binding differs for {model_id}")
+
+        staged.append(
+            {
+                "model_id": model_id,
+                "repo_id": repo_id,
+                "revision": revision,
+                "artifact": str(target.relative_to(out_root)),
+                "artifact_sha256": expected_sha256,
+                "artifact_size_bytes": expected_size,
+                "metadata": str(metadata_target.relative_to(out_root)),
+                "metadata_sha256": metadata_sha256,
+                "metadata_size_bytes": metadata_target.stat().st_size,
+            }
+        )
+
+    return {
+        "schema_version": 1,
+        "status": "ok",
+        "generated_at_utc": _now_iso(),
+        "source": "huggingface",
+        "cohort": cohort,
+        "manifest_sha256": _sha256(manifest_path),
+        "models": staged,
+    }
+
+
 def _build_validation_cases(
     spec: Dict[str, Any],
     batch_sizes: Sequence[int],
@@ -2498,6 +2645,18 @@ def main():
         help="Output inventory path. Default: models_local/source-inventory-<cohort>.json",
     )
 
+    p_stage = sub.add_parser(
+        "stage-artifacts",
+        help="Stage exact digest-bound PT2 artifacts from pinned Hub revisions",
+    )
+    p_stage.add_argument("--repo-root", default=".")
+    p_stage.add_argument("--cohort", required=True)
+    p_stage.add_argument("--model-ids", default="")
+    p_stage.add_argument("--out-root", required=True)
+    p_stage.add_argument("--inventory", required=True)
+    p_stage.add_argument("--offline", action="store_true")
+    p_stage.add_argument("--force-download", action="store_true")
+
     p_export = sub.add_parser("export", help="Export and validate into local staging")
     add_common_args(p_export)
     p_export.add_argument("--out-root", default="/tmp/model-cohort-exports")
@@ -2565,6 +2724,26 @@ def main():
         )
         _write_json_atomic(inventory_path, inventory)
         print(f"Prepared {len(specs)} model sources; inventory: {inventory_path}")
+        return
+
+    if args.command == "stage-artifacts":
+        if args.offline and args.force_download:
+            parser.error("--offline and --force-download cannot be combined")
+        out_root = Path(args.out_root).resolve()
+        inventory = _stage_pinned_artifacts(
+            specs,
+            repo_root=repo_root,
+            cohort=cohort,
+            out_root=out_root,
+            offline=args.offline,
+            force_download=args.force_download,
+        )
+        inventory_path = Path(args.inventory).resolve()
+        _write_json_atomic(inventory_path, inventory)
+        print(
+            f"Staged {len(specs)} pinned artifacts for torch {cohort}; "
+            f"inventory: {inventory_path}"
+        )
         return
 
     batch_sizes = _parse_csv_ints(args.batch_sizes)

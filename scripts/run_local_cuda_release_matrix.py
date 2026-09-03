@@ -193,7 +193,10 @@ def main() -> int:
 
     _ensure_evidence_root(staging_root)
     artifact_summaries = []
+    pinned_artifact_inventories = []
+    pinned_artifact_roots = {}
     runtime_summaries = []
+    runtime_summary_by_runtime = {}
     commands = []
     synced_profiles = set()
     golden_reference_cohort = "2.6"
@@ -258,6 +261,29 @@ def main() -> int:
         commands.append(export_command)
         artifact_summaries.append(cohort_root / f"summary-torch{cohort}.json")
 
+        # torch.export.save ZIP containers are not byte-reproducible. Keep the
+        # fresh export as semantic source evidence, then separately stage the
+        # immutable published bytes that every runtime and user will consume.
+        pinned_root = staging_root / "pinned-artifacts" / f"torch-{cohort}"
+        pinned_inventory = staging_root / f"pinned-artifacts-torch{cohort}.json"
+        stage_command = [
+            str(cohort_python),
+            str(repo_root / "scripts" / "export_model_cohorts_hf.py"),
+            "stage-artifacts",
+            "--repo-root",
+            str(repo_root),
+            "--cohort",
+            cohort,
+            "--out-root",
+            str(pinned_root),
+            "--inventory",
+            str(pinned_inventory),
+        ]
+        _run(stage_command, cwd=repo_root, environment=source_environment)
+        commands.append(stage_command)
+        pinned_artifact_roots[cohort] = pinned_root
+        pinned_artifact_inventories.append(pinned_inventory)
+
     matrix_report = staging_root / "candidate-matrix-report.json"
     verify_command = [
         sys.executable,
@@ -300,7 +326,7 @@ def main() -> int:
             "--cohort",
             artifact_cohort,
             "--artifacts-root",
-            str(staging_root / f"torch-{artifact_cohort}"),
+            str(pinned_artifact_roots[artifact_cohort]),
             "--report-root",
             str(report_root),
             "--environment-lock",
@@ -316,10 +342,12 @@ def main() -> int:
         ]
         _run(validate_command, cwd=repo_root, environment=source_environment)
         commands.append(validate_command)
-        runtime_summaries.append(
+        runtime_summary = (
             report_root
             / f"validation-summary-torch{runtime}-artifact{artifact_cohort}.json"
         )
+        runtime_summaries.append(runtime_summary)
+        runtime_summary_by_runtime[runtime] = runtime_summary
 
     runtime_matrix_report = staging_root / "runtime-compatibility-report.json"
     runtime_verify_command = [
@@ -403,7 +431,9 @@ def main() -> int:
         "--staging-root",
         str(staging_root),
         "--summary",
-        str(staging_root / "torch-2.6" / "summary-torch2.6.json"),
+        str(runtime_summary_by_runtime["2.6"]),
+        "--pinned-artifacts-root",
+        str(pinned_artifact_roots["2.6"]),
         "--device",
         "cuda",
         "--report",
@@ -422,7 +452,9 @@ def main() -> int:
         "--staging-root",
         str(staging_root),
         "--summary",
-        str(staging_root / "torch-2.6" / "summary-torch2.6.json"),
+        str(runtime_summary_by_runtime["2.6"]),
+        "--pinned-artifacts-root",
+        str(pinned_artifact_roots["2.6"]),
         "--wheel",
         str(wheels[0]),
         "--device",
@@ -472,6 +504,10 @@ def main() -> int:
         "artifact_summaries": [
             {"path": str(path.relative_to(staging_root)), "sha256": _sha256(path)}
             for path in artifact_summaries
+        ],
+        "pinned_artifact_inventories": [
+            {"path": str(path.relative_to(staging_root)), "sha256": _sha256(path)}
+            for path in pinned_artifact_inventories
         ],
         "matrix_report_sha256": _sha256(matrix_report),
         "runtime_matrix_report_sha256": _sha256(runtime_matrix_report),
