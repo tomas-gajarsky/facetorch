@@ -1,6 +1,6 @@
 ARG SOURCE_DATE_EPOCH=315532800
 
-FROM python:3.12-slim@sha256:876416ecde9aca2bcc90e1fb0c7a9500bbf749f5788b70f82d4c5a5c2357f8b4 AS builder
+FROM python:3.14-slim@sha256:cad9a2c871761c413caa6fdd6441c783451e740a48aaeba60ae62a8b53525ef6 AS builder
 ARG SOURCE_DATE_EPOCH
 
 COPY --from=ghcr.io/astral-sh/uv:0.9.14@sha256:ad3f022815822ee5124d1e3d77169ba4420ed8906815ecb486164a48fdba360b /uv /uvx /bin/
@@ -9,7 +9,7 @@ COPY pyproject.toml README.md LICENSE MODEL_NOTICE.md ./
 COPY facetorch/ facetorch/
 RUN uv build --wheel --out-dir /dist
 
-FROM python:3.12-slim@sha256:876416ecde9aca2bcc90e1fb0c7a9500bbf749f5788b70f82d4c5a5c2357f8b4
+FROM python:3.14-slim@sha256:cad9a2c871761c413caa6fdd6441c783451e740a48aaeba60ae62a8b53525ef6
 ARG SOURCE_DATE_EPOCH
 
 ENV FACETORCH_CACHE_DIR=/var/cache/facetorch
