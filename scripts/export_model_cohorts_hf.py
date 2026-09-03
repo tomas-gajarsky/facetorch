@@ -1721,6 +1721,7 @@ def _stage_pinned_artifacts(
             )
         )
         target = out_root / model_id / filename
+        _ensure_runtime_directory(target.parent)
         _copy_verified_source(
             downloaded,
             target,

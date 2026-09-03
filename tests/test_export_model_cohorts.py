@@ -140,13 +140,17 @@ def test_pinned_artifact_staging_binds_exact_hub_revision_bytes_and_metadata(
         return downloads / kwargs["filename"]
 
     out_root = tmp_path / "staging" / "torch-2.6"
-    inventory = exporter._stage_pinned_artifacts(
-        [{"id": "test-model", "repo_id": "owner/test-model"}],
-        repo_root=repo_root,
-        cohort="2.6",
-        out_root=out_root,
-        download_fn=download_fn,
-    )
+    previous_umask = os.umask(0o077)
+    try:
+        inventory = exporter._stage_pinned_artifacts(
+            [{"id": "test-model", "repo_id": "owner/test-model"}],
+            repo_root=repo_root,
+            cohort="2.6",
+            out_root=out_root,
+            download_fn=download_fn,
+        )
+    finally:
+        os.umask(previous_umask)
 
     staged_artifact = out_root / "test-model" / "model-torch2.6.pt2"
     staged_metadata = out_root / "test-model" / "model-torch2.6.pt2.meta.json"
@@ -154,6 +158,7 @@ def test_pinned_artifact_staging_binds_exact_hub_revision_bytes_and_metadata(
     assert staged_metadata.read_bytes() == metadata_bytes
     assert staged_artifact.stat().st_mode & 0o777 == 0o644
     assert staged_metadata.stat().st_mode & 0o777 == 0o644
+    assert staged_artifact.parent.stat().st_mode & 0o777 == 0o755
     assert inventory["status"] == "ok"
     assert inventory["source"] == "huggingface"
     assert inventory["cohort"] == "2.6"
