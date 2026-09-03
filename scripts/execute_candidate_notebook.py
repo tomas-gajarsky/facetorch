@@ -47,6 +47,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--staging-root", type=Path, required=True)
     parser.add_argument("--summary", type=Path, required=True)
+    parser.add_argument(
+        "--pinned-artifacts-root",
+        type=Path,
+        help="Exact digest-bound artifact cohort staged beneath --staging-root",
+    )
     parser.add_argument("--wheel", type=Path, required=True)
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cuda")
     parser.add_argument("--output-notebook", type=Path, required=True)
@@ -71,6 +76,13 @@ def main() -> int:
         raise RuntimeError("The staged summary and candidate wheel must exist")
     if wheel.suffix != ".whl":
         raise RuntimeError("--wheel must identify the exact candidate wheel")
+    pinned_artifacts_root = (
+        _within(staging_root, args.pinned_artifacts_root, "Pinned artifacts")
+        if args.pinned_artifacts_root is not None
+        else None
+    )
+    if pinned_artifacts_root is not None and not pinned_artifacts_root.is_dir():
+        raise RuntimeError("--pinned-artifacts-root must identify a directory")
 
     notebook_path = repo_root / "notebooks" / "facetorch_notebook_demo.ipynb"
     image_path = repo_root / "data" / "input" / "test.jpg"
@@ -88,6 +100,11 @@ def main() -> int:
 
     scripts_root = repo_root / "scripts"
     cache_root = staging_root / f"notebook-cache-{args.device}"
+    pinned_artifacts_expression = (
+        "None"
+        if pinned_artifacts_root is None
+        else f"_FacetorchPath({json.dumps(str(pinned_artifacts_root))})"
+    )
     injected_source = f"""
 import sys as _facetorch_sys
 import hashlib as _facetorch_hashlib
@@ -127,7 +144,10 @@ _facetorch_staging = _FacetorchPath({json.dumps(str(staging_root))})
 _facetorch_repo = _FacetorchPath({json.dumps(str(repo_root))})
 _facetorch_summary = _facetorch_read_json(_facetorch_summary_path)
 _facetorch_manifest, _facetorch_paths = _facetorch_candidate_manifest(
-    _facetorch_repo, _facetorch_staging, _facetorch_summary
+    _facetorch_repo,
+    _facetorch_staging,
+    _facetorch_summary,
+    pinned_artifacts_root={pinned_artifacts_expression},
 )
 _facetorch_profile = "gpu" if _facetorch_device == "cuda" else "cpu"
 _facetorch_config = _facetorch_package.load_config(_facetorch_profile, offline=True)
@@ -192,6 +212,7 @@ assert all(
         "status": "ok",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "device": args.device,
+        "pinned_manifest_artifacts": pinned_artifacts_root is not None,
         "platform": {"system": platform.system(), "machine": platform.machine()},
         "runner_python": sys.version.split()[0],
         "source_notebook_sha256": _sha256(notebook_path),

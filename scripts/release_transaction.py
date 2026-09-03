@@ -1013,6 +1013,7 @@ def validate_local_release_evidence(
         raise ReleaseError("Local CUDA runner evidence is not release eligible")
 
     model_root = repo / "facetorch" / "models"
+    packaged_model_manifest = _read_json(model_root / "manifest.json")
     source_records = {
         "manifest_sha256": model_root / "manifest.json",
         "compatibility_sha256": model_root / "compatibility.json",
@@ -1094,6 +1095,79 @@ def validate_local_release_evidence(
             if record.get("sha256") != sha256_file(path):
                 raise ReleaseError(f"CUDA artifact summary changed: {relative}")
 
+        pinned_inventories = runner.get("pinned_artifact_inventories")
+        if not isinstance(pinned_inventories, list) or len(pinned_inventories) != len(
+            artifact_cohorts
+        ):
+            raise ReleaseError("Local CUDA evidence has incomplete pinned artifacts")
+        seen_inventory_cohorts = set()
+        manifest_models = packaged_model_manifest.get("models", {})
+        for record in pinned_inventories:
+            if not isinstance(record, dict):
+                raise ReleaseError("Local CUDA evidence has an invalid pinned inventory")
+            relative = str(record.get("path", ""))
+            path = _safe_relative_file(root, relative)
+            if record.get("sha256") != sha256_file(path):
+                raise ReleaseError(f"Pinned artifact inventory changed: {relative}")
+            inventory = _read_json(path)
+            cohort = str(inventory.get("cohort", ""))
+            staged_models = inventory.get("models")
+            if (
+                inventory.get("schema_version") != 1
+                or inventory.get("status") != "ok"
+                or inventory.get("source") != "huggingface"
+                or inventory.get("manifest_sha256")
+                != sha256_file(model_root / "manifest.json")
+                or cohort not in artifact_cohorts
+                or cohort in seen_inventory_cohorts
+                or not isinstance(staged_models, list)
+            ):
+                raise ReleaseError(f"Pinned artifact inventory is invalid: {relative}")
+            seen_inventory_cohorts.add(cohort)
+            staged_by_model = {
+                str(item.get("model_id", "")): item
+                for item in staged_models
+                if isinstance(item, dict)
+            }
+            if len(staged_models) != len(staged_by_model) or set(staged_by_model) != set(
+                manifest_models
+            ):
+                raise ReleaseError(
+                    f"Pinned artifact coverage differs for Torch {cohort}"
+                )
+            for model_id, model in manifest_models.items():
+                artifacts = [
+                    artifact
+                    for artifact in model.get("artifacts", [])
+                    if isinstance(artifact, dict)
+                    and artifact.get("format") == "pt2"
+                    and str(artifact.get("artifact_cohort", "")) == cohort
+                ]
+                if len(artifacts) != 1:
+                    raise ReleaseError(
+                        f"Packaged artifact coverage differs for {model_id}/{cohort}"
+                    )
+                artifact = artifacts[0]
+                staged = staged_by_model[model_id]
+                filename = str(artifact.get("filename", ""))
+                metadata_filename = str(artifact.get("validation_metadata", ""))
+                if (
+                    staged.get("repo_id") != model.get("repo_id")
+                    or staged.get("revision") != model.get("revision")
+                    or staged.get("artifact") != f"{model_id}/{filename}"
+                    or staged.get("artifact_sha256") != artifact.get("sha256")
+                    or staged.get("artifact_size_bytes") != artifact.get("size_bytes")
+                    or staged.get("metadata")
+                    != f"{model_id}/{metadata_filename}"
+                    or staged.get("metadata_sha256")
+                    != artifact.get("metadata_sha256")
+                ):
+                    raise ReleaseError(
+                        f"Pinned artifact binding differs for {model_id}/{cohort}"
+                    )
+        if seen_inventory_cohorts != artifact_cohorts:
+            raise ReleaseError("Pinned artifact cohort coverage differs")
+
     matrix = _read_json(matrix_path)
     lanes = matrix.get("lanes")
     if (
@@ -1154,10 +1228,12 @@ def validate_local_release_evidence(
         runner.get("default_analyzer_smoke_sha256") != sha256_file(default_smoke_path)
         or default_smoke.get("status") != "ok"
         or default_smoke.get("device") != "cuda"
+        or default_smoke.get("pinned_manifest_artifacts") is not True
         or default_smoke.get("legacy_fallback") is not False
         or runner.get("notebook_report_sha256") != sha256_file(notebook_report_path)
         or notebook_report.get("status") != "ok"
         or notebook_report.get("device") != "cuda"
+        or notebook_report.get("pinned_manifest_artifacts") is not True
         or runner.get("executed_notebook_sha256") != sha256_file(notebook_path)
     ):
         raise ReleaseError("CUDA analyzer or notebook evidence is incomplete")
@@ -1200,6 +1276,7 @@ def validate_local_release_evidence(
             or image.get("smoke_report_sha256") != sha256_file(container_smokes[flavor])
             or report.get("status") != "ok"
             or report.get("device") != expected_device
+            or report.get("pinned_manifest_artifacts") is not True
             or report.get("uid") != 10001
             or report.get("legacy_fallback") is not False
         ):

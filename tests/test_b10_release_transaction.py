@@ -245,9 +245,23 @@ def _local_release_evidence(bundle, repo, source_sha):
     _write_json(alignment_metadata, ALIGNMENT_METADATA_REPORT)
     _write_json(
         default_smoke,
-        {"schema_version": 1, "status": "ok", "device": "cuda", "legacy_fallback": False},
+        {
+            "schema_version": 1,
+            "status": "ok",
+            "device": "cuda",
+            "pinned_manifest_artifacts": True,
+            "legacy_fallback": False,
+        },
     )
-    _write_json(notebook_report, {"schema_version": 1, "status": "ok", "device": "cuda"})
+    _write_json(
+        notebook_report,
+        {
+            "schema_version": 1,
+            "status": "ok",
+            "device": "cuda",
+            "pinned_manifest_artifacts": True,
+        },
+    )
     _write_json(notebook, {"nbformat": 4, "nbformat_minor": 5, "cells": [], "metadata": {}})
     container_smokes = {}
     for flavor, device in (("cpu", "cpu"), ("gpu", "cuda")):
@@ -259,6 +273,7 @@ def _local_release_evidence(bundle, repo, source_sha):
                 "status": "ok",
                 "uid": 10001,
                 "device": device,
+                "pinned_manifest_artifacts": True,
                 "legacy_fallback": False,
             },
         )
@@ -1122,6 +1137,115 @@ def test_local_gpu_evidence_binds_exact_source_images_and_reports(tmp_path):
     value["status"] = "skipped"
     _write_json(smoke, value)
     with pytest.raises(ReleaseError, match="production image evidence is invalid"):
+        validate_local_release_evidence(
+            repo,
+            evidence,
+            source_sha=source_sha,
+            cpu_image_digest=CPU_IMAGE_DIGEST,
+            gpu_image_digest=GPU_IMAGE_DIGEST,
+        )
+
+
+@pytest.mark.release_blocker
+def test_local_gpu_evidence_binds_pinned_hub_artifact_inventory(tmp_path):
+    repo, _ = _candidate_repo(tmp_path)
+    model_root = repo / "facetorch/models"
+    packaged_manifest_path = model_root / "manifest.json"
+    packaged_manifest = json.loads(packaged_manifest_path.read_text(encoding="utf-8"))
+    artifact = packaged_manifest["models"]["detector"]["artifacts"][0]
+    artifact["artifact_cohort"] = "2.6"
+    _write_json(packaged_manifest_path, packaged_manifest)
+
+    compatibility_path = model_root / "compatibility.json"
+    compatibility = json.loads(compatibility_path.read_text(encoding="utf-8"))
+    compatibility["schema_version"] = 2
+    compatibility["cohorts"] = [
+        {
+            "torch_minor": "2.6",
+            "artifact_cohort": "2.6",
+        }
+    ]
+    _write_json(compatibility_path, compatibility)
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-qm", "use split artifact cohorts")
+    source_sha = _git(repo, "rev-parse", "HEAD")
+
+    bundle, _ = _bundle(tmp_path, repo, source_sha)
+    evidence = bundle / "evidence/local-gpu"
+    inventory_path = evidence / "pinned-artifacts-torch2.6.json"
+    _write_json(
+        inventory_path,
+        {
+            "schema_version": 1,
+            "status": "ok",
+            "source": "huggingface",
+            "cohort": "2.6",
+            "manifest_sha256": _sha256(packaged_manifest_path),
+            "models": [
+                {
+                    "model_id": "detector",
+                    "repo_id": "owner/detector",
+                    "revision": "5" * 40,
+                    "artifact": "detector/model-torch2.6.pt2",
+                    "artifact_sha256": "6" * 64,
+                    "artifact_size_bytes": 123,
+                    "metadata": "detector/model-torch2.6.pt2.meta.json",
+                    "metadata_sha256": METADATA_SHA256,
+                    "metadata_size_bytes": 321,
+                }
+            ],
+        },
+    )
+    runtime_matrix_path = evidence / "runtime-compatibility-report.json"
+    _write_json(
+        runtime_matrix_path,
+        {
+            "schema_version": 1,
+            "status": "ok",
+            "source_commit": source_sha,
+            "required_devices": ["cpu", "cuda"],
+            "runtime_lanes": [
+                {
+                    "torch_minor": "2.6",
+                    "source_commit": source_sha,
+                    "source_clean": True,
+                }
+            ],
+        },
+    )
+    runner_path = evidence / "local-cuda-runner-report.json"
+    runner = json.loads(runner_path.read_text(encoding="utf-8"))
+    runner["artifact_summaries"] = runner["summaries"]
+    runner["pinned_artifact_inventories"] = [
+        {
+            "path": inventory_path.relative_to(evidence).as_posix(),
+            "sha256": _sha256(inventory_path),
+        }
+    ]
+    runner["runtime_matrix_report_sha256"] = _sha256(runtime_matrix_path)
+    _write_json(runner_path, runner)
+    container_path = evidence / "container-evidence.json"
+    container = json.loads(container_path.read_text(encoding="utf-8"))
+    container["runner_report_sha256"] = _sha256(runner_path)
+    _write_json(container_path, container)
+
+    validated = validate_local_release_evidence(
+        repo,
+        evidence,
+        source_sha=source_sha,
+        cpu_image_digest=CPU_IMAGE_DIGEST,
+        gpu_image_digest=GPU_IMAGE_DIGEST,
+    )
+    assert validated["status"] == "verified"
+
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    inventory["models"][0]["artifact_sha256"] = "0" * 64
+    _write_json(inventory_path, inventory)
+    runner["pinned_artifact_inventories"][0]["sha256"] = _sha256(inventory_path)
+    _write_json(runner_path, runner)
+    container["runner_report_sha256"] = _sha256(runner_path)
+    _write_json(container_path, container)
+    with pytest.raises(ReleaseError, match="Pinned artifact binding differs"):
         validate_local_release_evidence(
             repo,
             evidence,

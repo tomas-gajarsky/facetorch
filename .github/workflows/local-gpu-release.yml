@@ -130,7 +130,8 @@ jobs:
             --entrypoint python "facetorch:cpu-${SOURCE_SHA}" \
             /release-source/scripts/smoke_staged_default_analyzer.py \
             --repo-root /release-source --staging-root /evidence \
-            --summary /evidence/torch-2.6/summary-torch2.6.json \
+            --summary /evidence/runtime-validation/torch-2.6/validation-summary-torch2.6-artifact2.6.json \
+            --pinned-artifacts-root /evidence/pinned-artifacts/torch-2.6 \
             --device cpu --cache-root /tmp/facetorch-cache \
             --report /reports/cpu-image-smoke.json
           docker run --rm --gpus all --network none --read-only \
@@ -141,7 +142,8 @@ jobs:
             --entrypoint python "facetorch:gpu-${SOURCE_SHA}" \
             /release-source/scripts/smoke_staged_default_analyzer.py \
             --repo-root /release-source --staging-root /evidence \
-            --summary /evidence/torch-2.6/summary-torch2.6.json \
+            --summary /evidence/runtime-validation/torch-2.6/validation-summary-torch2.6-artifact2.6.json \
+            --pinned-artifacts-root /evidence/pinned-artifacts/torch-2.6 \
             --device cuda --cache-root /tmp/facetorch-cache \
             --report /reports/gpu-image-smoke.json
       - name: Bind container evidence to image IDs
@@ -168,6 +170,7 @@ jobs:
             ${{ env.FACETORCH_STAGING }}/default-analyzer-cuda-smoke.json
             ${{ env.FACETORCH_STAGING }}/facetorch-notebook-report.json
             ${{ env.FACETORCH_STAGING }}/facetorch-notebook-executed.ipynb
+            ${{ env.FACETORCH_STAGING }}/pinned-artifacts-torch*.json
             ${{ env.FACETORCH_STAGING }}/torch-*/summary-torch*.json
             ${{ env.FACETORCH_STAGING }}/runtime-validation/torch-*/validation-summary-*.json
             ${{ env.FACETORCH_STAGING }}/container-reports/*.json

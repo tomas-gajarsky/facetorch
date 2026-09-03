@@ -1,4 +1,5 @@
 import hashlib
+import json
 import os
 from pathlib import Path
 from types import SimpleNamespace
@@ -80,6 +81,121 @@ def test_verified_source_copy_is_readable_by_non_owner_runtime(tmp_path):
 
     assert target.read_bytes() == source.read_bytes()
     assert target.stat().st_mode & 0o777 == 0o644
+
+
+@pytest.mark.release_blocker
+def test_pinned_artifact_staging_binds_exact_hub_revision_bytes_and_metadata(
+    tmp_path,
+):
+    repo_root = tmp_path / "repo"
+    model_root = repo_root / "facetorch" / "models"
+    model_root.mkdir(parents=True)
+    artifact_bytes = b"immutable pt2 bytes"
+    artifact_sha256 = hashlib.sha256(artifact_bytes).hexdigest()
+    metadata = {
+        "schema_version": 2,
+        "model_id": "test-model",
+        "repo_id": "owner/test-model",
+        "artifact": "model-torch2.6.pt2",
+        "artifact_sha256": artifact_sha256,
+        "artifact_size_bytes": len(artifact_bytes),
+    }
+    metadata_bytes = json.dumps(metadata, sort_keys=True).encode()
+    metadata_sha256 = hashlib.sha256(metadata_bytes).hexdigest()
+    revision = "a" * 40
+    (model_root / "manifest.json").write_text(
+        json.dumps(
+            {
+                "models": {
+                    "test-model": {
+                        "repo_id": "owner/test-model",
+                        "revision": revision,
+                        "artifacts": [
+                            {
+                                "format": "pt2",
+                                "artifact_cohort": "2.6",
+                                "filename": "model-torch2.6.pt2",
+                                "sha256": artifact_sha256,
+                                "size_bytes": len(artifact_bytes),
+                                "validation_metadata": "model-torch2.6.pt2.meta.json",
+                                "metadata_sha256": metadata_sha256,
+                            }
+                        ],
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    downloads = tmp_path / "downloads"
+    downloads.mkdir()
+    artifact_download = downloads / "model-torch2.6.pt2"
+    artifact_download.write_bytes(artifact_bytes)
+    metadata_download = downloads / "model-torch2.6.pt2.meta.json"
+    metadata_download.write_bytes(metadata_bytes)
+    calls = []
+
+    def download_fn(**kwargs):
+        calls.append(kwargs)
+        return downloads / kwargs["filename"]
+
+    out_root = tmp_path / "staging" / "torch-2.6"
+    inventory = exporter._stage_pinned_artifacts(
+        [{"id": "test-model", "repo_id": "owner/test-model"}],
+        repo_root=repo_root,
+        cohort="2.6",
+        out_root=out_root,
+        download_fn=download_fn,
+    )
+
+    staged_artifact = out_root / "test-model" / "model-torch2.6.pt2"
+    staged_metadata = out_root / "test-model" / "model-torch2.6.pt2.meta.json"
+    assert staged_artifact.read_bytes() == artifact_bytes
+    assert staged_metadata.read_bytes() == metadata_bytes
+    assert staged_artifact.stat().st_mode & 0o777 == 0o644
+    assert staged_metadata.stat().st_mode & 0o777 == 0o644
+    assert inventory["status"] == "ok"
+    assert inventory["source"] == "huggingface"
+    assert inventory["cohort"] == "2.6"
+    assert inventory["models"] == [
+        {
+            "model_id": "test-model",
+            "repo_id": "owner/test-model",
+            "revision": revision,
+            "artifact": "test-model/model-torch2.6.pt2",
+            "artifact_sha256": artifact_sha256,
+            "artifact_size_bytes": len(artifact_bytes),
+            "metadata": "test-model/model-torch2.6.pt2.meta.json",
+            "metadata_sha256": metadata_sha256,
+            "metadata_size_bytes": len(metadata_bytes),
+        }
+    ]
+    assert calls == [
+        {
+            "repo_id": "owner/test-model",
+            "filename": "model-torch2.6.pt2",
+            "revision": revision,
+            "local_files_only": False,
+            "force_download": False,
+        },
+        {
+            "repo_id": "owner/test-model",
+            "filename": "model-torch2.6.pt2.meta.json",
+            "revision": revision,
+            "local_files_only": False,
+            "force_download": False,
+        },
+    ]
+
+    artifact_download.write_bytes(b"substituted")
+    with pytest.raises(RuntimeError, match="Downloaded source integrity mismatch"):
+        exporter._stage_pinned_artifacts(
+            [{"id": "test-model", "repo_id": "owner/test-model"}],
+            repo_root=repo_root,
+            cohort="2.6",
+            out_root=tmp_path / "rejected",
+            download_fn=download_fn,
+        )
 
 
 def test_export_validation_passes_within_tolerance():

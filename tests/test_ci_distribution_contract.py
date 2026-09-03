@@ -522,6 +522,13 @@ def test_local_cuda_release_runner_is_explicit_and_manually_gated():
     assert "--golden-reference-root" in runner
     assert 'golden_reference_cohort = "2.6"' in runner
     assert '"record" if cohort == golden_reference_cohort else "reuse"' in runner
+    assert '"stage-artifacts"' in runner
+    assert 'staging_root / "pinned-artifacts"' in runner
+    assert "pinned_artifact_roots[artifact_cohort]" in runner
+    assert 'runtime_summary_by_runtime["2.6"]' in runner
+    assert 'pinned_artifact_roots["2.6"]' in runner
+    assert "--pinned-artifacts-root" in runner
+    assert '"pinned_manifest_artifacts": args.pinned_artifacts_root is not None' in smoke
     assert "stage_alignment_metadata.py" in runner
     assert 'Path("runtime-inputs/3dmm/meta.pt")' in smoke
     assert 'repo_root / "data" / "3dmm" / "meta.pt"' not in smoke
@@ -531,6 +538,16 @@ def test_local_cuda_release_runner_is_explicit_and_manually_gated():
     for workflow_name in ("local-gpu-release.yml", "release.yml"):
         workflow = (WORKFLOW_ROOT / workflow_name).read_text(encoding="utf-8")
         assert "alignment-metadata-report.json" in workflow
+        assert "pinned-artifacts-torch*.json" in workflow
+        assert (
+            "--pinned-artifacts-root /evidence/pinned-artifacts/torch-2.6"
+            in workflow
+        )
+        assert (
+            "/evidence/runtime-validation/torch-2.6/"
+            "validation-summary-torch2.6-artifact2.6.json"
+        ) in workflow
+        assert "/evidence/torch-2.6/summary-torch2.6.json" not in workflow
 
 
 @pytest.mark.release_blocker
