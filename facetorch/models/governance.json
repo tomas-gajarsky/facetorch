@@ -21,7 +21,7 @@
     "detector-retinaface": {
       "status": "approved",
       "release_eligible": true,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-detector-retinaface/blob/b4240f23442f52dae9de2ecee8fd279a2ca4545d/README.md",
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-detector-retinaface/blob/ea9e77d390c23150d9c268be0f85bcba64338cb9/README.md",
       "upstream_sources": [{"url": "https://github.com/biubug6/Pytorch_Retinaface", "revision": "b984b4b775b2c4dced95c1eadd195a5c7d32a60b", "code_license": "MIT", "license_url": "https://github.com/biubug6/Pytorch_Retinaface/blob/b984b4b775b2c4dced95c1eadd195a5c7d32a60b/LICENSE.MIT", "license_role": "weights", "license_file": "model_cards/upstream_licenses/retinaface-LICENSE.MIT", "license_sha256": "41034e3430e3b7fd63031bcc6f9dd9740fa910328f3168208ca032807f026147", "role": "checkpoint publisher and architecture source"}],
       "source_checkpoint": {
         "hosted_sha256_verified": true,
@@ -38,7 +38,7 @@
     "align-synergynet": {
       "status": "approved",
       "release_eligible": true,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-align-synergynet/blob/807894a3a00396658f7c538cbb5fb8e55980755c/README.md",
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-align-synergynet/blob/922302926d1641c4b18bc6465201ba6a751c330c/README.md",
       "upstream_sources": [{"url": "https://github.com/choyingw/SynergyNet", "revision": "9de11e2831b85254d776ca748fa2ffd68aedf4ba", "code_license": "MIT", "license_url": "https://github.com/choyingw/SynergyNet/blob/9de11e2831b85254d776ca748fa2ffd68aedf4ba/LICENSE", "license_role": "weights", "license_file": "model_cards/upstream_licenses/synergynet-LICENSE", "license_sha256": "fb0caa3ee56ab0a267ddc98fac1cb010e54cc6994103ee217d7631337b0bbe78", "role": "checkpoint publisher and architecture source"}],
       "source_checkpoint": {
         "hosted_sha256_verified": true,
@@ -54,7 +54,7 @@
     "au-opengraph": {
       "status": "approved",
       "release_eligible": true,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-au-opengraph/blob/016e8b39233d50271e1881281c1a9f7b366d7947/README.md",
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-au-opengraph/blob/bbd29f55d14c235cb43fbad19a12d4929e4c7947/README.md",
       "upstream_sources": [
         {"url": "https://github.com/lingjivoo/OpenGraphAU", "revision": "a0ad10d516ed121f476cbc6d66a84ebfc033a53f", "code_license": "Apache-2.0", "license_url": "https://github.com/lingjivoo/OpenGraphAU/blob/a0ad10d516ed121f476cbc6d66a84ebfc033a53f/LICENSE", "license_role": "weights", "license_file": "model_cards/upstream_licenses/apache-2.0-LICENSE", "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4", "notice_url": null, "notice_file": null, "notice_sha256": null, "role": "checkpoint publisher and primary architecture source"},
         {"url": "https://github.com/CVI-SZU/ME-GraphAU", "revision": "dda53cba00c427a0494468c549e464a96ba7b2fa", "code_license": "MIT", "license_url": "https://github.com/CVI-SZU/ME-GraphAU/blob/dda53cba00c427a0494468c549e464a96ba7b2fa/LICENSE", "license_role": "notice", "license_file": "model_cards/upstream_licenses/megraphau-LICENSE", "license_sha256": "a4420e16a065cd7b27e4171ce7b962cea16c313ed3cb070d3ddd8c223784154e", "role": "related graph-AU implementation requiring preserved attribution"}
@@ -74,7 +74,7 @@
     "deepfake-efficientnet-b7": {
       "status": "approved",
       "release_eligible": true,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-deepfake-efficientnet-b7/blob/a0c23dffebb927d6f3651ab1210fac3f27a0cbfa/README.md",
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-deepfake-efficientnet-b7/blob/94ba3ac3162aa68e89b75729ce614a2669636aaa/README.md",
       "upstream_sources": [{"url": "https://github.com/selimsef/dfdc_deepfake_challenge", "revision": "89c6290490bac96b29193a4061b3db9dd3933e36", "code_license": "MIT", "license_url": "https://github.com/selimsef/dfdc_deepfake_challenge/blob/89c6290490bac96b29193a4061b3db9dd3933e36/LICENSE", "license_role": "weights", "license_file": "model_cards/upstream_licenses/deepfake-LICENSE", "license_sha256": "0671780885c3623f2f1320c9668eea54252deea384a86acb8013abc3d3adf64c", "role": "checkpoint publisher and architecture source"}],
       "source_checkpoint": {
         "hosted_sha256_verified": true,
@@ -90,7 +90,7 @@
     "embed-resnet50": {
       "status": "approved",
       "release_eligible": true,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-embed-resnet-50/blob/5df1ddec26010a64ad7bc8cea717997c71238923/README.md",
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-embed-resnet-50/blob/9eb6398922ab81fd61699e37f3bfe1054df81275/README.md",
       "upstream_sources": [
         {"url": "https://github.com/1adrianb/unsupervised-face-representation", "revision": "8bdb3cc7fddbee147d7188c0bda103272238d1bb", "code_license": "MIT", "license_url": "https://github.com/1adrianb/unsupervised-face-representation/blob/8bdb3cc7fddbee147d7188c0bda103272238d1bb/LICENSE", "license_role": "weights", "license_file": "model_cards/upstream_licenses/unsupervised-face-LICENSE", "license_sha256": "5a9669baf02e6285f0f05f4b25b3f702e5f25c27d24967d94eb7708781c49d5e", "role": "checkpoint publisher and primary model source"},
         {"url": "https://github.com/cydonia999/VGGFace2-pytorch", "revision": "c6e10f277b31b972c78fac68a40464a36a46a10d", "code_license": "MIT", "license_url": "https://github.com/cydonia999/VGGFace2-pytorch/blob/c6e10f277b31b972c78fac68a40464a36a46a10d/LICENSE", "license_role": "notice", "license_file": "model_cards/upstream_licenses/vggface2-LICENSE", "license_sha256": "6a44da9f4025320e490417d0c19dc15e82fbffa56896f45565d3d93432215545", "role": "Facetorch native architecture attribution"}
@@ -109,7 +109,7 @@
     "fer-efficientnet-b0": {
       "status": "approved",
       "release_eligible": true,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-fer-efficientnet-b0/blob/b5121f01048ede44dfb9dbf9967e31aa4653cbde/README.md",
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-fer-efficientnet-b0/blob/afcc38337cfc281a9019f1e8eba70f3d869207e4/README.md",
       "upstream_sources": [{"url": "https://github.com/sb-ai-lab/EmotiEffLib", "revision": "520a051c64cd191521e5934655314e769a319684", "code_license": "Apache-2.0", "license_url": "https://github.com/sb-ai-lab/EmotiEffLib/blob/520a051c64cd191521e5934655314e769a319684/LICENSE", "license_role": "weights", "license_file": "model_cards/upstream_licenses/apache-2.0-LICENSE", "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4", "notice_url": null, "notice_file": null, "notice_sha256": null, "role": "checkpoint publisher and architecture source"}],
       "source_checkpoint": {
         "hosted_sha256_verified": true,
@@ -125,7 +125,7 @@
     "fer-efficientnet-b2": {
       "status": "approved",
       "release_eligible": true,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-fer-efficientnet-b2/blob/18c1748e14ed6e353eb88cea7e01bf8da9f6de4c/README.md",
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-fer-efficientnet-b2/blob/12c5e0e4496865d4b03ffd6574d1f8fcc141eacc/README.md",
       "upstream_sources": [{"url": "https://github.com/sb-ai-lab/EmotiEffLib", "revision": "520a051c64cd191521e5934655314e769a319684", "code_license": "Apache-2.0", "license_url": "https://github.com/sb-ai-lab/EmotiEffLib/blob/520a051c64cd191521e5934655314e769a319684/LICENSE", "license_role": "weights", "license_file": "model_cards/upstream_licenses/apache-2.0-LICENSE", "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4", "notice_url": null, "notice_file": null, "notice_sha256": null, "role": "checkpoint publisher and architecture source"}],
       "source_checkpoint": {
         "hosted_sha256_verified": true,
@@ -141,7 +141,7 @@
     "va-elim": {
       "status": "approved",
       "release_eligible": true,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-va-elim/blob/4e6f4909f9f36d5f0f807f2181093d03a494c5b8/README.md",
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-va-elim/blob/8a1733b1d6404e6b5531c59070c23ab26080f102/README.md",
       "upstream_sources": [{"url": "https://github.com/kdhht2334/ELIM_FER", "revision": "fb1aa0d495ffcf38494c487135390ba1a5521fc4", "code_license": "MIT", "license_url": "https://github.com/kdhht2334/ELIM_FER/blob/fb1aa0d495ffcf38494c487135390ba1a5521fc4/LICENSE", "license_role": "weights", "license_file": "model_cards/upstream_licenses/elim-LICENSE", "license_sha256": "71f4adc55401be1d3fec0ebbef9c9844880d9e74fb06e1191866150fc9361c98", "role": "checkpoint publisher and architecture source"}],
       "source_checkpoint": {
         "hosted_sha256_verified": true,
@@ -161,7 +161,7 @@
     "verify-adaface": {
       "status": "approved",
       "release_eligible": true,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-verify-adaface/blob/62b32103fa1b1d7e08943ff20801d14de73101c1/README.md",
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-verify-adaface/blob/05f8055339f1c22e5ea6a85e00f975d57d92f07e/README.md",
       "upstream_sources": [{"url": "https://github.com/mk-minchul/AdaFace", "revision": "c60eaa786a42c03444f3df7096dbaf9d57ae010d", "code_license": "MIT", "license_url": "https://github.com/mk-minchul/AdaFace/blob/c60eaa786a42c03444f3df7096dbaf9d57ae010d/LICENSE", "license_role": "weights", "license_file": "model_cards/upstream_licenses/adaface-LICENSE", "license_sha256": "95b6e493eb9dba27f2150304e790ae254bab18d1611f4d6e2ade28fa3a271583", "role": "checkpoint publisher and architecture source"}],
       "source_checkpoint": {
         "hosted_sha256_verified": true,
@@ -177,7 +177,7 @@
     "verify-magface": {
       "status": "approved",
       "release_eligible": true,
-      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-verify-magface/blob/bf2e5d45259405d9b73cc507efa95db0ff03ee52/README.md",
+      "hosted_model_card": "https://huggingface.co/tomas-gajarsky/facetorch-verify-magface/blob/28ac5f428afdb726e5a52c1a5211ce1e5aa7245e/README.md",
       "upstream_sources": [
         {"url": "https://github.com/junuke/UNPG", "revision": "a6f9c1731a68fc035eb8fe8198f5a5c643825a5b", "code_license": "Apache-2.0", "license_url": "https://github.com/junuke/UNPG/blob/a6f9c1731a68fc035eb8fe8198f5a5c643825a5b/LICENSE", "license_role": "weights", "license_file": "model_cards/upstream_licenses/apache-2.0-LICENSE", "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4", "notice_url": null, "notice_file": null, "notice_sha256": null, "role": "checkpoint publisher and UNPG training source"},
         {"url": "https://github.com/IrvingMeng/MagFace", "revision": "99bae614ac2643b9694bf18e0c5645272ff6acfa", "code_license": "Apache-2.0", "license_url": "https://github.com/IrvingMeng/MagFace/blob/99bae614ac2643b9694bf18e0c5645272ff6acfa/LICENSE", "license_role": "weights", "license_file": "model_cards/upstream_licenses/apache-2.0-LICENSE", "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4", "notice_url": null, "notice_file": null, "notice_sha256": null, "role": "MagFace architecture and loss source"}

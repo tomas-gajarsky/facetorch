@@ -7,7 +7,7 @@ downloader:
   path_local: ${facetorch.model_dir:}/exported/detector/1/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-detector-retinaface  # HuggingFace repo ID
   manifest_id: detector-retinaface
-  revision: b4240f23442f52dae9de2ecee8fd279a2ca4545d
+  revision: ea9e77d390c23150d9c268be0f85bcba64338cb9
   offline: ${offline}
   allow_legacy_models: ${allow_legacy_models}
   device: ${analyzer.device}

@@ -6,7 +6,7 @@ downloader:
   path_local: ${facetorch.model_dir:}/exported/predictor/align/1/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-align-synergynet  # HuggingFace repo ID
   manifest_id: align-synergynet
-  revision: 807894a3a00396658f7c538cbb5fb8e55980755c
+  revision: 922302926d1641c4b18bc6465201ba6a751c330c
   offline: ${offline}
   allow_legacy_models: ${allow_legacy_models}
   device: ${analyzer.device}
