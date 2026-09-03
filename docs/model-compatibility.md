@@ -1,27 +1,36 @@
 # Model compatibility and governance
 
-Facetorch v1 uses a bounded release-candidate matrix. Package metadata and runtime
-routing accept only the PyTorch minor lines for which the package has a distinct
-artifact cohort. Similar export-schema numbers are not treated as compatibility
-proof.
+Facetorch v1 uses a bounded release-candidate matrix. Runtime support and artifact
+export cohorts are separate concepts: one digest-pinned exported program may serve
+several PyTorch lines only after every line has passed CPU and CUDA validation.
+Similar export-schema numbers alone are not treated as compatibility proof.
 
 | Python | PyTorch line | Export schema | Artifact cohort | Candidate CUDA runtime |
 | --- | --- | --- | --- | --- |
 | 3.10-3.12 | 2.6.x | 8.2 | 2.6 | 12.4 |
+| 3.10-3.12 | 2.7.x | 8.2 artifact | 2.6 | 12.6 |
+| 3.10-3.12 | 2.8.x | 8.2 artifact | 2.6 | 12.6 |
+| 3.10-3.12 | 2.9.x | 8.17 artifact | 2.11 | 13.0 |
+| 3.10-3.12 | 2.10.x | 8.17 artifact | 2.11 | 13.0 |
 | 3.10-3.12 | 2.11.x | 8.17 | 2.11 | 13.0 |
+| 3.10-3.12 | 2.12.x | 8.17 artifact | 2.11 | 13.0 |
+| 3.10-3.12 | 2.13.x | 8.17 artifact | 2.11 | 13.0 |
 
-The dependency is deliberately expressed as
-`torch>=2.6,<2.12,!=2.7.*,!=2.8.*,!=2.9.*,!=2.10.*`.
-Torch 2.3-2.5 and 2.7-2.10 fail before model download even when legacy models are
-explicitly enabled. In particular, Torch 2.5 uses export schema major 7 and has no
-approved facetorch cohort. New lines are added only with a complete
-artifact and validation matrix; an upper bound prevents a future resolver choice
-from silently expanding the support claim.
+The dependencies are deliberately expressed as `torch>=2.6,<2.14` and
+`torchvision>=0.21,<0.29`. Torch 2.3-2.5 and 2.14 or newer fail before model
+download even when legacy models are explicitly enabled. In particular, Torch 2.5
+uses export schema major 7 and has no approved Facetorch cohort. The upper bound
+prevents a future resolver choice from silently expanding the support claim.
+
+PyTorch 2.8 emits an upstream deprecation warning when it reads the older PT2
+archive container used by the 2.6 cohort. The archive still loads and its outputs
+pass the declared tolerances. PyTorch 2.9 is the routing boundary because it loads
+the newer 2.11 cohort cleanly, whereas PyTorch 2.8 cannot read that newer archive.
 
 The candidate's official platform target is Linux x86-64 on CPU and the named
 NVIDIA CUDA pairs above. Windows, macOS, Linux ARM, and Apple MPS are experimental
 until exercised. The matrix becomes an official release claim only after the exact
-clean candidate passes every model on CPU and CUDA for both rows. Current lane
+clean candidate passes every model on CPU and CUDA for all eight rows. Current lane
 status is machine-readable in `facetorch/models/compatibility.json`.
 
 ## Security support boundary
@@ -40,9 +49,15 @@ those APIs. The exceptions are restricted to the exact Torch 2.6 CPU/CUDA profil
 and expire on 2026-11-20. The machine-readable policy and removal conditions are in
 `security/advisory-exceptions.json`.
 
+Torch 2.11.0 and 2.12.1 currently constrain their runtime dependency to
+`setuptools<82`. Those exact profiles retain the existing Linux-only exception for
+CVE-2026-59890 through 2026-11-20. Facetorch does not build source distributions
+at runtime, and release source distributions use the isolated setuptools 84 build
+backend. Torch lines without that upstream constraint resolve setuptools 84.
+
 ## Candidate evidence
 
-On 2026-08-21, the retained two rows were exercised as part of a larger diagnostic
+On 2026-08-21, the two exported cohorts were exercised as part of a larger diagnostic
 on Linux x86-64 with Python 3.10 and an NVIDIA GeForce RTX 3090. Their 20 cohort
 artifacts passed 1,248 cases across every model, CPU and CUDA, face batches
 1/2/4/8, two seeds, two input scales, and normal/uniform inputs. Detector input
@@ -60,11 +75,20 @@ approved. This model-artifact approval is distinct from the coordinated RC1
 release, which must still run its protected dry run from the exact final source
 commit.
 
+On 2026-09-01, the public RC2 wheel and all ten existing artifacts were then tested
+from an independent directory on PyTorch 2.6 through 2.13, on CPU and an RTX 3090.
+All eight preferred routes loaded and completed real four-face inference within
+the published tolerances, and every downloaded artifact matched its manifest
+SHA-256. This established the reusable routing boundary above. It was a focused
+compatibility probe, not a substitute for the complete synthetic release matrix;
+RC3 publication therefore re-runs every batch, seed, scale, input variant, model,
+and device through the protected exact-candidate workflow.
+
 ## Validation semantics
 
 Every immutable TorchScript reference is kept on CPU. Torch 2.6 is the declared
 golden-reference cohort: it records one digest-bound output bundle for the full
-case matrix, and every CPU/CUDA lane and later Torch cohort must reuse those exact
+case matrix, and every CPU/CUDA runtime lane must reuse those exact
 outputs. Validation disables
 TensorFloat-32, selects highest float32 matmul precision, and enables deterministic
 cuDNN behavior while restoring the caller's backend settings afterward. This
@@ -147,7 +171,7 @@ PYTHONPATH=. python scripts/audit_model_manifest_hf.py \
 ```
 
 After all cohort summaries exist beneath one protected staging root, verify the
-complete candidate matrix without claiming governance approval:
+two exported artifact cohorts without claiming governance approval:
 
 ```bash
 PYTHONPATH=. python scripts/verify_model_release_matrix.py \
@@ -155,6 +179,16 @@ PYTHONPATH=. python scripts/verify_model_release_matrix.py \
   --summary /secure/staging/torch-2.6/summary-torch2.6.json \
   --summary /secure/staging/torch-2.11/summary-torch2.11.json \
   --candidate-evidence --allow-dirty-source
+```
+
+The protected local runner additionally validates the two staged cohorts through
+all eight runtime profiles and verifies those summaries with
+`scripts/verify_runtime_compatibility_matrix.py`:
+
+```bash
+python scripts/run_local_cuda_release_matrix.py \
+  --repo-root . --source-sha "$(git rev-parse HEAD)" \
+  --staging-root /secure/staging
 ```
 
 The relaxed flags are diagnostic only. Release verification omits both flags and

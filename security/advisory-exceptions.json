@@ -16,20 +16,22 @@
         "torch-2.6-cpu",
         "torch-2.6-cu124",
         "torch-2.11-cpu",
-        "torch-2.11-cu130"
+        "torch-2.11-cu130",
+        "torch-2.12-cpu",
+        "torch-2.12-cu130"
       ],
       "status": "approved",
-      "approved_on": "2026-08-22",
+      "approved_on": "2026-09-02",
       "expires_on": "2026-11-20",
       "review_owner": "founder",
-      "rationale": "Torch 2.11.0 requires setuptools<82. The advisory affects Unicode-normalization handling while building source distributions on macOS; Facetorch's official platform and release builders are Linux.",
+      "rationale": "Torch 2.11.0 and 2.12.1 require setuptools<82. The advisory affects Unicode-normalization handling while building source distributions on macOS; Facetorch's official platform and release builders are Linux.",
       "mitigations": [
         "Facetorch source distributions use an isolated setuptools>=83 build backend.",
         "Release jobs reject non-Linux production targets.",
         "The runtime environment does not invoke setuptools to build source distributions."
       ],
-      "upstream_constraint": "torch 2.11.0 metadata requires setuptools<82",
-      "removal_condition": "Remove when a validated Torch 2.11 patch no longer requires vulnerable setuptools, or drop the cohort."
+      "upstream_constraint": "torch 2.11.0 and 2.12.1 metadata require setuptools<82",
+      "removal_condition": "Remove when validated Torch 2.11 and 2.12 patches no longer require vulnerable setuptools, or drop the affected runtime lines."
     },
     {
       "vulnerability_id": "CVE-2025-3730",

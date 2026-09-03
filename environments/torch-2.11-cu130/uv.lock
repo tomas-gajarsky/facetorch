@@ -6,6 +6,9 @@ resolution-markers = [
     "python_full_version == '3.11.*'",
     "python_full_version < '3.11'",
 ]
+required-markers = [
+    "platform_machine == 'x86_64' and sys_platform == 'linux'",
+]
 
 [[package]]
 name = "annotated-types"
@@ -663,7 +666,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=2.10.0" },
     { name = "python-json-logger", specifier = ">=2.0.0" },
     { name = "requests", specifier = ">=2.20.0" },
-    { name = "setuptools", marker = "extra == 'test'", specifier = "==81.0.0" },
+    { name = "setuptools", marker = "extra == 'test'", specifier = ">=77.0.3" },
     { name = "snakeviz", marker = "extra == 'test'", specifier = ">=2.1.0" },
     { name = "timm", specifier = ">=0.6.0" },
     { name = "torch", specifier = "==2.11.0", index = "https://download.pytorch.org/whl/cu130" },

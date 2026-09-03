@@ -11,7 +11,7 @@ CPU is the safe default profile; GPU remains supported by selecting
 `load_config("gpu")` on a compatible CUDA host. Windows, macOS, ARM, and MPS
 are experimental until separately validated.
 
-Install the exact candidate only after `1.0.0rc2` appears on PyPI. Preinstalling
+Install the exact candidate only after `1.0.0rc3` appears on PyPI. Preinstalling
 the CPU PyTorch cohort prevents pip from selecting the much larger CUDA runtime
 dependency graph on a CPU host:
 
@@ -20,17 +20,18 @@ python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install --index-url https://download.pytorch.org/whl/cpu \
-  "torch==2.11.0+cpu" "torchvision==0.26.0+cpu"
-python -m pip install "facetorch==1.0.0rc2"
+  "torch==2.13.0+cpu" "torchvision==0.28.0+cpu"
+python -m pip install "facetorch==1.0.0rc3"
 ```
 
-For CUDA 13.0, install `torch==2.11.0+cu130` and
-`torchvision==0.26.0+cu130` from `https://download.pytorch.org/whl/cu130`
-before installing the same facetorch candidate. Torch 2.6 CPU/CUDA 12.4 is the
-other supported cohort. Do not rely on bare `pip install facetorch`, Docker
+For CUDA 13.0, install `torch==2.13.0+cu130` and
+`torchvision==0.28.0+cu130` from `https://download.pytorch.org/whl/cu130`
+before installing the same Facetorch candidate. Matching PyTorch/torchvision pairs
+from 2.6/0.21 through 2.13/0.28 are supported; the two existing model artifact
+cohorts are selected automatically. Do not rely on bare `pip install facetorch`, Docker
 `latest`, or the unversioned conda command during the RC soak: those stable
 aliases remain on 0.6.2. Conda-forge is usable only after its feedstock shows
-the exact `1.0.0rc2` build.
+the exact `1.0.0rc3` build.
 
 ## Runtime API changes
 
@@ -124,11 +125,11 @@ the release tag and digest. Conda metadata may follow PyPI publication, so pin
 the artifact source explicitly in deployment automation.
 
 After the RC images are public, the repository Compose file defaults to the
-immutable `1.0.0-rc.2` tag. Keep the tag explicit in deployment automation:
+immutable `1.0.0-rc.3` tag. Keep the tag explicit in deployment automation:
 
 ```bash
-FACETORCH_DOCKER_TAG=1.0.0-rc.2 docker compose pull facetorch
-FACETORCH_DOCKER_TAG=1.0.0-rc.2 docker compose run --rm facetorch \
+FACETORCH_DOCKER_TAG=1.0.0-rc.3 docker compose pull facetorch
+FACETORCH_DOCKER_TAG=1.0.0-rc.3 docker compose run --rm facetorch \
   python /opt/facetorch/example.py /workspace/data/input/test.jpg \
   --output /workspace/data/output/test.png
 ```

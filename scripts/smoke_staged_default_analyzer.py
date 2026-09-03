@@ -99,11 +99,11 @@ def _candidate_manifest(
     compatibility = _read_json(manifest_path.parent / manifest["compatibility_ref"])
     governance = _read_json(manifest_path.parent / manifest["governance_ref"])
     cohort = str(summary["torch_minor"])
-    results = {
-        str(result["model_id"]): result for result in summary.get("results", [])
-    }
+    results = {str(result["model_id"]): result for result in summary.get("results", [])}
     if set(results) != set(manifest["models"]):
-        raise RuntimeError("Staged summary does not cover the complete default analyzer")
+        raise RuntimeError(
+            "Staged summary does not cover the complete default analyzer"
+        )
 
     staged_paths = {}
     for model_id, model in manifest["models"].items():
@@ -114,7 +114,8 @@ def _candidate_manifest(
             artifact
             for artifact in model["artifacts"]
             if artifact.get("format") == "pt2"
-            and str(artifact.get("torch_min")) == cohort
+            and str(artifact.get("artifact_cohort", artifact.get("torch_min")))
+            == cohort
         ]
         if len(matching) != 1:
             raise RuntimeError(f"Manifest cohort selection is ambiguous: {model_id}")
@@ -329,7 +330,9 @@ def main() -> int:
                 raise RuntimeError("Repeated AU inference is not stable")
 
     components = [analyzer.detector]
-    components.extend(analyzer.predictors[name] for name in analyzer.configured_predictors)
+    components.extend(
+        analyzer.predictors[name] for name in analyzer.configured_predictors
+    )
     active = [component.downloader.active_descriptor for component in components]
     if any(descriptor is None or descriptor.format != "pt2" for descriptor in active):
         raise RuntimeError("Legacy fallback occurred during default-analyzer smoke")

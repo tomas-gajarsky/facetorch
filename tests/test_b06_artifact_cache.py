@@ -36,7 +36,16 @@ def test_packaged_manifest_covers_every_model_and_real_format():
     assert manifest.manifest_version == 1
     assert manifest.status == "approved"
     assert len(manifest.models) == 10
-    descriptors_per_model = len(manifest.supported_torch_minors) + 1
+    descriptors_per_model = (
+        len(
+            {
+                item.artifact_cohort
+                for item in manifest.iter_descriptors()
+                if item.format == "pt2"
+            }
+        )
+        + 1
+    )
     assert len(tuple(manifest.iter_descriptors())) == (
         len(manifest.models) * descriptors_per_model
     )
@@ -47,9 +56,7 @@ def test_packaged_manifest_covers_every_model_and_real_format():
         assert all(len(item.revision) == 40 for item in artifacts)
         assert all(item.size_bytes > 0 and len(item.sha256) == 64 for item in artifacts)
         assert all(
-            item.filename.endswith(".pt2")
-            for item in artifacts
-            if item.format == "pt2"
+            item.filename.endswith(".pt2") for item in artifacts if item.format == "pt2"
         )
         assert all(
             item.filename.endswith(".pt")
@@ -78,9 +85,7 @@ def test_manifest_selection_is_exact_and_fails_for_undeclared_runtime():
         torch_version="2.11.0+cu130",
         device="cuda:0",
     )
-    assert [item.artifact_id for item in selected] == [
-        "detector-retinaface-torch2.11"
-    ]
+    assert [item.artifact_id for item in selected] == ["detector-retinaface-torch2.11"]
 
     with pytest.raises(ModelCompatibilityError, match="outside facetorch"):
         manifest.candidates(
@@ -102,7 +107,15 @@ def test_au_legacy_artifact_is_cpu_only():
 
 @pytest.mark.release_blocker
 def test_prefetch_plan_matches_requested_runtime_components():
-    torch_minor = ".".join(str(torch.__version__).split("+", 1)[0].split(".")[:2])
+    expected_fer_artifact = (
+        get_model_manifest()
+        .candidates(
+            "fer-efficientnet-b2",
+            torch_version=torch.__version__,
+            device="cpu",
+        )[0]
+        .artifact_id
+    )
     fer = plan_model_prefetch(
         "cpu",
         include_predictors=["fer"],
@@ -110,7 +123,7 @@ def test_prefetch_plan_matches_requested_runtime_components():
         offline=True,
     )
     assert [(item.component, item.artifact_id) for item in fer.items] == [
-        ("predictor.fer", f"fer-efficientnet-b2-torch{torch_minor}")
+        ("predictor.fer", expected_fer_artifact)
     ]
 
     align = plan_model_prefetch(
@@ -155,6 +168,9 @@ def test_prefetch_plan_uses_composed_utilizer_dependency_graph():
 def test_prefetch_plan_uses_the_runtime_incompatibility_selection(
     tmp_path, monkeypatch
 ):
+    # Exercise the final runtime where both the modern export and the bounded
+    # legacy fallback are intentionally eligible.
+    monkeypatch.setattr(torch, "__version__", "2.11.0+cpu")
     model_root = tmp_path / "models"
     monkeypatch.setenv("FACETORCH_MODEL_DIR", str(model_root))
     manifest = get_model_manifest()
@@ -200,9 +216,11 @@ def test_prefetch_plan_uses_the_runtime_incompatibility_selection(
 
 @pytest.mark.release_blocker
 def test_empty_prefetch_selection_performs_no_network_or_instantiation():
-    with patch("facetorch.model_cache.instantiate") as instantiate, patch(
-        "facetorch.downloader.hf_hub_download"
-    ) as hub, patch("facetorch.downloader.gdown.download") as drive:
+    with (
+        patch("facetorch.model_cache.instantiate") as instantiate,
+        patch("facetorch.downloader.hf_hub_download") as hub,
+        patch("facetorch.downloader.gdown.download") as drive,
+    ):
         result = prefetch_models(
             "cpu",
             include_predictors=[],
@@ -228,12 +246,14 @@ def test_prefetch_instantiates_only_requested_downloader(tmp_path):
         def run(self):
             return self.path_local
 
-    with patch(
-        "facetorch.model_cache.instantiate",
-        side_effect=lambda config: FakeDownloader(config),
-    ), patch("facetorch.downloader.hf_hub_download") as hub, patch(
-        "facetorch.downloader.gdown.download"
-    ) as drive:
+    with (
+        patch(
+            "facetorch.model_cache.instantiate",
+            side_effect=lambda config: FakeDownloader(config),
+        ),
+        patch("facetorch.downloader.hf_hub_download") as hub,
+        patch("facetorch.downloader.gdown.download") as drive,
+    ):
         result = prefetch_models(
             "cpu",
             include_predictors=["fer"],

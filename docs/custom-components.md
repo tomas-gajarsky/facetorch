@@ -41,7 +41,7 @@ unknown manifest ID, a mutable branch or tag, a mismatched built-in repository,
 or a missing direct-artifact digest fails closed before inference.
 
 Direct external mode describes one artifact for one configured device. It does
-not automatically provide facetorch's Torch 2.6/2.11 cohort routing. Test the
+not automatically provide Facetorch's validated Torch 2.6-2.13 runtime routing. Test the
 artifact on the exact Torch major/minor used by the application. If both
 supported Torch cohorts are required, publish and select separately validated
 artifacts through separate application configs, or implement an application

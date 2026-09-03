@@ -27,7 +27,7 @@ test = [
     "pip>=25.0",
     "pytest>=6.0.0",
     "pytest-cov>=2.10.0",
-    "setuptools==81.0.0",
+    "setuptools>=77.0.3",
     "snakeviz>=2.1.0",
     "twine>=3.2.0",
 ]
@@ -41,6 +41,7 @@ release = [
 
 [tool.uv]
 package = false
+required-environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
 
 [tool.uv.sources]
 torch = { index = "pytorch-cu130" }

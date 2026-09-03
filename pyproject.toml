@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "facetorch"
-version = "1.0.0rc2"
+version = "1.0.0rc3"
 description = "Face analysis PyTorch framework."
 readme = "README.md"
 license = "Apache-2.0"
@@ -38,10 +38,10 @@ dependencies = [
     "numpy>=1.18.2",
     "omegaconf>=2.3.0,<2.4",
     "python-json-logger>=2.0.0",
-    "torch>=2.6,<2.12,!=2.7.*,!=2.8.*,!=2.9.*,!=2.10.*",
+    "torch>=2.6,<2.14",
     "requests>=2.20.0",
     "timm>=0.6.0",
-    "torchvision>=0.21,<0.27",
+    "torchvision>=0.21,<0.29",
     "huggingface_hub>=0.16.0",
 ]
 
@@ -55,7 +55,7 @@ dev = [
     "pip>=25.0",
     "pytest>=6.0.0",
     "pytest-cov>=2.10.0",
-    "setuptools==81.0.0",
+    "setuptools>=77.0.3",
     "snakeviz>=2.1.0",
     "twine>=3.2.0",
 ]
@@ -71,6 +71,9 @@ release = [
 Homepage = "https://github.com/tomas-gajarsky/facetorch"
 Download = "https://pypi.org/project/facetorch/"
 Documentation = "https://tomas-gajarsky.github.io/facetorch/facetorch/index.html"
+
+[tool.uv]
+required-environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
 
 [tool.uv.sources]
 torch = { index = "pytorch-cpu" }

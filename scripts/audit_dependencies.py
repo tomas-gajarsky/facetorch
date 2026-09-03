@@ -13,13 +13,24 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any, Dict, Iterable
 
-
 PROFILE_PROJECTS = {
     "root": Path("."),
     "torch-2.6-cpu": Path("environments/torch-2.6-cpu"),
+    "torch-2.7-cpu": Path("environments/torch-2.7-cpu"),
+    "torch-2.8-cpu": Path("environments/torch-2.8-cpu"),
+    "torch-2.9-cpu": Path("environments/torch-2.9-cpu"),
+    "torch-2.10-cpu": Path("environments/torch-2.10-cpu"),
     "torch-2.11-cpu": Path("environments/torch-2.11-cpu"),
+    "torch-2.12-cpu": Path("environments/torch-2.12-cpu"),
+    "torch-2.13-cpu": Path("environments/torch-2.13-cpu"),
     "torch-2.6-cu124": Path("environments/torch-2.6-cu124"),
+    "torch-2.7-cu126": Path("environments/torch-2.7-cu126"),
+    "torch-2.8-cu126": Path("environments/torch-2.8-cu126"),
+    "torch-2.9-cu130": Path("environments/torch-2.9-cu130"),
+    "torch-2.10-cu130": Path("environments/torch-2.10-cu130"),
     "torch-2.11-cu130": Path("environments/torch-2.11-cu130"),
+    "torch-2.12-cu130": Path("environments/torch-2.12-cu130"),
+    "torch-2.13-cu130": Path("environments/torch-2.13-cu130"),
 }
 PIP_AUDIT_VERSION = "2.10.1"
 
@@ -63,9 +74,7 @@ def _require_locked_auditor() -> None:
             "pip-audit must be installed from the locked release dependency group"
         ) from exc
     if installed != PIP_AUDIT_VERSION:
-        raise RuntimeError(
-            f"Expected pip-audit {PIP_AUDIT_VERSION}, found {installed}"
-        )
+        raise RuntimeError(f"Expected pip-audit {PIP_AUDIT_VERSION}, found {installed}")
 
 
 def _load_exceptions(path: Path) -> Dict[str, Any]:
@@ -189,7 +198,10 @@ def _audit_profile(
         version = str(dependency.get("version", ""))
         for vulnerability in dependency.get("vulns", []):
             primary_id = str(vulnerability.get("id", ""))
-            ids = {primary_id, *(str(item) for item in vulnerability.get("aliases", []))}
+            ids = {
+                primary_id,
+                *(str(item) for item in vulnerability.get("aliases", [])),
+            }
             identity = (package, version, primary_id)
             if identity in seen:
                 continue

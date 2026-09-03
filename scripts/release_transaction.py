@@ -23,7 +23,6 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import urlopen
 
-
 PLAN_SCHEMA_VERSION = 2
 RECEIPT_SCHEMA_VERSION = 1
 PROJECT_NAME = "facetorch"
@@ -276,7 +275,9 @@ def validate_candidate_identity(
     )
     if not tag_exists:
         if not allow_missing_tag:
-            raise ReleaseError(f"Required annotated tag does not exist: {identity['tag']}")
+            raise ReleaseError(
+                f"Required annotated tag does not exist: {identity['tag']}"
+            )
     else:
         tagged_commit = _run_git(root, "rev-parse", f"{tag_ref}^{{commit}}")
         if tagged_commit != source:
@@ -300,7 +301,9 @@ def _safe_relative_file(root: Path, relative: str) -> Path:
     except (OSError, ValueError) as exc:
         raise ReleaseError(f"Bundle file escapes its root: {relative!r}") from exc
     if path.is_symlink() or not resolved.is_file():
-        raise ReleaseError(f"Bundle member must be a regular non-symlink file: {relative}")
+        raise ReleaseError(
+            f"Bundle member must be a regular non-symlink file: {relative}"
+        )
     return resolved
 
 
@@ -321,9 +324,7 @@ def _validated_manifest_filename(value: Any) -> str:
 
 
 def _alignment_metadata_contract(repo_root: Path) -> dict[str, Any]:
-    inputs = _read_json(
-        _safe_relative_file(repo_root, "security/release-inputs.json")
-    )
+    inputs = _read_json(_safe_relative_file(repo_root, "security/release-inputs.json"))
     contract = inputs.get("alignment_metadata")
     if (
         not isinstance(contract, dict)
@@ -388,16 +389,16 @@ def validate_model_manifest(
             raise ReleaseError(f"Artifact size is missing for {identity}")
         devices = model.get("required_devices")
         if not isinstance(devices, list) or set(devices) != {"cpu", "cuda"}:
-            raise ReleaseError(f"Required CPU/CUDA evidence is incomplete for {identity}")
+            raise ReleaseError(
+                f"Required CPU/CUDA evidence is incomplete for {identity}"
+            )
         metadata_filename = model.get("metadata_filename")
         if (
             not isinstance(metadata_filename, str)
             or PurePosixPath(metadata_filename).name != metadata_filename
         ):
             raise ReleaseError(f"Metadata filename is invalid for {identity}")
-        _require_sha256(
-            model.get("metadata_sha256"), f"Metadata digest for {identity}"
-        )
+        _require_sha256(model.get("metadata_sha256"), f"Metadata digest for {identity}")
         _require_sha256(
             model.get("golden_reference_sha256"),
             f"Golden-reference digest for {identity}",
@@ -431,7 +432,10 @@ def validate_packaged_model_governance(
     compatibility = _read_json(model_root / "compatibility.json")
     governance = _read_json(model_root / "governance.json")
     revision = _require_sha(remote_revision, "Model manifest revision")
-    if packaged.get("status") != "approved" or packaged.get("manifest_revision") != revision:
+    if (
+        packaged.get("status") != "approved"
+        or packaged.get("manifest_revision") != revision
+    ):
         raise ReleaseError(
             "Packaged model manifest must be approved and bind the exact Hub revision"
         )
@@ -500,16 +504,66 @@ def validate_packaged_model_governance(
         upper = f"{match.group('major')}.{int(match.group('minor')) + 1}"
         return cohort, upper
 
-    supported_cohorts = {
+    supported_runtimes = {
         cohort_range(value, "Supported Torch cohort")[0] for value in supported_values
     }
-    if len(supported_cohorts) != len(supported_values):
+    if len(supported_runtimes) != len(supported_values):
         raise ReleaseError("Packaged compatibility has duplicate Torch cohorts")
     if any(not isinstance(value, str) or not value for value in required_values) or len(
         set(required_values)
     ) != len(required_values):
         raise ReleaseError("Packaged compatibility has invalid required devices")
     required_devices = tuple(sorted(required_values))
+
+    raw_artifact_cohorts = compatibility.get("cohorts")
+    raw_runtime_lanes = compatibility.get("runtime_lanes")
+    artifact_routes: dict[str, tuple[str, str]] = {}
+    runtime_routes: dict[str, str] = {}
+    if compatibility.get("schema_version") == 1:
+        artifact_routes = {
+            runtime: cohort_range(runtime, f"Artifact cohort {runtime}")
+            for runtime in supported_runtimes
+        }
+        runtime_routes = {runtime: runtime for runtime in supported_runtimes}
+    else:
+        if not isinstance(raw_artifact_cohorts, list) or not isinstance(
+            raw_runtime_lanes, list
+        ):
+            raise ReleaseError(
+                "Packaged compatibility must separate artifact cohorts from runtime lanes"
+            )
+        for record in raw_artifact_cohorts:
+            if not isinstance(record, dict):
+                raise ReleaseError("Packaged artifact cohort record is invalid")
+            cohort = exact_text(record.get("artifact_cohort"), "Artifact cohort")
+            lower = cohort_range(record.get("torch_min"), f"Minimum for {cohort}")[0]
+            upper = cohort_range(
+                record.get("torch_max_exclusive"), f"Maximum for {cohort}"
+            )[0]
+            if cohort in artifact_routes:
+                raise ReleaseError("Packaged artifact cohorts are duplicated")
+            artifact_routes[cohort] = (lower, upper)
+
+        for record in raw_runtime_lanes:
+            if not isinstance(record, dict):
+                raise ReleaseError("Packaged runtime lane record is invalid")
+            runtime = cohort_range(record.get("torch_minor"), "Runtime Torch line")[0]
+            cohort = exact_text(record.get("artifact_cohort"), f"Route for {runtime}")
+            if runtime in runtime_routes or cohort not in artifact_routes:
+                raise ReleaseError("Packaged runtime routes are duplicated or unknown")
+            lower, upper = artifact_routes[cohort]
+            runtime_key = tuple(map(int, runtime.split(".")))
+            if (
+                not tuple(map(int, lower.split(".")))
+                <= runtime_key
+                < tuple(map(int, upper.split(".")))
+            ):
+                raise ReleaseError(
+                    f"Packaged runtime route is invalid for Torch {runtime}"
+                )
+            runtime_routes[runtime] = cohort
+    if set(runtime_routes) != supported_runtimes:
+        raise ReleaseError("Packaged runtime routes do not cover supported Torch lines")
 
     expected_records: dict[tuple[str, str], dict[str, Any]] = {}
     for model_id, model in packaged_models.items():
@@ -521,9 +575,7 @@ def validate_packaged_model_governance(
         if _REPO_ID_RE.fullmatch(repo_id) is None:
             raise ReleaseError(f"Packaged repository is invalid for {model_id}")
         model_revision = _require_sha(
-            exact_text(
-                model.get("revision"), f"Packaged revision for {model_id}"
-            ),
+            exact_text(model.get("revision"), f"Packaged revision for {model_id}"),
             f"Packaged revision for {model_id}",
         )
         artifacts = model.get("artifacts")
@@ -533,15 +585,25 @@ def validate_packaged_model_governance(
         for artifact in artifacts:
             if not isinstance(artifact, dict) or artifact.get("format") != "pt2":
                 continue
-            cohort, expected_upper = cohort_range(
-                artifact.get("torch_min"),
+            cohort, _native_upper = cohort_range(
+                artifact.get("artifact_cohort", artifact.get("torch_min")),
                 f"Packaged cohort for {model_id}",
+            )
+            expected_range = artifact_routes.get(cohort)
+            if expected_range is None:
+                raise ReleaseError(
+                    f"Packaged artifact has an undeclared cohort for {model_id}/{cohort}"
+                )
+            expected_lower, expected_upper = expected_range
+            packaged_lower = exact_text(
+                artifact.get("torch_min"),
+                f"Packaged minimum Torch version for {model_id}/{cohort}",
             )
             packaged_upper = exact_text(
                 artifact.get("torch_max_exclusive"),
                 f"Packaged maximum Torch version for {model_id}/{cohort}",
             )
-            if packaged_upper != expected_upper:
+            if packaged_lower != expected_lower or packaged_upper != expected_upper:
                 raise ReleaseError(
                     f"Packaged cohort range is invalid for {model_id}/{cohort}"
                 )
@@ -613,8 +675,6 @@ def validate_packaged_model_governance(
                     f"Packaged golden-reference source for {model_id}/{cohort}",
                 ),
                 "required_devices": required_devices,
-                "torch_min": cohort,
-                "torch_max_exclusive": expected_upper,
             }
             golden_size = expected_records[key]["golden_reference_size_bytes"]
             if (
@@ -626,10 +686,15 @@ def validate_packaged_model_governance(
                     f"Packaged golden-reference size is invalid for {model_id}/{cohort}"
                 )
             model_cohorts.add(cohort)
-        if model_cohorts != supported_cohorts:
+        if model_cohorts != set(artifact_routes):
             raise ReleaseError(
                 f"Packaged cohorts do not match compatibility for {model_id}"
             )
+        for runtime, cohort in runtime_routes.items():
+            if cohort not in model_cohorts:
+                raise ReleaseError(
+                    f"Packaged model {model_id} has no artifact for Torch {runtime}"
+                )
         export_commit = model.get("export_commit")
         license_ref = model.get("license_ref")
         if (
@@ -716,9 +781,7 @@ def validate_packaged_model_governance(
                 ),
                 f"Remote golden-reference digest for {model_id}/{cohort}",
             ),
-            "golden_reference_size_bytes": record.get(
-                "golden_reference_size_bytes"
-            ),
+            "golden_reference_size_bytes": record.get("golden_reference_size_bytes"),
             "golden_reference_source_cohort": exact_text(
                 record.get("golden_reference_source_cohort"),
                 f"Remote golden-reference source for {model_id}/{cohort}",
@@ -827,19 +890,26 @@ def validate_model_audit_report(
             for document in legal_documents
             if isinstance(document, Mapping)
         }
-        if len(legal_by_name) != len(legal_documents) or set(legal_by_name) != {
-            "README.md",
-            "LICENSE",
-            "THIRD_PARTY_NOTICES.md",
-        } or any(
-            document.get("bytes_verified") is not True
-            or _SHA256_RE.fullmatch(str(document.get("sha256", ""))) is None
-            or isinstance(document.get("size_bytes"), bool)
-            or not isinstance(document.get("size_bytes"), int)
-            or int(document["size_bytes"]) < 1
-            for document in legal_by_name.values()
+        if (
+            len(legal_by_name) != len(legal_documents)
+            or set(legal_by_name)
+            != {
+                "README.md",
+                "LICENSE",
+                "THIRD_PARTY_NOTICES.md",
+            }
+            or any(
+                document.get("bytes_verified") is not True
+                or _SHA256_RE.fullmatch(str(document.get("sha256", ""))) is None
+                or isinstance(document.get("size_bytes"), bool)
+                or not isinstance(document.get("size_bytes"), int)
+                or int(document["size_bytes"]) < 1
+                for document in legal_by_name.values()
+            )
         ):
-            raise ReleaseError(f"Model audit legal evidence is incomplete for {model_id}")
+            raise ReleaseError(
+                f"Model audit legal evidence is incomplete for {model_id}"
+            )
 
         artifacts = model.get("artifacts")
         audited_artifacts = result.get("artifacts")
@@ -919,9 +989,7 @@ def validate_local_release_evidence(
     alignment_metadata_path = _safe_relative_file(
         root, "alignment-metadata-report.json"
     )
-    default_smoke_path = _safe_relative_file(
-        root, "default-analyzer-cuda-smoke.json"
-    )
+    default_smoke_path = _safe_relative_file(root, "default-analyzer-cuda-smoke.json")
     notebook_report_path = _safe_relative_file(root, "facetorch-notebook-report.json")
     notebook_path = _safe_relative_file(root, "facetorch-notebook-executed.ipynb")
     container_path = _safe_relative_file(root, "container-evidence.json")
@@ -955,19 +1023,24 @@ def validate_local_release_evidence(
             raise ReleaseError(f"Local CUDA evidence has a different {field}")
 
     alignment_metadata = _read_json(alignment_metadata_path)
-    if (
-        runner.get("alignment_metadata_report_sha256")
-        != sha256_file(alignment_metadata_path)
-        or alignment_metadata != _alignment_metadata_contract(repo)
-    ):
-        raise ReleaseError(
-            "Alignment metadata evidence is incomplete or mismatched"
-        )
+    if runner.get("alignment_metadata_report_sha256") != sha256_file(
+        alignment_metadata_path
+    ) or alignment_metadata != _alignment_metadata_contract(repo):
+        raise ReleaseError("Alignment metadata evidence is incomplete or mismatched")
 
     compatibility = _read_json(model_root / "compatibility.json")
+    compatibility_schema = compatibility.get("schema_version")
     supported_cohorts = {
-        str(value) for value in compatibility.get("torch", {}).get("supported_minor_lines", [])
+        str(value)
+        for value in compatibility.get("torch", {}).get("supported_minor_lines", [])
     }
+    artifact_cohorts = {
+        str(record.get("artifact_cohort", ""))
+        for record in compatibility.get("cohorts", [])
+        if isinstance(record, dict)
+    }
+    if compatibility_schema == 1:
+        artifact_cohorts = set(supported_cohorts)
     required_devices = {
         str(value)
         for value in compatibility.get("platform_policy", {}).get(
@@ -976,7 +1049,9 @@ def validate_local_release_evidence(
     }
     locks = runner.get("environment_locks")
     if not isinstance(locks, dict) or set(locks) != supported_cohorts:
-        raise ReleaseError("Local CUDA evidence does not cover every supported cohort lock")
+        raise ReleaseError(
+            "Local CUDA evidence does not cover every supported cohort lock"
+        )
     for cohort, record in locks.items():
         if not isinstance(record, dict):
             raise ReleaseError(f"Invalid environment lock evidence for Torch {cohort}")
@@ -999,6 +1074,26 @@ def validate_local_release_evidence(
         if record.get("sha256") != sha256_file(path):
             raise ReleaseError(f"CUDA cohort summary changed: {relative}")
 
+    if compatibility_schema == 2:
+        artifact_summaries = runner.get("artifact_summaries")
+        if not isinstance(artifact_summaries, list) or len(artifact_summaries) != len(
+            artifact_cohorts
+        ):
+            raise ReleaseError("Local CUDA evidence has incomplete artifact summaries")
+        artifact_summary_paths = set()
+        for record in artifact_summaries:
+            if not isinstance(record, dict):
+                raise ReleaseError(
+                    "Local CUDA evidence contains an invalid artifact summary"
+                )
+            relative = str(record.get("path", ""))
+            if relative in artifact_summary_paths:
+                raise ReleaseError("Local CUDA evidence repeats an artifact summary")
+            artifact_summary_paths.add(relative)
+            path = _safe_relative_file(root, relative)
+            if record.get("sha256") != sha256_file(path):
+                raise ReleaseError(f"CUDA artifact summary changed: {relative}")
+
     matrix = _read_json(matrix_path)
     lanes = matrix.get("lanes")
     if (
@@ -1008,8 +1103,10 @@ def validate_local_release_evidence(
         or matrix.get("release_approval_required") is not False
         or set(matrix.get("required_devices", [])) != required_devices
         or not isinstance(lanes, list)
-        or {str(lane.get("torch_minor", "")) for lane in lanes if isinstance(lane, dict)}
-        != supported_cohorts
+        or {
+            str(lane.get("torch_minor", "")) for lane in lanes if isinstance(lane, dict)
+        }
+        != artifact_cohorts
         or any(
             not isinstance(lane, dict)
             or lane.get("source_commit") != source
@@ -1018,6 +1115,38 @@ def validate_local_release_evidence(
         )
     ):
         raise ReleaseError("Candidate CUDA matrix evidence is incomplete or mismatched")
+
+    runtime_matrix_path = None
+    if compatibility_schema == 2:
+        runtime_matrix_path = _safe_relative_file(
+            root, "runtime-compatibility-report.json"
+        )
+        runtime_matrix = _read_json(runtime_matrix_path)
+        runtime_lanes = runtime_matrix.get("runtime_lanes")
+        if (
+            runner.get("runtime_matrix_report_sha256")
+            != sha256_file(runtime_matrix_path)
+            or runtime_matrix.get("schema_version") != 1
+            or runtime_matrix.get("status") != "ok"
+            or runtime_matrix.get("source_commit") != source
+            or set(runtime_matrix.get("required_devices", [])) != required_devices
+            or not isinstance(runtime_lanes, list)
+            or {
+                str(lane.get("torch_minor", ""))
+                for lane in runtime_lanes
+                if isinstance(lane, dict)
+            }
+            != supported_cohorts
+            or any(
+                not isinstance(lane, dict)
+                or lane.get("source_commit") != source
+                or lane.get("source_clean") is not True
+                for lane in runtime_lanes
+            )
+        ):
+            raise ReleaseError(
+                "Runtime compatibility evidence is incomplete or mismatched"
+            )
 
     default_smoke = _read_json(default_smoke_path)
     notebook_report = _read_json(notebook_report_path)
@@ -1063,7 +1192,11 @@ def validate_local_release_evidence(
             or image.get("architecture") != "amd64"
             or image.get("configured_user") != "facetorch"
             or image.get("dockerfile_sha256")
-            != sha256_file(repo / "docker" / ("Dockerfile.gpu" if flavor == "gpu" else "Dockerfile"))
+            != sha256_file(
+                repo
+                / "docker"
+                / ("Dockerfile.gpu" if flavor == "gpu" else "Dockerfile")
+            )
             or image.get("smoke_report_sha256") != sha256_file(container_smokes[flavor])
             or report.get("status") != "ok"
             or report.get("device") != expected_device
@@ -1078,9 +1211,12 @@ def validate_local_release_evidence(
         "source_sha": source,
         "runner_report_sha256": sha256_file(runner_path),
         "matrix_report_sha256": sha256_file(matrix_path),
-        "alignment_metadata_report_sha256": sha256_file(
-            alignment_metadata_path
+        "runtime_matrix_report_sha256": (
+            sha256_file(runtime_matrix_path)
+            if runtime_matrix_path is not None
+            else None
         ),
+        "alignment_metadata_report_sha256": sha256_file(alignment_metadata_path),
         "container_evidence_sha256": sha256_file(container_path),
         "cpu_image_digest": cpu_digest,
         "gpu_image_digest": gpu_digest,
@@ -1148,7 +1284,11 @@ def _artifact_records(bundle_root: Path, excluded: set[Path]) -> list[dict[str, 
 
 def _aggregate_digest(records: Sequence[Mapping[str, Any]]) -> str:
     core = [
-        {"path": item["path"], "sha256": item["sha256"], "size_bytes": item["size_bytes"]}
+        {
+            "path": item["path"],
+            "sha256": item["sha256"],
+            "size_bytes": item["size_bytes"],
+        }
         for item in records
     ]
     return _sha256_bytes(_canonical_json_bytes(core))
@@ -1156,10 +1296,20 @@ def _aggregate_digest(records: Sequence[Mapping[str, Any]]) -> str:
 
 def _validate_bundle_layout(records: Sequence[Mapping[str, Any]]) -> None:
     paths = {str(record["path"]) for record in records}
-    wheels = [path for path in paths if path.startswith("distributions/") and path.endswith(".whl")]
-    sdists = [path for path in paths if path.startswith("distributions/") and path.endswith(".tar.gz")]
+    wheels = [
+        path
+        for path in paths
+        if path.startswith("distributions/") and path.endswith(".whl")
+    ]
+    sdists = [
+        path
+        for path in paths
+        if path.startswith("distributions/") and path.endswith(".tar.gz")
+    ]
     if len(wheels) != 1 or len(sdists) != 1:
-        raise ReleaseError("Release bundle needs exactly one wheel and one source distribution")
+        raise ReleaseError(
+            "Release bundle needs exactly one wheel and one source distribution"
+        )
     required = {
         "images/facetorch-cpu.tar.zst",
         "images/facetorch-gpu.tar.zst",
@@ -1171,9 +1321,13 @@ def _validate_bundle_layout(records: Sequence[Mapping[str, Any]]) -> None:
     missing = sorted(required - paths)
     if missing:
         raise ReleaseError(f"Release bundle is missing required files: {missing}")
-    sboms = [path for path in paths if path.startswith("sboms/") and path.endswith(".json")]
+    sboms = [
+        path for path in paths if path.startswith("sboms/") and path.endswith(".json")
+    ]
     if len(sboms) < 3:
-        raise ReleaseError("Release bundle needs distribution, CPU-image, and GPU-image SBOMs")
+        raise ReleaseError(
+            "Release bundle needs distribution, CPU-image, and GPU-image SBOMs"
+        )
 
 
 def prepare_release_plan(
@@ -1224,7 +1378,9 @@ def prepare_release_plan(
         expected_sha256=model_manifest_sha256,
     )
     if manifest_report != manifest:
-        raise ReleaseError("Fetched model manifest report disagrees with release inputs")
+        raise ReleaseError(
+            "Fetched model manifest report disagrees with release inputs"
+        )
     validate_packaged_model_governance(
         repo_root,
         remote_manifest_path=manifest_path,
@@ -1354,9 +1510,14 @@ def verify_release_plan(plan_path: Path, bundle_root: Path) -> dict[str, Any]:
     if subjects["pypi"] != _aggregate_digest(distribution_records):
         raise ReleaseError("PyPI subject does not match distribution bytes")
     manifest = plan.get("model_manifest")
-    if not isinstance(manifest, dict) or manifest.get("sha256") != subjects["model-manifest"]:
+    if (
+        not isinstance(manifest, dict)
+        or manifest.get("sha256") != subjects["model-manifest"]
+    ):
         raise ReleaseError("Model manifest subject does not match the release plan")
-    manifest_path = _safe_relative_file(bundle_root.resolve(), "evidence/model-manifest.json")
+    manifest_path = _safe_relative_file(
+        bundle_root.resolve(), "evidence/model-manifest.json"
+    )
     validated_manifest = validate_model_manifest(
         manifest_path,
         repo_id=str(manifest.get("repo_id", "")),
@@ -1377,13 +1538,12 @@ def verify_release_plan(plan_path: Path, bundle_root: Path) -> dict[str, Any]:
     model_audit_path = _safe_relative_file(
         bundle_root.resolve(), "evidence/model-manifest-audit.json"
     )
-    bound_remote = model_audit.get("remote_manifest") if isinstance(
-        model_audit, dict
-    ) else None
-    if (
-        not isinstance(model_audit, dict)
-        or sha256_file(model_audit_path) != model_audit.get("sha256")
-    ):
+    bound_remote = (
+        model_audit.get("remote_manifest") if isinstance(model_audit, dict) else None
+    )
+    if not isinstance(model_audit, dict) or sha256_file(
+        model_audit_path
+    ) != model_audit.get("sha256"):
         raise ReleaseError("Model audit evidence changed after planning")
     audit_report = _read_json(model_audit_path)
     if (
@@ -1470,13 +1630,9 @@ def write_public_checksums(bundle_root: Path, output_path: Path) -> None:
     root = bundle_root.resolve()
     output = output_path.resolve()
     if output != (root / PUBLIC_CHECKSUM_FILENAME).resolve():
-        raise ReleaseError(
-            f"Public checksums must be named {PUBLIC_CHECKSUM_FILENAME}"
-        )
+        raise ReleaseError(f"Public checksums must be named {PUBLIC_CHECKSUM_FILENAME}")
     sources = _public_payload_sources(root)
-    lines = [
-        f"{sha256_file(path)}  {name}\n" for name, path in sorted(sources.items())
-    ]
+    lines = [f"{sha256_file(path)}  {name}\n" for name, path in sorted(sources.items())]
     _write_bytes_atomic(output, "".join(lines).encode("utf-8"))
 
 
@@ -1512,9 +1668,7 @@ def write_bundle_checksums(bundle_root: Path, output_path: Path) -> None:
     root = bundle_root.resolve()
     output = output_path.resolve()
     if output != (root / BUNDLE_CHECKSUM_FILENAME).resolve():
-        raise ReleaseError(
-            f"Bundle checksums must be named {BUNDLE_CHECKSUM_FILENAME}"
-        )
+        raise ReleaseError(f"Bundle checksums must be named {BUNDLE_CHECKSUM_FILENAME}")
     excluded = {output, (root / "publication-receipt.json").resolve()}
     lines = [
         f"{record['sha256']}  {record['path']}\n"
@@ -1528,9 +1682,7 @@ def verify_bundle_checksums(bundle_root: Path, checksums_path: Path) -> None:
 
     root = bundle_root.resolve()
     if checksums_path.resolve() != (root / BUNDLE_CHECKSUM_FILENAME).resolve():
-        raise ReleaseError(
-            f"Bundle checksums must be named {BUNDLE_CHECKSUM_FILENAME}"
-        )
+        raise ReleaseError(f"Bundle checksums must be named {BUNDLE_CHECKSUM_FILENAME}")
     entries = _checksum_entries(
         checksums_path, label=BUNDLE_CHECKSUM_FILENAME, basenames_only=False
     )
@@ -1700,9 +1852,7 @@ def verify_github_release_assets(
             raise ReleaseError(f"{name} must contain exactly the {channel} channel")
         add_expected(name, path)
 
-    publication_receipt = verify_publication_receipt(
-        plan, publication_receipt_path
-    )
+    publication_receipt = verify_publication_receipt(plan, publication_receipt_path)
     if set(publication_receipt["channels"]) != set(IMMUTABLE_CHANNELS):
         raise ReleaseError("Publication receipt is missing coordinated channels")
     if publication_receipt_path.name != "publication-receipt.json":
@@ -1775,9 +1925,7 @@ def verify_github_release_assets(
     public_sources = _public_payload_sources(bundle_root)
     public_entries = verify_public_checksums(
         downloaded_assets_dir / PUBLIC_CHECKSUM_FILENAME,
-        payloads={
-            name: downloaded_assets_dir / name for name in public_sources
-        },
+        payloads={name: downloaded_assets_dir / name for name in public_sources},
     )
     expected_public_entries = {
         name: sha256_file(path) for name, path in public_sources.items()
@@ -1789,9 +1937,7 @@ def verify_github_release_assets(
 
     return {
         "status": "identical",
-        "assets": [
-            {"name": name, **expected[name]} for name in sorted(expected)
-        ],
+        "assets": [{"name": name, **expected[name]} for name in sorted(expected)],
     }
 
 
@@ -1814,7 +1960,9 @@ def assert_stable_alias_promotion(
         current = parse_release_tag(current_latest_tag)
         if current["is_prerelease"] or current["release_kind"] != "stable":
             raise ReleaseError("Current latest release must use a stable release tag")
-        target_version = tuple(int(part) for part in target["project_version"].split("."))
+        target_version = tuple(
+            int(part) for part in target["project_version"].split(".")
+        )
         current_version = tuple(
             int(part) for part in current["project_version"].split(".")
         )
@@ -1858,7 +2006,9 @@ def pypi_distribution_state(
     wheels = [name for name in local if name.endswith(".whl")]
     sdists = [name for name in local if name.endswith(".tar.gz")]
     if len(local) != len(paths) or len(wheels) != 1 or len(sdists) != 1:
-        raise ReleaseError("Local PyPI publication needs exactly one wheel and one sdist")
+        raise ReleaseError(
+            "Local PyPI publication needs exactly one wheel and one sdist"
+        )
     remote = {}
     if remote_metadata is not None:
         urls = remote_metadata.get("urls")
@@ -1875,9 +2025,13 @@ def pypi_distribution_state(
             remote[filename] = digest
     unexpected = sorted(set(remote) - set(local))
     if unexpected:
-        raise ReleaseError(f"PyPI contains unexpected files for this version: {unexpected}")
+        raise ReleaseError(
+            f"PyPI contains unexpected files for this version: {unexpected}"
+        )
     mismatched = sorted(
-        filename for filename in set(local) & set(remote) if local[filename] != remote[filename]
+        filename
+        for filename in set(local) & set(remote)
+        if local[filename] != remote[filename]
     )
     if mismatched:
         raise ReleaseError(f"PyPI already contains different bytes: {mismatched}")
@@ -1925,7 +2079,9 @@ def _container_config_digests(value: Any) -> set[str]:
         if not isinstance(entry, dict):
             continue
         descriptor = entry.get("Descriptor", {})
-        platform = descriptor.get("platform", {}) if isinstance(descriptor, dict) else {}
+        platform = (
+            descriptor.get("platform", {}) if isinstance(descriptor, dict) else {}
+        )
         if platform and (
             platform.get("os") != "linux" or platform.get("architecture") != "amd64"
         ):
@@ -1967,9 +2123,14 @@ def inspect_docker(reference: str, expected_config_digest: str) -> dict[str, Any
     )
     if result.returncode != 0:
         error = (result.stderr + result.stdout).lower()
-        if any(value in error for value in ("no such manifest", "manifest unknown", "not found")):
+        if any(
+            value in error
+            for value in ("no such manifest", "manifest unknown", "not found")
+        ):
             return docker_distribution_state(None, expected_config_digest)
-        raise ReleaseError(f"Cannot inspect Docker reference {reference}: {error.strip()}")
+        raise ReleaseError(
+            f"Cannot inspect Docker reference {reference}: {error.strip()}"
+        )
     try:
         manifest = json.loads(result.stdout)
     except json.JSONDecodeError as exc:
@@ -2085,7 +2246,9 @@ def _parse_args() -> argparse.Namespace:
 
     docker = subparsers.add_parser("docker-state")
     docker.add_argument("--plan", required=True)
-    docker.add_argument("--channel", choices=("docker-cpu", "docker-gpu"), required=True)
+    docker.add_argument(
+        "--channel", choices=("docker-cpu", "docker-gpu"), required=True
+    )
     docker.add_argument("--reference", required=True)
     docker.add_argument("--output", required=True)
 
@@ -2177,9 +2340,7 @@ def main() -> int:
                 payloads=_public_payload_sources(Path(args.bundle_root)),
             )
         if args.bundle_checksums:
-            verify_bundle_checksums(
-                Path(args.bundle_root), Path(args.bundle_checksums)
-            )
+            verify_bundle_checksums(Path(args.bundle_root), Path(args.bundle_checksums))
         return 0
     if args.command == "bundle-checksums":
         write_bundle_checksums(Path(args.bundle_root), Path(args.output))
@@ -2191,7 +2352,9 @@ def main() -> int:
         plan = _load_plan_without_bundle(Path(args.plan))
         distributions = sorted(Path(args.dist_dir).glob("*"))
         state = inspect_pypi(
-            project=plan["project"], version=plan["version"], distributions=distributions
+            project=plan["project"],
+            version=plan["version"],
+            distributions=distributions,
         )
         _copy_missing_distributions(state, distributions, Path(args.missing_dir))
         _write_output(Path(args.output), state)
