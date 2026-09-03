@@ -6,7 +6,7 @@ downloader:
   path_local: ${facetorch.model_dir:}/exported/predictor/deepfake/1/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-deepfake-efficientnet-b7  # HuggingFace repo ID
   manifest_id: deepfake-efficientnet-b7
-  revision: a0c23dffebb927d6f3651ab1210fac3f27a0cbfa
+  revision: 94ba3ac3162aa68e89b75729ce614a2669636aaa
   offline: ${offline}
   allow_legacy_models: ${allow_legacy_models}
   device: ${analyzer.device}

@@ -7,7 +7,7 @@ downloader:
   path_local: ${facetorch.model_dir:}/exported/predictor/verify/1/model.pt2 # str
   repo_id: tomas-gajarsky/facetorch-verify-magface  # HuggingFace repo ID
   manifest_id: verify-magface
-  revision: bf2e5d45259405d9b73cc507efa95db0ff03ee52
+  revision: 28ac5f428afdb726e5a52c1a5211ce1e5aa7245e
   offline: ${offline}
   allow_legacy_models: ${allow_legacy_models}
   device: ${analyzer.device}

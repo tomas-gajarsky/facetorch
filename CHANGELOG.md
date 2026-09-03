@@ -18,6 +18,8 @@ only when the `v1.0.0-rc.3` tag and all publication receipts are verified.
 * Torch 2.6 artifacts now route to runtimes 2.6-2.8; Torch 2.11 artifacts route
   to runtimes 2.9-2.13
 * CPU CI and dependency auditing now cover every supported runtime profile
+* Immutable model pins now reference README-only child revisions whose cards
+  document the expanded runtime range; weights and validation metadata are unchanged
 
 ### Known limitations
 * PyTorch 2.8 emits an upstream deprecation warning when loading the older PT2
