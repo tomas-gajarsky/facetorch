@@ -218,17 +218,29 @@ def create_index(
                 _require(
                     _sha(source) == result["meta_sha256"], "Metadata checksum mismatch"
                 )
+                golden_original = Path(result["golden_reference"])
+                golden_path = (
+                    golden_original.resolve()
+                    if golden_original.is_absolute()
+                    else (root / golden_original).resolve()
+                )
                 records.append(
                     {
                         "model_id": result["model_id"],
                         "path": relative,
                         "sha256": result["meta_sha256"],
                         "original_path": result["meta"],
+                        "golden_reference": {
+                            "path": golden_path.relative_to(root).as_posix(),
+                            "original_path": result["golden_reference"],
+                            "sha256": result["golden_reference_sha256"],
+                            "size_bytes": result["golden_reference_size_bytes"],
+                        },
                     }
                 )
             entries.append({**binding, "kind": kind, "records": records})
     index = {
-        "schema_version": 1,
+        "schema_version": 2,
         "source_sha": source_sha,
         "runner": {
             "path": runner_path.relative_to(root).as_posix(),
@@ -249,7 +261,7 @@ def verify_index(root: Path, *, source_sha: str, index: dict | None = None) -> d
     index = _read(root / INDEX) if index is None else index
     _require(re.fullmatch(r"[0-9a-f]{40}", source_sha), "Expected full source SHA")
     _require(
-        index["schema_version"] == 1 and index["source_sha"] == source_sha,
+        index["schema_version"] == 2 and index["source_sha"] == source_sha,
         "Wrong index source",
     )
     runner = _checked(root, index["runner"])
@@ -267,6 +279,7 @@ def verify_index(root: Path, *, source_sha: str, index: dict | None = None) -> d
             expected[entry["path"]] = (kind, entry["sha256"])
     observed = set()
     metadata_paths = set()
+    golden_paths = set()
     case_count = 0
     for entry in index["summaries"]:
         path = entry["path"]
@@ -326,6 +339,22 @@ def verify_index(root: Path, *, source_sha: str, index: dict | None = None) -> d
                 and metadata["artifact_size_bytes"] == result["size_bytes"],
                 "Artifact identity differs",
             )
+            golden = record["golden_reference"]
+            golden_path = _inside(root, golden["path"])
+            declared_golden = metadata["validation"]["golden_reference"]
+            _require(
+                golden["original_path"] == result["golden_reference"]
+                and golden["sha256"] == result["golden_reference_sha256"]
+                == declared_golden["sha256"]
+                and type(golden["size_bytes"]) is int
+                and golden["size_bytes"] > 0
+                and golden["size_bytes"] == result["golden_reference_size_bytes"]
+                == declared_golden["size_bytes"]
+                and golden_path.stat().st_size == golden["size_bytes"]
+                and _sha(golden_path) == golden["sha256"],
+                "Golden reference binding or bytes differ",
+            )
+            golden_paths.add(golden["path"])
             case_count += _numeric(metadata, result, identity["validate_devices"])
     _require(observed == set(expected), "Missing summary binding")
     return {
@@ -333,6 +362,7 @@ def verify_index(root: Path, *, source_sha: str, index: dict | None = None) -> d
         "source_sha": source_sha,
         "summaries": len(observed),
         "model_records": len(metadata_paths),
+        "golden_references": len(golden_paths),
         "cases": case_count,
     }
 

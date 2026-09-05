@@ -1,8 +1,9 @@
 # GA dependency advisory triage — September 5, 2026
 
-Status: **owner decision required; GA dependency gate fails**. This is a triage
-record, not an approval or a finding that the application is remotely exploitable.
-No supported runtime or approved exception scope has been changed.
+Status: **retain all eight Torch lines; advisory approval remains pending**.
+The owner confirmed broad Torch compatibility on September 5. This resolves the
+support-range question. It does not approve new dependency exceptions or establish
+that the application is remotely exploitable. The GA dependency gate still fails.
 
 ## Result and reproducibility
 
@@ -68,10 +69,12 @@ requirements are an advisory projection; they must never be used for installatio
    `torch.jit.script`; any proposed extension must assess the specific annotation
    trigger and custom-transform boundary instead of claiming JIT is unused.
 
-Prefer validated patched runtime pins and an explicit support decision over
-blanket exceptions. If CUDA 12.4 / Torch 2.6 must remain a GA promise, prepare
-individual time-limited risk assessments for the reachable loading advisories,
-with exact versions/profiles, owner approval, mitigations, and a removal plan.
+Retain the existing Torch 2.6–2.13 range, including CUDA 12.4 / Torch 2.6,
+under the [recorded support policy](torch-support-policy.md). The current pins
+are already the latest patches in their minor lines as of September 5. The
+[individual treatment proposal](v1-risk-treatment-proposal.md) now includes
+inspection of all 20 pinned model programs, exact affected scopes, residual
+risks, mitigations, and the existing expiry deadline. It remains unapproved.
 Compatibility support through Torch 2.13 does not justify silently dropping the
 older lines or approving their unresolved risks. Do not publish GA with this gate
 red, or change the auditor to ignore all Torch findings.
@@ -113,11 +116,9 @@ versions, not validated replacements for the current Facetorch lock profile.
 
 ## Decision to record before another candidate
 
-Choose whether GA must retain every currently declared runtime, particularly the
-Torch 2.6 / CUDA 12.4 baseline. If yes, review the individual findings and approve
-only justified, exact, expiring exceptions after any available patch-pin
-qualification. If no, approve a revised support and image-baseline proposal,
-update the locks/routing/docs consistently, and validate every retained lane.
-The five currently passing profiles are evidence for that discussion, not an
-automatically adopted support matrix. Any plan still needs the complete
-exact-candidate CPU/CUDA matrix, archive verification, and the agreed RC soak.
+The support decision is settled: retain all eight lines and recommend a recent
+qualified pair for new installations. Review the [risk treatment proposal](v1-risk-treatment-proposal.md),
+especially the two loading advisories and the trusted-model boundary, before
+approving any exact, expiring exception. The five currently passing profiles
+are not a replacement support matrix. The full exact-candidate CPU/CUDA matrix,
+archive verification, and agreed RC soak remain required.

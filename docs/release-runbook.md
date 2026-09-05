@@ -100,8 +100,9 @@ on the final push commit, where the full frozen dependency audit is required.
 ## Portable numerical evidence
 
 The local runner records `numerical-evidence-index.json`, every export/runtime
-summary, and the per-model `.meta.json` records referenced by those summaries.
-The index binds portable relative paths and metadata digests while preserving
+summary, the per-model `.meta.json` records referenced by those summaries, and
+the actual `golden-references/*/golden-reference.pt` bundles. Schema 2 of the
+index binds portable relative paths, metadata digests, and reference sizes/hashes while preserving
 original summary bytes and runner identity. Both local GPU upload paths retain
 these records. Release assembly verifies the downloaded archive before creating
 the release plan; partial evidence cannot proceed through that workflow.
@@ -117,7 +118,8 @@ This uses only the Python standard library and the sibling
 `model_evidence_contract.py`; no Torch install, GPU, model download, or original
 runner directory is needed. It checks source identity, summary/metadata digests,
 model/device/case records, finite errors, recorded same/cross-device bounds, and
-fixed-reference identities. It validates the recorded measurements, not a new
+fixed-reference identities and the archived reference bytes without deserializing
+them. It validates the recorded measurements, not a new
 execution or independently reconstructed golden tensors. The existing complete
 matrix and model-manifest gates still establish authoritative case coverage,
 policy tolerances, and artifact/golden bytes before archiving. The public archive
@@ -125,3 +127,10 @@ checksum and release receipt remain the external trust roots for the records.
 
 RC3's published archive lacks these numerical records. Its historical summary
 is retained as such; this change does not retroactively upgrade RC3 evidence.
+
+The September 5 compatibility investigation recovered all ten historical golden
+bundles exactly using Torch 2.6 with 16 CPU threads. Four-thread regeneration
+changed their output bytes while remaining within numerical bounds. Retain the
+authenticated bundles and record the generation environment; do not assume that
+regeneration under different CPU settings will reproduce their hashes. See the
+[investigation](torch-support-investigation.md) for the local recovery evidence.

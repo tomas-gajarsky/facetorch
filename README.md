@@ -57,6 +57,10 @@ Please use this library responsibly and with caution. Adhere to the [European Co
 > during the RC soak. Conda-forge is asynchronous and must be verified separately.
 > None of those unpinned routes can be assumed to provide the v1 API shown below.
 
+Torch 2.13.0 / torchvision 0.28.0 is the recommended pair for new installations
+within the current supported range. Older supported integrations remain welcome;
+see the [Torch support policy](docs/torch-support-policy.md).
+
 Use a virtual environment and install the supported CPU PyTorch cohort first.
 This avoids pip selecting a multi-gigabyte CUDA dependency graph on a CPU host:
 
@@ -570,9 +574,11 @@ artifacts serve runtimes 2.6-2.8, while the 2.11 artifacts serve runtimes
 and 2.14 or newer fail before download; no schema-major or numeric fallback is
 attempted. Torch 2.3 was
 dropped because its affected `torch.load(weights_only=True)` path has a critical
-remote-code-execution advisory. Torch 2.6 is temporarily retained under three
-moderate, affected-API-specific exceptions documented in
-`security/advisory-exceptions.json`, all expiring on 2026-11-20.
+remote-code-execution advisory. The existing exception policy contains nine
+exact, profile-scoped records (eight Torch and one setuptools), expiring on
+2026-11-20. The corrected September 5 audit exposed additional unresolved
+findings; GA remains gated on their individual treatment. See the
+[advisory triage](docs/v1-advisory-triage.md).
 Validation uses immutable CPU golden references for both CPU and CUDA artifacts,
 with TensorFloat-32 disabled and the numeric policy recorded. Predictor batch
 sizes refer only to faces from one input image; multi-image batching is not

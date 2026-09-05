@@ -3,6 +3,10 @@
 ## Unreleased
 
 ### Fixed
+* Validate existing model programs without rebuilding exports, allowing inference
+  compatibility checks to run independently of historical exporter APIs.
+* Retain the actual numerical reference bundles in release evidence and verify
+  their hashes and sizes after download without deserializing them.
 * Audit every active runtime dependency in all 17 frozen profiles, preserving official
   Torch CPU/CUDA build identities while querying upstream-version advisories;
   skipped, missing, duplicate, or malformed audit records fail the gate.
@@ -20,6 +24,8 @@
   their recorded bounds offline before preparing the release plan.
 
 ### Release status
+* Retain all eight Torch 2.6–2.13 lines as a product requirement, recommend 2.13
+  for new installations, and assess 2.14 CPU/CUDA profiles before admission.
 * GA dependency approval is pending: the corrected audit on September 5 found
   18 distinct unresolved advisories across twelve profiles. See
   [the triage](docs/v1-advisory-triage.md). Existing exception scopes are unchanged.

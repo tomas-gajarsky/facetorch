@@ -4,6 +4,9 @@ Facetorch v1 uses a bounded release-candidate matrix. Runtime support and artifa
 export cohorts are separate concepts: one digest-pinned exported program may serve
 several PyTorch lines only after every line has passed CPU and CUDA validation.
 Similar export-schema numbers alone are not treated as compatibility proof.
+The [v1 support policy](torch-support-policy.md) records the owner’s decision
+to retain all eight lines, recommend Torch 2.13 for new installations, preserve
+a CUDA 12 path, and qualify newer runtimes before widening the bounds.
 
 | Python | PyTorch line | Export schema | Artifact cohort | Candidate CUDA runtime |
 | --- | --- | --- | --- | --- |

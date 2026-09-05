@@ -6,8 +6,10 @@ Date: September 5, 2026. Branch: `fix/v1-ga-readiness`, based on RC3 / main
 The approved correction work is implemented locally. **GA remains blocked by
 newly exposed dependency findings.** The corrected audit now checks all active
 runtime dependencies and reports 18 distinct unresolved advisories, repeated as 76 entries
-across twelve profiles. Their treatment needs a support/risk decision, documented
-in [the advisory triage](docs/v1-advisory-triage.md).
+across twelve profiles. The owner has confirmed that all eight Torch lines
+must be retained. Their remaining risk treatment is documented in
+[the advisory triage](docs/v1-advisory-triage.md) and the
+[concrete exception proposal](docs/v1-risk-treatment-proposal.md).
 
 This branch has not been pushed, merged, or published. Repository protection and
 release approvals have not been changed. The package still has the RC3 version
@@ -62,13 +64,42 @@ These checks are implementation validation. They do not replace the complete
 protected-source release workflow, full eight-line CPU/CUDA numerical matrix,
 exact image validation, and agreed 7–14 day candidate soak.
 
+## Broad Torch support follow-up
+
+The owner confirmed that all eight Torch 2.6–2.13 lines must remain supported;
+Torch 2.13 remains the recommended pair for new installations. The
+[support policy](docs/torch-support-policy.md) also preserves a CUDA 12 path and
+sets explicit admission criteria for newer runtimes.
+
+The [local investigation](docs/torch-support-investigation.md) exercised all ten
+models in every retained CPU/CUDA lane: **4,992 cases passed**. Exploratory Torch
+2.14 CPU, CUDA 12.6, and CUDA 13 profiles passed another **1,560 cases**, and all
+three complete runtime dependency inventories had no findings. Torch 2.14 is
+still an admission candidate, outside the current package bounds.
+
+Runtime validation now executes the pinned programs without re-exporting them.
+Exporter regressions passed on Torch 2.6, 2.11, and 2.14 (27 tests each). All
+58 affected validation/archive gate tests passed after extending the archive to
+retain and authenticate the golden bundles; 34 CI/distribution contract tests
+also passed. All ten historical bundles were
+recovered byte-for-byte with 16 CPU threads and preserved locally. The numerical
+runs used a separate four-thread reference set; the report states that limit
+and the untracked-review-document state. They are diagnostic compatibility
+evidence, not an approved exact-candidate release run.
+
+The [individual risk proposal](docs/v1-risk-treatment-proposal.md) includes all
+18 findings, 76 exact profile/version scopes with lock hashes, and an inventory
+of all 20 pinned model programs. It is inactive and unapproved. The existing
+advisory exception policy has not changed.
+
 ## Decision and activation sequence
 
-1. Review [the dependency triage](docs/v1-advisory-triage.md). Decide whether GA
-   must retain every declared runtime, particularly Torch 2.6 / CUDA 12.4. Prefer
-   validated patched pins; retaining affected versions requires individually
-   justified, exact, expiring risk acceptance. Changing the supported matrix also
-   needs an explicit decision. No blanket exception is proposed.
+1. Preserve all eight Torch lines under the [support policy](docs/torch-support-policy.md).
+   The support-range decision is complete. Review the
+   [individual risk treatment proposal](docs/v1-risk-treatment-proposal.md);
+   accepting new exceptions still needs explicit approval. Current pins are
+   already the latest patches of their lines, so patch-only upgrades cannot
+   resolve the exposed findings.
 2. Review this local branch and authorize any push/merge separately. After its
    workflow can emit the new aggregate, add `cpu-cohorts-complete` (GitHub Actions
    app ID 15368) to the existing protections without removing their other checks.

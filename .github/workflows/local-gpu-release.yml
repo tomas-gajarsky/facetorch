@@ -167,6 +167,7 @@ jobs:
             ${{ env.FACETORCH_STAGING }}/runtime-compatibility-report.json
             ${{ env.FACETORCH_STAGING }}/local-cuda-runner-report.json
             ${{ env.FACETORCH_STAGING }}/numerical-evidence-index.json
+            ${{ env.FACETORCH_STAGING }}/golden-references/*/golden-reference.pt
             ${{ env.FACETORCH_STAGING }}/alignment-metadata-report.json
             ${{ env.FACETORCH_STAGING }}/default-analyzer-cuda-smoke.json
             ${{ env.FACETORCH_STAGING }}/facetorch-notebook-report.json

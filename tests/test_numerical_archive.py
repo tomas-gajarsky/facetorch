@@ -57,19 +57,19 @@ def evidence(tmp_path):
     return root
 
 
-def test_archive_verifies_after_relocation_without_binaries(evidence, tmp_path):
+def test_archive_verifies_after_relocation_without_model_programs(evidence, tmp_path):
     create_index(evidence, source_sha=SHA)
     relocated = tmp_path / "downloaded"
     shutil.copytree(evidence, relocated)
     shutil.rmtree(evidence)
-    for pattern in ("*.pt", "*.pt2"):
-        for binary in relocated.rglob(pattern):
-            binary.unlink()
+    for binary in relocated.rglob("*.pt2"):
+        binary.unlink()
     assert verify_index(relocated, source_sha=SHA) == {
         "status": "ok",
         "source_sha": SHA,
         "summaries": 2,
         "model_records": 4,
+        "golden_references": 4,
         "cases": 8,
     }
 
@@ -162,6 +162,7 @@ def test_release_uploads_records_and_checks_archive_before_preparing_plan():
     for workflow_name in ("release.yml", "local-gpu-release.yml"):
         workflow = (root / ".github/workflows" / workflow_name).read_text()
         assert "/numerical-evidence-index.json" in workflow
+        assert "/golden-references/*/golden-reference.pt" in workflow
         assert "/torch-*/*/*.meta.json" in workflow
         assert "/runtime-validation/torch-*/*/*.meta.json" in workflow
     workflow = yaml.safe_load((root / ".github/workflows/release.yml").read_text())
@@ -177,3 +178,20 @@ def test_release_uploads_records_and_checks_archive_before_preparing_plan():
         if "release_transaction.py prepare" in step.get("run", "")
     )
     assert check < prepare
+
+
+@pytest.mark.parametrize("problem", ["missing", "corrupt", "size", "escape"])
+def test_archive_requires_original_golden_bytes(evidence, problem):
+    index = create_index(evidence, source_sha=SHA)
+    golden = index["summaries"][0]["records"][0]["golden_reference"]
+    path = evidence / golden["path"]
+    if problem == "missing":
+        path.unlink()
+    elif problem == "corrupt":
+        path.write_bytes(b"unverified replacement")
+    elif problem == "size":
+        golden["size_bytes"] += 1
+    else:
+        golden["path"] = "../outside.pt"
+    with pytest.raises((ValueError, FileNotFoundError)):
+        verify_index(evidence, source_sha=SHA, index=index)

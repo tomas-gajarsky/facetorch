@@ -1,0 +1,961 @@
+{
+  "schema_version": 1,
+  "status": "proposed_not_approved",
+  "prepared_on": "2026-09-05",
+  "policy_effect": "None. This file is not an input to the release dependency auditor. It does not authorize a push, merge or publication.",
+  "scope_source": {
+    "path": "security/v1-audit-findings-2026-09-05.json",
+    "sha256": "9dd02656cfac35494a219f85ef4afe693e1ac046997184d86251d67149f75806"
+  },
+  "decision_record": "docs/v1-risk-treatment-proposal.md",
+  "review_owner": "founder",
+  "proposed_expires_on": "2026-11-20",
+  "proposals": [
+    {
+      "vulnerability_id": "CVE-2025-2999",
+      "aliases": [
+        "GHSA-vgrw-7cvw-pwgx"
+      ],
+      "package": "torch",
+      "status": "proposed_not_approved",
+      "subject": "unpack_sequence: memory corruption",
+      "upstream_record": "https://api.osv.dev/v1/vulns/CVE-2025-2999",
+      "scopes": [
+        {
+          "profile": "torch-2.7-cpu",
+          "version": "2.7.1+cpu",
+          "lock_path": "environments/torch-2.7-cpu/uv.lock",
+          "lock_sha256": "f25d615d5ea122d788c3178f2b60c0db924cb9f88d6f350a2144767eb99454c5",
+          "audit_inventory_sha256": "ce33524ae2eb3cee132dbdebbc8eb6c233b45bea018046376c5163021a0be365"
+        },
+        {
+          "profile": "torch-2.8-cpu",
+          "version": "2.8.0+cpu",
+          "lock_path": "environments/torch-2.8-cpu/uv.lock",
+          "lock_sha256": "62216e2efd44e08bd24ae2f85aa28cbfa315693beb54caa2d18e2ab3951bbf71",
+          "audit_inventory_sha256": "61bc4b7311760d522b77b99219176763286306992458496fea94fb3cca2c9fab"
+        },
+        {
+          "profile": "torch-2.7-cu126",
+          "version": "2.7.1+cu126",
+          "lock_path": "environments/torch-2.7-cu126/uv.lock",
+          "lock_sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2",
+          "audit_inventory_sha256": "253e01cc24586b23f776fa354d8add88daaf71c22011efdd0e534e3f54052f96"
+        },
+        {
+          "profile": "torch-2.8-cu126",
+          "version": "2.8.0+cu126",
+          "lock_path": "environments/torch-2.8-cu126/uv.lock",
+          "lock_sha256": "189a61018ec36b8085f7f76e78fbb9581e37f14e415844a80977bdc892079cf4",
+          "audit_inventory_sha256": "c9873a203a2049f54c873595d0224c725d0cec749302a06812e507813c1d3c08"
+        }
+      ],
+      "assessment": "See the individual CVE-2025-2999 row in docs/v1-risk-treatment-proposal.md.",
+      "risk_category": "operator_or_compiler_path",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision."
+    },
+    {
+      "vulnerability_id": "CVE-2025-3001",
+      "aliases": [
+        "GHSA-qfhq-4f3w-5fph"
+      ],
+      "package": "torch",
+      "status": "proposed_not_approved",
+      "subject": "lstm_cell: memory corruption",
+      "upstream_record": "https://api.osv.dev/v1/vulns/CVE-2025-3001",
+      "scopes": [
+        {
+          "profile": "torch-2.7-cpu",
+          "version": "2.7.1+cpu",
+          "lock_path": "environments/torch-2.7-cpu/uv.lock",
+          "lock_sha256": "f25d615d5ea122d788c3178f2b60c0db924cb9f88d6f350a2144767eb99454c5",
+          "audit_inventory_sha256": "ce33524ae2eb3cee132dbdebbc8eb6c233b45bea018046376c5163021a0be365"
+        },
+        {
+          "profile": "torch-2.8-cpu",
+          "version": "2.8.0+cpu",
+          "lock_path": "environments/torch-2.8-cpu/uv.lock",
+          "lock_sha256": "62216e2efd44e08bd24ae2f85aa28cbfa315693beb54caa2d18e2ab3951bbf71",
+          "audit_inventory_sha256": "61bc4b7311760d522b77b99219176763286306992458496fea94fb3cca2c9fab"
+        },
+        {
+          "profile": "torch-2.9-cpu",
+          "version": "2.9.1+cpu",
+          "lock_path": "environments/torch-2.9-cpu/uv.lock",
+          "lock_sha256": "86226cc7f7f1a485abd02898b0cca1478fac5ddcad26da06fbcfddeffffcd88e",
+          "audit_inventory_sha256": "c422e925adb06772454c870a72baf3aaa4ac7c48d66fa3ca10122782ce6eeaaf"
+        },
+        {
+          "profile": "torch-2.7-cu126",
+          "version": "2.7.1+cu126",
+          "lock_path": "environments/torch-2.7-cu126/uv.lock",
+          "lock_sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2",
+          "audit_inventory_sha256": "253e01cc24586b23f776fa354d8add88daaf71c22011efdd0e534e3f54052f96"
+        },
+        {
+          "profile": "torch-2.8-cu126",
+          "version": "2.8.0+cu126",
+          "lock_path": "environments/torch-2.8-cu126/uv.lock",
+          "lock_sha256": "189a61018ec36b8085f7f76e78fbb9581e37f14e415844a80977bdc892079cf4",
+          "audit_inventory_sha256": "c9873a203a2049f54c873595d0224c725d0cec749302a06812e507813c1d3c08"
+        },
+        {
+          "profile": "torch-2.9-cu130",
+          "version": "2.9.1+cu130",
+          "lock_path": "environments/torch-2.9-cu130/uv.lock",
+          "lock_sha256": "6fc6c85801ba773557345e4fdcc0fd46bbe5342fed2da8c8d336fd33f42f81e6",
+          "audit_inventory_sha256": "64825300840df5c76ea9d77400a85db94fa6b915dd837f0fe8af49098278136b"
+        }
+      ],
+      "assessment": "See the individual CVE-2025-3001 row in docs/v1-risk-treatment-proposal.md.",
+      "risk_category": "operator_or_compiler_path",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision."
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "package": "torch",
+      "status": "proposed_not_approved",
+      "subject": "TorchScript class annotation: memory corruption",
+      "upstream_record": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-194.yaml",
+      "scopes": [
+        {
+          "profile": "torch-2.7-cpu",
+          "version": "2.7.1+cpu",
+          "lock_path": "environments/torch-2.7-cpu/uv.lock",
+          "lock_sha256": "f25d615d5ea122d788c3178f2b60c0db924cb9f88d6f350a2144767eb99454c5",
+          "audit_inventory_sha256": "ce33524ae2eb3cee132dbdebbc8eb6c233b45bea018046376c5163021a0be365"
+        },
+        {
+          "profile": "torch-2.8-cpu",
+          "version": "2.8.0+cpu",
+          "lock_path": "environments/torch-2.8-cpu/uv.lock",
+          "lock_sha256": "62216e2efd44e08bd24ae2f85aa28cbfa315693beb54caa2d18e2ab3951bbf71",
+          "audit_inventory_sha256": "61bc4b7311760d522b77b99219176763286306992458496fea94fb3cca2c9fab"
+        },
+        {
+          "profile": "torch-2.9-cpu",
+          "version": "2.9.1+cpu",
+          "lock_path": "environments/torch-2.9-cpu/uv.lock",
+          "lock_sha256": "86226cc7f7f1a485abd02898b0cca1478fac5ddcad26da06fbcfddeffffcd88e",
+          "audit_inventory_sha256": "c422e925adb06772454c870a72baf3aaa4ac7c48d66fa3ca10122782ce6eeaaf"
+        },
+        {
+          "profile": "torch-2.10-cpu",
+          "version": "2.10.0+cpu",
+          "lock_path": "environments/torch-2.10-cpu/uv.lock",
+          "lock_sha256": "7fb7973cc4b9e239b3c733518abb7260d0530baaa6fac93420215a8f2f1817cf",
+          "audit_inventory_sha256": "446c465fd3f32dd8c1e0ae7de37bcd221893c3d3b69282356ed0619cb4dedd82"
+        },
+        {
+          "profile": "torch-2.12-cpu",
+          "version": "2.12.1+cpu",
+          "lock_path": "environments/torch-2.12-cpu/uv.lock",
+          "lock_sha256": "1906364462216c7ce5b9db0afac0080dcafa45e9a3a8ce48a4af90b1f47e7b85",
+          "audit_inventory_sha256": "c324eb96d39c9a21cfff64576ee5d44fe2ad28d8fe4134ad951b112604c32712"
+        },
+        {
+          "profile": "torch-2.7-cu126",
+          "version": "2.7.1+cu126",
+          "lock_path": "environments/torch-2.7-cu126/uv.lock",
+          "lock_sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2",
+          "audit_inventory_sha256": "253e01cc24586b23f776fa354d8add88daaf71c22011efdd0e534e3f54052f96"
+        },
+        {
+          "profile": "torch-2.8-cu126",
+          "version": "2.8.0+cu126",
+          "lock_path": "environments/torch-2.8-cu126/uv.lock",
+          "lock_sha256": "189a61018ec36b8085f7f76e78fbb9581e37f14e415844a80977bdc892079cf4",
+          "audit_inventory_sha256": "c9873a203a2049f54c873595d0224c725d0cec749302a06812e507813c1d3c08"
+        },
+        {
+          "profile": "torch-2.9-cu130",
+          "version": "2.9.1+cu130",
+          "lock_path": "environments/torch-2.9-cu130/uv.lock",
+          "lock_sha256": "6fc6c85801ba773557345e4fdcc0fd46bbe5342fed2da8c8d336fd33f42f81e6",
+          "audit_inventory_sha256": "64825300840df5c76ea9d77400a85db94fa6b915dd837f0fe8af49098278136b"
+        },
+        {
+          "profile": "torch-2.10-cu130",
+          "version": "2.10.0+cu130",
+          "lock_path": "environments/torch-2.10-cu130/uv.lock",
+          "lock_sha256": "2d29d2b3979baa4c47b8f6230c13c44a20ffcbb58af3a038a799479e04fbe52c",
+          "audit_inventory_sha256": "3bbd61005638338e2ab266b8cd6dce074747421a4cc505c3d8aec4ab6361c0d2"
+        },
+        {
+          "profile": "torch-2.12-cu130",
+          "version": "2.12.1+cu130",
+          "lock_path": "environments/torch-2.12-cu130/uv.lock",
+          "lock_sha256": "37a5c2419904665bba896a7688ca1ff87e1099bc1597799fe12dcc1d18e446ed",
+          "audit_inventory_sha256": "044a4600c4dff5e4ad75625e12fdeffd30209b276849c4ad126f849826358965"
+        }
+      ],
+      "assessment": "See the individual PYSEC-2025-194 row in docs/v1-risk-treatment-proposal.md.",
+      "risk_category": "operator_or_compiler_path",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision."
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-198",
+      "aliases": [
+        "BIT-pytorch-2025-46148",
+        "CVE-2025-46148"
+      ],
+      "package": "torch",
+      "status": "proposed_not_approved",
+      "subject": "PairwiseDistance eager numerical mismatch",
+      "upstream_record": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-198.yaml",
+      "scopes": [
+        {
+          "profile": "torch-2.6-cpu",
+          "version": "2.6.0+cpu",
+          "lock_path": "environments/torch-2.6-cpu/uv.lock",
+          "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+          "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+        },
+        {
+          "profile": "torch-2.6-cu124",
+          "version": "2.6.0+cu124",
+          "lock_path": "environments/torch-2.6-cu124/uv.lock",
+          "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+          "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+        }
+      ],
+      "assessment": "See the individual PYSEC-2025-198 row in docs/v1-risk-treatment-proposal.md.",
+      "risk_category": "operator_or_compiler_path",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision."
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-199",
+      "aliases": [
+        "BIT-pytorch-2025-46149",
+        "CVE-2025-46149"
+      ],
+      "package": "torch",
+      "status": "proposed_not_approved",
+      "subject": "Fold under Inductor: assertion failure",
+      "upstream_record": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-199.yaml",
+      "scopes": [
+        {
+          "profile": "torch-2.6-cpu",
+          "version": "2.6.0+cpu",
+          "lock_path": "environments/torch-2.6-cpu/uv.lock",
+          "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+          "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+        },
+        {
+          "profile": "torch-2.6-cu124",
+          "version": "2.6.0+cu124",
+          "lock_path": "environments/torch-2.6-cu124/uv.lock",
+          "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+          "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+        }
+      ],
+      "assessment": "See the individual PYSEC-2025-199 row in docs/v1-risk-treatment-proposal.md.",
+      "risk_category": "operator_or_compiler_path",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision."
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-200",
+      "aliases": [
+        "BIT-pytorch-2025-46150",
+        "CVE-2025-46150"
+      ],
+      "package": "torch",
+      "status": "proposed_not_approved",
+      "subject": "Compiled FractionalMaxPool2d numerical mismatch",
+      "upstream_record": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-200.yaml",
+      "scopes": [
+        {
+          "profile": "torch-2.6-cpu",
+          "version": "2.6.0+cpu",
+          "lock_path": "environments/torch-2.6-cpu/uv.lock",
+          "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+          "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+        },
+        {
+          "profile": "torch-2.6-cu124",
+          "version": "2.6.0+cu124",
+          "lock_path": "environments/torch-2.6-cu124/uv.lock",
+          "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+          "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+        }
+      ],
+      "assessment": "See the individual PYSEC-2025-200 row in docs/v1-risk-treatment-proposal.md.",
+      "risk_category": "operator_or_compiler_path",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision."
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-201",
+      "aliases": [
+        "BIT-pytorch-2025-46152",
+        "CVE-2025-46152"
+      ],
+      "package": "torch",
+      "status": "proposed_not_approved",
+      "subject": "Out-of-range bitwise right shift output",
+      "upstream_record": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-201.yaml",
+      "scopes": [
+        {
+          "profile": "torch-2.6-cpu",
+          "version": "2.6.0+cpu",
+          "lock_path": "environments/torch-2.6-cpu/uv.lock",
+          "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+          "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+        },
+        {
+          "profile": "torch-2.6-cu124",
+          "version": "2.6.0+cu124",
+          "lock_path": "environments/torch-2.6-cu124/uv.lock",
+          "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+          "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+        }
+      ],
+      "assessment": "See the individual PYSEC-2025-201 row in docs/v1-risk-treatment-proposal.md.",
+      "risk_category": "operator_or_compiler_path",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision."
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-202",
+      "aliases": [
+        "BIT-pytorch-2025-46153",
+        "CVE-2025-46153"
+      ],
+      "package": "torch",
+      "status": "proposed_not_approved",
+      "subject": "Dropout random fallback decomposition mismatch",
+      "upstream_record": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-202.yaml",
+      "scopes": [
+        {
+          "profile": "torch-2.6-cpu",
+          "version": "2.6.0+cpu",
+          "lock_path": "environments/torch-2.6-cpu/uv.lock",
+          "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+          "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+        },
+        {
+          "profile": "torch-2.6-cu124",
+          "version": "2.6.0+cu124",
+          "lock_path": "environments/torch-2.6-cu124/uv.lock",
+          "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+          "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+        }
+      ],
+      "assessment": "See the individual PYSEC-2025-202 row in docs/v1-risk-treatment-proposal.md.",
+      "risk_category": "operator_or_compiler_path",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision."
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-203",
+      "aliases": [
+        "BIT-pytorch-2025-55551",
+        "CVE-2025-55551"
+      ],
+      "package": "torch",
+      "status": "proposed_not_approved",
+      "subject": "LU with sliced tensors: denial of service",
+      "upstream_record": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-203.yaml",
+      "scopes": [
+        {
+          "profile": "torch-2.6-cpu",
+          "version": "2.6.0+cpu",
+          "lock_path": "environments/torch-2.6-cpu/uv.lock",
+          "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+          "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+        },
+        {
+          "profile": "torch-2.7-cpu",
+          "version": "2.7.1+cpu",
+          "lock_path": "environments/torch-2.7-cpu/uv.lock",
+          "lock_sha256": "f25d615d5ea122d788c3178f2b60c0db924cb9f88d6f350a2144767eb99454c5",
+          "audit_inventory_sha256": "ce33524ae2eb3cee132dbdebbc8eb6c233b45bea018046376c5163021a0be365"
+        },
+        {
+          "profile": "torch-2.8-cpu",
+          "version": "2.8.0+cpu",
+          "lock_path": "environments/torch-2.8-cpu/uv.lock",
+          "lock_sha256": "62216e2efd44e08bd24ae2f85aa28cbfa315693beb54caa2d18e2ab3951bbf71",
+          "audit_inventory_sha256": "61bc4b7311760d522b77b99219176763286306992458496fea94fb3cca2c9fab"
+        },
+        {
+          "profile": "torch-2.6-cu124",
+          "version": "2.6.0+cu124",
+          "lock_path": "environments/torch-2.6-cu124/uv.lock",
+          "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+          "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+        },
+        {
+          "profile": "torch-2.7-cu126",
+          "version": "2.7.1+cu126",
+          "lock_path": "environments/torch-2.7-cu126/uv.lock",
+          "lock_sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2",
+          "audit_inventory_sha256": "253e01cc24586b23f776fa354d8add88daaf71c22011efdd0e534e3f54052f96"
+        },
+        {
+          "profile": "torch-2.8-cu126",
+          "version": "2.8.0+cu126",
+          "lock_path": "environments/torch-2.8-cu126/uv.lock",
+          "lock_sha256": "189a61018ec36b8085f7f76e78fbb9581e37f14e415844a80977bdc892079cf4",
+          "audit_inventory_sha256": "c9873a203a2049f54c873595d0224c725d0cec749302a06812e507813c1d3c08"
+        }
+      ],
+      "assessment": "See the individual PYSEC-2025-203 row in docs/v1-risk-treatment-proposal.md.",
+      "risk_category": "operator_or_compiler_path",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision."
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-204",
+      "aliases": [
+        "BIT-pytorch-2025-55552",
+        "CVE-2025-55552"
+      ],
+      "package": "torch",
+      "status": "proposed_not_approved",
+      "subject": "Combined rot90/randn_like behavior",
+      "upstream_record": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-204.yaml",
+      "scopes": [
+        {
+          "profile": "torch-2.6-cpu",
+          "version": "2.6.0+cpu",
+          "lock_path": "environments/torch-2.6-cpu/uv.lock",
+          "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+          "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+        },
+        {
+          "profile": "torch-2.7-cpu",
+          "version": "2.7.1+cpu",
+          "lock_path": "environments/torch-2.7-cpu/uv.lock",
+          "lock_sha256": "f25d615d5ea122d788c3178f2b60c0db924cb9f88d6f350a2144767eb99454c5",
+          "audit_inventory_sha256": "ce33524ae2eb3cee132dbdebbc8eb6c233b45bea018046376c5163021a0be365"
+        },
+        {
+          "profile": "torch-2.8-cpu",
+          "version": "2.8.0+cpu",
+          "lock_path": "environments/torch-2.8-cpu/uv.lock",
+          "lock_sha256": "62216e2efd44e08bd24ae2f85aa28cbfa315693beb54caa2d18e2ab3951bbf71",
+          "audit_inventory_sha256": "61bc4b7311760d522b77b99219176763286306992458496fea94fb3cca2c9fab"
+        },
+        {
+          "profile": "torch-2.6-cu124",
+          "version": "2.6.0+cu124",
+          "lock_path": "environments/torch-2.6-cu124/uv.lock",
+          "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+          "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+        },
+        {
+          "profile": "torch-2.7-cu126",
+          "version": "2.7.1+cu126",
+          "lock_path": "environments/torch-2.7-cu126/uv.lock",
+          "lock_sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2",
+          "audit_inventory_sha256": "253e01cc24586b23f776fa354d8add88daaf71c22011efdd0e534e3f54052f96"
+        },
+        {
+          "profile": "torch-2.8-cu126",
+          "version": "2.8.0+cu126",
+          "lock_path": "environments/torch-2.8-cu126/uv.lock",
+          "lock_sha256": "189a61018ec36b8085f7f76e78fbb9581e37f14e415844a80977bdc892079cf4",
+          "audit_inventory_sha256": "c9873a203a2049f54c873595d0224c725d0cec749302a06812e507813c1d3c08"
+        }
+      ],
+      "assessment": "See the individual PYSEC-2025-204 row in docs/v1-risk-treatment-proposal.md.",
+      "risk_category": "operator_or_compiler_path",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision."
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-205",
+      "aliases": [
+        "BIT-pytorch-2025-55553",
+        "CVE-2025-55553"
+      ],
+      "package": "torch",
+      "status": "proposed_not_approved",
+      "subject": "proxy_tensor syntax failure",
+      "upstream_record": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-205.yaml",
+      "scopes": [
+        {
+          "profile": "torch-2.6-cpu",
+          "version": "2.6.0+cpu",
+          "lock_path": "environments/torch-2.6-cpu/uv.lock",
+          "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+          "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+        },
+        {
+          "profile": "torch-2.6-cu124",
+          "version": "2.6.0+cu124",
+          "lock_path": "environments/torch-2.6-cu124/uv.lock",
+          "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+          "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+        }
+      ],
+      "assessment": "See the individual PYSEC-2025-205 row in docs/v1-risk-treatment-proposal.md.",
+      "risk_category": "operator_or_compiler_path",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision."
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-206",
+      "aliases": [
+        "BIT-pytorch-2025-55554",
+        "CVE-2025-55554"
+      ],
+      "package": "torch",
+      "status": "proposed_not_approved",
+      "subject": "nan_to_num followed by integer conversion: overflow",
+      "upstream_record": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-206.yaml",
+      "scopes": [
+        {
+          "profile": "torch-2.6-cpu",
+          "version": "2.6.0+cpu",
+          "lock_path": "environments/torch-2.6-cpu/uv.lock",
+          "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+          "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+        },
+        {
+          "profile": "torch-2.7-cpu",
+          "version": "2.7.1+cpu",
+          "lock_path": "environments/torch-2.7-cpu/uv.lock",
+          "lock_sha256": "f25d615d5ea122d788c3178f2b60c0db924cb9f88d6f350a2144767eb99454c5",
+          "audit_inventory_sha256": "ce33524ae2eb3cee132dbdebbc8eb6c233b45bea018046376c5163021a0be365"
+        },
+        {
+          "profile": "torch-2.8-cpu",
+          "version": "2.8.0+cpu",
+          "lock_path": "environments/torch-2.8-cpu/uv.lock",
+          "lock_sha256": "62216e2efd44e08bd24ae2f85aa28cbfa315693beb54caa2d18e2ab3951bbf71",
+          "audit_inventory_sha256": "61bc4b7311760d522b77b99219176763286306992458496fea94fb3cca2c9fab"
+        },
+        {
+          "profile": "torch-2.6-cu124",
+          "version": "2.6.0+cu124",
+          "lock_path": "environments/torch-2.6-cu124/uv.lock",
+          "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+          "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+        },
+        {
+          "profile": "torch-2.7-cu126",
+          "version": "2.7.1+cu126",
+          "lock_path": "environments/torch-2.7-cu126/uv.lock",
+          "lock_sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2",
+          "audit_inventory_sha256": "253e01cc24586b23f776fa354d8add88daaf71c22011efdd0e534e3f54052f96"
+        },
+        {
+          "profile": "torch-2.8-cu126",
+          "version": "2.8.0+cu126",
+          "lock_path": "environments/torch-2.8-cu126/uv.lock",
+          "lock_sha256": "189a61018ec36b8085f7f76e78fbb9581e37f14e415844a80977bdc892079cf4",
+          "audit_inventory_sha256": "c9873a203a2049f54c873595d0224c725d0cec749302a06812e507813c1d3c08"
+        }
+      ],
+      "assessment": "See the individual PYSEC-2025-206 row in docs/v1-risk-treatment-proposal.md.",
+      "risk_category": "operator_or_compiler_path",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision."
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-207",
+      "aliases": [
+        "BIT-pytorch-2025-55557",
+        "CVE-2025-55557"
+      ],
+      "package": "torch",
+      "status": "proposed_not_approved",
+      "subject": "Compiled cummin: name error",
+      "upstream_record": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-207.yaml",
+      "scopes": [
+        {
+          "profile": "torch-2.6-cpu",
+          "version": "2.6.0+cpu",
+          "lock_path": "environments/torch-2.6-cpu/uv.lock",
+          "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+          "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+        },
+        {
+          "profile": "torch-2.6-cu124",
+          "version": "2.6.0+cu124",
+          "lock_path": "environments/torch-2.6-cu124/uv.lock",
+          "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+          "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+        }
+      ],
+      "assessment": "See the individual PYSEC-2025-207 row in docs/v1-risk-treatment-proposal.md.",
+      "risk_category": "operator_or_compiler_path",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision."
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-208",
+      "aliases": [
+        "BIT-pytorch-2025-55558",
+        "CVE-2025-55558"
+      ],
+      "package": "torch",
+      "status": "proposed_not_approved",
+      "subject": "Compiled Conv2d/hardshrink/view/mv combination",
+      "upstream_record": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-208.yaml",
+      "scopes": [
+        {
+          "profile": "torch-2.6-cpu",
+          "version": "2.6.0+cpu",
+          "lock_path": "environments/torch-2.6-cpu/uv.lock",
+          "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+          "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+        },
+        {
+          "profile": "torch-2.6-cu124",
+          "version": "2.6.0+cu124",
+          "lock_path": "environments/torch-2.6-cu124/uv.lock",
+          "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+          "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+        }
+      ],
+      "assessment": "See the individual PYSEC-2025-208 row in docs/v1-risk-treatment-proposal.md.",
+      "risk_category": "operator_or_compiler_path",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision."
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-209",
+      "aliases": [
+        "BIT-pytorch-2025-55560",
+        "CVE-2025-55560"
+      ],
+      "package": "torch",
+      "status": "proposed_not_approved",
+      "subject": "Compiled sparse/dense conversion failure",
+      "upstream_record": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-209.yaml",
+      "scopes": [
+        {
+          "profile": "torch-2.6-cpu",
+          "version": "2.6.0+cpu",
+          "lock_path": "environments/torch-2.6-cpu/uv.lock",
+          "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+          "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+        },
+        {
+          "profile": "torch-2.6-cu124",
+          "version": "2.6.0+cu124",
+          "lock_path": "environments/torch-2.6-cu124/uv.lock",
+          "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+          "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+        }
+      ],
+      "assessment": "See the individual PYSEC-2025-209 row in docs/v1-risk-treatment-proposal.md.",
+      "risk_category": "operator_or_compiler_path",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision."
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "package": "torch",
+      "status": "proposed_not_approved",
+      "subject": "PT2 deserialization: code execution concern",
+      "upstream_record": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2026-139.yaml",
+      "scopes": [
+        {
+          "profile": "torch-2.6-cpu",
+          "version": "2.6.0+cpu",
+          "lock_path": "environments/torch-2.6-cpu/uv.lock",
+          "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+          "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+        },
+        {
+          "profile": "torch-2.7-cpu",
+          "version": "2.7.1+cpu",
+          "lock_path": "environments/torch-2.7-cpu/uv.lock",
+          "lock_sha256": "f25d615d5ea122d788c3178f2b60c0db924cb9f88d6f350a2144767eb99454c5",
+          "audit_inventory_sha256": "ce33524ae2eb3cee132dbdebbc8eb6c233b45bea018046376c5163021a0be365"
+        },
+        {
+          "profile": "torch-2.8-cpu",
+          "version": "2.8.0+cpu",
+          "lock_path": "environments/torch-2.8-cpu/uv.lock",
+          "lock_sha256": "62216e2efd44e08bd24ae2f85aa28cbfa315693beb54caa2d18e2ab3951bbf71",
+          "audit_inventory_sha256": "61bc4b7311760d522b77b99219176763286306992458496fea94fb3cca2c9fab"
+        },
+        {
+          "profile": "torch-2.9-cpu",
+          "version": "2.9.1+cpu",
+          "lock_path": "environments/torch-2.9-cpu/uv.lock",
+          "lock_sha256": "86226cc7f7f1a485abd02898b0cca1478fac5ddcad26da06fbcfddeffffcd88e",
+          "audit_inventory_sha256": "c422e925adb06772454c870a72baf3aaa4ac7c48d66fa3ca10122782ce6eeaaf"
+        },
+        {
+          "profile": "torch-2.10-cpu",
+          "version": "2.10.0+cpu",
+          "lock_path": "environments/torch-2.10-cpu/uv.lock",
+          "lock_sha256": "7fb7973cc4b9e239b3c733518abb7260d0530baaa6fac93420215a8f2f1817cf",
+          "audit_inventory_sha256": "446c465fd3f32dd8c1e0ae7de37bcd221893c3d3b69282356ed0619cb4dedd82"
+        },
+        {
+          "profile": "torch-2.6-cu124",
+          "version": "2.6.0+cu124",
+          "lock_path": "environments/torch-2.6-cu124/uv.lock",
+          "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+          "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+        },
+        {
+          "profile": "torch-2.7-cu126",
+          "version": "2.7.1+cu126",
+          "lock_path": "environments/torch-2.7-cu126/uv.lock",
+          "lock_sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2",
+          "audit_inventory_sha256": "253e01cc24586b23f776fa354d8add88daaf71c22011efdd0e534e3f54052f96"
+        },
+        {
+          "profile": "torch-2.8-cu126",
+          "version": "2.8.0+cu126",
+          "lock_path": "environments/torch-2.8-cu126/uv.lock",
+          "lock_sha256": "189a61018ec36b8085f7f76e78fbb9581e37f14e415844a80977bdc892079cf4",
+          "audit_inventory_sha256": "c9873a203a2049f54c873595d0224c725d0cec749302a06812e507813c1d3c08"
+        },
+        {
+          "profile": "torch-2.9-cu130",
+          "version": "2.9.1+cu130",
+          "lock_path": "environments/torch-2.9-cu130/uv.lock",
+          "lock_sha256": "6fc6c85801ba773557345e4fdcc0fd46bbe5342fed2da8c8d336fd33f42f81e6",
+          "audit_inventory_sha256": "64825300840df5c76ea9d77400a85db94fa6b915dd837f0fe8af49098278136b"
+        },
+        {
+          "profile": "torch-2.10-cu130",
+          "version": "2.10.0+cu130",
+          "lock_path": "environments/torch-2.10-cu130/uv.lock",
+          "lock_sha256": "2d29d2b3979baa4c47b8f6230c13c44a20ffcbb58af3a038a799479e04fbe52c",
+          "audit_inventory_sha256": "3bbd61005638338e2ab266b8cd6dce074747421a4cc505c3d8aec4ab6361c0d2"
+        }
+      ],
+      "assessment": "See the individual PYSEC-2026-139 row in docs/v1-risk-treatment-proposal.md.",
+      "risk_category": "active_model_loading",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision."
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-1970",
+      "aliases": [
+        "BIT-pytorch-2025-3730",
+        "CVE-2025-3730",
+        "GHSA-887c-mr87-cxwp"
+      ],
+      "package": "torch",
+      "status": "proposed_not_approved",
+      "subject": "ctc_loss: denial of service",
+      "upstream_record": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2026-1970.yaml",
+      "scopes": [
+        {
+          "profile": "torch-2.7-cpu",
+          "version": "2.7.1+cpu",
+          "lock_path": "environments/torch-2.7-cpu/uv.lock",
+          "lock_sha256": "f25d615d5ea122d788c3178f2b60c0db924cb9f88d6f350a2144767eb99454c5",
+          "audit_inventory_sha256": "ce33524ae2eb3cee132dbdebbc8eb6c233b45bea018046376c5163021a0be365"
+        },
+        {
+          "profile": "torch-2.7-cu126",
+          "version": "2.7.1+cu126",
+          "lock_path": "environments/torch-2.7-cu126/uv.lock",
+          "lock_sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2",
+          "audit_inventory_sha256": "253e01cc24586b23f776fa354d8add88daaf71c22011efdd0e534e3f54052f96"
+        }
+      ],
+      "assessment": "See the individual PYSEC-2026-1970 row in docs/v1-risk-treatment-proposal.md.",
+      "risk_category": "operator_or_compiler_path",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision."
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-2286",
+      "aliases": [
+        "CVE-2026-24747",
+        "GHSA-63cw-57p8-fm3p"
+      ],
+      "package": "torch",
+      "status": "proposed_not_approved",
+      "subject": "weights_only checkpoint unpickler: memory corruption/code execution",
+      "upstream_record": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2026-2286.yaml",
+      "scopes": [
+        {
+          "profile": "torch-2.6-cpu",
+          "version": "2.6.0+cpu",
+          "lock_path": "environments/torch-2.6-cpu/uv.lock",
+          "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+          "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+        },
+        {
+          "profile": "torch-2.7-cpu",
+          "version": "2.7.1+cpu",
+          "lock_path": "environments/torch-2.7-cpu/uv.lock",
+          "lock_sha256": "f25d615d5ea122d788c3178f2b60c0db924cb9f88d6f350a2144767eb99454c5",
+          "audit_inventory_sha256": "ce33524ae2eb3cee132dbdebbc8eb6c233b45bea018046376c5163021a0be365"
+        },
+        {
+          "profile": "torch-2.8-cpu",
+          "version": "2.8.0+cpu",
+          "lock_path": "environments/torch-2.8-cpu/uv.lock",
+          "lock_sha256": "62216e2efd44e08bd24ae2f85aa28cbfa315693beb54caa2d18e2ab3951bbf71",
+          "audit_inventory_sha256": "61bc4b7311760d522b77b99219176763286306992458496fea94fb3cca2c9fab"
+        },
+        {
+          "profile": "torch-2.9-cpu",
+          "version": "2.9.1+cpu",
+          "lock_path": "environments/torch-2.9-cpu/uv.lock",
+          "lock_sha256": "86226cc7f7f1a485abd02898b0cca1478fac5ddcad26da06fbcfddeffffcd88e",
+          "audit_inventory_sha256": "c422e925adb06772454c870a72baf3aaa4ac7c48d66fa3ca10122782ce6eeaaf"
+        },
+        {
+          "profile": "torch-2.6-cu124",
+          "version": "2.6.0+cu124",
+          "lock_path": "environments/torch-2.6-cu124/uv.lock",
+          "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+          "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+        },
+        {
+          "profile": "torch-2.7-cu126",
+          "version": "2.7.1+cu126",
+          "lock_path": "environments/torch-2.7-cu126/uv.lock",
+          "lock_sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2",
+          "audit_inventory_sha256": "253e01cc24586b23f776fa354d8add88daaf71c22011efdd0e534e3f54052f96"
+        },
+        {
+          "profile": "torch-2.8-cu126",
+          "version": "2.8.0+cu126",
+          "lock_path": "environments/torch-2.8-cu126/uv.lock",
+          "lock_sha256": "189a61018ec36b8085f7f76e78fbb9581e37f14e415844a80977bdc892079cf4",
+          "audit_inventory_sha256": "c9873a203a2049f54c873595d0224c725d0cec749302a06812e507813c1d3c08"
+        },
+        {
+          "profile": "torch-2.9-cu130",
+          "version": "2.9.1+cu130",
+          "lock_path": "environments/torch-2.9-cu130/uv.lock",
+          "lock_sha256": "6fc6c85801ba773557345e4fdcc0fd46bbe5342fed2da8c8d336fd33f42f81e6",
+          "audit_inventory_sha256": "64825300840df5c76ea9d77400a85db94fa6b915dd837f0fe8af49098278136b"
+        }
+      ],
+      "assessment": "See the individual PYSEC-2026-2286 row in docs/v1-risk-treatment-proposal.md.",
+      "risk_category": "active_model_loading",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision."
+    }
+  ]
+}
