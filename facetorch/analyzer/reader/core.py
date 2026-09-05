@@ -3,6 +3,7 @@
 import http.client
 import io
 import ipaddress
+import math
 import os
 import queue
 import socket
@@ -137,6 +138,53 @@ def _validate_public_url_target(parsed, deadline: float) -> tuple[str, ...]:
     return tuple(validated)
 
 
+class _DeadlineReader(io.RawIOBase):
+    """Charge every raw receive, including header/chunk parsing, to one budget."""
+
+    def __init__(self, raw, sock, deadline: float) -> None:
+        super().__init__()
+        self._raw = raw
+        self._sock = sock
+        self._deadline = deadline
+
+    def readable(self) -> bool:
+        return True
+
+    def readinto(self, buffer) -> int:
+        self._sock.settimeout(_remaining_timeout(self._deadline))
+        count = self._raw.readinto(buffer)
+        _remaining_timeout(self._deadline)
+        return count
+
+    def close(self) -> None:
+        try:
+            self._raw.close()
+        finally:
+            super().close()
+
+
+class _DeadlineSocket:
+    """Preserve socket file ownership while bounding HTTP buffered operations."""
+
+    def __init__(self, sock, deadline: float) -> None:
+        self._sock = sock
+        self._deadline = deadline
+
+    def __getattr__(self, name):
+        return getattr(self._sock, name)
+
+    def sendall(self, data) -> None:
+        self._sock.settimeout(_remaining_timeout(self._deadline))
+        self._sock.sendall(data)
+        _remaining_timeout(self._deadline)
+
+    def makefile(self, mode="rb"):
+        # SocketIO retains the real socket even when HTTPConnection.close() is
+        # called before a Connection: close response body has been consumed.
+        raw = self._sock.makefile(mode, buffering=0)
+        return io.BufferedReader(_DeadlineReader(raw, self._sock, self._deadline))
+
+
 class _PinnedHTTPConnection(http.client.HTTPConnection):
     """HTTP connection whose socket target is an already validated numeric IP."""
 
@@ -149,13 +197,15 @@ class _PinnedHTTPConnection(http.client.HTTPConnection):
     ) -> None:
         super().__init__(hostname, port=port, timeout=timeout)
         self._validated_address = address
+        self._deadline = time.monotonic() + timeout
 
     def connect(self) -> None:
-        self.sock = socket.create_connection(
+        raw_socket = socket.create_connection(
             (self._validated_address, self.port),
-            self.timeout,
+            _remaining_timeout(self._deadline),
             self.source_address,
         )
+        self.sock = _DeadlineSocket(raw_socket, self._deadline)
 
 
 class _PinnedHTTPSConnection(http.client.HTTPSConnection):
@@ -168,6 +218,7 @@ class _PinnedHTTPSConnection(http.client.HTTPSConnection):
         port: int,
         timeout: float,
     ) -> None:
+        self._deadline = time.monotonic() + timeout
         super().__init__(
             hostname,
             port=port,
@@ -179,15 +230,23 @@ class _PinnedHTTPSConnection(http.client.HTTPSConnection):
     def connect(self) -> None:
         raw_socket = socket.create_connection(
             (self._validated_address, self.port),
-            self.timeout,
+            _remaining_timeout(self._deadline),
             self.source_address,
         )
+        tls_socket = None
         try:
-            self.sock = self._context.wrap_socket(
+            tls_socket = self._context.wrap_socket(
                 raw_socket,
                 server_hostname=self.host,
+                do_handshake_on_connect=False,
             )
+            tls_socket.settimeout(_remaining_timeout(self._deadline))
+            tls_socket.do_handshake()
+            _remaining_timeout(self._deadline)
+            self.sock = _DeadlineSocket(tls_socket, self._deadline)
         except Exception:
+            if tls_socket is not None:
+                tls_socket.close()
             raw_socket.close()
             raise
 
@@ -608,12 +667,25 @@ class URLReader(UniversalReader):
             scheme not in {"http", "https"} for scheme in self.allowed_schemes
         ):
             raise InputError("allowed_schemes must contain only 'http' and/or 'https'.")
-        if timeout <= 0:
-            raise InputError("URLReader timeout must be greater than zero.")
-        if max_redirects < 0:
-            raise InputError("URLReader max_redirects must be non-negative.")
-        if max_bytes < 1:
-            raise InputError("URLReader max_bytes must be at least one byte.")
+        if (
+            isinstance(timeout, bool)
+            or not isinstance(timeout, (int, float))
+            or not math.isfinite(timeout)
+            or timeout <= 0
+        ):
+            raise InputError("URLReader timeout must be finite and greater than zero.")
+        if (
+            isinstance(max_redirects, bool)
+            or not isinstance(max_redirects, int)
+            or max_redirects < 0
+        ):
+            raise InputError("URLReader max_redirects must be a non-negative integer.")
+        if (
+            isinstance(max_bytes, bool)
+            or not isinstance(max_bytes, int)
+            or max_bytes < 1
+        ):
+            raise InputError("URLReader max_bytes must be a positive integer.")
         self.timeout = timeout
         self.max_redirects = max_redirects
         self.max_bytes = max_bytes

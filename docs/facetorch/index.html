@@ -1038,15 +1038,15 @@ class CacheEntryInspection:
         self._component_lock = threading.RLock()
 
         if hasattr(self.cfg, &#34;logger&#34;) and self.cfg.logger is not None:
-            self.logger = instantiate(self.cfg.logger).logger
+            self.logger = _instantiate_component(self.cfg.logger, &#34;logger&#34;).logger
         else:
-            self.logger = LoggerJsonFile(level=logging.INFO).logger
+            self.logger = get_logger()
 
         self.logger.info(&#34;Initializing FaceAnalyzer&#34;)
         self.logger.debug(&#34;Config&#34;, extra=self.cfg.__dict__[&#34;_content&#34;])
 
         self.logger.info(&#34;Initializing BaseReader&#34;)
-        self.reader = instantiate(self.cfg.reader)
+        self.reader = _instantiate_component(self.cfg.reader, &#34;image reader&#34;)
         self._reader_signature_owner = None
         self._reader_signature_parameters = None
 
@@ -1056,7 +1056,7 @@ class CacheEntryInspection:
 
         self.logger.info(&#34;Initializing FaceUnifier&#34;)
         if &#34;unifier&#34; in self.cfg:
-            self.unifier = instantiate(self.cfg.unifier)
+            self.unifier = _instantiate_component(self.cfg.unifier, &#34;face unifier&#34;)
         else:
             self.unifier = None
 
@@ -1112,7 +1112,9 @@ class CacheEntryInspection:
         with lock:
             if self._detector is _UNLOADED:
                 self.logger.info(&#34;Initializing FaceDetector&#34;)
-                self._detector = instantiate(detector_config)
+                self._detector = _instantiate_component(
+                    detector_config, &#34;face detector&#34;
+                )
         return self._detector
 
     @detector.setter
@@ -1204,11 +1206,11 @@ class CacheEntryInspection:
 
     def _load_predictor(self, name: str, predictor_config) -&gt; FacePredictor:
         self.logger.info(f&#34;Initializing FacePredictor {name}&#34;)
-        return instantiate(predictor_config)
+        return _instantiate_component(predictor_config, f&#34;predictor {name!r}&#34;)
 
     def _load_utilizer(self, name: str, utilizer_config):
         self.logger.info(f&#34;Initializing BaseUtilizer {name}&#34;)
-        return instantiate(utilizer_config)
+        return _instantiate_component(utilizer_config, f&#34;utilizer {name!r}&#34;)
 
     @staticmethod
     def _normalize_predictor_selection(
@@ -1485,6 +1487,18 @@ class CacheEntryInspection:
                         f&#34;{prediction_count} prediction(s) for &#34;
                         f&#34;{expected_count} input face(s).&#34;
                     )
+                for index, prediction in enumerate(preds, start=face_indx_start):
+                    if (
+                        not isinstance(prediction, Prediction)
+                        or not isinstance(prediction.label, str)
+                        or not isinstance(prediction.logits, torch.Tensor)
+                        or not isinstance(prediction.other, dict)
+                    ):
+                        raise InferenceError(
+                            f&#34;Face predictor {predictor_name!r} returned an invalid &#34;
+                            f&#34;Prediction for face {index}; expected a string label, &#34;
+                            &#34;tensor logits and dictionary metadata.&#34;
+                        )
                 data.add_preds(preds, predictor_name, face_indx_start)
 
             return data
@@ -1554,12 +1568,8 @@ class CacheEntryInspection:
             face_tensor = data.tensor[0]
             face = Face(
                 indx=0,
-                loc=Location(
-                    x1=0, y1=0, x2=data.dims.width, y2=data.dims.height
-                ),
-                dims=Dimensions(
-                    height=data.dims.height, width=data.dims.width
-                ),
+                loc=Location(x1=0, y1=0, x2=data.dims.width, y2=data.dims.height),
+                dims=Dimensions(height=data.dims.height, width=data.dims.width),
                 tensor=face_tensor,
                 ratio=1.0,
             )
@@ -1625,9 +1635,9 @@ class CacheEntryInspection:
             self.logger.info(f&#34;Running BaseUtilizer: {utilizer_name}&#34;)
             data = _run_component(
                 f&#34;Face utilizer {utilizer_name!r}&#34;,
-                lambda utilizer_name=utilizer_name: self.utilizers[
-                    utilizer_name
-                ].run(data),
+                lambda utilizer_name=utilizer_name: self.utilizers[utilizer_name].run(
+                    data
+                ),
             )
 
         if not include_tensors:
@@ -1884,7 +1894,9 @@ class CacheEntryInspection:
             if tensor.numel() and (
                 float(tensor.min()) &lt; 0.0 or float(tensor.max()) &gt; 255.0
             ):
-                raise ConfigurationError(&#34;Reader output values must stay within 0..255.&#34;)</code></pre>
+                raise ConfigurationError(
+                    &#34;Reader output values must stay within 0..255.&#34;
+                )</code></pre>
 </details>
 <div class="desc"><p>FaceAnalyzer is the main class that reads images, runs face detection, tensor unification and facial feature prediction.
 It also draws bounding boxes and facial landmarks over the image.</p>
@@ -1945,7 +1957,9 @@ def detector(self):
     with lock:
         if self._detector is _UNLOADED:
             self.logger.info(&#34;Initializing FaceDetector&#34;)
-            self._detector = instantiate(detector_config)
+            self._detector = _instantiate_component(
+                detector_config, &#34;face detector&#34;
+            )
     return self._detector</code></pre>
 </details>
 <div class="desc"><p>Return the configured detector, constructing and caching it on demand.</p></div>
@@ -2220,6 +2234,18 @@ def run(
                     f&#34;{prediction_count} prediction(s) for &#34;
                     f&#34;{expected_count} input face(s).&#34;
                 )
+            for index, prediction in enumerate(preds, start=face_indx_start):
+                if (
+                    not isinstance(prediction, Prediction)
+                    or not isinstance(prediction.label, str)
+                    or not isinstance(prediction.logits, torch.Tensor)
+                    or not isinstance(prediction.other, dict)
+                ):
+                    raise InferenceError(
+                        f&#34;Face predictor {predictor_name!r} returned an invalid &#34;
+                        f&#34;Prediction for face {index}; expected a string label, &#34;
+                        &#34;tensor logits and dictionary metadata.&#34;
+                    )
             data.add_preds(preds, predictor_name, face_indx_start)
 
         return data
@@ -2289,12 +2315,8 @@ def run(
         face_tensor = data.tensor[0]
         face = Face(
             indx=0,
-            loc=Location(
-                x1=0, y1=0, x2=data.dims.width, y2=data.dims.height
-            ),
-            dims=Dimensions(
-                height=data.dims.height, width=data.dims.width
-            ),
+            loc=Location(x1=0, y1=0, x2=data.dims.width, y2=data.dims.height),
+            dims=Dimensions(height=data.dims.height, width=data.dims.width),
             tensor=face_tensor,
             ratio=1.0,
         )
@@ -2360,9 +2382,9 @@ def run(
         self.logger.info(f&#34;Running BaseUtilizer: {utilizer_name}&#34;)
         data = _run_component(
             f&#34;Face utilizer {utilizer_name!r}&#34;,
-            lambda utilizer_name=utilizer_name: self.utilizers[
-                utilizer_name
-            ].run(data),
+            lambda utilizer_name=utilizer_name: self.utilizers[utilizer_name].run(
+                data
+            ),
         )
 
     if not include_tensors:
@@ -2686,8 +2708,8 @@ class Detection:
     Attributes:
         loc (torch.Tensor): Locations of faces
         conf (torch.Tensor): Confidences of faces
-        landmarks (torch.Tensor): Selected landmark coordinates in source-image space.
-        boxes (torch.Tensor): Selected bounding boxes in source-image space.
+        landmarks (torch.Tensor): Selected landmarks in the canonical reader-image coordinate frame.
+        boxes (torch.Tensor): Selected boxes in the canonical reader-image coordinate frame.
         dets (torch.Tensor): Selected boxes and confidence scores.
 
     &#34;&#34;&#34;
@@ -2707,9 +2729,9 @@ class Detection:
 <dt><strong><code>conf</code></strong> :&ensp;<code>torch.Tensor</code></dt>
 <dd>Confidences of faces</dd>
 <dt><strong><code>landmarks</code></strong> :&ensp;<code>torch.Tensor</code></dt>
-<dd>Selected landmark coordinates in source-image space.</dd>
+<dd>Selected landmarks in the canonical reader-image coordinate frame.</dd>
 <dt><strong><code>boxes</code></strong> :&ensp;<code>torch.Tensor</code></dt>
-<dd>Selected bounding boxes in source-image space.</dd>
+<dd>Selected boxes in the canonical reader-image coordinate frame.</dd>
 <dt><strong><code>dets</code></strong> :&ensp;<code>torch.Tensor</code></dt>
 <dd>Selected boxes and confidence scores.</dd>
 </dl></div>

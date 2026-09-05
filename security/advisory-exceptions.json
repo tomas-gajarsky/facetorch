@@ -43,13 +43,13 @@
       "approved_on": "2026-08-22",
       "expires_on": "2026-11-20",
       "review_owner": "founder",
-      "rationale": "The local denial-of-service advisory affects torch.nn.functional.ctc_loss. Facetorch does not call that API; Torch 2.6 remains the validated CUDA 12.4 production cohort while newer intermediate Torch lines are unsupported.",
+      "rationale": "The local denial-of-service advisory affects torch.nn.functional.ctc_loss. Facetorch does not call that API; Torch 2.6 remains the validated CUDA 12.4 production cohort alongside the separately validated Torch 2.7-2.13 runtime lines.",
       "mitigations": [
         "Release contracts reject any Facetorch production-source use of ctc_loss while this exception exists.",
         "Model inputs are selected from digest-pinned manifest entries and are not passed to the affected API.",
         "The exception is restricted to the exact Torch 2.6 CPU and CUDA 12.4 release profiles."
       ],
-      "upstream_constraint": "The first patched Torch line is 2.8, which is not a validated Facetorch cohort.",
+      "upstream_constraint": "The first patched Torch line is 2.8, which does not replace the pinned Torch 2.6 / CUDA 12.4 production profile.",
       "removal_condition": "Remove when Torch 2.6 is dropped, an upstream backport is validated, or a replacement CUDA 12.4-compatible cohort is released."
     },
     {
@@ -62,13 +62,13 @@
       "approved_on": "2026-08-22",
       "expires_on": "2026-11-20",
       "review_owner": "founder",
-      "rationale": "The local memory-corruption advisory affects torch.nn.utils.rnn.unpack_sequence. Facetorch does not call that API; Torch 2.6 remains the validated CUDA 12.4 production cohort while newer intermediate Torch lines are unsupported.",
+      "rationale": "The local memory-corruption advisory affects torch.nn.utils.rnn.unpack_sequence. Facetorch does not call that API; Torch 2.6 remains the validated CUDA 12.4 production cohort alongside the separately validated Torch 2.7-2.13 runtime lines.",
       "mitigations": [
         "Release contracts reject any Facetorch production-source use of unpack_sequence while this exception exists.",
         "Model inputs are selected from digest-pinned manifest entries and are not passed to the affected API.",
         "The exception is restricted to the exact Torch 2.6 CPU and CUDA 12.4 release profiles."
       ],
-      "upstream_constraint": "The first patched release is Torch 2.9.1, which is not a validated Facetorch cohort.",
+      "upstream_constraint": "The first patched release is Torch 2.9.1, which does not replace the pinned Torch 2.6 / CUDA 12.4 production profile.",
       "removal_condition": "Remove when Torch 2.6 is dropped, an upstream backport is validated, or a replacement CUDA 12.4-compatible cohort is released."
     },
     {
@@ -81,7 +81,7 @@
       "approved_on": "2026-08-22",
       "expires_on": "2026-11-20",
       "review_owner": "founder",
-      "rationale": "The local memory-consumption advisory affects torch.nn.utils.rnn.pad_packed_sequence. Facetorch does not call that API; Torch 2.6 remains the validated CUDA 12.4 production cohort while newer intermediate Torch lines are unsupported.",
+      "rationale": "The local memory-consumption advisory affects torch.nn.utils.rnn.pad_packed_sequence. Facetorch does not call that API; Torch 2.6 remains the validated CUDA 12.4 production cohort alongside the separately validated Torch 2.7-2.13 runtime lines.",
       "mitigations": [
         "Release contracts reject any Facetorch production-source use of pad_packed_sequence while this exception exists.",
         "Model inputs are selected from digest-pinned manifest entries and are not passed to the affected API.",
@@ -106,7 +106,7 @@
         "The public analyzer does not accept executable operator graphs from image inputs.",
         "The exception is restricted to the exact Torch 2.6 CPU and CUDA 12.4 release profiles."
       ],
-      "upstream_constraint": "The first patched release is Torch 2.7.1-rc1, which is not a validated Facetorch cohort.",
+      "upstream_constraint": "The first patched release is Torch 2.7.1-rc1, which does not replace the pinned Torch 2.6 / CUDA 12.4 production profile.",
       "removal_condition": "Remove when Torch 2.6 is dropped, an upstream backport is validated, or a replacement CUDA 12.4-compatible cohort is released."
     },
     {
@@ -195,7 +195,7 @@
         "Official configurations contain packaged transform graphs; image and tensor inputs cannot supply executable Python definitions.",
         "All supported Torch cohorts execute the full source, wheel, and production-image smoke suites before release."
       ],
-      "upstream_constraint": "The first patched release is Torch 2.13, beyond the currently exported and validated Torch 2.11 model cohort.",
+      "upstream_constraint": "The advisory lists Torch 2.13 as patched. That runtime is supported using the Torch 2.11 artifact cohort; the exact older runtime versions in this exception remain affected.",
       "removal_condition": "Remove after a validated Torch 2.13 cohort replaces affected versions or an upstream backport is validated."
     }
   ]

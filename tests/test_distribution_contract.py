@@ -8,7 +8,6 @@ from zipfile import ZipFile
 
 import pytest
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 WHEEL_REQUIRED_FILES = {
@@ -318,6 +317,9 @@ def test_sdist_content_matches_source_allowlist(built_distributions):
         "scripts/render_model_cards.py",
         "scripts/release_transaction.py",
         "scripts/verify_model_release_matrix.py",
+        "scripts/verify_runtime_compatibility_matrix.py",
+        "scripts/stage_alignment_metadata.py",
+        "scripts/verify_source_checks.py",
         "model_cards/catalog.json",
         "model_cards/upstream_licenses/adaface-LICENSE",
         "notebooks/facetorch_notebook_demo.ipynb",
@@ -334,6 +336,8 @@ def test_sdist_model_manifest_auditor_has_its_renderer_inputs(built_distribution
 from pathlib import Path
 
 from scripts.audit_model_manifest_hf import audit_remote_manifest
+from scripts import stage_alignment_metadata, verify_runtime_compatibility_matrix
+from scripts import verify_source_checks, archive_numerical_evidence
 
 class OfflineApi:
     def model_info(self, **kwargs):

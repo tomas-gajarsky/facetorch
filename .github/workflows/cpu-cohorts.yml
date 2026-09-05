@@ -71,3 +71,14 @@ jobs:
           assert Path(facetorch.__file__).resolve().is_relative_to(Path.cwd())
           PY
           uv run --project "$PROFILE" --frozen --extra test --no-sync python -m pytest -q
+
+  cpu-cohorts-complete:
+    if: always()
+    needs: cpu-cohort
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every supported CPU lane to succeed
+        env:
+          MATRIX_RESULT: ${{ needs.cpu-cohort.result }}
+        run: test "$MATRIX_RESULT" = success

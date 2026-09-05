@@ -1,10 +1,32 @@
 # Change Log
 
-## 1.0.0rc3 (Unreleased)
+## Unreleased
 
-This candidate officially expands the tested PyTorch runtime range while reusing
-the immutable model artifacts published for RC2. The section becomes released
-only when the `v1.0.0-rc.3` tag and all publication receipts are verified.
+### Fixed
+* Audit every active runtime dependency in all 17 frozen profiles, preserving official
+  Torch CPU/CUDA build identities while querying upstream-version advisories;
+  skipped, missing, duplicate, or malformed audit records fail the gate.
+* Use persistent kernel-backed cache locks across container PID namespaces;
+  recover automatically when a holder exits, and reject legacy directory locks
+  until every cache worker is stopped for upgrade.
+* Reject missing native weights, preserve typed errors across Hydra construction,
+  retain application logging settings when no logger is configured, and validate
+  each custom `Prediction` before consuming it.
+* Enforce the URL deadline during HTTP/HTTPS header and body reads, including
+  trickle responses and chunk framing.
+* Include all Python release helpers in the sdist; require the complete CPU
+  source matrix and exact-commit checks before release preparation.
+* Retain digest-bound per-model numerical records in release evidence and verify
+  their recorded bounds offline before preparing the release plan.
+
+### Release status
+* GA dependency approval is pending: the corrected audit on September 5 found
+  18 distinct unresolved advisories across twelve profiles. See
+  [the triage](docs/v1-advisory-triage.md). Existing exception scopes are unchanged.
+
+## 1.0.0rc3
+
+Released on September 3, 2026 as `v1.0.0-rc.3`.
 
 ### Added
 * Official PyTorch 2.6-2.13 support with exact matching torchvision pairs

@@ -274,9 +274,7 @@ class BaseModel(object, metaclass=ABCMeta):
         cache_resolver = None
         cache_resolution_missed = False
         if not should_verify:
-            cache_resolver = getattr(
-                type(self.downloader), "resolve_cached_path", None
-            )
+            cache_resolver = getattr(type(self.downloader), "resolve_cached_path", None)
             if callable(cache_resolver):
                 resolved_path = cache_resolver(self.downloader)
                 if resolved_path is not None:
@@ -448,10 +446,14 @@ class BaseModel(object, metaclass=ABCMeta):
                             state_dict[key] = getattr(mod, buf)
                         except AttributeError:
                             pass
-            if state_dict:
-                model.load_state_dict(state_dict, strict=True)
-            elif hasattr(model, "load_from_torchscript"):
+            if not state_dict and callable(
+                getattr(model, "load_from_torchscript", None)
+            ):
                 model.load_from_torchscript(ts_model)
+            else:
+                # Frozen graphs may inline every parameter. An empty source is
+                # valid only when the native target also requires no state.
+                model.load_state_dict(state_dict, strict=True)
 
         model.to(self.device)
         return model

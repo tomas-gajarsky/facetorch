@@ -153,8 +153,8 @@ class Detection:
     Attributes:
         loc (torch.Tensor): Locations of faces
         conf (torch.Tensor): Confidences of faces
-        landmarks (torch.Tensor): Selected landmark coordinates in source-image space.
-        boxes (torch.Tensor): Selected bounding boxes in source-image space.
+        landmarks (torch.Tensor): Selected landmarks in the canonical reader-image coordinate frame.
+        boxes (torch.Tensor): Selected boxes in the canonical reader-image coordinate frame.
         dets (torch.Tensor): Selected boxes and confidence scores.
 
     """

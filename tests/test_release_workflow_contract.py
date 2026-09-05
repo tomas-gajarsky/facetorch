@@ -227,9 +227,9 @@ def test_stable_aliases_are_tagged_from_verified_local_image_ids():
         pull = f'docker pull "{repository}:$VERSION_TAG"'
         inspect = (
             f'{flavor}_image_id="$(docker image inspect --format '
-            f"'{{{{.Id}}}}' \"{repository}:$VERSION_TAG\")\""
+            f'\'{{{{.Id}}}}\' "{repository}:$VERSION_TAG")"'
         )
-        assertion = f"--channel docker-{flavor} --image-id \"${flavor}_image_id\""
+        assertion = f'--channel docker-{flavor} --image-id "${flavor}_image_id"'
         tag = f'docker tag "${flavor}_image_id"'
         push = (
             "docker push docker.io/tomasgajarsky/facetorch:latest"
@@ -246,9 +246,7 @@ def test_stable_aliases_are_tagged_from_verified_local_image_ids():
         assert commands.index(tag) < commands.index(push)
         assert f'docker tag "{repository}:$VERSION_TAG"' not in commands
 
-    cpu_push = commands.index(
-        "docker push docker.io/tomasgajarsky/facetorch:latest"
-    )
+    cpu_push = commands.index("docker push docker.io/tomasgajarsky/facetorch:latest")
     gpu_push = commands.index(
         "docker push docker.io/tomasgajarsky/facetorch-gpu:latest"
     )
@@ -303,7 +301,10 @@ def test_finalization_revalidates_the_exact_draft_asset_bytes_before_publish():
     assert "release-receipts-${{ matrix.channel }}-${{" in workflow_text
     assert "release-receipts-pypi-${{" in workflow_text
     assert 'gh release view "$TAG" --json assets' in commands
-    assert 'gh release download "$TAG" --dir "$RUNNER_TEMP/final-release-assets"' in commands
+    assert (
+        'gh release download "$TAG" --dir "$RUNNER_TEMP/final-release-assets"'
+        in commands
+    )
     assert "release_transaction.py github-release-assets" in commands
     verify_index = commands.index("release_transaction.py github-release-assets")
     assert commands.rfind("release_transaction.py docker-state") < verify_index
@@ -330,6 +331,7 @@ def test_automatic_dry_run_has_the_reusable_workflow_permission_envelope():
     assert auto["permissions"] == {"actions": "read", "contents": "read"}
     assert coordinated["permissions"] == {
         "actions": "read",
+        "checks": "read",
         "attestations": "write",
         "contents": "write",
         "id-token": "write",
@@ -354,9 +356,7 @@ def test_release_plan_requires_the_exact_full_byte_model_audit():
         step
         for step in assemble["steps"]
         if str(step.get("uses", "")).startswith("actions/download-artifact@")
-        and str(step.get("with", {}).get("name", "")).startswith(
-            "release-model-audit-"
-        )
+        and str(step.get("with", {}).get("name", "")).startswith("release-model-audit-")
     ]
     assert len(audit_downloads) == 1
     assert audit_downloads[0]["with"]["path"] == (
@@ -378,8 +378,7 @@ def test_release_workflow_keeps_internal_and_public_checksum_scopes_separate():
     assert '--output "$RUNNER_TEMP/release-bundle/BUNDLE-SHA256SUMS"' in commands
     assert '--public-checksums "$RUNNER_TEMP/release-bundle/SHA256SUMS"' in commands
     assert (
-        '--bundle-checksums "$RUNNER_TEMP/release-bundle/BUNDLE-SHA256SUMS"'
-        in commands
+        '--bundle-checksums "$RUNNER_TEMP/release-bundle/BUNDLE-SHA256SUMS"' in commands
     )
 
     metadata_upload = next(
@@ -551,9 +550,7 @@ def test_release_source_is_the_selected_protected_ref_and_tools_are_bounded():
 
 @pytest.mark.release_blocker
 def test_local_gpu_release_is_authorized_only_from_protected_main():
-    workflow = _workflow(
-        REPO_ROOT / ".github" / "workflows" / "local-gpu-release.yml"
-    )
+    workflow = _workflow(REPO_ROOT / ".github" / "workflows" / "local-gpu-release.yml")
     commands = _commands(workflow["jobs"]["authorize-candidate"])
 
     assert "SOURCE_REF_NAME" in commands

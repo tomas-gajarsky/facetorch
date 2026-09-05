@@ -67,3 +67,61 @@ automated and exact-candidate gate, and rehearse recovery from the receipts.
 The release candidate remains provisional until the clean protected dry run,
 model-rights approvals, required remote environments, and exact local-GPU
 evidence are all present.
+
+## Required source checks and activation
+
+`security/required-source-checks.json` declares thirteen successful checks required
+on the exact final source SHA before release preparation. The CPU aggregate
+`cpu-cohorts-complete` depends on every supported CPU lane, including Python 3.11
+on Torch 2.6. A failed, skipped, cancelled, missing, or unfinished lane fails the
+aggregate. The release verifier accepts only GitHub Actions check runs bound to
+the candidate SHA and uses the newest attempt for each required check. The
+resulting `source-checks.json` is retained in the release evidence.
+
+On September 5, main protection already required the core checks, but named only
+three individual CPU lanes. Activate the aggregate in branch protection after
+the workflow is available on main and has produced a successful check run:
+add `cpu-cohorts-complete` with GitHub Actions app ID `15368`, preserving the
+existing contexts, strict up-to-date requirement, administrator enforcement, and
+D20 owner-review policy. This is a separately reviewed settings change. Do not
+require a check that cannot yet be emitted by the protected branch.
+
+For an independent read-only check of a candidate's source CI:
+
+```bash
+python scripts/verify_source_checks.py --repo tomas-gajarsky/facetorch \
+  --source-sha FULL_COMMIT_SHA --output source-checks.json
+```
+
+A saved paginated API response can be verified using `--checks-json`. Pull-request
+`dependency-review` remains a branch-protection requirement; it is not required
+on the final push commit, where the full frozen dependency audit is required.
+
+## Portable numerical evidence
+
+The local runner records `numerical-evidence-index.json`, every export/runtime
+summary, and the per-model `.meta.json` records referenced by those summaries.
+The index binds portable relative paths and metadata digests while preserving
+original summary bytes and runner identity. Both local GPU upload paths retain
+these records. Release assembly verifies the downloaded archive before creating
+the release plan; partial evidence cannot proceed through that workflow.
+
+After extracting a candidate's evidence, use the scripts from its source commit:
+
+```bash
+python scripts/archive_numerical_evidence.py verify \
+  --root /path/to/evidence/local-gpu --source-sha FULL_COMMIT_SHA
+```
+
+This uses only the Python standard library and the sibling
+`model_evidence_contract.py`; no Torch install, GPU, model download, or original
+runner directory is needed. It checks source identity, summary/metadata digests,
+model/device/case records, finite errors, recorded same/cross-device bounds, and
+fixed-reference identities. It validates the recorded measurements, not a new
+execution or independently reconstructed golden tensors. The existing complete
+matrix and model-manifest gates still establish authoritative case coverage,
+policy tolerances, and artifact/golden bytes before archiving. The public archive
+checksum and release receipt remain the external trust roots for the records.
+
+RC3's published archive lacks these numerical records. Its historical summary
+is retained as such; this change does not retroactively upgrade RC3 evidence.

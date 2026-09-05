@@ -6,12 +6,24 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import subprocess
 import sys
 from datetime import date
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any, Dict, Iterable
+from urllib.parse import urlsplit
+
+from packaging.markers import default_environment
+from packaging.requirements import Requirement
+from packaging.utils import canonicalize_name
+from packaging.version import Version
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - Python 3.10
+    import tomli as tomllib
 
 PROFILE_PROJECTS = {
     "root": Path("."),
@@ -127,6 +139,174 @@ def _exception_for(
     return None
 
 
+def _audit_inventory(requirements: str, lock: dict, profile: str) -> dict:
+    """Bind advisory queries to the exact active, hashed lock inventory.
+
+    PyPI's advisory service does not recognize official Torch local build tags.
+    Only the two official Torch distributions may project such tags to their
+    upstream release, retaining the actual identity for exception matching.
+    """
+    inventory = {}
+    environment = default_environment()
+    for line in requirements.replace("\\\n", " ").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        requirement = Requirement(line.split("--hash=", 1)[0].strip())
+        if requirement.marker and not requirement.marker.evaluate(environment):
+            continue
+        name = canonicalize_name(requirement.name)
+        pins = list(requirement.specifier)
+        if requirement.url or len(pins) != 1 or pins[0].operator != "==":
+            raise ValueError(f"Audit dependency must have one exact version: {name}")
+        actual = str(Version(pins[0].version))
+        hashes = sorted(set(re.findall(r"--hash=sha256:([a-f0-9]{64})(?=\s|$)", line)))
+        if not hashes or name in inventory:
+            raise ValueError(
+                f"Missing hashes or duplicate active audit dependency: {name}"
+            )
+        packages = [
+            item
+            for item in lock.get("package", [])
+            if canonicalize_name(item["name"]) == name and item["version"] == actual
+        ]
+        if len(packages) != 1:
+            raise ValueError(
+                f"Audit dependency is not unique in the lock: {name}=={actual}"
+            )
+        package = packages[0]
+        distributions = [*package.get("wheels", [])]
+        if package.get("sdist"):
+            distributions.append(package["sdist"])
+        locked_hashes = {
+            item.get("hash", "").removeprefix("sha256:") for item in distributions
+        }
+        if not set(hashes) <= locked_hashes:
+            raise ValueError(f"Export hashes do not match the lock: {name}=={actual}")
+        audited = actual
+        parsed = Version(actual)
+        source = package.get("source", {})
+        record = {"version": actual, "source": source, "sha256": hashes}
+        if parsed.local is not None and name in {"torch", "torchvision"}:
+            flavor = "cpu" if profile == "root" else profile.rsplit("-", 1)[-1]
+            index = f"https://download.pytorch.org/whl/{flavor}"
+            if (
+                not re.fullmatch(r"cpu|cu[0-9]{3}", flavor)
+                or parsed.local != flavor
+                or source != {"registry": index}
+            ):
+                raise ValueError(f"Unapproved Torch build mapping: {name}=={actual}")
+            wheels = package.get("wheels", [])
+            if not wheels or any(
+                urlsplit(item.get("url", "")).scheme != "https"
+                or urlsplit(item.get("url", "")).netloc
+                not in {"download.pytorch.org", "download-r2.pytorch.org"}
+                for item in wheels
+            ):
+                raise ValueError(f"Unapproved Torch wheel source: {name}=={actual}")
+            audited = parsed.public
+            record["mapping"] = "official-pytorch-build-to-upstream-advisory-version"
+            record["wheels"] = wheels
+        record["audited_version"] = audited
+        inventory[name] = record
+    if not inventory or not {"torch", "torchvision"} <= inventory.keys():
+        raise ValueError("Audit inventory is empty or missing Torch/torchvision")
+    return {"environment": environment, "dependencies": inventory}
+
+
+def _evaluate_audit(
+    report, inventory: dict, profile: str, policy: dict, *, today=None
+) -> dict:
+    """Reject incomplete coverage as well as findings without exact exceptions."""
+    expected = inventory["dependencies"]
+    coverage_errors = []
+    dependencies = report.get("dependencies") if isinstance(report, dict) else None
+    if not isinstance(dependencies, list) or not dependencies:
+        coverage_errors.append("Auditor returned no dependency inventory")
+        dependencies = []
+    accepted, unresolved = [], []
+    seen, audited = set(), set()
+    for dependency in dependencies:
+        if not isinstance(dependency, dict) or not isinstance(
+            dependency.get("name"), str
+        ):
+            coverage_errors.append("Malformed audited dependency")
+            continue
+        name = canonicalize_name(dependency["name"])
+        if name not in expected or name in seen:
+            coverage_errors.append(
+                f"Unexpected or duplicate audited dependency: {name}"
+            )
+            continue
+        seen.add(name)
+        record = expected[name]
+        if dependency.get("skip_reason"):
+            coverage_errors.append(f"Unaudited {name}: {dependency['skip_reason']}")
+            continue
+        if dependency.get("version") != record["audited_version"]:
+            coverage_errors.append(f"Missing or mismatched audited version: {name}")
+            continue
+        vulns = dependency.get("vulns")
+        if not isinstance(vulns, list):
+            coverage_errors.append(f"Missing vulnerability result: {name}")
+            continue
+        audited.add(name)
+        seen_ids = set()
+        for vulnerability in vulns:
+            if (
+                not isinstance(vulnerability, dict)
+                or not isinstance(vulnerability.get("id"), str)
+                or not vulnerability["id"]
+                or not isinstance(vulnerability.get("aliases", []), list)
+            ):
+                coverage_errors.append(f"Malformed vulnerability result: {name}")
+                continue
+            primary_id = vulnerability["id"]
+            aliases = vulnerability.get("aliases", [])
+            if not all(isinstance(item, str) and item for item in aliases):
+                coverage_errors.append(f"Malformed vulnerability aliases: {name}")
+                continue
+            ids = {primary_id, *aliases}
+            if primary_id in seen_ids:
+                continue
+            seen_ids.add(primary_id)
+            finding = {
+                "package": name,
+                "version": record["version"],
+                "audited_version": record["audited_version"],
+                "vulnerability_id": primary_id,
+                "aliases": sorted(ids - {primary_id}),
+                "fix_versions": vulnerability.get("fix_versions", []),
+            }
+            exception = _exception_for(
+                policy["exceptions"],
+                profile=profile,
+                package=name,
+                version=record["version"],
+                vulnerability_ids=ids,
+                today=today or date.today(),
+                maximum_days=policy["maximum_exception_days"],
+            )
+            if exception is None:
+                unresolved.append(finding)
+            else:
+                accepted.append(
+                    {**finding, "exception_expires_on": exception["expires_on"]}
+                )
+    for name in sorted(expected.keys() - seen):
+        coverage_errors.append(f"Missing audited dependency: {name}")
+    return {
+        "status": "failed" if coverage_errors or unresolved else "ok",
+        "coverage": {
+            "expected_count": len(expected),
+            "audited_count": len(audited),
+            "errors": coverage_errors,
+        },
+        "accepted_exceptions": accepted,
+        "unresolved_findings": unresolved,
+    }
+
+
 def _audit_profile(
     repo_root: Path,
     profile: str,
@@ -140,6 +320,8 @@ def _audit_profile(
     requirements_path = profile_output / "requirements.txt"
     sbom_path = profile_output / "sbom.cdx.json"
     audit_path = profile_output / "pip-audit.json"
+    audit_requirements_path = profile_output / "audit-requirements.txt"
+    inventory_path = profile_output / "audit-inventory.json"
 
     export_base = [
         "uv",
@@ -169,6 +351,23 @@ def _audit_profile(
     if sbom.returncode != 0:
         raise RuntimeError(sbom.stdout + sbom.stderr)
 
+    lock_path = project_root / "uv.lock"
+    inventory = _audit_inventory(
+        requirements_path.read_text(encoding="utf-8"),
+        tomllib.loads(lock_path.read_text(encoding="utf-8")),
+        profile,
+    )
+    inventory_path.write_text(json.dumps(inventory, indent=2) + "\n", encoding="utf-8")
+    audit_requirements_path.write_text(
+        "# Advisory-only projection; requirements.txt retains actual build identities.\n"
+        + "\n".join(
+            f"{name}=={item['audited_version']} "
+            + " ".join(f"--hash=sha256:{digest}" for digest in item["sha256"])
+            for name, item in sorted(inventory["dependencies"].items())
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     audit = _run(
         [
             sys.executable,
@@ -181,7 +380,7 @@ def _audit_profile(
             "--desc=off",
             "--format=json",
             f"--output={audit_path}",
-            f"--requirement={requirements_path}",
+            f"--requirement={audit_requirements_path}",
         ],
         cwd=repo_root,
     )
@@ -189,59 +388,18 @@ def _audit_profile(
         raise RuntimeError(audit.stdout + audit.stderr)
 
     report = json.loads(audit_path.read_text(encoding="utf-8"))
-    unresolved = []
-    accepted = []
-    seen = set()
-    today = date.today()
-    for dependency in report.get("dependencies", []):
-        package = str(dependency.get("name", "")).lower().replace("_", "-")
-        version = str(dependency.get("version", ""))
-        for vulnerability in dependency.get("vulns", []):
-            primary_id = str(vulnerability.get("id", ""))
-            ids = {
-                primary_id,
-                *(str(item) for item in vulnerability.get("aliases", [])),
-            }
-            identity = (package, version, primary_id)
-            if identity in seen:
-                continue
-            seen.add(identity)
-            finding = {
-                "package": package,
-                "version": version,
-                "vulnerability_id": primary_id,
-                "aliases": sorted(ids - {primary_id}),
-                "fix_versions": vulnerability.get("fix_versions", []),
-            }
-            exception = _exception_for(
-                exception_policy["exceptions"],
-                profile=profile,
-                package=package,
-                version=version,
-                vulnerability_ids=ids,
-                today=today,
-                maximum_days=exception_policy["maximum_exception_days"],
-            )
-            if exception is None:
-                unresolved.append(finding)
-            else:
-                accepted.append(
-                    {**finding, "exception_expires_on": exception["expires_on"]}
-                )
-
-    lock_path = project_root / "uv.lock"
     project_path = project_root / "pyproject.toml"
     return {
         "profile": profile,
-        "status": "ok" if not unresolved else "failed",
+        **_evaluate_audit(report, inventory, profile, exception_policy),
         "project_sha256": _sha256(project_path),
         "lock_sha256": _sha256(lock_path),
         "requirements_sha256": _sha256(requirements_path),
+        "audit_requirements_sha256": _sha256(audit_requirements_path),
+        "audit_inventory_sha256": _sha256(inventory_path),
         "sbom_sha256": _sha256(sbom_path),
         "sbom_content_sha256": _sbom_content_sha256(sbom_path),
         "pip_audit_version": PIP_AUDIT_VERSION,
-        "accepted_exceptions": accepted,
-        "unresolved_findings": unresolved,
     }
 
 

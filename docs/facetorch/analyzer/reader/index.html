@@ -948,12 +948,25 @@ All subclass should overwrite:</p>
             scheme not in {&#34;http&#34;, &#34;https&#34;} for scheme in self.allowed_schemes
         ):
             raise InputError(&#34;allowed_schemes must contain only &#39;http&#39; and/or &#39;https&#39;.&#34;)
-        if timeout &lt;= 0:
-            raise InputError(&#34;URLReader timeout must be greater than zero.&#34;)
-        if max_redirects &lt; 0:
-            raise InputError(&#34;URLReader max_redirects must be non-negative.&#34;)
-        if max_bytes &lt; 1:
-            raise InputError(&#34;URLReader max_bytes must be at least one byte.&#34;)
+        if (
+            isinstance(timeout, bool)
+            or not isinstance(timeout, (int, float))
+            or not math.isfinite(timeout)
+            or timeout &lt;= 0
+        ):
+            raise InputError(&#34;URLReader timeout must be finite and greater than zero.&#34;)
+        if (
+            isinstance(max_redirects, bool)
+            or not isinstance(max_redirects, int)
+            or max_redirects &lt; 0
+        ):
+            raise InputError(&#34;URLReader max_redirects must be a non-negative integer.&#34;)
+        if (
+            isinstance(max_bytes, bool)
+            or not isinstance(max_bytes, int)
+            or max_bytes &lt; 1
+        ):
+            raise InputError(&#34;URLReader max_bytes must be a positive integer.&#34;)
         self.timeout = timeout
         self.max_redirects = max_redirects
         self.max_bytes = max_bytes

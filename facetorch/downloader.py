@@ -5,14 +5,21 @@ from __future__ import annotations
 from contextlib import AbstractContextManager
 import errno
 import json
+import math
 import os
 from pathlib import Path
 import shutil
+import stat
 import tempfile
 import time
 from typing import Any, Dict, List, Mapping, Optional
 from uuid import uuid4
 import warnings
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - unsupported experimental platform
+    fcntl = None
 
 import gdown
 from huggingface_hub import hf_hub_download
@@ -42,225 +49,88 @@ logger = get_logger()
 
 
 class _DirectoryLock(AbstractContextManager):
-    """Small cross-platform lock based on atomic directory publication."""
+    """Kernel-owned lock for the supported POSIX local-filesystem cache.
+
+    The persistent file must never be unlinked during normal operation: waiters
+    may already have its inode open. Process IDs are diagnostic only and are
+    never used to reclaim ownership across containers or hosts.
+    """
 
     def __init__(self, path: Path, *, timeout: float = 600.0) -> None:
+        if (
+            isinstance(timeout, bool)
+            or not isinstance(timeout, (int, float))
+            or not math.isfinite(timeout)
+            or timeout < 0
+        ):
+            raise CacheLockError(
+                "Model cache lock timeout must be finite and non-negative."
+            )
         self.path = path
         self.timeout = timeout
-        self._owner_token: Optional[str] = None
-
-    @staticmethod
-    def _process_exists(pid: int) -> bool:
-        if pid <= 0:
-            return False
-        try:
-            os.kill(pid, 0)
-        except ProcessLookupError:
-            return False
-        except PermissionError:
-            return True
-        except OSError as exc:
-            return exc.errno != errno.ESRCH
-        return True
-
-    @staticmethod
-    def _process_identity(pid: int) -> Optional[str]:
-        """Return Linux boot/process-start identity when the kernel exposes it."""
-        if pid <= 0:
-            return None
-        try:
-            stat_text = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8")
-            boot_id = Path("/proc/sys/kernel/random/boot_id").read_text(
-                encoding="utf-8"
-            ).strip()
-            command_end = stat_text.rfind(")")
-            fields = stat_text[command_end + 2 :].split()
-            start_ticks = fields[19]
-        except (IndexError, OSError, ValueError):
-            return None
-        if command_end < 0 or not boot_id or not start_ticks:
-            return None
-        return f"{boot_id}:{start_ticks}"
-
-    def _recorded_process_is_live(self, record: Mapping[str, Any]) -> Optional[bool]:
-        """Return whether an ownership record still identifies the same process."""
-        try:
-            pid = int(record["pid"])
-        except (KeyError, TypeError, ValueError):
-            return None
-        if not self._process_exists(pid):
-            return False
-        recorded_identity = record.get("process_identity")
-        current_identity = self._process_identity(pid)
-        if recorded_identity is not None and current_identity is not None:
-            return recorded_identity == current_identity
-        return True
-
-    def _remove_abandoned_claim(self, claim_path: Path) -> bool:
-        """Remove a stale reclamation claim without disturbing a live claimant."""
-        try:
-            claim = json.loads(claim_path.read_text(encoding="utf-8"))
-            claim_is_live = self._recorded_process_is_live(claim)
-        except (OSError, TypeError, ValueError, json.JSONDecodeError):
-            claim_is_live = None
-        if claim_is_live is True:
-            return False
-        if claim_is_live is None:
-            try:
-                old_enough = time.time() - claim_path.stat().st_mtime > 5.0
-            except OSError:
-                return False
-            if not old_enough:
-                return False
-        try:
-            claim_path.unlink()
-        except OSError:
-            return False
-        return True
-
-    def _reclaim_stale_owner(self) -> bool:
-        """Atomically remove a lock whose recorded process identity is stale."""
-        owner_path = self.path / "owner.json"
-        owner_text: Optional[str] = None
-        try:
-            owner_text = owner_path.read_text(encoding="utf-8")
-            owner = json.loads(owner_text)
-            owner_is_live = self._recorded_process_is_live(owner)
-            if owner_is_live is None:
-                raise ValueError("invalid ownership record")
-        except (KeyError, TypeError, ValueError, OSError, json.JSONDecodeError):
-            try:
-                old_enough = time.time() - self.path.stat().st_mtime > 5.0
-            except OSError:
-                return False
-            if not old_enough:
-                return False
-        else:
-            if owner_is_live:
-                return False
-
-        claim_path = self.path / ".reclaim"
-        try:
-            claim_fd = os.open(
-                claim_path,
-                os.O_CREAT | os.O_EXCL | os.O_WRONLY,
-                0o600,
-            )
-        except FileExistsError:
-            self._remove_abandoned_claim(claim_path)
-            return False
-        except OSError:
-            return False
-        claim = {
-            "pid": os.getpid(),
-            "token": uuid4().hex,
-            "created": time.time(),
-        }
-        process_identity = self._process_identity(claim["pid"])
-        if process_identity is not None:
-            claim["process_identity"] = process_identity
-        try:
-            with os.fdopen(claim_fd, "w", encoding="utf-8") as claim_file:
-                json.dump(claim, claim_file)
-                claim_file.flush()
-                os.fsync(claim_file.fileno())
-        except OSError:
-            try:
-                claim_path.unlink()
-            except OSError:
-                pass
-            return False
-
-        try:
-            current_owner_text = owner_path.read_text(encoding="utf-8")
-        except OSError:
-            current_owner_text = None
-        if current_owner_text != owner_text:
-            try:
-                claim_path.unlink()
-            except OSError:
-                pass
-            return False
-
-        stale_path = self.path.with_name(
-            f"{self.path.name}.stale.{uuid4().hex}"
-        )
-        try:
-            os.replace(self.path, stale_path)
-        except (FileNotFoundError, FileExistsError, OSError):
-            try:
-                claim_path.unlink()
-            except OSError:
-                pass
-            return False
-        shutil.rmtree(stale_path, ignore_errors=True)
-        return True
+        self._fd: Optional[int] = None
+        self._pid: Optional[int] = None
 
     def __enter__(self) -> "_DirectoryLock":
-        started = time.monotonic()
-        owner_token = uuid4().hex
-        owner = {
-            "pid": os.getpid(),
-            "created": time.time(),
-            "token": owner_token,
-        }
-        process_identity = self._process_identity(owner["pid"])
-        if process_identity is not None:
-            owner["process_identity"] = process_identity
-        pending_path = self.path.with_name(
-            f"{self.path.name}.pending.{uuid4().hex}"
-        )
-        try:
-            pending_path.mkdir(mode=0o700)
-            (pending_path / "owner.json").write_text(
-                json.dumps(owner),
-                encoding="utf-8",
-            )
-        except OSError as exc:
-            shutil.rmtree(pending_path, ignore_errors=True)
+        if fcntl is None:
             raise CacheLockError(
-                f"Could not prepare ownership for model cache lock {self.path}."
-            ) from exc
-
+                "Shared model cache locking requires POSIX flock support."
+            )
+        if self._fd is not None:
+            raise CacheLockError("This model cache lock is already acquired.")
+        deadline = time.monotonic() + self.timeout
+        flags = os.O_CREAT | os.O_RDWR | getattr(os, "O_CLOEXEC", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
         try:
+            fd = os.open(self.path, flags, 0o600)
+        except IsADirectoryError as exc:
+            raise CacheLockError(
+                f"Legacy directory lock at {self.path}. Stop all users of this "
+                "cache before removing that directory and upgrading every worker."
+            ) from exc
+        except OSError as exc:
+            raise CacheLockError(
+                f"Could not open model cache lock {self.path}."
+            ) from exc
+        try:
+            if not stat.S_ISREG(os.fstat(fd).st_mode):
+                raise CacheLockError(
+                    f"Model cache lock is not a regular file: {self.path}."
+                )
             while True:
-                if os.path.lexists(self.path):
-                    if self._reclaim_stale_owner():
-                        continue
-                    if time.monotonic() - started >= self.timeout:
+                try:
+                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except OSError as exc:
+                    if exc.errno not in {errno.EAGAIN, errno.EACCES}:
+                        raise CacheLockError(
+                            f"Could not acquire model cache lock {self.path}."
+                        ) from exc
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
                         raise CacheLockError(
                             f"Timed out waiting for model cache lock {self.path}. "
-                            "Confirm no facetorch process owns it before removing "
-                            "the lock directory and retrying."
-                        )
-                    time.sleep(0.05)
-                    continue
-                try:
-                    os.rename(pending_path, self.path)
-                except OSError as exc:
-                    if os.path.lexists(self.path):
-                        continue
-                    raise CacheLockError(
-                        f"Could not publish ownership for model cache lock "
-                        f"{self.path}."
-                    ) from exc
-                self._owner_token = owner_token
-                return self
-        finally:
-            shutil.rmtree(pending_path, ignore_errors=True)
+                            "Wait for the active worker; do not remove the lock file."
+                        ) from exc
+                    time.sleep(min(0.05, remaining))
+            self._fd = fd
+            self._pid = os.getpid()
+            return self
+        except BaseException:
+            os.close(fd)
+            raise
 
     def __exit__(self, *_exc: object) -> None:
-        try:
-            owner = json.loads(
-                (self.path / "owner.json").read_text(encoding="utf-8")
-            )
-        except (OSError, TypeError, ValueError, json.JSONDecodeError):
-            owner = {}
-        if not isinstance(owner, Mapping):
-            owner = {}
-        if self._owner_token is not None and owner.get("token") == self._owner_token:
-            shutil.rmtree(self.path, ignore_errors=True)
-        self._owner_token = None
+        if self._fd is not None:
+            fd, self._fd = self._fd, None
+            try:
+                # Closing an inherited context in a forked child must not unlock
+                # the parent's open-file description.
+                if self._pid == os.getpid():
+                    fcntl.flock(fd, fcntl.LOCK_UN)
+            finally:
+                os.close(fd)
+                self._pid = None
 
 
 def _ensure_directory(path: Path) -> None:
@@ -511,10 +381,7 @@ class DownloaderGDrive(_VerifiedDownloader):
                 prefix=".facetorch-download-", dir=target.parent
             ) as temporary_dir:
                 temporary_path = Path(temporary_dir) / descriptor.filename
-                url = (
-                    "https://drive.google.com/uc?&id="
-                    f"{self.file_id}&confirm=t"
-                )
+                url = "https://drive.google.com/uc?&id=" f"{self.file_id}&confirm=t"
                 downloaded = gdown.download(
                     url, output=os.fspath(temporary_path), quiet=False
                 )
@@ -600,9 +467,7 @@ class DownloaderHuggingFace(_VerifiedDownloader):
     def _read_incompatible(self) -> set[str]:
         path = self._incompatibility_path
         try:
-            return read_incompatible_artifact_ids(
-                path, self._incompatibility_key()
-            )
+            return read_incompatible_artifact_ids(path, self._incompatibility_key())
         except ArtifactIntegrityError:
             _quarantine(path, "invalid incompatibility sidecar")
             return set()
@@ -749,9 +614,7 @@ class DownloaderHuggingFace(_VerifiedDownloader):
     def run(self, force_download: bool = False) -> str:
         candidates = self._resolve_candidates()
         self._candidate_index = 0
-        return self._download_descriptor(
-            candidates[0], force_download=force_download
-        )
+        return self._download_descriptor(candidates[0], force_download=force_download)
 
     def try_next(self, force_download: bool = False) -> bool:
         """Select one next manifest candidate after a persisted load rejection."""
@@ -771,9 +634,7 @@ class DownloaderHuggingFace(_VerifiedDownloader):
         if next_index >= len(candidates):
             return False
         self._candidate_index = next_index
-        self._download_descriptor(
-            candidates[next_index], force_download=force_download
-        )
+        self._download_descriptor(candidates[next_index], force_download=force_download)
         return True
 
 

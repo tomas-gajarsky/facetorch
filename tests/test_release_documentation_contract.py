@@ -47,12 +47,15 @@ def test_unpublished_v1_changelog_is_not_marked_as_released():
         return
 
     changelog = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-    current_section = changelog.split("## 1.0.0rc3", 1)[1].split("\n## ", 1)[0]
-    assert "Released on" not in current_section
-    assert (
-        "Unreleased" in changelog.splitlines()[2]
-        or "release candidate" in current_section.lower()
+    # A published RC may have a release date while final 1.0.0 is still pending.
+    final_section = re.search(
+        r"^## 1\.0\.0(?:[ \t][^\n]*)?\n(.*?)(?=^## |\Z)", changelog, re.M | re.S
     )
+    if final_section:
+        assert "Released on" not in final_section.group(0)
+    assert changelog.splitlines()[2] == "## Unreleased"
+    rc3_section = changelog.split("## 1.0.0rc3", 1)[1].split("\n## ", 1)[0]
+    assert "Released on September 3, 2026" in rc3_section
 
 
 @pytest.mark.release_blocker

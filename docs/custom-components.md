@@ -132,14 +132,16 @@ A predictor installed in `analyzer.predictors[name]` must:
 - expose `run(faces)`, where `faces` is one `BCHW` tensor produced by the
   configured face unifier;
 - return a sized sequence containing exactly one `facetorch.Prediction` for
-  every input face, in the same order;
+  every input face, in the same order; subclasses are accepted, and every entry
+  must have a string `label`, tensor `logits`, and dictionary `other`;
 - keep tensors on compatible devices or move them explicitly; and
 - expose `max_batch_size` as a positive integer or `None` when it needs a limit.
 
 The analyzer treats `face_batch_size` as a caller upper bound and splits work at
 the smaller of that value and `max_batch_size`. A missing `max_batch_size` is
 treated like `None`. A bad limit, a result without a length, or the wrong number
-of predictions raises an actionable public error.
+of predictions raises an actionable public error. Invalid prediction entries
+raise `InferenceError` naming the predictor and face index.
 
 Subclasses of `FacePredictor`, `BasePredPreProcessor`, and
 `BasePredPostProcessor` remain useful when their standard model pipeline fits,
@@ -154,8 +156,9 @@ A detector installed through `analyzer.detector` must expose
 responsibilities:
 
 - preserve or deliberately restore the canonical source image;
-- place public boxes, landmarks, and face locations in original-image
-  coordinates;
+- place public boxes, landmarks, and face locations in the coordinate frame of
+  the canonical image returned by the reader (including any `fix_img_size` resize
+  and padding);
 - clamp geometry to the source dimensions;
 - populate `data.faces` with correctly indexed crops; and
 - return an empty face list, rather than a special value, when nothing is found.

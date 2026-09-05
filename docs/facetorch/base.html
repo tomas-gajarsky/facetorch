@@ -596,9 +596,7 @@ def run(self) -&gt; Optional[str]:
         cache_resolver = None
         cache_resolution_missed = False
         if not should_verify:
-            cache_resolver = getattr(
-                type(self.downloader), &#34;resolve_cached_path&#34;, None
-            )
+            cache_resolver = getattr(type(self.downloader), &#34;resolve_cached_path&#34;, None)
             if callable(cache_resolver):
                 resolved_path = cache_resolver(self.downloader)
                 if resolved_path is not None:
@@ -770,10 +768,14 @@ def run(self) -&gt; Optional[str]:
                             state_dict[key] = getattr(mod, buf)
                         except AttributeError:
                             pass
-            if state_dict:
-                model.load_state_dict(state_dict, strict=True)
-            elif hasattr(model, &#34;load_from_torchscript&#34;):
+            if not state_dict and callable(
+                getattr(model, &#34;load_from_torchscript&#34;, None)
+            ):
                 model.load_from_torchscript(ts_model)
+            else:
+                # Frozen graphs may inline every parameter. An empty source is
+                # valid only when the native target also requires no state.
+                model.load_state_dict(state_dict, strict=True)
 
         model.to(self.device)
         return model
@@ -885,9 +887,7 @@ def load_model(self) -&gt; torch.nn.Module:
     cache_resolver = None
     cache_resolution_missed = False
     if not should_verify:
-        cache_resolver = getattr(
-            type(self.downloader), &#34;resolve_cached_path&#34;, None
-        )
+        cache_resolver = getattr(type(self.downloader), &#34;resolve_cached_path&#34;, None)
         if callable(cache_resolver):
             resolved_path = cache_resolver(self.downloader)
             if resolved_path is not None:

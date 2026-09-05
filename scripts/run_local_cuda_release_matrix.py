@@ -16,6 +16,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
+if __package__:
+    from .archive_numerical_evidence import create_index
+else:
+    from archive_numerical_evidence import create_index
+
 UV_VERSION = "0.9.14"
 ARTIFACT_COHORT_PROFILES = {
     "2.6": "environments/torch-2.6-cu124",
@@ -521,6 +526,7 @@ def main() -> int:
         "candidate_evidence_only": args.candidate_evidence,
     }
     _write_json_atomic(report_path, report)
+    create_index(staging_root, source_sha=args.source_sha, runner_path=report_path)
     print(f"Local CUDA release report: {report_path}")
     return 0
 

@@ -105,6 +105,7 @@ jobs:
     # every write-capable nested job is conditionally excluded in that mode.
     permissions:
       actions: read
+      checks: read
       attestations: write
       contents: write
       id-token: write
