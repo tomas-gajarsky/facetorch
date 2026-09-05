@@ -2443,9 +2443,10 @@ def _run_for_specs(
         )
 
         try:
-            ref_fn, ep, load_meta = _build_reference_and_exported_program(spec, cohort)
-
             if mode == "export":
+                ref_fn, ep, load_meta = _build_reference_and_exported_program(
+                    spec, cohort
+                )
                 out_dir = out_root / spec["id"]
                 _ensure_runtime_directory(out_dir)
                 artifact_path = out_dir / f"model-torch{cohort}.pt2"
@@ -2461,6 +2462,13 @@ def _run_for_specs(
                     torch.export.save(ep, str(artifact_path))
                 artifact_path.chmod(0o644)
             else:
+                # Runtime compatibility concerns the existing program. Re-exporting
+                # here also requires exporter APIs that inference does not use.
+                ref_fn, reference_meta = _load_validation_reference(spec)
+                load_meta = {
+                    "strategy": "validate_pinned_program",
+                    "validation_reference": reference_meta,
+                }
                 artifact_path = _resolve_artifact_path(artifacts_root, spec, cohort)
                 if not artifact_path.exists():
                     raise RuntimeError(f"Artifact not found: {artifact_path}")
