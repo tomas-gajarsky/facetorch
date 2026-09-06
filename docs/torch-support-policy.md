@@ -94,9 +94,10 @@ using compilation or custom models must qualify that exact configuration.
 
 ## Expansion and maintenance priorities
 
-1. **Before GA:** retain all eight rows, complete their advisory treatment, and
-   rerun the exact candidate's full qualification. Broader compatibility does
-   not approve a new exception automatically.
+1. **Before GA:** retain all eight rows and rerun the exact candidate's full
+   qualification. The owner approved the reviewed advisory treatment on
+   September 6; all 17 dependency profiles now pass under its exact scopes.
+   Broader compatibility does not approve future exceptions automatically.
 2. **Next expansion candidate:** Torch 2.14.0 / torchvision 0.29.0, including CPU,
    CUDA 13.0, and especially CUDA 12.6. The local assessment is recorded in the
    [compatibility investigation](torch-support-investigation.md). Until all

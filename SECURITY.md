@@ -26,7 +26,15 @@ Facetorch has no telemetry by default. Image bytes, facial-analysis inputs, pred
 
 Dependency exceptions are exact-version, profile-scoped, time-bounded records under `security/`. Expired or mismatched exceptions fail the release dependency gate.
 
-The complete audit of the RC3 lock profiles on 2026-09-05 found unresolved
-advisories after correcting upstream Torch build-tag coverage. GA remains gated
-on their treatment; see [the advisory triage](docs/v1-advisory-triage.md). Existing
-exceptions have not been broadened or renewed.
+The complete audit of the RC3 lock profiles on 2026-09-05 found 18 unresolved
+advisories after correcting upstream Torch build-tag coverage. On September 6,
+the owner approved the [scoped risk treatment](docs/v1-risk-treatment-proposal.md).
+The active policy adds exactly 76 profile/version records, expiring November 20;
+the earlier nine approvals retain their dates and scopes. Fresh audits pass all
+17 profiles with no coverage gaps or unresolved findings under that policy.
+
+Affected older runtimes are retained for trusted model programs and metadata.
+Digest verification authenticates selected bytes; it does not make adversarial
+model uploads safe. Keep built-in verification enabled and qualify custom models
+and compiler options separately. These are accepted dependency risks, not
+upstream fixes or approval to publish GA.

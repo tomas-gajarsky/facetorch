@@ -1,5 +1,11 @@
 # Torch compatibility investigation — September 5, 2026
 
+**September 6 status update:** the owner approved the scoped advisory treatment,
+and all 17 dependency profiles now pass. See the
+[activation record](../security/v1-advisory-activation-2026-09-06.json). The
+September 5 investigation below remains a historical record; candidate
+qualification and publication approval are still required.
+
 All eight existing Torch lines passed **4,992 model cases** across CPU and their
 named CUDA profiles. Exploratory Torch 2.14 CPU, CUDA 12.6, and CUDA 13 profiles
 passed another **1,560 cases**. These are local compatibility results; GA still

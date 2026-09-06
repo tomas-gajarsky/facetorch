@@ -574,11 +574,12 @@ artifacts serve runtimes 2.6-2.8, while the 2.11 artifacts serve runtimes
 and 2.14 or newer fail before download; no schema-major or numeric fallback is
 attempted. Torch 2.3 was
 dropped because its affected `torch.load(weights_only=True)` path has a critical
-remote-code-execution advisory. The existing exception policy contains nine
-exact, profile-scoped records (eight Torch and one setuptools), expiring on
-2026-11-20. The corrected September 5 audit exposed additional unresolved
-findings; GA remains gated on their individual treatment. See the
-[advisory triage](docs/v1-advisory-triage.md).
+remote-code-execution advisory. The exception policy retains nine earlier
+records and adds 76 exact Torch profile/version records approved on September 6
+for 18 reviewed findings. All expire on 2026-11-20. The dependency gate passes
+under this scoped policy; affected runtimes require trusted models and metadata.
+The full candidate qualification and release approval remain required. See the
+[risk treatment](docs/v1-risk-treatment-proposal.md).
 Validation uses immutable CPU golden references for both CPU and CUDA artifacts,
 with TensorFloat-32 disabled and the numeric policy recorded. Predictor batch
 sizes refer only to faces from one input image; multi-image batching is not

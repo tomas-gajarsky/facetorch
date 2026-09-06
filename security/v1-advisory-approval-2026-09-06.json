@@ -1,0 +1,1028 @@
+{
+  "schema_version": 1,
+  "status": "approved",
+  "approved_on": "2026-09-06",
+  "review_owner": "founder",
+  "authorization": "The owner approved the recommended scoped temporary exception proposal in this conversation.",
+  "authorization_quote": "I approve what you recommended",
+  "expires_on": "2026-11-20",
+  "decision_record": "docs/v1-risk-treatment-proposal.md",
+  "approved_proposal": {
+    "path": "security/v1-proposed-advisory-exceptions-2026-09-05.json",
+    "sha256": "4e0164bca0e220cd6276bbcbcacfb69d7650cf2eb7da9cc4da38c8c1cbf47e42"
+  },
+  "reviewed_commit": "207f7d7d4603514b73642fb72d321c469744d6b9",
+  "previous_policy_sha256": "59dfed5aa1e50f34b616443f5ad55cecaa299cf004b5a80936a7ee9ea621198c",
+  "previous_exception_count": 9,
+  "new_advisory_count": 18,
+  "new_exact_profile_version_records": 76,
+  "preserves_previous_records": true,
+  "conditions": [
+    "Retain Torch 2.6 through 2.13 and recommend the qualified Torch 2.13 pair for new installations.",
+    "Use affected runtimes only with trusted model programs and metadata; never treat weights_only or artifact hashes as a sandbox for adversarial model uploads.",
+    "Keep built-in hash verification enabled and default model compilation disabled.",
+    "Custom models, compiler options and application-selected files require their own qualification and trust controls.",
+    "Review upstream backports and advisory corrections before expiry; no automatic renewal."
+  ],
+  "authorization_excludes": [
+    "push",
+    "merge",
+    "model publication",
+    "image publication",
+    "package publication",
+    "GA release"
+  ],
+  "approved_scopes": [
+    {
+      "vulnerability_id": "CVE-2025-2999",
+      "package": "torch",
+      "aliases": [
+        "GHSA-vgrw-7cvw-pwgx"
+      ],
+      "profile": "torch-2.7-cpu",
+      "version": "2.7.1+cpu",
+      "lock_path": "environments/torch-2.7-cpu/uv.lock",
+      "lock_sha256": "f25d615d5ea122d788c3178f2b60c0db924cb9f88d6f350a2144767eb99454c5",
+      "audit_inventory_sha256": "ce33524ae2eb3cee132dbdebbc8eb6c233b45bea018046376c5163021a0be365"
+    },
+    {
+      "vulnerability_id": "CVE-2025-2999",
+      "package": "torch",
+      "aliases": [
+        "GHSA-vgrw-7cvw-pwgx"
+      ],
+      "profile": "torch-2.8-cpu",
+      "version": "2.8.0+cpu",
+      "lock_path": "environments/torch-2.8-cpu/uv.lock",
+      "lock_sha256": "62216e2efd44e08bd24ae2f85aa28cbfa315693beb54caa2d18e2ab3951bbf71",
+      "audit_inventory_sha256": "61bc4b7311760d522b77b99219176763286306992458496fea94fb3cca2c9fab"
+    },
+    {
+      "vulnerability_id": "CVE-2025-2999",
+      "package": "torch",
+      "aliases": [
+        "GHSA-vgrw-7cvw-pwgx"
+      ],
+      "profile": "torch-2.7-cu126",
+      "version": "2.7.1+cu126",
+      "lock_path": "environments/torch-2.7-cu126/uv.lock",
+      "lock_sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2",
+      "audit_inventory_sha256": "253e01cc24586b23f776fa354d8add88daaf71c22011efdd0e534e3f54052f96"
+    },
+    {
+      "vulnerability_id": "CVE-2025-2999",
+      "package": "torch",
+      "aliases": [
+        "GHSA-vgrw-7cvw-pwgx"
+      ],
+      "profile": "torch-2.8-cu126",
+      "version": "2.8.0+cu126",
+      "lock_path": "environments/torch-2.8-cu126/uv.lock",
+      "lock_sha256": "189a61018ec36b8085f7f76e78fbb9581e37f14e415844a80977bdc892079cf4",
+      "audit_inventory_sha256": "c9873a203a2049f54c873595d0224c725d0cec749302a06812e507813c1d3c08"
+    },
+    {
+      "vulnerability_id": "CVE-2025-3001",
+      "package": "torch",
+      "aliases": [
+        "GHSA-qfhq-4f3w-5fph"
+      ],
+      "profile": "torch-2.7-cpu",
+      "version": "2.7.1+cpu",
+      "lock_path": "environments/torch-2.7-cpu/uv.lock",
+      "lock_sha256": "f25d615d5ea122d788c3178f2b60c0db924cb9f88d6f350a2144767eb99454c5",
+      "audit_inventory_sha256": "ce33524ae2eb3cee132dbdebbc8eb6c233b45bea018046376c5163021a0be365"
+    },
+    {
+      "vulnerability_id": "CVE-2025-3001",
+      "package": "torch",
+      "aliases": [
+        "GHSA-qfhq-4f3w-5fph"
+      ],
+      "profile": "torch-2.8-cpu",
+      "version": "2.8.0+cpu",
+      "lock_path": "environments/torch-2.8-cpu/uv.lock",
+      "lock_sha256": "62216e2efd44e08bd24ae2f85aa28cbfa315693beb54caa2d18e2ab3951bbf71",
+      "audit_inventory_sha256": "61bc4b7311760d522b77b99219176763286306992458496fea94fb3cca2c9fab"
+    },
+    {
+      "vulnerability_id": "CVE-2025-3001",
+      "package": "torch",
+      "aliases": [
+        "GHSA-qfhq-4f3w-5fph"
+      ],
+      "profile": "torch-2.9-cpu",
+      "version": "2.9.1+cpu",
+      "lock_path": "environments/torch-2.9-cpu/uv.lock",
+      "lock_sha256": "86226cc7f7f1a485abd02898b0cca1478fac5ddcad26da06fbcfddeffffcd88e",
+      "audit_inventory_sha256": "c422e925adb06772454c870a72baf3aaa4ac7c48d66fa3ca10122782ce6eeaaf"
+    },
+    {
+      "vulnerability_id": "CVE-2025-3001",
+      "package": "torch",
+      "aliases": [
+        "GHSA-qfhq-4f3w-5fph"
+      ],
+      "profile": "torch-2.7-cu126",
+      "version": "2.7.1+cu126",
+      "lock_path": "environments/torch-2.7-cu126/uv.lock",
+      "lock_sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2",
+      "audit_inventory_sha256": "253e01cc24586b23f776fa354d8add88daaf71c22011efdd0e534e3f54052f96"
+    },
+    {
+      "vulnerability_id": "CVE-2025-3001",
+      "package": "torch",
+      "aliases": [
+        "GHSA-qfhq-4f3w-5fph"
+      ],
+      "profile": "torch-2.8-cu126",
+      "version": "2.8.0+cu126",
+      "lock_path": "environments/torch-2.8-cu126/uv.lock",
+      "lock_sha256": "189a61018ec36b8085f7f76e78fbb9581e37f14e415844a80977bdc892079cf4",
+      "audit_inventory_sha256": "c9873a203a2049f54c873595d0224c725d0cec749302a06812e507813c1d3c08"
+    },
+    {
+      "vulnerability_id": "CVE-2025-3001",
+      "package": "torch",
+      "aliases": [
+        "GHSA-qfhq-4f3w-5fph"
+      ],
+      "profile": "torch-2.9-cu130",
+      "version": "2.9.1+cu130",
+      "lock_path": "environments/torch-2.9-cu130/uv.lock",
+      "lock_sha256": "6fc6c85801ba773557345e4fdcc0fd46bbe5342fed2da8c8d336fd33f42f81e6",
+      "audit_inventory_sha256": "64825300840df5c76ea9d77400a85db94fa6b915dd837f0fe8af49098278136b"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "profile": "torch-2.7-cpu",
+      "version": "2.7.1+cpu",
+      "lock_path": "environments/torch-2.7-cpu/uv.lock",
+      "lock_sha256": "f25d615d5ea122d788c3178f2b60c0db924cb9f88d6f350a2144767eb99454c5",
+      "audit_inventory_sha256": "ce33524ae2eb3cee132dbdebbc8eb6c233b45bea018046376c5163021a0be365"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "profile": "torch-2.8-cpu",
+      "version": "2.8.0+cpu",
+      "lock_path": "environments/torch-2.8-cpu/uv.lock",
+      "lock_sha256": "62216e2efd44e08bd24ae2f85aa28cbfa315693beb54caa2d18e2ab3951bbf71",
+      "audit_inventory_sha256": "61bc4b7311760d522b77b99219176763286306992458496fea94fb3cca2c9fab"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "profile": "torch-2.9-cpu",
+      "version": "2.9.1+cpu",
+      "lock_path": "environments/torch-2.9-cpu/uv.lock",
+      "lock_sha256": "86226cc7f7f1a485abd02898b0cca1478fac5ddcad26da06fbcfddeffffcd88e",
+      "audit_inventory_sha256": "c422e925adb06772454c870a72baf3aaa4ac7c48d66fa3ca10122782ce6eeaaf"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "profile": "torch-2.10-cpu",
+      "version": "2.10.0+cpu",
+      "lock_path": "environments/torch-2.10-cpu/uv.lock",
+      "lock_sha256": "7fb7973cc4b9e239b3c733518abb7260d0530baaa6fac93420215a8f2f1817cf",
+      "audit_inventory_sha256": "446c465fd3f32dd8c1e0ae7de37bcd221893c3d3b69282356ed0619cb4dedd82"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "profile": "torch-2.12-cpu",
+      "version": "2.12.1+cpu",
+      "lock_path": "environments/torch-2.12-cpu/uv.lock",
+      "lock_sha256": "1906364462216c7ce5b9db0afac0080dcafa45e9a3a8ce48a4af90b1f47e7b85",
+      "audit_inventory_sha256": "c324eb96d39c9a21cfff64576ee5d44fe2ad28d8fe4134ad951b112604c32712"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "profile": "torch-2.7-cu126",
+      "version": "2.7.1+cu126",
+      "lock_path": "environments/torch-2.7-cu126/uv.lock",
+      "lock_sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2",
+      "audit_inventory_sha256": "253e01cc24586b23f776fa354d8add88daaf71c22011efdd0e534e3f54052f96"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "profile": "torch-2.8-cu126",
+      "version": "2.8.0+cu126",
+      "lock_path": "environments/torch-2.8-cu126/uv.lock",
+      "lock_sha256": "189a61018ec36b8085f7f76e78fbb9581e37f14e415844a80977bdc892079cf4",
+      "audit_inventory_sha256": "c9873a203a2049f54c873595d0224c725d0cec749302a06812e507813c1d3c08"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "profile": "torch-2.9-cu130",
+      "version": "2.9.1+cu130",
+      "lock_path": "environments/torch-2.9-cu130/uv.lock",
+      "lock_sha256": "6fc6c85801ba773557345e4fdcc0fd46bbe5342fed2da8c8d336fd33f42f81e6",
+      "audit_inventory_sha256": "64825300840df5c76ea9d77400a85db94fa6b915dd837f0fe8af49098278136b"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "profile": "torch-2.10-cu130",
+      "version": "2.10.0+cu130",
+      "lock_path": "environments/torch-2.10-cu130/uv.lock",
+      "lock_sha256": "2d29d2b3979baa4c47b8f6230c13c44a20ffcbb58af3a038a799479e04fbe52c",
+      "audit_inventory_sha256": "3bbd61005638338e2ab266b8cd6dce074747421a4cc505c3d8aec4ab6361c0d2"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "profile": "torch-2.12-cu130",
+      "version": "2.12.1+cu130",
+      "lock_path": "environments/torch-2.12-cu130/uv.lock",
+      "lock_sha256": "37a5c2419904665bba896a7688ca1ff87e1099bc1597799fe12dcc1d18e446ed",
+      "audit_inventory_sha256": "044a4600c4dff5e4ad75625e12fdeffd30209b276849c4ad126f849826358965"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-198",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-46148",
+        "CVE-2025-46148"
+      ],
+      "profile": "torch-2.6-cpu",
+      "version": "2.6.0+cpu",
+      "lock_path": "environments/torch-2.6-cpu/uv.lock",
+      "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+      "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-198",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-46148",
+        "CVE-2025-46148"
+      ],
+      "profile": "torch-2.6-cu124",
+      "version": "2.6.0+cu124",
+      "lock_path": "environments/torch-2.6-cu124/uv.lock",
+      "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+      "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-199",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-46149",
+        "CVE-2025-46149"
+      ],
+      "profile": "torch-2.6-cpu",
+      "version": "2.6.0+cpu",
+      "lock_path": "environments/torch-2.6-cpu/uv.lock",
+      "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+      "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-199",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-46149",
+        "CVE-2025-46149"
+      ],
+      "profile": "torch-2.6-cu124",
+      "version": "2.6.0+cu124",
+      "lock_path": "environments/torch-2.6-cu124/uv.lock",
+      "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+      "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-200",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-46150",
+        "CVE-2025-46150"
+      ],
+      "profile": "torch-2.6-cpu",
+      "version": "2.6.0+cpu",
+      "lock_path": "environments/torch-2.6-cpu/uv.lock",
+      "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+      "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-200",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-46150",
+        "CVE-2025-46150"
+      ],
+      "profile": "torch-2.6-cu124",
+      "version": "2.6.0+cu124",
+      "lock_path": "environments/torch-2.6-cu124/uv.lock",
+      "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+      "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-201",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-46152",
+        "CVE-2025-46152"
+      ],
+      "profile": "torch-2.6-cpu",
+      "version": "2.6.0+cpu",
+      "lock_path": "environments/torch-2.6-cpu/uv.lock",
+      "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+      "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-201",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-46152",
+        "CVE-2025-46152"
+      ],
+      "profile": "torch-2.6-cu124",
+      "version": "2.6.0+cu124",
+      "lock_path": "environments/torch-2.6-cu124/uv.lock",
+      "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+      "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-202",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-46153",
+        "CVE-2025-46153"
+      ],
+      "profile": "torch-2.6-cpu",
+      "version": "2.6.0+cpu",
+      "lock_path": "environments/torch-2.6-cpu/uv.lock",
+      "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+      "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-202",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-46153",
+        "CVE-2025-46153"
+      ],
+      "profile": "torch-2.6-cu124",
+      "version": "2.6.0+cu124",
+      "lock_path": "environments/torch-2.6-cu124/uv.lock",
+      "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+      "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-203",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55551",
+        "CVE-2025-55551"
+      ],
+      "profile": "torch-2.6-cpu",
+      "version": "2.6.0+cpu",
+      "lock_path": "environments/torch-2.6-cpu/uv.lock",
+      "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+      "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-203",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55551",
+        "CVE-2025-55551"
+      ],
+      "profile": "torch-2.7-cpu",
+      "version": "2.7.1+cpu",
+      "lock_path": "environments/torch-2.7-cpu/uv.lock",
+      "lock_sha256": "f25d615d5ea122d788c3178f2b60c0db924cb9f88d6f350a2144767eb99454c5",
+      "audit_inventory_sha256": "ce33524ae2eb3cee132dbdebbc8eb6c233b45bea018046376c5163021a0be365"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-203",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55551",
+        "CVE-2025-55551"
+      ],
+      "profile": "torch-2.8-cpu",
+      "version": "2.8.0+cpu",
+      "lock_path": "environments/torch-2.8-cpu/uv.lock",
+      "lock_sha256": "62216e2efd44e08bd24ae2f85aa28cbfa315693beb54caa2d18e2ab3951bbf71",
+      "audit_inventory_sha256": "61bc4b7311760d522b77b99219176763286306992458496fea94fb3cca2c9fab"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-203",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55551",
+        "CVE-2025-55551"
+      ],
+      "profile": "torch-2.6-cu124",
+      "version": "2.6.0+cu124",
+      "lock_path": "environments/torch-2.6-cu124/uv.lock",
+      "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+      "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-203",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55551",
+        "CVE-2025-55551"
+      ],
+      "profile": "torch-2.7-cu126",
+      "version": "2.7.1+cu126",
+      "lock_path": "environments/torch-2.7-cu126/uv.lock",
+      "lock_sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2",
+      "audit_inventory_sha256": "253e01cc24586b23f776fa354d8add88daaf71c22011efdd0e534e3f54052f96"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-203",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55551",
+        "CVE-2025-55551"
+      ],
+      "profile": "torch-2.8-cu126",
+      "version": "2.8.0+cu126",
+      "lock_path": "environments/torch-2.8-cu126/uv.lock",
+      "lock_sha256": "189a61018ec36b8085f7f76e78fbb9581e37f14e415844a80977bdc892079cf4",
+      "audit_inventory_sha256": "c9873a203a2049f54c873595d0224c725d0cec749302a06812e507813c1d3c08"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-204",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55552",
+        "CVE-2025-55552"
+      ],
+      "profile": "torch-2.6-cpu",
+      "version": "2.6.0+cpu",
+      "lock_path": "environments/torch-2.6-cpu/uv.lock",
+      "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+      "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-204",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55552",
+        "CVE-2025-55552"
+      ],
+      "profile": "torch-2.7-cpu",
+      "version": "2.7.1+cpu",
+      "lock_path": "environments/torch-2.7-cpu/uv.lock",
+      "lock_sha256": "f25d615d5ea122d788c3178f2b60c0db924cb9f88d6f350a2144767eb99454c5",
+      "audit_inventory_sha256": "ce33524ae2eb3cee132dbdebbc8eb6c233b45bea018046376c5163021a0be365"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-204",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55552",
+        "CVE-2025-55552"
+      ],
+      "profile": "torch-2.8-cpu",
+      "version": "2.8.0+cpu",
+      "lock_path": "environments/torch-2.8-cpu/uv.lock",
+      "lock_sha256": "62216e2efd44e08bd24ae2f85aa28cbfa315693beb54caa2d18e2ab3951bbf71",
+      "audit_inventory_sha256": "61bc4b7311760d522b77b99219176763286306992458496fea94fb3cca2c9fab"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-204",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55552",
+        "CVE-2025-55552"
+      ],
+      "profile": "torch-2.6-cu124",
+      "version": "2.6.0+cu124",
+      "lock_path": "environments/torch-2.6-cu124/uv.lock",
+      "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+      "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-204",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55552",
+        "CVE-2025-55552"
+      ],
+      "profile": "torch-2.7-cu126",
+      "version": "2.7.1+cu126",
+      "lock_path": "environments/torch-2.7-cu126/uv.lock",
+      "lock_sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2",
+      "audit_inventory_sha256": "253e01cc24586b23f776fa354d8add88daaf71c22011efdd0e534e3f54052f96"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-204",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55552",
+        "CVE-2025-55552"
+      ],
+      "profile": "torch-2.8-cu126",
+      "version": "2.8.0+cu126",
+      "lock_path": "environments/torch-2.8-cu126/uv.lock",
+      "lock_sha256": "189a61018ec36b8085f7f76e78fbb9581e37f14e415844a80977bdc892079cf4",
+      "audit_inventory_sha256": "c9873a203a2049f54c873595d0224c725d0cec749302a06812e507813c1d3c08"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-205",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55553",
+        "CVE-2025-55553"
+      ],
+      "profile": "torch-2.6-cpu",
+      "version": "2.6.0+cpu",
+      "lock_path": "environments/torch-2.6-cpu/uv.lock",
+      "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+      "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-205",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55553",
+        "CVE-2025-55553"
+      ],
+      "profile": "torch-2.6-cu124",
+      "version": "2.6.0+cu124",
+      "lock_path": "environments/torch-2.6-cu124/uv.lock",
+      "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+      "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-206",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55554",
+        "CVE-2025-55554"
+      ],
+      "profile": "torch-2.6-cpu",
+      "version": "2.6.0+cpu",
+      "lock_path": "environments/torch-2.6-cpu/uv.lock",
+      "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+      "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-206",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55554",
+        "CVE-2025-55554"
+      ],
+      "profile": "torch-2.7-cpu",
+      "version": "2.7.1+cpu",
+      "lock_path": "environments/torch-2.7-cpu/uv.lock",
+      "lock_sha256": "f25d615d5ea122d788c3178f2b60c0db924cb9f88d6f350a2144767eb99454c5",
+      "audit_inventory_sha256": "ce33524ae2eb3cee132dbdebbc8eb6c233b45bea018046376c5163021a0be365"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-206",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55554",
+        "CVE-2025-55554"
+      ],
+      "profile": "torch-2.8-cpu",
+      "version": "2.8.0+cpu",
+      "lock_path": "environments/torch-2.8-cpu/uv.lock",
+      "lock_sha256": "62216e2efd44e08bd24ae2f85aa28cbfa315693beb54caa2d18e2ab3951bbf71",
+      "audit_inventory_sha256": "61bc4b7311760d522b77b99219176763286306992458496fea94fb3cca2c9fab"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-206",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55554",
+        "CVE-2025-55554"
+      ],
+      "profile": "torch-2.6-cu124",
+      "version": "2.6.0+cu124",
+      "lock_path": "environments/torch-2.6-cu124/uv.lock",
+      "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+      "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-206",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55554",
+        "CVE-2025-55554"
+      ],
+      "profile": "torch-2.7-cu126",
+      "version": "2.7.1+cu126",
+      "lock_path": "environments/torch-2.7-cu126/uv.lock",
+      "lock_sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2",
+      "audit_inventory_sha256": "253e01cc24586b23f776fa354d8add88daaf71c22011efdd0e534e3f54052f96"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-206",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55554",
+        "CVE-2025-55554"
+      ],
+      "profile": "torch-2.8-cu126",
+      "version": "2.8.0+cu126",
+      "lock_path": "environments/torch-2.8-cu126/uv.lock",
+      "lock_sha256": "189a61018ec36b8085f7f76e78fbb9581e37f14e415844a80977bdc892079cf4",
+      "audit_inventory_sha256": "c9873a203a2049f54c873595d0224c725d0cec749302a06812e507813c1d3c08"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-207",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55557",
+        "CVE-2025-55557"
+      ],
+      "profile": "torch-2.6-cpu",
+      "version": "2.6.0+cpu",
+      "lock_path": "environments/torch-2.6-cpu/uv.lock",
+      "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+      "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-207",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55557",
+        "CVE-2025-55557"
+      ],
+      "profile": "torch-2.6-cu124",
+      "version": "2.6.0+cu124",
+      "lock_path": "environments/torch-2.6-cu124/uv.lock",
+      "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+      "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-208",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55558",
+        "CVE-2025-55558"
+      ],
+      "profile": "torch-2.6-cpu",
+      "version": "2.6.0+cpu",
+      "lock_path": "environments/torch-2.6-cpu/uv.lock",
+      "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+      "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-208",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55558",
+        "CVE-2025-55558"
+      ],
+      "profile": "torch-2.6-cu124",
+      "version": "2.6.0+cu124",
+      "lock_path": "environments/torch-2.6-cu124/uv.lock",
+      "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+      "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-209",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55560",
+        "CVE-2025-55560"
+      ],
+      "profile": "torch-2.6-cpu",
+      "version": "2.6.0+cpu",
+      "lock_path": "environments/torch-2.6-cpu/uv.lock",
+      "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+      "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-209",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-55560",
+        "CVE-2025-55560"
+      ],
+      "profile": "torch-2.6-cu124",
+      "version": "2.6.0+cu124",
+      "lock_path": "environments/torch-2.6-cu124/uv.lock",
+      "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+      "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "profile": "torch-2.6-cpu",
+      "version": "2.6.0+cpu",
+      "lock_path": "environments/torch-2.6-cpu/uv.lock",
+      "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+      "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "profile": "torch-2.7-cpu",
+      "version": "2.7.1+cpu",
+      "lock_path": "environments/torch-2.7-cpu/uv.lock",
+      "lock_sha256": "f25d615d5ea122d788c3178f2b60c0db924cb9f88d6f350a2144767eb99454c5",
+      "audit_inventory_sha256": "ce33524ae2eb3cee132dbdebbc8eb6c233b45bea018046376c5163021a0be365"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "profile": "torch-2.8-cpu",
+      "version": "2.8.0+cpu",
+      "lock_path": "environments/torch-2.8-cpu/uv.lock",
+      "lock_sha256": "62216e2efd44e08bd24ae2f85aa28cbfa315693beb54caa2d18e2ab3951bbf71",
+      "audit_inventory_sha256": "61bc4b7311760d522b77b99219176763286306992458496fea94fb3cca2c9fab"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "profile": "torch-2.9-cpu",
+      "version": "2.9.1+cpu",
+      "lock_path": "environments/torch-2.9-cpu/uv.lock",
+      "lock_sha256": "86226cc7f7f1a485abd02898b0cca1478fac5ddcad26da06fbcfddeffffcd88e",
+      "audit_inventory_sha256": "c422e925adb06772454c870a72baf3aaa4ac7c48d66fa3ca10122782ce6eeaaf"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "profile": "torch-2.10-cpu",
+      "version": "2.10.0+cpu",
+      "lock_path": "environments/torch-2.10-cpu/uv.lock",
+      "lock_sha256": "7fb7973cc4b9e239b3c733518abb7260d0530baaa6fac93420215a8f2f1817cf",
+      "audit_inventory_sha256": "446c465fd3f32dd8c1e0ae7de37bcd221893c3d3b69282356ed0619cb4dedd82"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "profile": "torch-2.6-cu124",
+      "version": "2.6.0+cu124",
+      "lock_path": "environments/torch-2.6-cu124/uv.lock",
+      "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+      "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "profile": "torch-2.7-cu126",
+      "version": "2.7.1+cu126",
+      "lock_path": "environments/torch-2.7-cu126/uv.lock",
+      "lock_sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2",
+      "audit_inventory_sha256": "253e01cc24586b23f776fa354d8add88daaf71c22011efdd0e534e3f54052f96"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "profile": "torch-2.8-cu126",
+      "version": "2.8.0+cu126",
+      "lock_path": "environments/torch-2.8-cu126/uv.lock",
+      "lock_sha256": "189a61018ec36b8085f7f76e78fbb9581e37f14e415844a80977bdc892079cf4",
+      "audit_inventory_sha256": "c9873a203a2049f54c873595d0224c725d0cec749302a06812e507813c1d3c08"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "profile": "torch-2.9-cu130",
+      "version": "2.9.1+cu130",
+      "lock_path": "environments/torch-2.9-cu130/uv.lock",
+      "lock_sha256": "6fc6c85801ba773557345e4fdcc0fd46bbe5342fed2da8c8d336fd33f42f81e6",
+      "audit_inventory_sha256": "64825300840df5c76ea9d77400a85db94fa6b915dd837f0fe8af49098278136b"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "profile": "torch-2.10-cu130",
+      "version": "2.10.0+cu130",
+      "lock_path": "environments/torch-2.10-cu130/uv.lock",
+      "lock_sha256": "2d29d2b3979baa4c47b8f6230c13c44a20ffcbb58af3a038a799479e04fbe52c",
+      "audit_inventory_sha256": "3bbd61005638338e2ab266b8cd6dce074747421a4cc505c3d8aec4ab6361c0d2"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-1970",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-3730",
+        "CVE-2025-3730",
+        "GHSA-887c-mr87-cxwp"
+      ],
+      "profile": "torch-2.7-cpu",
+      "version": "2.7.1+cpu",
+      "lock_path": "environments/torch-2.7-cpu/uv.lock",
+      "lock_sha256": "f25d615d5ea122d788c3178f2b60c0db924cb9f88d6f350a2144767eb99454c5",
+      "audit_inventory_sha256": "ce33524ae2eb3cee132dbdebbc8eb6c233b45bea018046376c5163021a0be365"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-1970",
+      "package": "torch",
+      "aliases": [
+        "BIT-pytorch-2025-3730",
+        "CVE-2025-3730",
+        "GHSA-887c-mr87-cxwp"
+      ],
+      "profile": "torch-2.7-cu126",
+      "version": "2.7.1+cu126",
+      "lock_path": "environments/torch-2.7-cu126/uv.lock",
+      "lock_sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2",
+      "audit_inventory_sha256": "253e01cc24586b23f776fa354d8add88daaf71c22011efdd0e534e3f54052f96"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-2286",
+      "package": "torch",
+      "aliases": [
+        "CVE-2026-24747",
+        "GHSA-63cw-57p8-fm3p"
+      ],
+      "profile": "torch-2.6-cpu",
+      "version": "2.6.0+cpu",
+      "lock_path": "environments/torch-2.6-cpu/uv.lock",
+      "lock_sha256": "f9c305e9091e68c210067adcb37243a0bdf4cfe895b136eb7eba528b509b56ea",
+      "audit_inventory_sha256": "5ad9f9b4dd46db7e374a37d764dd176f0640f81e50fc8df94f874beaaee86984"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-2286",
+      "package": "torch",
+      "aliases": [
+        "CVE-2026-24747",
+        "GHSA-63cw-57p8-fm3p"
+      ],
+      "profile": "torch-2.7-cpu",
+      "version": "2.7.1+cpu",
+      "lock_path": "environments/torch-2.7-cpu/uv.lock",
+      "lock_sha256": "f25d615d5ea122d788c3178f2b60c0db924cb9f88d6f350a2144767eb99454c5",
+      "audit_inventory_sha256": "ce33524ae2eb3cee132dbdebbc8eb6c233b45bea018046376c5163021a0be365"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-2286",
+      "package": "torch",
+      "aliases": [
+        "CVE-2026-24747",
+        "GHSA-63cw-57p8-fm3p"
+      ],
+      "profile": "torch-2.8-cpu",
+      "version": "2.8.0+cpu",
+      "lock_path": "environments/torch-2.8-cpu/uv.lock",
+      "lock_sha256": "62216e2efd44e08bd24ae2f85aa28cbfa315693beb54caa2d18e2ab3951bbf71",
+      "audit_inventory_sha256": "61bc4b7311760d522b77b99219176763286306992458496fea94fb3cca2c9fab"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-2286",
+      "package": "torch",
+      "aliases": [
+        "CVE-2026-24747",
+        "GHSA-63cw-57p8-fm3p"
+      ],
+      "profile": "torch-2.9-cpu",
+      "version": "2.9.1+cpu",
+      "lock_path": "environments/torch-2.9-cpu/uv.lock",
+      "lock_sha256": "86226cc7f7f1a485abd02898b0cca1478fac5ddcad26da06fbcfddeffffcd88e",
+      "audit_inventory_sha256": "c422e925adb06772454c870a72baf3aaa4ac7c48d66fa3ca10122782ce6eeaaf"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-2286",
+      "package": "torch",
+      "aliases": [
+        "CVE-2026-24747",
+        "GHSA-63cw-57p8-fm3p"
+      ],
+      "profile": "torch-2.6-cu124",
+      "version": "2.6.0+cu124",
+      "lock_path": "environments/torch-2.6-cu124/uv.lock",
+      "lock_sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b",
+      "audit_inventory_sha256": "c288a5fffa55dd9396319bb8e19efa24a85fab6974f8790d26b41eff15bca2d4"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-2286",
+      "package": "torch",
+      "aliases": [
+        "CVE-2026-24747",
+        "GHSA-63cw-57p8-fm3p"
+      ],
+      "profile": "torch-2.7-cu126",
+      "version": "2.7.1+cu126",
+      "lock_path": "environments/torch-2.7-cu126/uv.lock",
+      "lock_sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2",
+      "audit_inventory_sha256": "253e01cc24586b23f776fa354d8add88daaf71c22011efdd0e534e3f54052f96"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-2286",
+      "package": "torch",
+      "aliases": [
+        "CVE-2026-24747",
+        "GHSA-63cw-57p8-fm3p"
+      ],
+      "profile": "torch-2.8-cu126",
+      "version": "2.8.0+cu126",
+      "lock_path": "environments/torch-2.8-cu126/uv.lock",
+      "lock_sha256": "189a61018ec36b8085f7f76e78fbb9581e37f14e415844a80977bdc892079cf4",
+      "audit_inventory_sha256": "c9873a203a2049f54c873595d0224c725d0cec749302a06812e507813c1d3c08"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-2286",
+      "package": "torch",
+      "aliases": [
+        "CVE-2026-24747",
+        "GHSA-63cw-57p8-fm3p"
+      ],
+      "profile": "torch-2.9-cu130",
+      "version": "2.9.1+cu130",
+      "lock_path": "environments/torch-2.9-cu130/uv.lock",
+      "lock_sha256": "6fc6c85801ba773557345e4fdcc0fd46bbe5342fed2da8c8d336fd33f42f81e6",
+      "audit_inventory_sha256": "64825300840df5c76ea9d77400a85db94fa6b915dd837f0fe8af49098278136b"
+    }
+  ],
+  "activated_policy_sha256": "fc9cbf4116362676a9b863e4e13e5d6fc5a7857275e61182fd022c9a363b6996"
+}

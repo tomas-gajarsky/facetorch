@@ -197,6 +197,2136 @@
       ],
       "upstream_constraint": "The advisory lists Torch 2.13 as patched. That runtime is supported using the Torch 2.11 artifact cohort; the exact older runtime versions in this exception remain affected.",
       "removal_condition": "Remove after a validated Torch 2.13 cohort replaces affected versions or an upstream backport is validated."
+    },
+    {
+      "vulnerability_id": "CVE-2025-2999",
+      "aliases": [
+        "GHSA-vgrw-7cvw-pwgx"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.7.1+cpu"
+      ],
+      "profiles": [
+        "torch-2.7-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "unpack_sequence: memory corruption. No packed-sequence unpacking target or direct production call was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "CVE-2025-2999",
+      "aliases": [
+        "GHSA-vgrw-7cvw-pwgx"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.8.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.8-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "unpack_sequence: memory corruption. No packed-sequence unpacking target or direct production call was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "CVE-2025-2999",
+      "aliases": [
+        "GHSA-vgrw-7cvw-pwgx"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.7.1+cu126"
+      ],
+      "profiles": [
+        "torch-2.7-cu126"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "unpack_sequence: memory corruption. No packed-sequence unpacking target or direct production call was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "CVE-2025-2999",
+      "aliases": [
+        "GHSA-vgrw-7cvw-pwgx"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.8.0+cu126"
+      ],
+      "profiles": [
+        "torch-2.8-cu126"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "unpack_sequence: memory corruption. No packed-sequence unpacking target or direct production call was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "CVE-2025-3001",
+      "aliases": [
+        "GHSA-qfhq-4f3w-5fph"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.7.1+cpu"
+      ],
+      "profiles": [
+        "torch-2.7-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "lstm_cell: memory corruption. No lstm_cell target or direct production call was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "CVE-2025-3001",
+      "aliases": [
+        "GHSA-qfhq-4f3w-5fph"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.8.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.8-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "lstm_cell: memory corruption. No lstm_cell target or direct production call was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "CVE-2025-3001",
+      "aliases": [
+        "GHSA-qfhq-4f3w-5fph"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.9.1+cpu"
+      ],
+      "profiles": [
+        "torch-2.9-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "lstm_cell: memory corruption. No lstm_cell target or direct production call was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "CVE-2025-3001",
+      "aliases": [
+        "GHSA-qfhq-4f3w-5fph"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.7.1+cu126"
+      ],
+      "profiles": [
+        "torch-2.7-cu126"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "lstm_cell: memory corruption. No lstm_cell target or direct production call was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "CVE-2025-3001",
+      "aliases": [
+        "GHSA-qfhq-4f3w-5fph"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.8.0+cu126"
+      ],
+      "profiles": [
+        "torch-2.8-cu126"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "lstm_cell: memory corruption. No lstm_cell target or direct production call was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "CVE-2025-3001",
+      "aliases": [
+        "GHSA-qfhq-4f3w-5fph"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.9.1+cu130"
+      ],
+      "profiles": [
+        "torch-2.9-cu130"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "lstm_cell: memory corruption. No lstm_cell target or direct production call was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.7.1+cpu"
+      ],
+      "profiles": [
+        "torch-2.7-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "TorchScript class annotation: memory corruption. Shipped transforms use controlled `nn.Sequential` scripting; the reported bare list/tuple class-annotation trigger was not found in production source. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.8.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.8-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "TorchScript class annotation: memory corruption. Shipped transforms use controlled `nn.Sequential` scripting; the reported bare list/tuple class-annotation trigger was not found in production source. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.9.1+cpu"
+      ],
+      "profiles": [
+        "torch-2.9-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "TorchScript class annotation: memory corruption. Shipped transforms use controlled `nn.Sequential` scripting; the reported bare list/tuple class-annotation trigger was not found in production source. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.10.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.10-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "TorchScript class annotation: memory corruption. Shipped transforms use controlled `nn.Sequential` scripting; the reported bare list/tuple class-annotation trigger was not found in production source. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.12.1+cpu"
+      ],
+      "profiles": [
+        "torch-2.12-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "TorchScript class annotation: memory corruption. Shipped transforms use controlled `nn.Sequential` scripting; the reported bare list/tuple class-annotation trigger was not found in production source. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.7.1+cu126"
+      ],
+      "profiles": [
+        "torch-2.7-cu126"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "TorchScript class annotation: memory corruption. Shipped transforms use controlled `nn.Sequential` scripting; the reported bare list/tuple class-annotation trigger was not found in production source. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.8.0+cu126"
+      ],
+      "profiles": [
+        "torch-2.8-cu126"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "TorchScript class annotation: memory corruption. Shipped transforms use controlled `nn.Sequential` scripting; the reported bare list/tuple class-annotation trigger was not found in production source. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.9.1+cu130"
+      ],
+      "profiles": [
+        "torch-2.9-cu130"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "TorchScript class annotation: memory corruption. Shipped transforms use controlled `nn.Sequential` scripting; the reported bare list/tuple class-annotation trigger was not found in production source. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.10.0+cu130"
+      ],
+      "profiles": [
+        "torch-2.10-cu130"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "TorchScript class annotation: memory corruption. Shipped transforms use controlled `nn.Sequential` scripting; the reported bare list/tuple class-annotation trigger was not found in production source. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.12.1+cu130"
+      ],
+      "profiles": [
+        "torch-2.12-cu130"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "TorchScript class annotation: memory corruption. Shipped transforms use controlled `nn.Sequential` scripting; the reported bare list/tuple class-annotation trigger was not found in production source. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-198",
+      "aliases": [
+        "BIT-pytorch-2025-46148",
+        "CVE-2025-46148"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.6-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "PairwiseDistance eager numerical mismatch. No PairwiseDistance call was found, but exported vector norms are present. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-198",
+      "aliases": [
+        "BIT-pytorch-2025-46148",
+        "CVE-2025-46148"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cu124"
+      ],
+      "profiles": [
+        "torch-2.6-cu124"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "PairwiseDistance eager numerical mismatch. No PairwiseDistance call was found, but exported vector norms are present. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-199",
+      "aliases": [
+        "BIT-pytorch-2025-46149",
+        "CVE-2025-46149"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.6-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Fold under Inductor: assertion failure. No Fold/col2im target; default model inference does not invoke Inductor. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-199",
+      "aliases": [
+        "BIT-pytorch-2025-46149",
+        "CVE-2025-46149"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cu124"
+      ],
+      "profiles": [
+        "torch-2.6-cu124"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Fold under Inductor: assertion failure. No Fold/col2im target; default model inference does not invoke Inductor. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-200",
+      "aliases": [
+        "BIT-pytorch-2025-46150",
+        "CVE-2025-46150"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.6-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Compiled FractionalMaxPool2d numerical mismatch. No FractionalMaxPool2d target; default model inference does not invoke Inductor. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-200",
+      "aliases": [
+        "BIT-pytorch-2025-46150",
+        "CVE-2025-46150"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cu124"
+      ],
+      "profiles": [
+        "torch-2.6-cu124"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Compiled FractionalMaxPool2d numerical mismatch. No FractionalMaxPool2d target; default model inference does not invoke Inductor. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-201",
+      "aliases": [
+        "BIT-pytorch-2025-46152",
+        "CVE-2025-46152"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.6-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Out-of-range bitwise right shift output. No bitwise-right-shift target was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-201",
+      "aliases": [
+        "BIT-pytorch-2025-46152",
+        "CVE-2025-46152"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cu124"
+      ],
+      "profiles": [
+        "torch-2.6-cu124"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Out-of-range bitwise right shift output. No bitwise-right-shift target was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-202",
+      "aliases": [
+        "BIT-pytorch-2025-46153",
+        "CVE-2025-46153"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.6-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Dropout random fallback decomposition mismatch. Dropout exists, but every serialized dropout node uses inference mode and default execution does not invoke Inductor. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-202",
+      "aliases": [
+        "BIT-pytorch-2025-46153",
+        "CVE-2025-46153"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cu124"
+      ],
+      "profiles": [
+        "torch-2.6-cu124"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Dropout random fallback decomposition mismatch. Dropout exists, but every serialized dropout node uses inference mode and default execution does not invoke Inductor. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-203",
+      "aliases": [
+        "BIT-pytorch-2025-55551",
+        "CVE-2025-55551"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.6-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "LU with sliced tensors: denial of service. No LU target or direct production call was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-203",
+      "aliases": [
+        "BIT-pytorch-2025-55551",
+        "CVE-2025-55551"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.7.1+cpu"
+      ],
+      "profiles": [
+        "torch-2.7-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "LU with sliced tensors: denial of service. No LU target or direct production call was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-203",
+      "aliases": [
+        "BIT-pytorch-2025-55551",
+        "CVE-2025-55551"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.8.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.8-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "LU with sliced tensors: denial of service. No LU target or direct production call was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-203",
+      "aliases": [
+        "BIT-pytorch-2025-55551",
+        "CVE-2025-55551"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cu124"
+      ],
+      "profiles": [
+        "torch-2.6-cu124"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "LU with sliced tensors: denial of service. No LU target or direct production call was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-203",
+      "aliases": [
+        "BIT-pytorch-2025-55551",
+        "CVE-2025-55551"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.7.1+cu126"
+      ],
+      "profiles": [
+        "torch-2.7-cu126"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "LU with sliced tensors: denial of service. No LU target or direct production call was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-203",
+      "aliases": [
+        "BIT-pytorch-2025-55551",
+        "CVE-2025-55551"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.8.0+cu126"
+      ],
+      "profiles": [
+        "torch-2.8-cu126"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "LU with sliced tensors: denial of service. No LU target or direct production call was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-204",
+      "aliases": [
+        "BIT-pytorch-2025-55552",
+        "CVE-2025-55552"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.6-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Combined rot90/randn_like behavior. No rot90 or randn_like target was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-204",
+      "aliases": [
+        "BIT-pytorch-2025-55552",
+        "CVE-2025-55552"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.7.1+cpu"
+      ],
+      "profiles": [
+        "torch-2.7-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Combined rot90/randn_like behavior. No rot90 or randn_like target was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-204",
+      "aliases": [
+        "BIT-pytorch-2025-55552",
+        "CVE-2025-55552"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.8.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.8-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Combined rot90/randn_like behavior. No rot90 or randn_like target was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-204",
+      "aliases": [
+        "BIT-pytorch-2025-55552",
+        "CVE-2025-55552"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cu124"
+      ],
+      "profiles": [
+        "torch-2.6-cu124"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Combined rot90/randn_like behavior. No rot90 or randn_like target was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-204",
+      "aliases": [
+        "BIT-pytorch-2025-55552",
+        "CVE-2025-55552"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.7.1+cu126"
+      ],
+      "profiles": [
+        "torch-2.7-cu126"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Combined rot90/randn_like behavior. No rot90 or randn_like target was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-204",
+      "aliases": [
+        "BIT-pytorch-2025-55552",
+        "CVE-2025-55552"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.8.0+cu126"
+      ],
+      "profiles": [
+        "torch-2.8-cu126"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Combined rot90/randn_like behavior. No rot90 or randn_like target was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-205",
+      "aliases": [
+        "BIT-pytorch-2025-55553",
+        "CVE-2025-55553"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.6-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "proxy_tensor syntax failure. Default inference executes pinned programs without tracing through proxy_tensor. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-205",
+      "aliases": [
+        "BIT-pytorch-2025-55553",
+        "CVE-2025-55553"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cu124"
+      ],
+      "profiles": [
+        "torch-2.6-cu124"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "proxy_tensor syntax failure. Default inference executes pinned programs without tracing through proxy_tensor. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-206",
+      "aliases": [
+        "BIT-pytorch-2025-55554",
+        "CVE-2025-55554"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.6-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "nan_to_num followed by integer conversion: overflow. No nan_to_num target was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-206",
+      "aliases": [
+        "BIT-pytorch-2025-55554",
+        "CVE-2025-55554"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.7.1+cpu"
+      ],
+      "profiles": [
+        "torch-2.7-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "nan_to_num followed by integer conversion: overflow. No nan_to_num target was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-206",
+      "aliases": [
+        "BIT-pytorch-2025-55554",
+        "CVE-2025-55554"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.8.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.8-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "nan_to_num followed by integer conversion: overflow. No nan_to_num target was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-206",
+      "aliases": [
+        "BIT-pytorch-2025-55554",
+        "CVE-2025-55554"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cu124"
+      ],
+      "profiles": [
+        "torch-2.6-cu124"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "nan_to_num followed by integer conversion: overflow. No nan_to_num target was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-206",
+      "aliases": [
+        "BIT-pytorch-2025-55554",
+        "CVE-2025-55554"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.7.1+cu126"
+      ],
+      "profiles": [
+        "torch-2.7-cu126"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "nan_to_num followed by integer conversion: overflow. No nan_to_num target was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-206",
+      "aliases": [
+        "BIT-pytorch-2025-55554",
+        "CVE-2025-55554"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.8.0+cu126"
+      ],
+      "profiles": [
+        "torch-2.8-cu126"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "nan_to_num followed by integer conversion: overflow. No nan_to_num target was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-207",
+      "aliases": [
+        "BIT-pytorch-2025-55557",
+        "CVE-2025-55557"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.6-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Compiled cummin: name error. No cummin target; default model inference does not invoke Inductor. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-207",
+      "aliases": [
+        "BIT-pytorch-2025-55557",
+        "CVE-2025-55557"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cu124"
+      ],
+      "profiles": [
+        "torch-2.6-cu124"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Compiled cummin: name error. No cummin target; default model inference does not invoke Inductor. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-208",
+      "aliases": [
+        "BIT-pytorch-2025-55558",
+        "CVE-2025-55558"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.6-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Compiled Conv2d/hardshrink/view/mv combination. Convolution and view targets exist; hardshrink does not. Default model inference does not invoke Inductor. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-208",
+      "aliases": [
+        "BIT-pytorch-2025-55558",
+        "CVE-2025-55558"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cu124"
+      ],
+      "profiles": [
+        "torch-2.6-cu124"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Compiled Conv2d/hardshrink/view/mv combination. Convolution and view targets exist; hardshrink does not. Default model inference does not invoke Inductor. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-209",
+      "aliases": [
+        "BIT-pytorch-2025-55560",
+        "CVE-2025-55560"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.6-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Compiled sparse/dense conversion failure. No sparse-conversion target; default model inference does not invoke Inductor. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-209",
+      "aliases": [
+        "BIT-pytorch-2025-55560",
+        "CVE-2025-55560"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cu124"
+      ],
+      "profiles": [
+        "torch-2.6-cu124"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "Compiled sparse/dense conversion failure. No sparse-conversion target; default model inference does not invoke Inductor. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.6-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "PT2 deserialization: code execution concern. `torch.export.load` is the normal loader. The packaged artifacts have immutable trusted-source pins verified before loading by default. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.7.1+cpu"
+      ],
+      "profiles": [
+        "torch-2.7-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "PT2 deserialization: code execution concern. `torch.export.load` is the normal loader. The packaged artifacts have immutable trusted-source pins verified before loading by default. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.8.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.8-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "PT2 deserialization: code execution concern. `torch.export.load` is the normal loader. The packaged artifacts have immutable trusted-source pins verified before loading by default. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.9.1+cpu"
+      ],
+      "profiles": [
+        "torch-2.9-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "PT2 deserialization: code execution concern. `torch.export.load` is the normal loader. The packaged artifacts have immutable trusted-source pins verified before loading by default. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.10.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.10-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "PT2 deserialization: code execution concern. `torch.export.load` is the normal loader. The packaged artifacts have immutable trusted-source pins verified before loading by default. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cu124"
+      ],
+      "profiles": [
+        "torch-2.6-cu124"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "PT2 deserialization: code execution concern. `torch.export.load` is the normal loader. The packaged artifacts have immutable trusted-source pins verified before loading by default. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.7.1+cu126"
+      ],
+      "profiles": [
+        "torch-2.7-cu126"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "PT2 deserialization: code execution concern. `torch.export.load` is the normal loader. The packaged artifacts have immutable trusted-source pins verified before loading by default. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.8.0+cu126"
+      ],
+      "profiles": [
+        "torch-2.8-cu126"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "PT2 deserialization: code execution concern. `torch.export.load` is the normal loader. The packaged artifacts have immutable trusted-source pins verified before loading by default. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.9.1+cu130"
+      ],
+      "profiles": [
+        "torch-2.9-cu130"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "PT2 deserialization: code execution concern. `torch.export.load` is the normal loader. The packaged artifacts have immutable trusted-source pins verified before loading by default. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.10.0+cu130"
+      ],
+      "profiles": [
+        "torch-2.10-cu130"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "PT2 deserialization: code execution concern. `torch.export.load` is the normal loader. The packaged artifacts have immutable trusted-source pins verified before loading by default. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-1970",
+      "aliases": [
+        "BIT-pytorch-2025-3730",
+        "CVE-2025-3730",
+        "GHSA-887c-mr87-cxwp"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.7.1+cpu"
+      ],
+      "profiles": [
+        "torch-2.7-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "ctc_loss: denial of service. No ctc_loss target or direct production call was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-1970",
+      "aliases": [
+        "BIT-pytorch-2025-3730",
+        "CVE-2025-3730",
+        "GHSA-887c-mr87-cxwp"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.7.1+cu126"
+      ],
+      "profiles": [
+        "torch-2.7-cu126"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "ctc_loss: denial of service. No ctc_loss target or direct production call was found. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "Inspection covers shipped programs and controlled transforms. Custom graphs, application Torch use and optional compilation may reach affected paths; declared numerical cases are not proof of immunity.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-2286",
+      "aliases": [
+        "CVE-2026-24747",
+        "GHSA-63cw-57p8-fm3p"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.6-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "weights_only checkpoint unpickler: memory corruption/code execution. `torch.load(weights_only=True)` is used for alignment metadata and native checkpoints; default metadata is pinned and verified. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-2286",
+      "aliases": [
+        "CVE-2026-24747",
+        "GHSA-63cw-57p8-fm3p"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.7.1+cpu"
+      ],
+      "profiles": [
+        "torch-2.7-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "weights_only checkpoint unpickler: memory corruption/code execution. `torch.load(weights_only=True)` is used for alignment metadata and native checkpoints; default metadata is pinned and verified. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-2286",
+      "aliases": [
+        "CVE-2026-24747",
+        "GHSA-63cw-57p8-fm3p"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.8.0+cpu"
+      ],
+      "profiles": [
+        "torch-2.8-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "weights_only checkpoint unpickler: memory corruption/code execution. `torch.load(weights_only=True)` is used for alignment metadata and native checkpoints; default metadata is pinned and verified. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-2286",
+      "aliases": [
+        "CVE-2026-24747",
+        "GHSA-63cw-57p8-fm3p"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.9.1+cpu"
+      ],
+      "profiles": [
+        "torch-2.9-cpu"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "weights_only checkpoint unpickler: memory corruption/code execution. `torch.load(weights_only=True)` is used for alignment metadata and native checkpoints; default metadata is pinned and verified. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-2286",
+      "aliases": [
+        "CVE-2026-24747",
+        "GHSA-63cw-57p8-fm3p"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.6.0+cu124"
+      ],
+      "profiles": [
+        "torch-2.6-cu124"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "weights_only checkpoint unpickler: memory corruption/code execution. `torch.load(weights_only=True)` is used for alignment metadata and native checkpoints; default metadata is pinned and verified. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-2286",
+      "aliases": [
+        "CVE-2026-24747",
+        "GHSA-63cw-57p8-fm3p"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.7.1+cu126"
+      ],
+      "profiles": [
+        "torch-2.7-cu126"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "weights_only checkpoint unpickler: memory corruption/code execution. `torch.load(weights_only=True)` is used for alignment metadata and native checkpoints; default metadata is pinned and verified. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-2286",
+      "aliases": [
+        "CVE-2026-24747",
+        "GHSA-63cw-57p8-fm3p"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.8.0+cu126"
+      ],
+      "profiles": [
+        "torch-2.8-cu126"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "weights_only checkpoint unpickler: memory corruption/code execution. `torch.load(weights_only=True)` is used for alignment metadata and native checkpoints; default metadata is pinned and verified. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-2286",
+      "aliases": [
+        "CVE-2026-24747",
+        "GHSA-63cw-57p8-fm3p"
+      ],
+      "package": "torch",
+      "versions": [
+        "2.9.1+cu130"
+      ],
+      "profiles": [
+        "torch-2.9-cu130"
+      ],
+      "status": "approved",
+      "approved_on": "2026-09-06",
+      "expires_on": "2026-11-20",
+      "review_owner": "founder",
+      "rationale": "weights_only checkpoint unpickler: memory corruption/code execution. `torch.load(weights_only=True)` is used for alignment metadata and native checkpoints; default metadata is pinned and verified. The owner accepted the documented residual risk to retain broad Torch compatibility.",
+      "mitigations": [
+        "Recommend the qualified Torch 2.13 pair for new installations.",
+        "Keep built-in model and metadata hash verification enabled.",
+        "Load only trusted models and metadata; do not accept adversarial model uploads.",
+        "Keep default model compilation disabled; qualify custom models and compiler options separately."
+      ],
+      "residual_risk": "The affected loader is active. Hashes authenticate selected bytes but do not make a malicious custom or trusted-source model safe.",
+      "removal_condition": "Remove when an upstream backport/advisory correction resolves this exact profile and the complete audit and runtime checks confirm it. Otherwise review before expiry; any retirement requires a separate announced support decision.",
+      "approval_ref": "security/v1-advisory-approval-2026-09-06.json"
     }
   ]
 }

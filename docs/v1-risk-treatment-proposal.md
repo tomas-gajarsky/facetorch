@@ -1,28 +1,32 @@
-# Proposed advisory treatment while retaining broad Torch support
+# Approved advisory treatment while retaining broad Torch support
 
-Prepared September 5, 2026. **Proposal only: no new exception is approved or
-active.** The owner has decided to retain all eight Torch lines. This document
-narrows the remaining decision to their dependency risks; it does not reopen
-that support decision. The release gate continues to fail on the 76 unresolved
-profile entries in the [dated triage](v1-advisory-triage.md).
+Prepared September 5; **approved and activated September 6, 2026**. The owner
+approved the recommended temporary risk treatment while retaining all eight Torch
+lines. The [approval record](../security/v1-advisory-approval-2026-09-06.json) binds
+the original reviewed proposal to 76 exact profile/version records for 18
+findings. All 17 dependency profiles now pass on Python 3.10 and 3.12 with zero
+coverage gaps and zero unresolved findings. These are accepted risks, not upstream
+fixes; see the [activation evidence](../security/v1-advisory-activation-2026-09-06.json).
 
 ## Recommended treatment
 
 Retain the current range and use Torch 2.13 as the recommended new-installation
-pair. Prepare exact, temporary exceptions for affected older profiles only with
-explicit owner acceptance of the residual risks below. Do not suppress the
+pair. The exact, temporary exceptions for affected older profiles now record the
+owner’s acceptance of the residual risks below. Do not suppress the
 whole Torch package, infer that a passing test fixes an upstream vulnerability,
 or treat a trusted-model assumption as a sandbox for arbitrary models.
 
-The proposed scope is exactly the finding/profile combinations already recorded
+The approved scope is exactly the finding/profile combinations already recorded
 in `security/v1-audit-findings-2026-09-05.json`, at the frozen installed versions in
 each corresponding lock. The [machine-readable proposal](../security/v1-proposed-advisory-exceptions-2026-09-05.json)
 lists all 76 exact profile/version combinations and their lock hashes.
 CPU and CUDA scopes stay separate. No other package,
-version, advisory alias, or profile is implicitly included. If approved, use the
-existing November 20, 2026 review deadline, without renewing any existing
-exception. Each active record must still name its owner, approval date,
-mitigations, and removal condition under the current policy.
+version, advisory alias, or profile is implicitly included. Every new record
+expires on November 20, 2026. All nine earlier records retain their original
+scopes and approval dates. Each new active record names its owner, September 6
+approval date, mitigations, residual risk, removal condition, and approval record.
+The original proposal JSON remains unchanged as historical review evidence;
+`security/advisory-exceptions.json` is the active auditor input.
 
 ## Evidence for the shipped models
 
@@ -50,11 +54,11 @@ The affected versions, CPU/CUDA profiles, aliases, and upstream records remain i
 [the complete triage table](v1-advisory-triage.md#unresolved-inventory). The following
 assessments explain the proposed treatment of each record.
 
-| Finding | Default-path assessment | Residual risk requiring acceptance |
+| Finding | Default-path assessment | Residual risk accepted |
 | --- | --- | --- |
 | CVE-2025-2999 | No packed-sequence unpacking target or direct production call was found. | Custom recurrent models or application code can invoke the vulnerable API. |
 | CVE-2025-3001 | No lstm_cell target or direct production call was found. | Custom recurrent models are outside the graph inventory. |
-| PYSEC-2025-194 | Shipped transforms use controlled `nn.Sequential` scripting; the reported bare list/tuple class-annotation trigger was not found in production source. | Scripting is active; custom transform classes can cross the affected compiler boundary. Existing approval does not cover newly found profiles. |
+| PYSEC-2025-194 | Shipped transforms use controlled `nn.Sequential` scripting; the reported bare list/tuple class-annotation trigger was not found in production source. | Scripting is active; custom transform classes can cross the affected compiler boundary. The September 6 records cover only the reviewed additional profiles. |
 | PYSEC-2025-198 | No PairwiseDistance call was found, but exported vector norms are present. | Name matching cannot exclude a decomposed numerical trigger; model-specific numerical tests cover only the declared cases. |
 | PYSEC-2025-199 | No Fold/col2im target; default model inference does not invoke Inductor. | Optional compilation or custom graphs can reach the assertion failure. |
 | PYSEC-2025-200 | No FractionalMaxPool2d target; default model inference does not invoke Inductor. | Custom compiled pooling graphs are not covered. |
@@ -71,9 +75,9 @@ assessments explain the proposed treatment of each record.
 | PYSEC-2026-1970 | No ctc_loss target or direct production call was found. | Custom losses/models or application code can invoke the denial-of-service trigger. |
 | PYSEC-2026-2286 | `torch.load(weights_only=True)` is used for alignment metadata and native checkpoints; default metadata is pinned and verified. | On affected versions, the safe-loading flag does not establish a safe boundary against a crafted checkpoint. Custom native files and verification opt-outs broaden exposure. |
 
-## Conditions and limits of the proposal
+## Conditions and limits
 
-The highest-priority decision is the two loading findings. Accepting compatibility
+The main accepted risk is the two loading findings. Retaining compatibility
 with affected Torch versions means accepting their use **only with trusted model
 programs and metadata**, not promising safe processing of adversarial model
 uploads. Hash verification stays enabled in defaults and release configurations;
@@ -91,15 +95,24 @@ No exploit test was run, and no proof of immunity is claimed. These are
 reachability assessments and compatibility results. Patch-only upgrades within
 the retained minor lines cannot currently resolve the findings: their frozen
 Torch pins are already the latest available patches as of the assessment date.
-Recheck upstream backports and advisory corrections before activation and before
-the existing expiry date.
+Upstream patch availability and both loading advisories were rechecked on
+September 6 before activation; fresh dependency queries returned the same
+reviewed findings. Recheck backports and corrections before expiry.
 
-## Decision still needed
+## Approval and remaining release work
 
-Approve or reject the proposed exact, temporary risk acceptance, especially the
-trusted-model restriction for the two loading findings. The recommendation is to
-retain the broad range under these explicit boundaries and continue to recommend
-Torch 2.13 for new integrations. Approval would authorize preparing the specific
-exception records and rerunning the dependency gate; it would **not** authorize a
-push, merge, model-card update, image publication, or GA release. Those actions
-remain subject to the user's separate approval.
+The owner approved this treatment on September 6 with “I approve what you
+recommended.” Activation adds one record per reviewed profile/version pair,
+avoiding approval of cross-paired CPU/CUDA builds. The 76 new records accept the
+previously unresolved findings; the earlier nine records are unchanged. The
+audit implementation and supported matrix are unchanged.
+
+All 17 profiles pass in both Python 3.10 (841 active package/profile entries)
+and Python 3.12 (832 entries), with zero coverage errors and 100 accepted
+finding/profile entries in each run. Fresh audit results and the reviewed
+snapshot contain the same findings. Scope, alias, expiry, and unrelated-finding
+regressions passed with the CI/distribution contracts: 53 tests.
+
+The complete clean-source candidate qualification and soak remain required.
+This approval does not authorize a push, merge, model-card update, image
+publication, package publication, or GA release.

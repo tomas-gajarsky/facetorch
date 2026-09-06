@@ -26,9 +26,11 @@
 ### Release status
 * Retain all eight Torch 2.6–2.13 lines as a product requirement, recommend 2.13
   for new installations, and assess 2.14 CPU/CUDA profiles before admission.
-* GA dependency approval is pending: the corrected audit on September 5 found
-  18 distinct unresolved advisories across twelve profiles. See
-  [the triage](docs/v1-advisory-triage.md). Existing exception scopes are unchanged.
+* Activate the owner-approved September 6 risk treatment for 18 advisories in
+  76 exact Torch profile/version records, expiring November 20. Earlier approvals
+  are unchanged. Fresh audits pass all 17 profiles on Python 3.10 and 3.12 under
+  this scoped policy; full candidate qualification and release approval remain
+  required. See [the treatment record](docs/v1-risk-treatment-proposal.md).
 
 ## 1.0.0rc3
 

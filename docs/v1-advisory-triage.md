@@ -1,14 +1,16 @@
 # GA dependency advisory triage — September 5, 2026
 
-Status: **retain all eight Torch lines; advisory approval remains pending**.
-The owner confirmed broad Torch compatibility on September 5. This resolves the
-support-range question. It does not approve new dependency exceptions or establish
-that the application is remotely exploitable. The GA dependency gate still fails.
+September 6 update: **the scoped treatment is approved and the dependency gate
+passes**. The owner approved the [risk treatment](v1-risk-treatment-proposal.md),
+retaining all eight Torch lines. The [activation evidence](../security/v1-advisory-activation-2026-09-06.json)
+records zero unresolved findings and zero coverage errors across all 17 profiles
+on Python 3.10 and 3.12. The September 5 findings below remain the historical
+triage; acceptance does not fix the upstream vulnerabilities or approve a release.
 
 ## Result and reproducibility
 
 The corrected auditor completed all 17 frozen profiles with every active
-runtime package accounted for and no skipped/missing records. There are **76 unresolved
+runtime package accounted for and no skipped/missing records. On September 5 there were **76 unresolved
 profile entries representing 18 distinct advisories across twelve profiles**.
 Root, Torch 2.11 CPU/CUDA, and Torch 2.13 CPU/CUDA have no unresolved entries under
 the existing, time-limited policy. CPU/CUDA repetitions are counted separately
@@ -74,7 +76,8 @@ under the [recorded support policy](torch-support-policy.md). The current pins
 are already the latest patches in their minor lines as of September 5. The
 [individual treatment proposal](v1-risk-treatment-proposal.md) now includes
 inspection of all 20 pinned model programs, exact affected scopes, residual
-risks, mitigations, and the existing expiry deadline. It remains unapproved.
+risks, mitigations, and the existing expiry deadline. The owner approved and
+activated these exact scopes on September 6; previous approvals were not renewed.
 Compatibility support through Torch 2.13 does not justify silently dropping the
 older lines or approving their unresolved risks. Do not publish GA with this gate
 red, or change the auditor to ignore all Torch findings.
@@ -88,6 +91,9 @@ a blanket claim of either exploitability or false positives.
 [compiler issue](https://github.com/pytorch/pytorch/issues/151523).
 
 ## Unresolved inventory
+
+This is the September 5 pre-approval inventory. Its exact reviewed scopes were
+accepted on September 6; the machine-readable historical snapshot is unchanged.
 
 “Lines” lists affected frozen profiles grouped by Torch minor; each listed line
 has CPU and its declared CUDA build. Fixes are database-reported upstream
@@ -114,11 +120,10 @@ versions, not validated replacements for the current Facetorch lock profile.
 | [PYSEC-2026-1970](https://github.com/pypa/advisory-database/blob/main/vulns/torch/PYSEC-2026-1970.yaml) | ctc_loss: denial of service | 2.7 | 2.8.0 |
 | [PYSEC-2026-2286](https://github.com/pypa/advisory-database/blob/main/vulns/torch/PYSEC-2026-2286.yaml) | weights_only checkpoint unpickler: memory corruption/code execution | 2.6, 2.7, 2.8, 2.9 | 2.10.0 |
 
-## Decision to record before another candidate
+## Before another candidate
 
-The support decision is settled: retain all eight lines and recommend a recent
-qualified pair for new installations. Review the [risk treatment proposal](v1-risk-treatment-proposal.md),
-especially the two loading advisories and the trusted-model boundary, before
-approving any exact, expiring exception. The five currently passing profiles
-are not a replacement support matrix. The full exact-candidate CPU/CUDA matrix,
-archive verification, and agreed RC soak remain required.
+The support and scoped risk decisions are complete. All eight lines remain,
+and the dependency gate now passes for every profile under the approved
+trusted-model boundary. The full exact-candidate CPU/CUDA matrix, archive
+verification, and agreed RC soak remain required. Any new finding, unmatched
+version/profile, or expired exception still fails the dependency gate.

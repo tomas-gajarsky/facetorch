@@ -1,6 +1,7 @@
 """Advisory coverage and exact local-build exception regressions."""
 
 import copy
+import hashlib
 import json
 import subprocess
 from datetime import date
@@ -11,6 +12,90 @@ import pytest
 from scripts import audit_dependencies as audit
 
 pytestmark = pytest.mark.release_blocker
+
+
+def test_owner_approval_adds_only_reviewed_profile_version_pairs():
+    root = Path(__file__).resolve().parents[1]
+    approval_ref = "security/v1-advisory-approval-2026-09-06.json"
+    approval = json.loads((root / approval_ref).read_text())
+    proposal_path = root / approval["approved_proposal"]["path"]
+    assert hashlib.sha256(proposal_path.read_bytes()).hexdigest() == (
+        approval["approved_proposal"]["sha256"]
+    )
+    proposal = json.loads(proposal_path.read_text())
+    policy = audit._load_exceptions(root / "security/advisory-exceptions.json")
+    activated = [
+        entry for entry in policy["exceptions"]
+        if entry.get("approval_ref") == approval_ref
+    ]
+    previous = [entry for entry in policy["exceptions"] if "approval_ref" not in entry]
+    assert len(previous) == approval["previous_exception_count"] == 9
+    assert len(activated) == approval["new_exact_profile_version_records"] == 76
+    assert len(policy["exceptions"]) == len(previous) + len(activated)
+    assert approval["status"] == "approved"
+    assert approval["approved_on"] == "2026-09-06"
+    assert approval["expires_on"] == proposal["proposed_expires_on"] == "2026-11-20"
+    reviewed = {item["vulnerability_id"]: item for item in proposal["proposals"]}
+    for entry in activated:
+        assert len(entry["versions"]) == len(entry["profiles"]) == 1
+        assert entry["approved_on"] == approval["approved_on"]
+        assert entry["expires_on"] == approval["expires_on"]
+        assert entry["review_owner"] == approval["review_owner"]
+        assert entry["rationale"] and entry["mitigations"] and entry["residual_risk"]
+        assert entry["removal_condition"]
+        assert entry["aliases"] == reviewed[entry["vulnerability_id"]]["aliases"]
+        assert entry["mitigations"] == reviewed[entry["vulnerability_id"]]["mitigations"]
+
+    observed = {
+        (entry["vulnerability_id"], entry["profiles"][0], entry["versions"][0])
+        for entry in activated
+    }
+    expected = {
+        (item["vulnerability_id"], scope["profile"], scope["version"])
+        for item in proposal["proposals"] for scope in item["scopes"]
+    }
+    assert observed == expected
+    assert len(proposal["proposals"]) == approval["new_advisory_count"] == 18
+    assert audit._exception_for(
+        policy["exceptions"],
+        profile="torch-2.7-cpu",
+        package="torch",
+        version="2.7.1+cpu",
+        vulnerability_ids={"GHSA-unreviewed-finding"},
+        today=date(2026, 9, 6),
+        maximum_days=policy["maximum_exception_days"],
+    ) is None
+
+    profiles = {profile for _, profile, _ in expected} | {"root", "torch-2.14-cpu"}
+    for item in proposal["proposals"]:
+        # Exercise the real matcher across the profile/version cross product;
+        # CPU/CUDA or runtime-line swaps must not inherit another pair's approval.
+        versions = {scope["version"] for scope in item["scopes"]} | {"2.14.0+cpu"}
+        for profile in profiles:
+            for version in versions:
+                match = audit._exception_for(
+                    activated,
+                    profile=profile,
+                    package="torch",
+                    version=version,
+                    vulnerability_ids={item["vulnerability_id"], *item["aliases"]},
+                    today=date(2026, 9, 6),
+                    maximum_days=policy["maximum_exception_days"],
+                )
+                assert (match is not None) == (
+                    (item["vulnerability_id"], profile, version) in expected
+                )
+        for scope in item["scopes"]:
+            for outside_window in (date(2026, 9, 5), date(2026, 11, 21)):
+                assert audit._exception_for(
+                    activated,
+                    profile=scope["profile"],
+                    package="torch",
+                    version=scope["version"],
+                    vulnerability_ids={item["vulnerability_id"]},
+                    today=outside_window,
+                    maximum_days=policy["maximum_exception_days"],
+                ) is None
 
 
 @pytest.fixture

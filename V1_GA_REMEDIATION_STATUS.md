@@ -1,15 +1,15 @@
 # Facetorch v1 GA remediation status
 
-Date: September 5, 2026. Branch: `fix/v1-ga-readiness`, based on RC3 / main
+Updated: September 6, 2026. Branch: `fix/v1-ga-readiness`, based on RC3 / main
 `12db551d937ac2fa0cc41324f89d71fd9858fa02`.
 
-The approved correction work is implemented locally. **GA remains blocked by
-newly exposed dependency findings.** The corrected audit now checks all active
-runtime dependencies and reports 18 distinct unresolved advisories, repeated as 76 entries
-across twelve profiles. The owner has confirmed that all eight Torch lines
-must be retained. Their remaining risk treatment is documented in
-[the advisory triage](docs/v1-advisory-triage.md) and the
-[concrete exception proposal](docs/v1-risk-treatment-proposal.md).
+The approved correction work and scoped risk treatment are implemented locally.
+**The dependency gate now passes all 17 profiles on Python 3.10 and 3.12.** The
+owner approved 76 exact profile/version records covering the 18 findings,
+expiring November 20; the earlier nine approvals are unchanged. All eight Torch
+lines remain supported. See the [treatment record](docs/v1-risk-treatment-proposal.md)
+and [activation evidence](security/v1-advisory-activation-2026-09-06.json).
+Full exact-candidate qualification, soak, and publication approval remain pending.
 
 This branch has not been pushed, merged, or published. Repository protection and
 release approvals have not been changed. The package still has the RC3 version
@@ -20,7 +20,7 @@ not replacements for the published RC3 bytes.
 
 | Review item | Implemented result | Remaining release work |
 | --- | --- | --- |
-| R01, P1: incomplete dependency audit | All 17 lock profiles retain their exact build identities, hashes, and SBOMs. Official Torch build tags are projected to upstream advisory versions only after source/hash checks. Missing, skipped, duplicate, unexpected, or malformed audit records fail. | Resolve the 18 advisories; no exception was broadened or renewed. |
+| R01, P1: incomplete dependency audit | All 17 lock profiles retain their exact build identities, hashes, and SBOMs. Official Torch build tags are projected to upstream advisory versions only after source/hash checks. Missing, skipped, duplicate, unexpected, or malformed audit records fail. | Owner-approved exact treatment is active; both complete dependency audits pass. Recheck the exact candidate and review before November 20 expiry. |
 | R02, P1: cross-container cache locks | Persistent POSIX file locks serialize independent PID namespaces and recover when a holder dies. Unsafe directory-lock reclamation was removed. Real container/process regressions exercise contention and recovery. | Stop every old worker before upgrading a shared RC3 cache; follow the documented migration. |
 | R03, P1: unloaded native weights | Strict loading rejects empty or incomplete state for a parameterized model. Explicit frozen-model reconstruction hooks and genuinely parameterless models remain supported. | Include the native path in candidate qualification. |
 | R04, P1: ineffective URL deadline | The shrinking deadline applies to each raw receive, request send, TLS handshake, redirect, and header/chunk/body parse. Invalid timeout values are rejected. | Ordinary network/decode limits remain documented; this is not a hard CPU-time limit on image decoding. |
@@ -50,8 +50,8 @@ restored to that frame.
 | Wheel and source distribution | Built successfully; Twine and wheel-content checks passed; the final unpacked sdist collects all 1,251 tests, and the source suite passed packaging/import checks | `build/v1-ga-distribution-build.log`, `build/v1-ga-twine.log`, `build/v1-ga-wheel-contents.log`, `build/v1-ga-sdist-collection.log` |
 | Static and dependency configuration checks | Flake8, actionlint 1.7.12, all frozen lock checks, dependency synchronization, and diff whitespace checks passed | `build/v1-ga-static-checks.log` |
 | Generated documentation in the locked Python 3.12.12 environment | pdoc HTML/search regenerated and checked against the committed outputs | `build/v1-ga-pdoc-locked.log`, `build/v1-ga-static-checks.log` |
-| Complete dependency inventory on Linux / Python 3.10.12 | 841 active package/profile entries covered; zero coverage errors; gate correctly fails on unresolved advisories | `build/v1-ga-audit/summary.json`, [durable snapshot](security/v1-audit-findings-2026-09-05.json) |
-| Dependency gate repeated in the frozen Python 3.12.12 environment | All 17 profiles covered, 832 active entries, zero coverage errors, same 76 unresolved findings | `build/v1-ga-audit-py312/summary.json` |
+| September 5 dependency inventory, before approval, Linux / Python 3.10.12 | 841 active package/profile entries covered; zero coverage errors; gate correctly fails on unresolved advisories | `build/v1-ga-audit/summary.json`, [durable snapshot](security/v1-audit-findings-2026-09-05.json) |
+| September 5 dependency gate, before approval, frozen Python 3.12.12 | All 17 profiles covered, 832 active entries, zero coverage errors, same 76 unresolved findings | `build/v1-ga-audit-py312/summary.json` |
 | Source-check verifier against historical RC3 | Existing required source checks succeed; missing new CPU aggregate correctly prevents approval | `build/v1-ga-historical-source-checks.json` |
 | Portable numerical archive | Relocated archive verifies without model binaries; missing records, hash/source mismatches, traversal, duplicate cases, nonfinite/excessive errors, and incomplete cross-device comparisons are rejected | `tests/test_numerical_archive.py` and CPU regression reports |
 
@@ -89,17 +89,22 @@ evidence, not an approved exact-candidate release run.
 
 The [individual risk proposal](docs/v1-risk-treatment-proposal.md) includes all
 18 findings, 76 exact profile/version scopes with lock hashes, and an inventory
-of all 20 pinned model programs. It is inactive and unapproved. The existing
-advisory exception policy has not changed.
+of all 20 pinned model programs. The owner approved this treatment on
+September 6. The original proposal remains unchanged as historical evidence;
+76 exact records are now active alongside the nine unchanged earlier records.
+The live audits covered 841 active package/profile entries on Python 3.10 and
+832 on Python 3.12, with zero coverage errors, zero unresolved findings, and
+100 accepted finding/profile entries in each run. All 53 advisory/CI contract
+tests passed, including cross-pair, alias, expiry, and unrelated-finding checks.
+The audit implementation and all dependency locks are unchanged.
 
 ## Decision and activation sequence
 
 1. Preserve all eight Torch lines under the [support policy](docs/torch-support-policy.md).
-   The support-range decision is complete. Review the
-   [individual risk treatment proposal](docs/v1-risk-treatment-proposal.md);
-   accepting new exceptions still needs explicit approval. Current pins are
-   already the latest patches of their lines, so patch-only upgrades cannot
-   resolve the exposed findings.
+   The support-range and reviewed risk decisions are complete; the
+   [individual treatment](docs/v1-risk-treatment-proposal.md) is active.
+   Keep its trusted-model boundary and November 20 expiry in effect.
+   Future findings or scope changes still need their own treatment.
 2. Review this local branch and authorize any push/merge separately. After its
    workflow can emit the new aggregate, add `cpu-cohorts-complete` (GitHub Actions
    app ID 15368) to the existing protections without removing their other checks.

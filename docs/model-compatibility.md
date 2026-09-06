@@ -44,8 +44,10 @@ when Facetorch reads authenticated state dictionaries and metadata. Digest-pinne
 artifacts reduce exposure but do not justify retaining a critically affected
 runtime as a supported public cohort.
 
-The approved exception policy currently contains nine exact-version records:
-eight for Torch and one for setuptools, all expiring on 2026-11-20. They are
+The approved exception policy contains nine earlier records (eight Torch and
+one setuptools) plus 76 exact Torch profile/version records approved on
+September 6 for the reviewed 18 findings. All expire on 2026-11-20; the earlier
+records were not renewed or broadened. They are
 limited to the profiles and versions listed in
 `security/advisory-exceptions.json`; support for an additional runtime does not
 extend an exception to it.
@@ -54,8 +56,11 @@ The corrected audit on 2026-09-05 covered every active runtime dependency in all
 profiles. It found 18 distinct unresolved advisories, repeated as 76 entries
 across twelve profiles. Root, Torch 2.11 CPU/CUDA, and Torch 2.13 CPU/CUDA had no
 unresolved findings under the existing policy. This is a dated audit result,
-not a claim that these runtimes have no vulnerabilities. GA remains blocked on
-advisory treatment; see [the decision record](v1-advisory-triage.md).
+not a claim that these runtimes have no vulnerabilities. The owner approved
+scoped treatment on September 6, and fresh audits now pass all 17 profiles with
+zero coverage errors or unresolved findings. See the
+[decision record](v1-risk-treatment-proposal.md). Full candidate qualification
+and publication approval remain separate requirements.
 
 Torch 2.11.0 and 2.12.1 constrain setuptools to `<82`; the existing scoped
 setuptools exception covers the affected locked profiles. Runtime compatibility,
