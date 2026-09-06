@@ -1,0 +1,619 @@
+{
+  "schema_version": 1,
+  "assessment_date": "2026-09-06",
+  "status": "corrections_validated_locally",
+  "release_readiness": "awaiting_new_candidate_and_protected_release_qualification",
+  "branch": "fix/v1-ga-readiness",
+  "technical_commit": "6415fe16219e81346360ba419e1488d7c848b011",
+  "technical_tree": "75e6200f7b9be3eeea3511d94997e3c8accabcf7",
+  "tested_worktree_base": "c349460aed434b650b32cbb996734fd0c5317464",
+  "transferred_tree_matches_commit": true,
+  "findings": {
+    "F01": "addressed",
+    "F02": "addressed",
+    "F03": "addressed",
+    "F04": "addressed",
+    "F05": "addressed"
+  },
+  "results": {
+    "source-tests": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "185",
+      "tests": "1307",
+      "time": "194.216",
+      "timestamp": "2026-09-06T20:21:51.936804+02:00",
+      "hostname": "toga-ubuntu",
+      "passed": 1122
+    },
+    "archive-tests": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "187",
+      "tests": "1307",
+      "time": "144.663",
+      "timestamp": "2026-09-06T20:34:29.386404+02:00",
+      "hostname": "toga-ubuntu",
+      "passed": 1120
+    },
+    "final-workflow-tests": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "102",
+      "time": "1.052",
+      "timestamp": "2026-09-06T20:30:31.840574+02:00",
+      "hostname": "toga-ubuntu",
+      "passed": 102
+    },
+    "source-metadata": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "1",
+      "time": "0.279",
+      "timestamp": "2026-09-06T20:32:35.568187+02:00",
+      "hostname": "toga-ubuntu",
+      "passed": 1
+    }
+  },
+  "source_line_coverage": 95.9322033898305,
+  "cpu_regressions": [
+    {
+      "profile": "torch-2.6-cpu",
+      "runtime": {
+        "python": "3.10.12 (main, Jun 22 2026, 18:55:27) [GCC 11.4.0]",
+        "torch": "2.6.0+cpu",
+        "torchvision": "0.21.0+cpu",
+        "hydra": "1.3.5",
+        "omegaconf": "2.3.1",
+        "facetorch": "/tmp/facetorch-v1-corrections-20260906-QmfSDcs2/source/facetorch/__init__.py"
+      },
+      "passed": 222,
+      "skipped": 0
+    },
+    {
+      "profile": "torch-2.7-cpu",
+      "runtime": {
+        "python": "3.10.12 (main, Jun 22 2026, 18:55:27) [GCC 11.4.0]",
+        "torch": "2.7.1+cpu",
+        "torchvision": "0.22.1+cpu",
+        "hydra": "1.3.6",
+        "omegaconf": "2.3.1",
+        "facetorch": "/tmp/facetorch-v1-corrections-20260906-QmfSDcs2/source/facetorch/__init__.py"
+      },
+      "passed": 222,
+      "skipped": 0
+    },
+    {
+      "profile": "torch-2.8-cpu",
+      "runtime": {
+        "python": "3.10.12 (main, Jun 22 2026, 18:55:27) [GCC 11.4.0]",
+        "torch": "2.8.0+cpu",
+        "torchvision": "0.23.0+cpu",
+        "hydra": "1.3.6",
+        "omegaconf": "2.3.1",
+        "facetorch": "/tmp/facetorch-v1-corrections-20260906-QmfSDcs2/source/facetorch/__init__.py"
+      },
+      "passed": 222,
+      "skipped": 0
+    },
+    {
+      "profile": "torch-2.9-cpu",
+      "runtime": {
+        "python": "3.10.12 (main, Jun 22 2026, 18:55:27) [GCC 11.4.0]",
+        "torch": "2.9.1+cpu",
+        "torchvision": "0.24.1+cpu",
+        "hydra": "1.3.6",
+        "omegaconf": "2.3.1",
+        "facetorch": "/tmp/facetorch-v1-corrections-20260906-QmfSDcs2/source/facetorch/__init__.py"
+      },
+      "passed": 222,
+      "skipped": 0
+    },
+    {
+      "profile": "torch-2.10-cpu",
+      "runtime": {
+        "python": "3.10.12 (main, Jun 22 2026, 18:55:27) [GCC 11.4.0]",
+        "torch": "2.10.0+cpu",
+        "torchvision": "0.25.0+cpu",
+        "hydra": "1.3.6",
+        "omegaconf": "2.3.1",
+        "facetorch": "/tmp/facetorch-v1-corrections-20260906-QmfSDcs2/source/facetorch/__init__.py"
+      },
+      "passed": 222,
+      "skipped": 0
+    },
+    {
+      "profile": "torch-2.11-cpu",
+      "runtime": {
+        "python": "3.10.12 (main, Jun 22 2026, 18:55:27) [GCC 11.4.0]",
+        "torch": "2.11.0+cpu",
+        "torchvision": "0.26.0+cpu",
+        "hydra": "1.3.5",
+        "omegaconf": "2.3.1",
+        "facetorch": "/tmp/facetorch-v1-corrections-20260906-QmfSDcs2/source/facetorch/__init__.py"
+      },
+      "passed": 222,
+      "skipped": 0
+    },
+    {
+      "profile": "torch-2.12-cpu",
+      "runtime": {
+        "python": "3.10.12 (main, Jun 22 2026, 18:55:27) [GCC 11.4.0]",
+        "torch": "2.12.1+cpu",
+        "torchvision": "0.27.1+cpu",
+        "hydra": "1.3.6",
+        "omegaconf": "2.3.1",
+        "facetorch": "/tmp/facetorch-v1-corrections-20260906-QmfSDcs2/source/facetorch/__init__.py"
+      },
+      "passed": 222,
+      "skipped": 0
+    },
+    {
+      "profile": "torch-2.13-cpu",
+      "runtime": {
+        "python": "3.10.12 (main, Jun 22 2026, 18:55:27) [GCC 11.4.0]",
+        "torch": "2.13.0+cpu",
+        "torchvision": "0.28.0+cpu",
+        "hydra": "1.3.6",
+        "omegaconf": "2.3.1",
+        "facetorch": "/tmp/facetorch-v1-corrections-20260906-QmfSDcs2/source/facetorch/__init__.py"
+      },
+      "passed": 222,
+      "skipped": 0
+    }
+  ],
+  "installed_wheel_regressions": [
+    {
+      "label": "wheel-3.10",
+      "runtime": {
+        "python": "3.10.12 (main, Jun 22 2026, 18:55:27) [GCC 11.4.0]",
+        "facetorch": "/tmp/facetorch-v1-corrections-20260906-QmfSDcs2/wheel-regressions/environment/lib/python3.10/site-packages/facetorch/__init__.py",
+        "hydra": "1.3.5",
+        "omegaconf": "2.3.1",
+        "torch": "2.11.0+cpu"
+      },
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "14",
+        "time": "4.889",
+        "timestamp": "2026-09-06T20:28:49.426883+02:00",
+        "hostname": "toga-ubuntu"
+      },
+      "status": "passed"
+    },
+    {
+      "label": "wheel-3.11",
+      "runtime": {
+        "python": "3.11.14 (main, Nov 19 2025, 22:47:14) [Clang 21.1.4 ]",
+        "facetorch": "/tmp/facetorch-v1-corrections-20260906-QmfSDcs2/wheel-regressions/environment/lib/python3.11/site-packages/facetorch/__init__.py",
+        "hydra": "1.3.5",
+        "omegaconf": "2.3.1",
+        "torch": "2.11.0+cpu"
+      },
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "14",
+        "time": "4.680",
+        "timestamp": "2026-09-06T20:29:03.897765+02:00",
+        "hostname": "toga-ubuntu"
+      },
+      "status": "passed"
+    },
+    {
+      "label": "wheel-3.12",
+      "runtime": {
+        "python": "3.12.12 (main, Nov 19 2025, 22:46:53) [Clang 21.1.4 ]",
+        "facetorch": "/tmp/facetorch-v1-corrections-20260906-QmfSDcs2/wheel-regressions/environment/lib/python3.12/site-packages/facetorch/__init__.py",
+        "hydra": "1.3.5",
+        "omegaconf": "2.3.1",
+        "torch": "2.11.0+cpu"
+      },
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "14",
+        "time": "4.425",
+        "timestamp": "2026-09-06T20:29:14.252609+02:00",
+        "hostname": "toga-ubuntu"
+      },
+      "status": "passed"
+    },
+    {
+      "label": "wheel-3.12-minimum-config",
+      "runtime": {
+        "python": "3.12.12 (main, Nov 19 2025, 22:46:53) [Clang 21.1.4 ]",
+        "facetorch": "/tmp/facetorch-v1-corrections-20260906-QmfSDcs2/wheel-regressions/environment/lib/python3.12/site-packages/facetorch/__init__.py",
+        "hydra": "1.3.2",
+        "omegaconf": "2.3.0",
+        "torch": "2.11.0+cpu"
+      },
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "14",
+        "time": "4.910",
+        "timestamp": "2026-09-06T20:29:21.339438+02:00",
+        "hostname": "toga-ubuntu"
+      },
+      "status": "passed"
+    }
+  ],
+  "rebuilt_distributions": [
+    {
+      "filename": "facetorch-1.0.0rc3-py3-none-any.whl",
+      "bytes": 145608,
+      "sha256": "a38e43a9cbc9cae4445ec027e66f33b8229aead70433d9361a223aa7419341fe"
+    },
+    {
+      "filename": "facetorch-1.0.0rc3.tar.gz",
+      "bytes": 3561965,
+      "sha256": "3ccae8254fd81da36f2fc966cbed11f23421ec92a28f73e7bc9a40692596f8d7"
+    }
+  ],
+  "wheel_content_continuity": {
+    "status": "passed",
+    "tested_wheel_sha256": "d1b8f57f251bf3b98e0f0a89ca6267f52aac6ded19879c70f4eaf17e4f3c243a",
+    "rebuilt_wheel_sha256": "a38e43a9cbc9cae4445ec027e66f33b8229aead70433d9361a223aa7419341fe",
+    "identical_members": 108,
+    "only_intervening_source_change": "Archive-aware assertion in tests/test_b08_model_compatibility.py"
+  },
+  "static_checks": {
+    "status": "passed",
+    "checks": [
+      "flake8 --config=.flake8",
+      "actionlint 1.7.12",
+      "python scripts/check_dependency_sync.py",
+      "uv lock --check (root and all 16 profiles)",
+      "pdoc 0.11.6 HTML comparison, normalized search-index comparison, exact doc-search comparison",
+      "twine check and check-wheel-contents",
+      "git diff --check"
+    ],
+    "dependency_graphs_changed": false,
+    "approved_exception_policy_changed": false
+  },
+  "preserved_local_environment_deletions": 32,
+  "remote_actions": {
+    "pushed": false,
+    "merged": false,
+    "tagged": false,
+    "published": false
+  },
+  "limitations": [
+    "Full source suite preceded the final archive-aware test assertion; its changed checkout case passed separately afterward.",
+    "Targeted CPU regressions ran across eight Torch versions; full source suite ran on the root Torch 2.11 CPU environment.",
+    "Installed-wheel tests used the earlier wheel; all 108 members are byte-identical in the final rebuilt wheel.",
+    "CUDA numerical qualification, production containers, notebook execution and live model/dependency audits were not repeated.",
+    "GitHub gate transitions were simulated locally; protected-source workflows still need an approved push.",
+    "The artifacts retain the development RC3 identity and must not replace the published RC3.",
+    "The main working directory retains its pre-existing environment definition deletions; tests used isolated copies."
+  ],
+  "remaining_release_gates": [
+    "new_candidate_identity",
+    "approved_remote_review_and_protected_source_checks",
+    "full_exact_candidate_qualification",
+    "7_to_14_day_soak",
+    "stable_metadata_and_publication_approval"
+  ],
+  "evidence_directory": "build/v1-production-corrections-20260906",
+  "evidence_files": {
+    "actionlint-download.json": {
+      "bytes": 237,
+      "sha256": "a9d932c1347c1d46c31d5978ab1d88fd68f6a7ad01abaf37c14ab05f3efaabab"
+    },
+    "actionlint.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "archive-final-sync.log": {
+      "bytes": 3445,
+      "sha256": "221a514f26b2bc84c36057e9e2bd67cdbff4d20d00bc61445c560074f1bb2290"
+    },
+    "archive-identity.json": {
+      "bytes": 243,
+      "sha256": "398e707936fa24f3004995c770b23fcdb4a45e3147d757561a26b34eae8c96a1"
+    },
+    "archive-sync.log": {
+      "bytes": 3420,
+      "sha256": "913bc02570f58bba1c10bc8ee3cf232818f07d8e67fdf9cf1f38b375caf312ff"
+    },
+    "archive-tests.log": {
+      "bytes": 11805,
+      "sha256": "868a2ea2f21a2ec64191ceda44a521e46f8a7df3071ba4ad310d70d5e63e0e91"
+    },
+    "archive-tests.xml": {
+      "bytes": 212922,
+      "sha256": "b5baf19b42ff21b27509211fc618ef597dadb79cd657a19e68b5ed5aff11a825"
+    },
+    "build.log": {
+      "bytes": 80516,
+      "sha256": "1c1ec3f9cc2d32d43f2ae2bf7ea855fbad35664989cd5bb4f54aab7b4b8ad753"
+    },
+    "commit-verification.json": {
+      "bytes": 1373,
+      "sha256": "04fdcbd0de71d6d72e92b1f06984e18f57a38e1c9a5b7b370dbfcf14ee0f9934"
+    },
+    "corrections.patch": {
+      "bytes": 1058871,
+      "sha256": "f3218490c7a3b7af99aec93fcfa3e7c0da17014d39405a018c0f33bc77ed13d4"
+    },
+    "coverage.json": {
+      "bytes": 222387,
+      "sha256": "3cf802e57e31c803e8ca3414edebe69659d54b2b782cf4d7a253b280cfd01fa2"
+    },
+    "cpu-regressions.json": {
+      "bytes": 8520,
+      "sha256": "db016de1eedf7c3b489f2e70df9d9a84e5bcf5ca6b5562919c18b1d0cc3dfc2a"
+    },
+    "distribution-checks.log": {
+      "bytes": 323,
+      "sha256": "3c920b6226b48fe700183f63ea36b1094370a69bfd5455a2bb42ca24cb2c6aa3"
+    },
+    "distributions.json": {
+      "bytes": 326,
+      "sha256": "acb09b28027cca38815569bbc0d6460395e36e9841ba4ef2722f3b546dd6eaa8"
+    },
+    "docs-check.log": {
+      "bytes": 5223,
+      "sha256": "4e2628139179d01c009a818ff89b3140ab9efdf54bdfffc29c34e2085cb15545"
+    },
+    "final-workflow-tests.log": {
+      "bytes": 180,
+      "sha256": "6f978c9b6795891110f4bcd9973201228489efabdcd17ab3b0e2f0e3badd41a6"
+    },
+    "final-workflow-tests.xml": {
+      "bytes": 14455,
+      "sha256": "1fee19fac572ac71763d750302972bba84d6439bc9d2bf210c41b3835fa7f26c"
+    },
+    "focused-runtime.log": {
+      "bytes": 991,
+      "sha256": "ced803600ac6a6cc17c3e22f48f879baaa23c70ce5f58ff27ddae8e455cb7b98"
+    },
+    "focused-runtime.xml": {
+      "bytes": 12233,
+      "sha256": "9886b99d5783367196cb9f1bbc5955b5204963241d6489812c05ae84c7374e3d"
+    },
+    "lock-checks.json": {
+      "bytes": 2389,
+      "sha256": "96d0529e79f57c7c1a9bfac59d4c1b5accaf971c6c6099def38f9ef656844d0a"
+    },
+    "pdoc-generation.log": {
+      "bytes": 2307,
+      "sha256": "c72672fbf5319b38000294c64d1be740f8852e3bb5d189fbc2f6d8e1d954315d"
+    },
+    "run_cpu_regressions.py": {
+      "bytes": 2991,
+      "sha256": "cb821a246d1926c5a4a9120dfa41f40f352f78c105581472e85c3733ee6bc4cc"
+    },
+    "run_wheel_regressions.py": {
+      "bytes": 3260,
+      "sha256": "83bd5d5a36880d51649af1dcb78566416cc3626d3cff8a5db8eada31cd68c89a"
+    },
+    "source-check-cli.json": {
+      "bytes": 2034,
+      "sha256": "cc5480d56726ed30913ce8bdc4b0360813d2e6b76fbb2dff57c18554a2b33bb8"
+    },
+    "source-metadata.log": {
+      "bytes": 98,
+      "sha256": "f574bf83729b682055fea4742e2eec06cd32be9f8694d8319d5361875228ed00"
+    },
+    "source-metadata.xml": {
+      "bytes": 388,
+      "sha256": "211f203185e6e77b5177b69c00a9c2d5a407ebff2ea7ef6d0dbf786875dbaa52"
+    },
+    "source-summary.json": {
+      "bytes": 287,
+      "sha256": "4f2213c85b506062df0e6acb661f22b8559b60dc37a4fd72bf6fd181802f7d70"
+    },
+    "source-tests.log": {
+      "bytes": 11611,
+      "sha256": "5fcb8bb2843a4d92751ba60fe00c54bbd6fee7558c172d5e03e536a9a2914331"
+    },
+    "source-tests.xml": {
+      "bytes": 207571,
+      "sha256": "da8afb182c724848e8ed9df8d34d65ff6e4196c2768d5eabba802264e04f5427"
+    },
+    "static-checks.json": {
+      "bytes": 448,
+      "sha256": "228ab9927950cf7f037972606522699b3cfb9c6b90415a66bc1e547d0eeea5b1"
+    },
+    "torch-2.10-cpu-sync.log": {
+      "bytes": 3306,
+      "sha256": "7cc98d9f3a2b52e2b034909246709ab1112403f42c10a28b43ec58cb6573c08f"
+    },
+    "torch-2.10-cpu.log": {
+      "bytes": 1153,
+      "sha256": "c97a9e139ce24d53dd8e40d0495996a68e0aa56ad03547ab92e2b67c7e357a34"
+    },
+    "torch-2.10-cpu.xml": {
+      "bytes": 31574,
+      "sha256": "ef77cddd6659080c42f42b7000d520163e532d21a62d26fd7a90131742dd9287"
+    },
+    "torch-2.11-cpu-sync.log": {
+      "bytes": 3304,
+      "sha256": "95445001ea8745001a3932d380b451754b3880b5ca07ce67b4a13433b472a7d5"
+    },
+    "torch-2.11-cpu.log": {
+      "bytes": 1153,
+      "sha256": "9f2e36e1ba1a1d950a502bed8260049512d3aad4ff4be09693231e702d2cf714"
+    },
+    "torch-2.11-cpu.xml": {
+      "bytes": 31574,
+      "sha256": "74d92186c0afc15ffa1cdf892c8b3023a0f853ef2a494e3dc7ef1aa0f68bc20f"
+    },
+    "torch-2.12-cpu-sync.log": {
+      "bytes": 3306,
+      "sha256": "c9e9cd18601eec3c202056d24dea208c919c89d276ef635a04ca35ace1d6c4ba"
+    },
+    "torch-2.12-cpu.log": {
+      "bytes": 1153,
+      "sha256": "17e6c2d4f63644b0914ad409ef787b6e46fca58e5a62d00980ed3e8ae9d5fe2b"
+    },
+    "torch-2.12-cpu.xml": {
+      "bytes": 31574,
+      "sha256": "b80ee1c470f24a5dab352fc941325f61fcb76f63a8af13a8def0bddae5a9a6aa"
+    },
+    "torch-2.13-cpu-sync.log": {
+      "bytes": 3306,
+      "sha256": "78286f7c11ac39ea7e53ae39d837eeeed27adb19bacf2bea4688723e29984e0b"
+    },
+    "torch-2.13-cpu.log": {
+      "bytes": 1153,
+      "sha256": "ceb7d876f41cdc09ad162cc647b9eb5fc3cd89b5f221562859cdff8e465fa9b9"
+    },
+    "torch-2.13-cpu.xml": {
+      "bytes": 31574,
+      "sha256": "596ede80e0d851e49c9a02aac55f0401fb12e9eef7752e46c0be61cc049a07f6"
+    },
+    "torch-2.6-cpu-sync.log": {
+      "bytes": 3708,
+      "sha256": "31b3e44d40d1cbb65ad6a5c0aec15e5de8071e34c4c9608ea78162c1be4e0a89"
+    },
+    "torch-2.6-cpu.log": {
+      "bytes": 1153,
+      "sha256": "13032837469dfaac53bfb88be51fecfaf49378955da0e40893470717e85ba641"
+    },
+    "torch-2.6-cpu.xml": {
+      "bytes": 31574,
+      "sha256": "0ce9929dffcb6e05930ddcfdc72708583a70e9cb15bc458f6f78773e9c3f77f8"
+    },
+    "torch-2.7-cpu-sync.log": {
+      "bytes": 3469,
+      "sha256": "498a469bbbbb2319a5fc7c4b92ebee80d84489a1613eec01c46431add65a9573"
+    },
+    "torch-2.7-cpu.log": {
+      "bytes": 1153,
+      "sha256": "da6e69cccfe5bc8917701c90af6199b5f6096ef8e5190b48f6072abaa7e25057"
+    },
+    "torch-2.7-cpu.xml": {
+      "bytes": 31574,
+      "sha256": "4da338b8ebc6307a38e5daab1ea750db5bad5a0bbe6ea84623a4f35d34db4670"
+    },
+    "torch-2.8-cpu-sync.log": {
+      "bytes": 3305,
+      "sha256": "f172ef49a61148c2a8f2cbee6b8d2ceb5312eb9899dd32bfa3861348dda47c8e"
+    },
+    "torch-2.8-cpu.log": {
+      "bytes": 1153,
+      "sha256": "36c15930718559841f01aee0d8813b97708939360cba9022383281e496d8ac27"
+    },
+    "torch-2.8-cpu.xml": {
+      "bytes": 31574,
+      "sha256": "8243b7148656c64bec44f71536a36bdece87d406af02b3f72db6c4c8d5b5e006"
+    },
+    "torch-2.9-cpu-sync.log": {
+      "bytes": 3305,
+      "sha256": "32ba4200384ab4b2e2c93bdcdb21e5d2412112fbc185c2d3f911285f5b15748f"
+    },
+    "torch-2.9-cpu.log": {
+      "bytes": 1153,
+      "sha256": "f93ef225535e9971f4e09ee49e54b2c21b9f070c353a04edd31c794bb5026131"
+    },
+    "torch-2.9-cpu.xml": {
+      "bytes": 31574,
+      "sha256": "b18fc4057d813276368337161eb6b1d239d117e9237731067b2400ac231a0050"
+    },
+    "tree-transfer.json": {
+      "bytes": 3847,
+      "sha256": "18509e99d6db311164eee8eb654bbdd1420c8095ccee3e7bc36ae7bc93f1c4f9"
+    },
+    "unchanged-release-inputs.json": {
+      "bytes": 7883,
+      "sha256": "2fc02df1263c751b3cb841628cee1538ecc32859b752077390f9e7ac0acd751a"
+    },
+    "wheel-3.10-sync.log": {
+      "bytes": 3534,
+      "sha256": "53fb4714e6b726ba30495a863d0847fb39951e2faeee7467f6bf0e78165a18c9"
+    },
+    "wheel-3.10.log": {
+      "bytes": 1437,
+      "sha256": "f749df2f50920072a72e7953df3fb6dfac864827401e6c02b9dc9cb2a4d80645"
+    },
+    "wheel-3.10.xml": {
+      "bytes": 2094,
+      "sha256": "44abd60c131a292de84a518c69159ca7e41dee3c9bf507f117cee30c432ddf3a"
+    },
+    "wheel-3.11-sync.log": {
+      "bytes": 3843,
+      "sha256": "d693a1c316d8ca4f81dd1c4dded550c8713d9ba177106582774da9eb449237d2"
+    },
+    "wheel-3.11.log": {
+      "bytes": 1437,
+      "sha256": "d80694c5f467747c03b75383a97c08d1ed7e5697f49a326bc201a1568f9cd3c9"
+    },
+    "wheel-3.11.xml": {
+      "bytes": 2094,
+      "sha256": "19facd8ebf76e4658dee8ac1a2b3e0b6c14b48ee3e08fe1b31549589d3af9cf6"
+    },
+    "wheel-3.12-minimum-config.log": {
+      "bytes": 1096,
+      "sha256": "56f8d640ac7fd89bccae40a96f493768279fd6a6b7b193891bf160c202bdacb4"
+    },
+    "wheel-3.12-minimum-config.xml": {
+      "bytes": 2094,
+      "sha256": "6f444cffb75ba42b9ccf7588ad34ff7dc970bc83c5a3f5a236ae9a303e43cc46"
+    },
+    "wheel-3.12-sync.log": {
+      "bytes": 3389,
+      "sha256": "570704c580b94ee1329e0739d2f6e9c721ef161fbfb342860e6ea873a59a77a4"
+    },
+    "wheel-3.12.log": {
+      "bytes": 1437,
+      "sha256": "888354d834990cdb2407005501c37d6d682e009306a6f13e8211046948026340"
+    },
+    "wheel-3.12.xml": {
+      "bytes": 2094,
+      "sha256": "37c3a463107c6c54fea81e1b223bb374ea7068c3ae6a0e8e431502b12678515e"
+    },
+    "wheel-content-continuity.json": {
+      "bytes": 344,
+      "sha256": "6e0a08d6efaef47212970a0ebd7905fb57fa6787726139cb52667807a4a49a2c"
+    },
+    "wheel-regressions.json": {
+      "bytes": 2535,
+      "sha256": "08875ab76a0c2101d9a626cb119687b4a7a958f09b58fd5e11e083a093ccf268"
+    },
+    "cleanup.json": {
+      "bytes": 192,
+      "sha256": "38b65e9b36f20361677b65879a62e36b623dbc78357f1d3c096c530320610def"
+    },
+    "verify_evidence.py": {
+      "bytes": 1343,
+      "sha256": "0d40ed6599f8bcd81f49b59cd828acc8202f7307a0b41fff8f6397035d381e1f"
+    },
+    "v1-production-corrections.md": {
+      "bytes": 9801,
+      "sha256": "67e7031cb1df3259322707365fc6022865bedd038a9f26f5af1e7cf2711e1fdc"
+    },
+    "distributions/facetorch-1.0.0rc3.tar.gz": {
+      "bytes": 3561965,
+      "sha256": "3ccae8254fd81da36f2fc966cbed11f23421ec92a28f73e7bc9a40692596f8d7"
+    },
+    "distributions/facetorch-1.0.0rc3-py3-none-any.whl": {
+      "bytes": 145608,
+      "sha256": "a38e43a9cbc9cae4445ec027e66f33b8229aead70433d9361a223aa7419341fe"
+    }
+  },
+  "temporary_cleanup": {
+    "status": "passed",
+    "owned_temporary_root_removed": true,
+    "shared_uv_cache_removed": false,
+    "main_model_fixture_cache_removed": false,
+    "main_environment_deletions_preserved": 32
+  }
+}
