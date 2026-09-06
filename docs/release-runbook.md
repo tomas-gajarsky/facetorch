@@ -97,6 +97,42 @@ A saved paginated API response can be verified using `--checks-json`. Pull-reque
 `dependency-review` remains a branch-protection requirement; it is not required
 on the final push commit, where the full frozen dependency audit is required.
 
+## Local qualification before publication
+
+Qualification answers whether one fixed source revision works as a complete
+distribution: frozen dependencies, model inference, the installed wheel, the
+example notebook, and production containers. Use a separate clean checkout and
+keep evidence outside it. A local branch run is useful pre-merge evidence; the
+protected-main checks and publication approval above still apply to the final
+release revision.
+
+For machines with limited storage, the same full numerical runner can install
+one environment at a time:
+
+```bash
+OMP_NUM_THREADS=16 MKL_NUM_THREADS=16 \
+python scripts/run_local_cuda_release_matrix.py \
+  --repo-root /path/to/clean/checkout --source-sha FULL_COMMIT_SHA \
+  --staging-root /path/to/evidence --ephemeral-environments
+```
+
+This still exports both artifact cohorts and validates all eight supported Torch
+lines on CPU and CUDA against the fixed reference bundles. It removes only the
+temporary environment and private download cache it creates, including after a
+failed check. Existing project environments and shared caches remain available.
+The tradeoff is repeated downloads when a profile is needed again. `TMPDIR` can
+select an executable temporary filesystem with space for one CUDA environment
+and its downloads; source models and staged artifacts also need space. Archive
+evidence onto persistent storage before removing temporary storage.
+
+The thread settings reproduce the current approved reference bundles on the
+qualification host. CPU reduction order can change reference bytes even when
+outputs remain within tolerance; a golden-reference digest mismatch must be
+investigated, never resolved by replacing the expected digest with the new one.
+The runner's success report and portable index are written only after every
+numerical, installed-wheel, and notebook check succeeds. Container checks and
+the final protected-source workflow remain separate required gates.
+
 ## Portable numerical evidence
 
 The local runner records `numerical-evidence-index.json`, every export/runtime

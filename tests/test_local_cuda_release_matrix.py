@@ -1,10 +1,12 @@
 import hashlib
 import json
 import os
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
+import scripts.run_local_cuda_release_matrix as release_matrix
 from scripts.run_local_cuda_release_matrix import (
     _ensure_evidence_root,
     _release_subprocess_environment,
@@ -12,6 +14,100 @@ from scripts.run_local_cuda_release_matrix import (
 import scripts.stage_alignment_metadata as alignment_metadata
 import scripts.smoke_staged_default_analyzer as analyzer_smoke
 from scripts.smoke_staged_default_analyzer import _staged_alignment_metadata
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize("failure", [None, "sync", "validation"])
+def test_ephemeral_profile_removes_only_owned_storage(tmp_path, monkeypatch, failure):
+    profile = tmp_path / "profile"
+    existing_environment = profile / ".venv"
+    existing_environment.mkdir(parents=True)
+    existing_package = existing_environment / "keep"
+    existing_package.write_text("existing environment")
+    shared_cache = tmp_path / "shared-cache"
+    shared_cache.mkdir()
+    cached_package = shared_cache / "keep"
+    cached_package.write_text("shared cache")
+    monkeypatch.setenv("UV_PROJECT_ENVIRONMENT", str(existing_environment))
+    monkeypatch.setenv("UV_CACHE_DIR", str(shared_cache))
+    monkeypatch.setenv("VIRTUAL_ENV", str(existing_environment))
+    commands = []
+    owned_paths = []
+
+    def sync(command, *, cwd, environment):
+        assert cwd == tmp_path
+        assert command == [
+            "uv", "sync", "--project", str(profile), "--frozen", "--python", "3.10",
+            "--extra", "release",
+        ]
+        assert "VIRTUAL_ENV" not in environment
+        for key in ("UV_PROJECT_ENVIRONMENT", "UV_CACHE_DIR"):
+            owned = Path(environment[key])
+            assert owned not in (existing_environment, shared_cache)
+            owned.mkdir()
+            (owned / "package").write_text("temporary package")
+            owned_paths.append(owned)
+        if failure == "sync":
+            raise RuntimeError("sync failed")
+
+    monkeypatch.setattr(release_matrix, "_run", sync)
+
+    def use_profile():
+        with release_matrix._profile_environment(
+            profile,
+            repo_root=tmp_path,
+            python="3.10",
+            commands=commands,
+            ephemeral=True,
+            extras=("release",),
+        ) as environment_root:
+            assert environment_root == owned_paths[0]
+            assert all(path.is_dir() for path in owned_paths)
+            if failure == "validation":
+                raise RuntimeError("validation failed")
+
+    if failure:
+        with pytest.raises(RuntimeError, match=f"{failure} failed"):
+            use_profile()
+    else:
+        use_profile()
+
+    assert len(owned_paths) == 2
+    assert all(not path.parent.exists() for path in owned_paths)
+    assert len(commands) == (0 if failure == "sync" else 1)
+    assert existing_package.read_text() == "existing environment"
+    assert cached_package.read_text() == "shared cache"
+    assert os.environ["UV_PROJECT_ENVIRONMENT"] == str(existing_environment)
+    assert os.environ["UV_CACHE_DIR"] == str(shared_cache)
+
+
+@pytest.mark.release_blocker
+def test_persistent_profile_binds_uv_to_the_selected_interpreter(tmp_path, monkeypatch):
+    profile = tmp_path / "profile"
+    inherited_environment = tmp_path / "unrelated-environment"
+    shared_cache = tmp_path / "shared-cache"
+    monkeypatch.setenv("UV_PROJECT_ENVIRONMENT", str(inherited_environment))
+    monkeypatch.setenv("UV_CACHE_DIR", str(shared_cache))
+    commands = []
+
+    def sync(command, *, cwd, environment):
+        assert environment["UV_PROJECT_ENVIRONMENT"] == str(profile / ".venv")
+        assert environment["UV_CACHE_DIR"] == str(shared_cache)
+        (profile / ".venv").mkdir(parents=True)
+
+    monkeypatch.setattr(release_matrix, "_run", sync)
+    with release_matrix._profile_environment(
+        profile,
+        repo_root=tmp_path,
+        python="3.10",
+        commands=commands,
+        ephemeral=False,
+    ) as environment_root:
+        assert environment_root == profile / ".venv"
+
+    assert environment_root.is_dir()
+    assert not inherited_environment.exists()
+    assert len(commands) == 1
 
 
 @pytest.mark.release_blocker
