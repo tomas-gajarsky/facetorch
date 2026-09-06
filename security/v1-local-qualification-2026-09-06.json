@@ -1,0 +1,239 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-09-06T14:14:50.514587+00:00",
+  "status": "local_qualification_passed_with_followups",
+  "scope": "Pre-merge local qualification; not protected-main release approval or publication.",
+  "source_sha": "cb202394bb7775573645f39db3968cbdd60b3732",
+  "branch": "fix/v1-ga-readiness",
+  "source_checkouts_clean": true,
+  "root_suite": {
+    "passed": 1078,
+    "skipped": 185,
+    "failed": 0,
+    "total": 1263,
+    "line_coverage_percent": 95.69691300280635
+  },
+  "cpu_lanes": [
+    {
+      "name": "torch-2.6-python-3.10",
+      "status": "ok",
+      "passed": 1078,
+      "skipped": 185,
+      "failed": 0,
+      "total": 1263
+    },
+    {
+      "name": "torch-2.7-python-3.10",
+      "status": "ok",
+      "passed": 1078,
+      "skipped": 185,
+      "failed": 0,
+      "total": 1263
+    },
+    {
+      "name": "torch-2.8-python-3.10",
+      "status": "ok",
+      "passed": 1078,
+      "skipped": 185,
+      "failed": 0,
+      "total": 1263
+    },
+    {
+      "name": "torch-2.9-python-3.10",
+      "status": "ok",
+      "passed": 1078,
+      "skipped": 185,
+      "failed": 0,
+      "total": 1263
+    },
+    {
+      "name": "torch-2.10-python-3.10",
+      "status": "ok",
+      "passed": 1078,
+      "skipped": 185,
+      "failed": 0,
+      "total": 1263
+    },
+    {
+      "name": "torch-2.11-python-3.10",
+      "status": "ok",
+      "passed": 1078,
+      "skipped": 185,
+      "failed": 0,
+      "total": 1263
+    },
+    {
+      "name": "torch-2.12-python-3.10",
+      "status": "ok",
+      "passed": 1078,
+      "skipped": 185,
+      "failed": 0,
+      "total": 1263
+    },
+    {
+      "name": "torch-2.13-python-3.10",
+      "status": "ok",
+      "passed": 1078,
+      "skipped": 185,
+      "failed": 0,
+      "total": 1263
+    },
+    {
+      "name": "torch-2.6-python-3.11",
+      "status": "ok",
+      "passed": 1078,
+      "skipped": 185,
+      "failed": 0,
+      "total": 1263
+    }
+  ],
+  "cpu_matrix_passed_test_executions": 9702,
+  "artifact_lanes": [
+    {
+      "torch": "2.11",
+      "status": "ok",
+      "models": 10,
+      "cases": 624
+    },
+    {
+      "torch": "2.6",
+      "status": "ok",
+      "models": 10,
+      "cases": 624
+    }
+  ],
+  "runtime_lanes": [
+    {
+      "torch": "2.10",
+      "status": "ok",
+      "models": 10,
+      "cases": 624
+    },
+    {
+      "torch": "2.11",
+      "status": "ok",
+      "models": 10,
+      "cases": 624
+    },
+    {
+      "torch": "2.12",
+      "status": "ok",
+      "models": 10,
+      "cases": 624
+    },
+    {
+      "torch": "2.13",
+      "status": "ok",
+      "models": 10,
+      "cases": 624
+    },
+    {
+      "torch": "2.6",
+      "status": "ok",
+      "models": 10,
+      "cases": 624
+    },
+    {
+      "torch": "2.7",
+      "status": "ok",
+      "models": 10,
+      "cases": 624
+    },
+    {
+      "torch": "2.8",
+      "status": "ok",
+      "models": 10,
+      "cases": 624
+    },
+    {
+      "torch": "2.9",
+      "status": "ok",
+      "models": 10,
+      "cases": 624
+    }
+  ],
+  "numerical_total_cases": 6240,
+  "installed_wheel_python_versions": [
+    "3.10",
+    "3.11",
+    "3.12"
+  ],
+  "full_default_analyzer": {
+    "installed_wheel_cuda": "ok",
+    "cpu_container": "ok",
+    "gpu_container": "ok",
+    "repeats_per_smoke": 3,
+    "faces_each_run": 4,
+    "predictors_per_face": 7,
+    "legacy_fallback": false
+  },
+  "notebook": "ok",
+  "container_cache_lock_and_crash_recovery": "ok",
+  "model_byte_audit": {
+    "status": "ok",
+    "model_repositories": 10,
+    "metadata_and_legal_documents_verified": true
+  },
+  "dependency_audit": {
+    "status": "ok",
+    "python_version": "3.12.12",
+    "profiles": 17,
+    "audited_entries": 832,
+    "accepted_finding_profile_pairs": 100,
+    "unresolved_findings": 0,
+    "policy_sha256": "fc9cbf4116362676a9b863e4e13e5d6fc5a7857275e61182fd022c9a363b6996",
+    "exceptions_expire_on": "2026-11-20",
+    "input_continuity_report": "build/v1-local-qualification/audit-input-continuity.json"
+  },
+  "archive": {
+    "status": "ok",
+    "source_sha": "cb202394bb7775573645f39db3968cbdd60b3732",
+    "archive": "build/v1-local-qualification/local-qualification-evidence.tar.gz",
+    "archive_sha256": "56f9d9fe32511ecdca70a28278d3c9156e4d3f5add372b7ea66f37b739401f79",
+    "size_bytes": 26272683,
+    "member_count": 281,
+    "all_member_hashes_verified": true,
+    "relocated_standard_library_verification": {
+      "status": "ok",
+      "source_sha": "cb202394bb7775573645f39db3968cbdd60b3732",
+      "summaries": 10,
+      "model_records": 100,
+      "golden_references": 10,
+      "cases": 6240
+    },
+    "tampered_reference_rejected": true,
+    "original_evidence_unchanged": true
+  },
+  "followups": [
+    {
+      "priority": "P3",
+      "item": "Normalize build umask and source permissions if bit-reproducible independent wheel archives are required. All 106 contained file contents match in every tested wheel; archive digests are kept distinct."
+    },
+    {
+      "priority": "workspace_clarification",
+      "item": "The main checkout lost 32 tracked environment profile/lock files during the run. Their committed copies and isolated checkouts remain intact. Those deletions were not staged; the notifier clarification timed out."
+    }
+  ],
+  "release_gates_remaining": [
+    "Owner approval before pushing, merging, or publishing.",
+    "Remote source checks and required CPU aggregate branch protection.",
+    "New candidate identity and authoritative checks at its exact protected-main revision.",
+    "Agreed release-candidate soak before GA."
+  ],
+  "publication_performed": false,
+  "evidence_files": {
+    "build/v1-local-qualification/evidence/local-cuda-runner-report.json": "8ca9ec40fde8667a86cd7b24d1c479d35f87e6c1d551a28f68c67cac9419c1e9",
+    "build/v1-local-qualification/evidence/runtime-compatibility-report.json": "ca2a641ba176082ac5413972583b8fe42b14374dea259fbb787a1ce3365c559b",
+    "build/v1-local-qualification/evidence/candidate-matrix-report.json": "c3e9e2c9934e9a65fb8828656b3f52ffec7a19559d816be5b2baa1beea8e2cf5",
+    "build/v1-local-qualification/evidence/container-evidence.json": "0abd465ed47d82229dae39b1e6a150940919f9a15989efe2b641022d341ad2c3",
+    "build/v1-local-qualification/frozen-root-tests.xml": "d883df8d0aa6b780740002140162bdb4eaa354005d7a20ac7867675ccd43e1d3",
+    "build/v1-local-qualification/cpu-cohorts/receipt.json": "c55c32aa10f05136e801a2c93a1615eaa5b20dc3697db2fcd5aba50934354bfb",
+    "build/v1-local-qualification/wheel-installs/report.json": "c721c7e9aed8ee4435532bd7493965975010c4a0148db30cea3d059ce0c805ea",
+    "build/v1-local-qualification/model-hub-audit.json": "f199115a77541e7b2e22b27d2712026c5bc054eb78ce459624362213fc79192d",
+    "build/v1-local-qualification/dependency-audit/summary.json": "4a638359259c0b51102526cd02be9afa169a4fa3e91258885867bd04704cdc7c",
+    "build/v1-local-qualification/audit-input-continuity.json": "b8c4ab7bba3edad80bd8052f60e6033d7a2043933c78480618ee320804f3789f",
+    "build/v1-local-qualification/distribution-image-continuity.json": "190732543b32e53b388831fc0f688556e961c0a3da18c71d884426eb13909285",
+    "build/v1-local-qualification/container-cache-lock.json": "b3dd39964e6c5c76fdda0c1413e1357fb42e38307616daeec69abd81f9e51ef0",
+    "build/v1-local-qualification/archive-verification.json": "af8b1261529c872c99fefe27ad34480dd7b50146127595be7a72644ef295737e"
+  }
+}
