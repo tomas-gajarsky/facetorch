@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 import torch
-from codetiming import Timer
+from facetorch._timing import timed
 from facetorch.base import BaseDownloader, BaseModel
 from facetorch.datastruct import Prediction
 from facetorch.exceptions import ConfigurationError
@@ -14,9 +14,7 @@ logger = get_logger()
 
 
 class FacePredictor(BaseModel):
-    @Timer(
-        "FacePredictor.__init__", "{name}: {milliseconds:.2f} ms", logger=logger.debug
-    )
+    @timed("FacePredictor.__init__", logger=logger)
     def __init__(
         self,
         downloader: BaseDownloader,
@@ -65,7 +63,7 @@ class FacePredictor(BaseModel):
         self.postprocessor = postprocessor
         self.max_batch_size = max_batch_size
 
-    @Timer("FacePredictor.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("FacePredictor.run", logger=logger)
     def run(self, faces: torch.Tensor) -> List[Prediction]:
         """Predicts facial features.
 

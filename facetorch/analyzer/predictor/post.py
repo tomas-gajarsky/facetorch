@@ -4,8 +4,8 @@ from numbers import Real
 from typing import List, Optional, Tuple, Union
 
 import torch
-from codetiming import Timer
 from itertools import compress
+from facetorch._timing import timed
 from facetorch.base import BaseProcessor
 from facetorch.datastruct import Prediction
 from facetorch.logger import get_logger
@@ -15,11 +15,7 @@ logger = get_logger()
 
 
 class BasePredPostProcessor(BaseProcessor):
-    @Timer(
-        "BasePredPostProcessor.__init__",
-        "{name}: {milliseconds:.2f} ms",
-        logger=logger.debug,
-    )
+    @timed("BasePredPostProcessor.__init__", logger=logger)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -83,7 +79,7 @@ class BasePredPostProcessor(BaseProcessor):
 
 
 class PostArgMax(BasePredPostProcessor):
-    @Timer("PostArgMax.__init__", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("PostArgMax.__init__", logger=logger)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -104,7 +100,7 @@ class PostArgMax(BasePredPostProcessor):
         super().__init__(transform, device, optimize_transform, labels)
         self.dim = dim
 
-    @Timer("PostArgMax.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("PostArgMax.run", logger=logger)
     def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -> List[Prediction]:
         """Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
 
@@ -124,11 +120,7 @@ class PostArgMax(BasePredPostProcessor):
 
 
 class PostSigmoidBinary(BasePredPostProcessor):
-    @Timer(
-        "PostSigmoidBinary.__init__",
-        "{name}: {milliseconds:.2f} ms",
-        logger=logger.debug,
-    )
+    @timed("PostSigmoidBinary.__init__", logger=logger)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -158,9 +150,7 @@ class PostSigmoidBinary(BasePredPostProcessor):
         super().__init__(transform, device, optimize_transform, labels)
         self.threshold = float(threshold)
 
-    @Timer(
-        "PostSigmoidBinary.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug
-    )
+    @timed("PostSigmoidBinary.run", logger=logger)
     def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -> List[Prediction]:
         """Post-processes the prediction tensor using sigmoid and returns a list of prediction data structures, one for each face.
 
@@ -198,7 +188,7 @@ class PostEmbedder(BasePredPostProcessor):
         """
         super().__init__(transform, device, optimize_transform, labels)
 
-    @Timer("PostEmbedder.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("PostEmbedder.run", logger=logger)
     def run(self, preds: torch.Tensor) -> List[Prediction]:
         """Extracts the embedding from the prediction tensor and returns a list of prediction data structures, one for each face.
 
@@ -241,7 +231,7 @@ class PostMultiLabel(BasePredPostProcessor):
         self.dim = dim
         self.threshold = threshold
 
-    @Timer("PostMultiLabel.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("PostMultiLabel.run", logger=logger)
     def run(self, preds: torch.Tensor) -> List[Prediction]:
         """Extracts multiple labels and puts them in other[multi] predictions. The most likely label is put in the label field. Confidence scores are returned in the logits field.
 
@@ -295,11 +285,7 @@ class PostLabelConfidencePairs(BasePredPostProcessor):
             offsets = [0] * len(labels)
         self.offsets = offsets
 
-    @Timer(
-        "PostLabelConfidencePairs.run",
-        "{name}: {milliseconds:.2f} ms",
-        logger=logger.debug,
-    )
+    @timed("PostLabelConfidencePairs.run", logger=logger)
     def run(self, preds: torch.Tensor) -> List[Prediction]:
         """Extracts the confidence scores and puts them in other[label] predictions.
 

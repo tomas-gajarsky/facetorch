@@ -122,7 +122,7 @@ class ReaderProtocol(Protocol):
         super().__init__(transform, device, optimize_transform)
         self.max_decoded_pixels = _validate_max_decoded_pixels(max_decoded_pixels)
 
-    @Timer(&#34;UniversalReader.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;UniversalReader.run&#34;, logger=logger)
     def run(
         self,
         image_source: ImageSource,
@@ -640,7 +640,7 @@ All subclass should overwrite:</p>
     read_pil_image = UniversalReader.read_pil_image
     read_image_from_path = UniversalReader.read_image_from_path
 
-    @Timer(&#34;ImageReader.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;ImageReader.run&#34;, logger=logger)
     def run(
         self,
         image_source: LocalPath,
@@ -846,7 +846,7 @@ All subclass should overwrite:</p>
     ):
         super().__init__(transform, device, optimize_transform)
 
-    @Timer(&#34;TensorReader.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;TensorReader.run&#34;, logger=logger)
     def run(
         self,
         image_source: torch.Tensor,
@@ -965,7 +965,7 @@ All subclass should overwrite:</p>
         self.max_redirects = max_redirects
         self.max_bytes = max_bytes
 
-    @Timer(&#34;URLReader.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;URLReader.run&#34;, logger=logger)
     def run(
         self,
         image_source: str,
@@ -983,7 +983,10 @@ All subclass should overwrite:</p>
         deadline = time.monotonic() + self.timeout
         for redirect_count in range(self.max_redirects + 1):
             _remaining_timeout(deadline)
-            parsed = urlsplit(current_url)
+            try:
+                parsed = urlsplit(current_url)
+            except ValueError as exc:
+                raise InputError(&#34;Remote image URL is malformed.&#34;) from exc
             if parsed.scheme.lower() not in self.allowed_schemes or not parsed.netloc:
                 raise InputError(&#34;URL scheme is not allowed or the URL has no host.&#34;)
             addresses = _validate_public_url_target(parsed, deadline)

@@ -1,6 +1,15 @@
 include LICENSE
 include MODEL_NOTICE.md
 include CHANGELOG.md
+include SECURITY.md
+include .dockerignore
+include .flake8
+include docker-compose.yml
+include docker-compose.dev.yml
+include .github/dependabot.yml
+recursive-include .github/workflows *.yml
+include docker/Dockerfile*
+recursive-include pdoc/templates *
 include pyproject.toml
 include pytest.ini
 include environment.yml

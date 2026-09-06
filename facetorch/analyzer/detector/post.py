@@ -5,7 +5,7 @@ from typing import List, Protocol, Tuple, Union, runtime_checkable
 import warnings
 
 import torch
-from codetiming import Timer
+from facetorch._timing import timed
 from facetorch.base import BaseProcessor
 from facetorch.datastruct import Detection, Dimensions, Face, ImageData, Location
 from facetorch.logger import get_logger
@@ -25,11 +25,7 @@ class DetectorPostprocessorProtocol(Protocol):
 
 
 class BaseDetPostProcessor(BaseProcessor):
-    @Timer(
-        "BaseDetPostProcessor.__init__",
-        "{name}: {milliseconds:.2f} ms",
-        logger=logger.debug,
-    )
+    @timed("BaseDetPostProcessor.__init__", logger=logger)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -115,7 +111,7 @@ class PriorBox:
 
 
 class PostRetFace(BaseDetPostProcessor):
-    @Timer("PostRetFace.__init__", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("PostRetFace.__init__", logger=logger)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -155,7 +151,7 @@ class PostRetFace(BaseDetPostProcessor):
         self.variance = list(variance)
         self.expand_box_ratio = expand_box_ratio
 
-    @Timer("PostRetFace.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("PostRetFace.run", logger=logger)
     def run(
         self,
         data: ImageData,

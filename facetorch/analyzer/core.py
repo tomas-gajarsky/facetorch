@@ -7,9 +7,9 @@ from typing import Any, List, Optional, Union
 
 import numpy as np
 import torch
-from codetiming import Timer
 from PIL import Image
 
+from facetorch._timing import timed
 from facetorch.analyzer.predictor.core import FacePredictor
 from facetorch.datastruct import (
     AnalysisResult,
@@ -120,9 +120,7 @@ class _LazyComponentRegistry(MutableMapping[str, Any]):
 
 
 class FaceAnalyzer(object):
-    @Timer(
-        "FaceAnalyzer.__init__", "{name}: {milliseconds:.2f} ms", logger=logger.debug
-    )
+    @timed("FaceAnalyzer.__init__", logger=logger)
     def __init__(self, cfg: OmegaConf):
         """FaceAnalyzer is the main class that reads images, runs face detection, tensor unification and facial feature prediction.
         It also draws bounding boxes and facial landmarks over the image.
@@ -464,7 +462,7 @@ class FaceAnalyzer(object):
             return tuple(name for name in configured if name not in excluded)
         return configured
 
-    @Timer("FaceAnalyzer.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("FaceAnalyzer.run", logger=logger)
     def run(
         self,
         image_source: Optional[

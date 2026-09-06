@@ -71,9 +71,7 @@ el.replaceWith(d);
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class FacePredictor(BaseModel):
-    @Timer(
-        &#34;FacePredictor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
-    )
+    @timed(&#34;FacePredictor.__init__&#34;, logger=logger)
     def __init__(
         self,
         downloader: BaseDownloader,
@@ -122,7 +120,7 @@ el.replaceWith(d);
         self.postprocessor = postprocessor
         self.max_batch_size = max_batch_size
 
-    @Timer(&#34;FacePredictor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;FacePredictor.run&#34;, logger=logger)
     def run(self, faces: torch.Tensor) -&gt; List[Prediction]:
         &#34;&#34;&#34;Predicts facial features.
 
@@ -177,7 +175,7 @@ predictor-specific capping for custom artifacts. Default: 64.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;FacePredictor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+<pre><code class="python">@timed(&#34;FacePredictor.run&#34;, logger=logger)
 def run(self, faces: torch.Tensor) -&gt; List[Prediction]:
     &#34;&#34;&#34;Predicts facial features.
 

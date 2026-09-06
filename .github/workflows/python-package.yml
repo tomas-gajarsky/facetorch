@@ -16,7 +16,7 @@ concurrency:
 jobs:
   build-distributions:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -36,6 +36,29 @@ jobs:
           uv run --frozen --extra dev --extra release python -m build
           uv run --frozen --extra dev --extra release twine check dist/*
           uv run --frozen --extra dev --extra release check-wheel-contents dist/*.whl
+      - name: Execute the full suite from the unpacked source distribution
+        run: |
+          archive_check_dir="$(mktemp -d "$RUNNER_TEMP/facetorch-sdist.XXXXXX")"
+          trap 'rm -rf "$archive_check_dir"' EXIT
+          tar -xzf dist/facetorch-*.tar.gz -C "$archive_check_dir"
+          cd "$archive_check_dir"/facetorch-*
+          unset PYTHONPATH UV_PROJECT_ENVIRONMENT VIRTUAL_ENV
+          uv sync --frozen --extra dev --extra release --python 3.12.12
+          uv run --frozen --no-sync python - <<'PY'
+          from pathlib import Path
+          import facetorch
+
+          assert not Path(".git").exists()
+          assert Path(facetorch.__file__).resolve().is_relative_to(Path.cwd())
+          PY
+          uv run --frozen --no-sync python -m pytest -q \
+            --junitxml="$RUNNER_TEMP/sdist-tests.xml"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: source-distribution-tests
+          path: ${{ runner.temp }}/sdist-tests.xml
+          if-no-files-found: error
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: distributions
@@ -94,8 +117,28 @@ jobs:
           import hydra
           import omegaconf
           import facetorch
+          from pathlib import Path
+          from tempfile import TemporaryDirectory
+          from hydra.core.global_hydra import GlobalHydra
+          from facetorch.exceptions import ConfigurationError
 
           assert hydra.__version__ == "1.3.2"
           assert omegaconf.__version__ == "2.3.0"
           assert facetorch.load_config(offline=True).analyzer.device == "cpu"
+          with TemporaryDirectory() as temporary:
+              root = Path(temporary)
+              (root / "host.yaml").write_text("marker: host\n")
+              (root / "library.yaml").write_text("marker: external\n")
+              with hydra.initialize_config_dir(config_dir=temporary, version_base="1.3"):
+                  host = GlobalHydra.instance().hydra
+                  assert facetorch.load_config(offline=True).analyzer.device == "cpu"
+                  assert facetorch.load_config_from_path(root / "library.yaml").marker == "external"
+                  try:
+                      facetorch.load_config(overrides=["missing=invalid"])
+                  except ConfigurationError:
+                      pass
+                  else:
+                      raise AssertionError("Invalid override must fail")
+                  assert GlobalHydra.instance().hydra is host
+                  assert hydra.compose(config_name="host").marker == "host"
           PY

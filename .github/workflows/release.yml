@@ -166,7 +166,9 @@ jobs:
   resolve-candidate:
     needs: validate-inputs
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    # Source workflows start alongside auto-release on a main push. Allow their
+    # longest (75-minute) jobs to finish, with a bounded 90-minute check wait.
+    timeout-minutes: 100
     outputs:
       version: ${{ steps.identity.outputs.version }}
       docker_tag: ${{ steps.identity.outputs.docker_tag }}
@@ -205,6 +207,7 @@ jobs:
         run: |
           python scripts/verify_source_checks.py \
             --repo "$GITHUB_REPOSITORY" --source-sha "$SOURCE_SHA" \
+            --wait-timeout 5400 --poll-interval 30 \
             --output "$RUNNER_TEMP/source-checks.json"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()

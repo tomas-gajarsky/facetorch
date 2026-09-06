@@ -2,7 +2,7 @@ from abc import abstractmethod
 
 import torch
 import torch.nn.functional as F
-from codetiming import Timer
+from facetorch._timing import timed
 from facetorch.base import BaseProcessor
 from facetorch.datastruct import ImageData
 from facetorch.logger import get_logger
@@ -17,11 +17,7 @@ class BaseDetPreProcessor(BaseProcessor):
     # therefore retain the detector's defensive raw-image copy by default.
     preserves_input_tensor = False
 
-    @Timer(
-        "BaseDetPreProcessor.__init__",
-        "{name}: {milliseconds:.2f} ms",
-        logger=logger.debug,
-    )
+    @timed("BaseDetPreProcessor.__init__", logger=logger)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -66,11 +62,7 @@ class DetectorPreProcessor(BaseDetPreProcessor):
     model_max_size = 2048
     model_size_multiple = 32
 
-    @Timer(
-        "DetectorPreProcessor.__init__",
-        "{name}: {milliseconds:.2f} ms",
-        logger=logger.debug,
-    )
+    @timed("DetectorPreProcessor.__init__", logger=logger)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -90,9 +82,7 @@ class DetectorPreProcessor(BaseDetPreProcessor):
         super().__init__(transform, device, optimize_transform)
         self.reverse_colors = reverse_colors
 
-    @Timer(
-        "DetectorPreProcessor.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug
-    )
+    @timed("DetectorPreProcessor.run", logger=logger)
     def run(self, data: ImageData) -> ImageData:
         """Run the detector preprocessor on the image tensor in BGR format and return the transformed image tensor.
 

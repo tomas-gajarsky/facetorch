@@ -56,9 +56,7 @@ el.replaceWith(d);
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class FaceAnalyzer(object):
-    @Timer(
-        &#34;FaceAnalyzer.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
-    )
+    @timed(&#34;FaceAnalyzer.__init__&#34;, logger=logger)
     def __init__(self, cfg: OmegaConf):
         &#34;&#34;&#34;FaceAnalyzer is the main class that reads images, runs face detection, tensor unification and facial feature prediction.
         It also draws bounding boxes and facial landmarks over the image.
@@ -400,7 +398,7 @@ el.replaceWith(d);
             return tuple(name for name in configured if name not in excluded)
         return configured
 
-    @Timer(&#34;FaceAnalyzer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;FaceAnalyzer.run&#34;, logger=logger)
     def run(
         self,
         image_source: Optional[
@@ -1147,7 +1145,7 @@ def detector_loaded(self) -&gt; bool:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;FaceAnalyzer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+<pre><code class="python">@timed(&#34;FaceAnalyzer.run&#34;, logger=logger)
 def run(
     self,
     image_source: Optional[

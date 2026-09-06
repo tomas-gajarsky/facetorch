@@ -60,11 +60,7 @@ el.replaceWith(d);
     # therefore retain the detector&#39;s defensive raw-image copy by default.
     preserves_input_tensor = False
 
-    @Timer(
-        &#34;BaseDetPreProcessor.__init__&#34;,
-        &#34;{name}: {milliseconds:.2f} ms&#34;,
-        logger=logger.debug,
-    )
+    @timed(&#34;BaseDetPreProcessor.__init__&#34;, logger=logger)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -194,11 +190,7 @@ Returns a batch of preprocessed face tensors.</p>
     model_max_size = 2048
     model_size_multiple = 32
 
-    @Timer(
-        &#34;DetectorPreProcessor.__init__&#34;,
-        &#34;{name}: {milliseconds:.2f} ms&#34;,
-        logger=logger.debug,
-    )
+    @timed(&#34;DetectorPreProcessor.__init__&#34;, logger=logger)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -218,9 +210,7 @@ Returns a batch of preprocessed face tensors.</p>
         super().__init__(transform, device, optimize_transform)
         self.reverse_colors = reverse_colors
 
-    @Timer(
-        &#34;DetectorPreProcessor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
-    )
+    @timed(&#34;DetectorPreProcessor.run&#34;, logger=logger)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Run the detector preprocessor on the image tensor in BGR format and return the transformed image tensor.
 
@@ -330,9 +320,7 @@ Returns a batch of preprocessed face tensors.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(
-    &#34;DetectorPreProcessor.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
-)
+<pre><code class="python">@timed(&#34;DetectorPreProcessor.run&#34;, logger=logger)
 def run(self, data: ImageData) -&gt; ImageData:
     &#34;&#34;&#34;Run the detector preprocessor on the image tensor in BGR format and return the transformed image tensor.
 

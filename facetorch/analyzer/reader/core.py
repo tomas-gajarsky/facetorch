@@ -18,9 +18,9 @@ from urllib.parse import urljoin, urlsplit, urlunsplit
 import numpy as np
 import torch
 import torchvision
-from codetiming import Timer
 from PIL import Image, UnidentifiedImageError
 
+from facetorch._timing import timed
 from facetorch.base import BaseReader
 from facetorch.datastruct import ImageData
 from facetorch.exceptions import FacetorchError, InputCoercionWarning, InputError
@@ -336,7 +336,7 @@ class UniversalReader(BaseReader):
         super().__init__(transform, device, optimize_transform)
         self.max_decoded_pixels = _validate_max_decoded_pixels(max_decoded_pixels)
 
-    @Timer("UniversalReader.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("UniversalReader.run", logger=logger)
     def run(
         self,
         image_source: ImageSource,
@@ -576,7 +576,7 @@ class ImageReader(BaseReader):
     read_pil_image = UniversalReader.read_pil_image
     read_image_from_path = UniversalReader.read_image_from_path
 
-    @Timer("ImageReader.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("ImageReader.run", logger=logger)
     def run(
         self,
         image_source: LocalPath,
@@ -613,7 +613,7 @@ class TensorReader(BaseReader):
     ):
         super().__init__(transform, device, optimize_transform)
 
-    @Timer("TensorReader.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("TensorReader.run", logger=logger)
     def run(
         self,
         image_source: torch.Tensor,
@@ -690,7 +690,7 @@ class URLReader(UniversalReader):
         self.max_redirects = max_redirects
         self.max_bytes = max_bytes
 
-    @Timer("URLReader.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("URLReader.run", logger=logger)
     def run(
         self,
         image_source: str,
@@ -708,7 +708,10 @@ class URLReader(UniversalReader):
         deadline = time.monotonic() + self.timeout
         for redirect_count in range(self.max_redirects + 1):
             _remaining_timeout(deadline)
-            parsed = urlsplit(current_url)
+            try:
+                parsed = urlsplit(current_url)
+            except ValueError as exc:
+                raise InputError("Remote image URL is malformed.") from exc
             if parsed.scheme.lower() not in self.allowed_schemes or not parsed.netloc:
                 raise InputError("URL scheme is not allowed or the URL has no host.")
             addresses = _validate_public_url_target(parsed, deadline)

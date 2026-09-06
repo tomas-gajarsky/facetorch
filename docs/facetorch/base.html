@@ -56,9 +56,7 @@ el.replaceWith(d);
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class BaseProcessor(object, metaclass=ABCMeta):
-    @Timer(
-        &#34;BaseProcessor.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
-    )
+    @timed(&#34;BaseProcessor.__init__&#34;, logger=logger)
     def __init__(
         self,
         transform: Optional[transforms.Compose],
@@ -172,7 +170,7 @@ def run(self):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class BaseReader(BaseProcessor):
-    @Timer(&#34;BaseReader.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;BaseReader.__init__&#34;, logger=logger)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -443,9 +441,7 @@ False, size_portrait and size_landscape are ignored.</dd>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class BaseDownloader(object, metaclass=ABCMeta):
-    @Timer(
-        &#34;BaseDownloader.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
-    )
+    @timed(&#34;BaseDownloader.__init__&#34;, logger=logger)
     def __init__(
         self,
         file_id: str,
@@ -521,7 +517,7 @@ def run(self) -&gt; Optional[str]:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class BaseModel(object, metaclass=ABCMeta):
-    @Timer(&#34;BaseModel.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;BaseModel.__init__&#34;, logger=logger)
     def __init__(
         self,
         downloader: BaseDownloader,
@@ -576,7 +572,7 @@ def run(self) -&gt; Optional[str]:
 
         self.model = self.load_model()
 
-    @Timer(&#34;BaseModel.load_model&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;BaseModel.load_model&#34;, logger=logger)
     def load_model(self) -&gt; torch.nn.Module:
         &#34;&#34;&#34;Loads the model from the local file.
 
@@ -780,7 +776,7 @@ def run(self) -&gt; Optional[str]:
         model.to(self.device)
         return model
 
-    @Timer(&#34;BaseModel.inference&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;BaseModel.inference&#34;, logger=logger)
     def inference(
         self, tensor: torch.Tensor
     ) -&gt; Union[torch.Tensor, Tuple[torch.Tensor]]:
@@ -867,7 +863,7 @@ for optimized inference. Default: False.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;BaseModel.load_model&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+<pre><code class="python">@timed(&#34;BaseModel.load_model&#34;, logger=logger)
 def load_model(self) -&gt; torch.nn.Module:
     &#34;&#34;&#34;Loads the model from the local file.
 
@@ -970,7 +966,7 @@ def load_model(self) -&gt; torch.nn.Module:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;BaseModel.inference&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+<pre><code class="python">@timed(&#34;BaseModel.inference&#34;, logger=logger)
 def inference(
     self, tensor: torch.Tensor
 ) -&gt; Union[torch.Tensor, Tuple[torch.Tensor]]:

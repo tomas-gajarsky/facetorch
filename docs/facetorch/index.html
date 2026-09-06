@@ -124,6 +124,9 @@ el.replaceWith(d);
 ) -&gt; DictConfig:
     &#34;&#34;&#34;Compose packaged facetorch defaults independently of the current directory.
 
+    Safe to call inside an existing Hydra application: composition uses its own
+    loader and does not replace the application&#39;s Hydra instance or search path.
+
     Args:
         profile: ``&#34;cpu&#34;`` (default), ``&#34;gpu&#34;``, or ``None`` to retain the
             packaged device value.
@@ -144,12 +147,12 @@ el.replaceWith(d);
     )
     composed_overrides = _profile_overrides(profile, option_overrides)
     try:
-        with initialize_config_module(
-            config_module=&#34;facetorch.configs&#34;,
-            version_base=None,
+        return compose_config(
+            search_path=&#34;pkg://facetorch.configs&#34;,
+            config_name=&#34;config&#34;,
+            overrides=composed_overrides,
             job_name=&#34;facetorch-load-config&#34;,
-        ):
-            return compose(config_name=&#34;config&#34;, overrides=composed_overrides)
+        )
     except ConfigurationError:
         raise
     except Exception as exc:
@@ -158,6 +161,8 @@ el.replaceWith(d);
         ) from exc</code></pre>
 </details>
 <div class="desc"><p>Compose packaged facetorch defaults independently of the current directory.</p>
+<p>Safe to call inside an existing Hydra application: composition uses its own
+loader and does not replace the application's Hydra instance or search path.</p>
 <dl>
 <dt>Args</dt>
 <dt>-----=</dt>
@@ -197,14 +202,13 @@ A fully composed configuration with <code>cfg.analyzer</code> available.</p></di
 
     Relative paths are resolved against the caller&#39;s current directory. The file&#39;s
     parent becomes Hydra&#39;s configuration directory, so its ``defaults`` list and
-    sibling configuration groups are composed normally.
+    sibling configuration groups are composed normally. An existing host Hydra
+    application keeps its instance, search path, job state and compatibility mode.
     &#34;&#34;&#34;
     register_path_resolvers()
     config_file = Path(path).expanduser().resolve()
     if config_file.suffix.lower() not in {&#34;.yaml&#34;, &#34;.yml&#34;}:
-        raise ConfigurationError(
-            &#34;External configuration must be a .yaml or .yml file.&#34;
-        )
+        raise ConfigurationError(&#34;External configuration must be a .yaml or .yml file.&#34;)
     if not config_file.is_file():
         raise ConfigurationError(
             f&#34;External configuration file does not exist: {config_file}.&#34;
@@ -217,15 +221,12 @@ A fully composed configuration with <code>cfg.analyzer</code> available.</p></di
     )
     composed_overrides = _profile_overrides(profile, option_overrides)
     try:
-        with initialize_config_dir(
-            config_dir=os.fspath(config_file.parent),
-            version_base=None,
+        return compose_config(
+            search_path=os.fspath(config_file.parent),
+            config_name=config_file.name[: -len(config_file.suffix)],
+            overrides=composed_overrides,
             job_name=&#34;facetorch-load-external-config&#34;,
-        ):
-            return compose(
-                config_name=config_file.name[: -len(config_file.suffix)],
-                overrides=composed_overrides,
-            )
+        )
     except ConfigurationError:
         raise
     except Exception as exc:
@@ -236,7 +237,8 @@ A fully composed configuration with <code>cfg.analyzer</code> available.</p></di
 <div class="desc"><p>Compose an advanced external Hydra YAML tree from an explicit file path.</p>
 <p>Relative paths are resolved against the caller's current directory. The file's
 parent becomes Hydra's configuration directory, so its <code>defaults</code> list and
-sibling configuration groups are composed normally.</p></div>
+sibling configuration groups are composed normally. An existing host Hydra
+application keeps its instance, search path, job state and compatibility mode.</p></div>
 </dd>
 <dt id="facetorch.get_cache_dir"><code class="name flex">
 <span>def <span class="ident">get_cache_dir</span></span>(<span>) ‑> pathlib.Path</span>
@@ -1002,9 +1004,7 @@ class CacheEntryInspection:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class FaceAnalyzer(object):
-    @Timer(
-        &#34;FaceAnalyzer.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
-    )
+    @timed(&#34;FaceAnalyzer.__init__&#34;, logger=logger)
     def __init__(self, cfg: OmegaConf):
         &#34;&#34;&#34;FaceAnalyzer is the main class that reads images, runs face detection, tensor unification and facial feature prediction.
         It also draws bounding boxes and facial landmarks over the image.
@@ -1346,7 +1346,7 @@ class CacheEntryInspection:
             return tuple(name for name in configured if name not in excluded)
         return configured
 
-    @Timer(&#34;FaceAnalyzer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;FaceAnalyzer.run&#34;, logger=logger)
     def run(
         self,
         image_source: Optional[
@@ -2093,7 +2093,7 @@ def detector_loaded(self) -&gt; bool:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;FaceAnalyzer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+<pre><code class="python">@timed(&#34;FaceAnalyzer.run&#34;, logger=logger)
 def run(
     self,
     image_source: Optional[
@@ -2918,9 +2918,7 @@ class ImageData:
         &#34;&#34;&#34;Reset the detection object to empty state.&#34;&#34;&#34;
         self.det = Detection()
 
-    @Timer(
-        &#34;ImageData.reset_faces&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
-    )
+    @timed(&#34;ImageData.reset_faces&#34;, logger=logger)
     def reset_tensors(self) -&gt; None:
         &#34;&#34;&#34;Reset the tensors to empty state.&#34;&#34;&#34;
         self.reset_img()
@@ -3145,9 +3143,7 @@ None</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(
-    &#34;ImageData.reset_faces&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
-)
+<pre><code class="python">@timed(&#34;ImageData.reset_faces&#34;, logger=logger)
 def reset_tensors(self) -&gt; None:
     &#34;&#34;&#34;Reset the tensors to empty state.&#34;&#34;&#34;
     self.reset_img()

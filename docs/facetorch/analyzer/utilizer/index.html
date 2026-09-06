@@ -147,7 +147,7 @@ el.replaceWith(d);
         self.w_exp_base = self.w_exp[self.keypoints]
         self.dim = self.w_shp.shape[0] // 3
 
-    @Timer(&#34;Lmk3DMeshPose.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;Lmk3DMeshPose.run&#34;, logger=logger)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Runs the Lmk3DMeshPose class functionality - convert the face parameter vector to 3D landmarks, mesh and pose.
 
@@ -455,7 +455,7 @@ el.replaceWith(d);
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;Lmk3DMeshPose.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+<pre><code class="python">@timed(&#34;Lmk3DMeshPose.run&#34;, logger=logger)
 def run(self, data: ImageData) -&gt; ImageData:
     &#34;&#34;&#34;Runs the Lmk3DMeshPose class functionality - convert the face parameter vector to 3D landmarks, mesh and pose.
 
@@ -549,7 +549,7 @@ def run(self, data: ImageData) -&gt; ImageData:
         self.color = color
         self.line_width = line_width
 
-    @Timer(&#34;BoxDrawer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;BoxDrawer.run&#34;, logger=logger)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Draws face boxes to the image tensor.
 
@@ -600,7 +600,7 @@ def run(self, data: ImageData) -&gt; ImageData:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;BoxDrawer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+<pre><code class="python">@timed(&#34;BoxDrawer.run&#34;, logger=logger)
 def run(self, data: ImageData) -&gt; ImageData:
     &#34;&#34;&#34;Draws face boxes to the image tensor.
 
@@ -675,7 +675,7 @@ def run(self, data: ImageData) -&gt; ImageData:
         self.width = width
         self.color = color
 
-    @Timer(&#34;LandmarkDrawer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;LandmarkDrawer.run&#34;, logger=logger)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Draws 3D face landmarks to the image tensor.
 
@@ -750,7 +750,7 @@ def run(self, data: ImageData) -&gt; ImageData:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;LandmarkDrawer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+<pre><code class="python">@timed(&#34;LandmarkDrawer.run&#34;, logger=logger)
 def run(self, data: ImageData) -&gt; ImageData:
     &#34;&#34;&#34;Draws 3D face landmarks to the image tensor.
 
@@ -811,7 +811,7 @@ def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;
         super().__init__(transform, device, optimize_transform)
 
-    @Timer(&#34;ImageSaver.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;ImageSaver.run&#34;, logger=logger)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Saves the image tensor to an image file, if the path_output attribute of ImageData is not None.
 
@@ -865,7 +865,7 @@ def run(self, data: ImageData) -&gt; ImageData:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;ImageSaver.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+<pre><code class="python">@timed(&#34;ImageSaver.run&#34;, logger=logger)
 def run(self, data: ImageData) -&gt; ImageData:
     &#34;&#34;&#34;Saves the image tensor to an image file, if the path_output attribute of ImageData is not None.
 

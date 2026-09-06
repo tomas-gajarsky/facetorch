@@ -72,7 +72,7 @@ el.replaceWith(d);
         &#34;&#34;&#34;
         super().__init__(transform, device, optimize_transform)
 
-    @Timer(&#34;ImageSaver.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;ImageSaver.run&#34;, logger=logger)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Saves the image tensor to an image file, if the path_output attribute of ImageData is not None.
 
@@ -126,7 +126,7 @@ el.replaceWith(d);
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;ImageSaver.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+<pre><code class="python">@timed(&#34;ImageSaver.run&#34;, logger=logger)
 def run(self, data: ImageData) -&gt; ImageData:
     &#34;&#34;&#34;Saves the image tensor to an image file, if the path_output attribute of ImageData is not None.
 

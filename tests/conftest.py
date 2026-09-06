@@ -9,6 +9,7 @@ import torch
 import pytest
 from hydra import compose, initialize
 from omegaconf import DictConfig, ListConfig
+from torchvision.io import read_image
 
 root_dir = d(d(abspath(__file__)))
 # Test the checkout deterministically, even when an older facetorch wheel is
@@ -76,8 +77,8 @@ def _rewrite_default_root_path(value: str) -> str:
         return str(REPO_ROOT / ".pytest_cache" / "logs" / suffix)
     models_prefix = DEFAULT_TEST_ROOT + "/models"
     if value.startswith(models_prefix + "/"):
-        return str(TEST_MODEL_ROOT) + value[len(models_prefix):]
-    return str(REPO_ROOT) + value[len(DEFAULT_TEST_ROOT):]
+        return str(TEST_MODEL_ROOT) + value[len(models_prefix) :]
+    return str(REPO_ROOT) + value[len(DEFAULT_TEST_ROOT) :]
 
 
 def pytest_configure(config):
@@ -177,7 +178,25 @@ def cfg(request) -> None:
         with initialize(version_base=None, config_path="../conf"):
             cfg = compose(config_name=request.param)
         _rewrite_default_root_paths(cfg)
+    if hasattr(cfg, "path_tensor"):
+        cfg.path_tensor = str(request.getfixturevalue("tensor_fixture_path"))
     return cfg
+
+
+@pytest.fixture(scope="session")
+def tensor_fixture_path(tmp_path_factory):
+    """Recreate the original tensor fixture from the identical bundled JPEG."""
+    path = tmp_path_factory.mktemp("tensor-fixture") / "tensor.pt"
+    torch.save(read_image(str(REPO_ROOT / "data/input/test.jpg")), path)
+    return path
+
+
+def pytest_collection_modifyitems(items):
+    if not (REPO_ROOT / ".git").exists():
+        marker = pytest.mark.skip(reason="Git metadata is only available in a checkout")
+        for item in items:
+            if item.get_closest_marker("checkout"):
+                item.add_marker(marker)
 
 
 @pytest.fixture(scope="session")

@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Optional
 import warnings as _warnings
 
 import torch
-from codetiming import Timer
 
+from facetorch._timing import timed
 from facetorch.logger import get_logger
 
 logger = get_logger()
@@ -263,9 +263,7 @@ class ImageData:
         """Reset the detection object to empty state."""
         self.det = Detection()
 
-    @Timer(
-        "ImageData.reset_faces", "{name}: {milliseconds:.2f} ms", logger=logger.debug
-    )
+    @timed("ImageData.reset_faces", logger=logger)
     def reset_tensors(self) -> None:
         """Reset the tensors to empty state."""
         self.reset_img()

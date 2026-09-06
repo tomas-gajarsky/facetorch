@@ -99,11 +99,7 @@ class DetectorPostprocessorProtocol(Protocol):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class BaseDetPostProcessor(BaseProcessor):
-    @Timer(
-        &#34;BaseDetPostProcessor.__init__&#34;,
-        &#34;{name}: {milliseconds:.2f} ms&#34;,
-        logger=logger.debug,
-    )
+    @timed(&#34;BaseDetPostProcessor.__init__&#34;, logger=logger)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -345,7 +341,7 @@ and returns the data object.</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class PostRetFace(BaseDetPostProcessor):
-    @Timer(&#34;PostRetFace.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;PostRetFace.__init__&#34;, logger=logger)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -385,7 +381,7 @@ and returns the data object.</p>
         self.variance = list(variance)
         self.expand_box_ratio = expand_box_ratio
 
-    @Timer(&#34;PostRetFace.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;PostRetFace.run&#34;, logger=logger)
     def run(
         self,
         data: ImageData,
@@ -635,7 +631,7 @@ and returns the data object.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;PostRetFace.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+<pre><code class="python">@timed(&#34;PostRetFace.run&#34;, logger=logger)
 def run(
     self,
     data: ImageData,

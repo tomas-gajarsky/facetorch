@@ -35,6 +35,7 @@ def _runtime_example_source():
 
 
 @pytest.mark.release_blocker
+@pytest.mark.checkout
 def test_unpublished_v1_changelog_is_not_marked_as_released():
     tag = subprocess.run(
         ["git", "tag", "--list", "v1.0.0"],
@@ -181,7 +182,7 @@ def test_generated_api_docs_cover_the_public_top_level_modules():
     missing = [
         module.stem
         for module in sorted(package_root.glob("*.py"))
-        if module.name != "__init__.py"
+        if not module.name.startswith("_")
         and not (documented / f"{module.stem}.html").is_file()
     ]
     assert missing == []

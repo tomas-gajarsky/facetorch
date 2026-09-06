@@ -231,7 +231,9 @@ state. Accessing `analyzer.detector` or a value in `analyzer.predictors` or
 `analyzer.utilizers` explicitly loads and caches that component. Lazy initialization
 is protected against concurrent construction, but concurrent `run()` calls are not
 guaranteed safe because configured custom readers and processors may be stateful.
-Use one analyzer per worker or synchronize calls externally.
+Use one analyzer per worker or synchronize calls externally. Timing instrumentation
+supports overlapping calls on separate analyzers, retains no measurement history,
+and only measures calls while debug logging is enabled.
 
 Detector and predictor configs may set `compile_model: true` and a
 `compile_options` mapping; the options are passed unchanged to `torch.compile` when
@@ -690,6 +692,26 @@ GPU:
 
 ### Run tests + coverage
 * Run tests and generate coverage: ```pytest tests --verbose --cov-report html:coverage --cov facetorch```
+
+The source distribution includes the tests, configuration trees, workflow and
+container definitions needed by the suite. To validate an archive independently
+of a checkout (Python 3.12 and uv 0.9.14):
+
+```bash
+tar -xzf facetorch-1.0.0rc3.tar.gz
+cd facetorch-1.0.0rc3
+uv sync --frozen --extra dev --extra release --python 3.12.12
+uv run --frozen --no-sync python -m pytest -q
+```
+
+The suite downloads pinned model fixtures into `.pytest_cache/facetorch-models`
+on first use. Set `FACETORCH_TEST_MODEL_ROOT` to an already populated, verified
+fixture cache to reuse it. The tensor fixture is generated in pytest's temporary
+directory from the bundled JPEG; no separate binary tensor is needed. Two tests
+marked `checkout` require Git metadata and are explicitly skipped in an archive.
+CI runs this command in a fresh environment outside the checkout before accepting
+the distributions. Running the suite also requires Git for temporary repository
+fixtures and OpenSSL for the local HTTPS deadline tests.
 
 ### Generate documentation
 * Generate documentation from docstrings using pdoc3:  ```pdoc --html facetorch --output-dir docs --force --template-dir pdoc/templates/```

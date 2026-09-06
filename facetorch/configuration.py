@@ -5,12 +5,11 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Optional, Union
 
-from hydra import compose, initialize_config_dir, initialize_config_module
 from omegaconf import DictConfig
 
+from facetorch._hydra import compose_config
 from facetorch.exceptions import ConfigurationError
 from facetorch.paths import register_path_resolvers
-
 
 ConfigPath = Union[str, os.PathLike]
 _PROFILE_OVERRIDES = {
@@ -86,6 +85,9 @@ def load_config(
 ) -> DictConfig:
     """Compose packaged facetorch defaults independently of the current directory.
 
+    Safe to call inside an existing Hydra application: composition uses its own
+    loader and does not replace the application's Hydra instance or search path.
+
     Args:
         profile: ``"cpu"`` (default), ``"gpu"``, or ``None`` to retain the
             packaged device value.
@@ -106,12 +108,12 @@ def load_config(
     )
     composed_overrides = _profile_overrides(profile, option_overrides)
     try:
-        with initialize_config_module(
-            config_module="facetorch.configs",
-            version_base=None,
+        return compose_config(
+            search_path="pkg://facetorch.configs",
+            config_name="config",
+            overrides=composed_overrides,
             job_name="facetorch-load-config",
-        ):
-            return compose(config_name="config", overrides=composed_overrides)
+        )
     except ConfigurationError:
         raise
     except Exception as exc:
@@ -132,14 +134,13 @@ def load_config_from_path(
 
     Relative paths are resolved against the caller's current directory. The file's
     parent becomes Hydra's configuration directory, so its ``defaults`` list and
-    sibling configuration groups are composed normally.
+    sibling configuration groups are composed normally. An existing host Hydra
+    application keeps its instance, search path, job state and compatibility mode.
     """
     register_path_resolvers()
     config_file = Path(path).expanduser().resolve()
     if config_file.suffix.lower() not in {".yaml", ".yml"}:
-        raise ConfigurationError(
-            "External configuration must be a .yaml or .yml file."
-        )
+        raise ConfigurationError("External configuration must be a .yaml or .yml file.")
     if not config_file.is_file():
         raise ConfigurationError(
             f"External configuration file does not exist: {config_file}."
@@ -152,15 +153,12 @@ def load_config_from_path(
     )
     composed_overrides = _profile_overrides(profile, option_overrides)
     try:
-        with initialize_config_dir(
-            config_dir=os.fspath(config_file.parent),
-            version_base=None,
+        return compose_config(
+            search_path=os.fspath(config_file.parent),
+            config_name=config_file.name[: -len(config_file.suffix)],
+            overrides=composed_overrides,
             job_name="facetorch-load-external-config",
-        ):
-            return compose(
-                config_name=config_file.name[: -len(config_file.suffix)],
-                overrides=composed_overrides,
-            )
+        )
     except ConfigurationError:
         raise
     except Exception as exc:

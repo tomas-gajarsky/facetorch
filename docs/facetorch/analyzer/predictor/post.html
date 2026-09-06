@@ -56,11 +56,7 @@ el.replaceWith(d);
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class BasePredPostProcessor(BaseProcessor):
-    @Timer(
-        &#34;BasePredPostProcessor.__init__&#34;,
-        &#34;{name}: {milliseconds:.2f} ms&#34;,
-        logger=logger.debug,
-    )
+    @timed(&#34;BasePredPostProcessor.__init__&#34;, logger=logger)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -253,7 +249,7 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class PostArgMax(BasePredPostProcessor):
-    @Timer(&#34;PostArgMax.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;PostArgMax.__init__&#34;, logger=logger)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -274,7 +270,7 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
         super().__init__(transform, device, optimize_transform, labels)
         self.dim = dim
 
-    @Timer(&#34;PostArgMax.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;PostArgMax.run&#34;, logger=logger)
     def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Prediction]:
         &#34;&#34;&#34;Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
 
@@ -322,7 +318,7 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;PostArgMax.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+<pre><code class="python">@timed(&#34;PostArgMax.run&#34;, logger=logger)
 def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Prediction]:
     &#34;&#34;&#34;Post-processes the prediction tensor using argmax and returns a list of prediction data structures, one for each face.
 
@@ -373,11 +369,7 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class PostSigmoidBinary(BasePredPostProcessor):
-    @Timer(
-        &#34;PostSigmoidBinary.__init__&#34;,
-        &#34;{name}: {milliseconds:.2f} ms&#34;,
-        logger=logger.debug,
-    )
+    @timed(&#34;PostSigmoidBinary.__init__&#34;, logger=logger)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -407,9 +399,7 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
         super().__init__(transform, device, optimize_transform, labels)
         self.threshold = float(threshold)
 
-    @Timer(
-        &#34;PostSigmoidBinary.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
-    )
+    @timed(&#34;PostSigmoidBinary.run&#34;, logger=logger)
     def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Prediction]:
         &#34;&#34;&#34;Post-processes the prediction tensor using sigmoid and returns a list of prediction data structures, one for each face.
 
@@ -458,9 +448,7 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(
-    &#34;PostSigmoidBinary.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
-)
+<pre><code class="python">@timed(&#34;PostSigmoidBinary.run&#34;, logger=logger)
 def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Prediction]:
     &#34;&#34;&#34;Post-processes the prediction tensor using sigmoid and returns a list of prediction data structures, one for each face.
 
@@ -529,7 +517,7 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
         &#34;&#34;&#34;
         super().__init__(transform, device, optimize_transform, labels)
 
-    @Timer(&#34;PostEmbedder.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;PostEmbedder.run&#34;, logger=logger)
     def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         &#34;&#34;&#34;Extracts the embedding from the prediction tensor and returns a list of prediction data structures, one for each face.
 
@@ -575,7 +563,7 @@ def run(self, preds: Union[torch.Tensor, Tuple[torch.Tensor]]) -&gt; List[Predic
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;PostEmbedder.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+<pre><code class="python">@timed(&#34;PostEmbedder.run&#34;, logger=logger)
 def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
     &#34;&#34;&#34;Extracts the embedding from the prediction tensor and returns a list of prediction data structures, one for each face.
 
@@ -649,7 +637,7 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         self.dim = dim
         self.threshold = threshold
 
-    @Timer(&#34;PostMultiLabel.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;PostMultiLabel.run&#34;, logger=logger)
     def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         &#34;&#34;&#34;Extracts multiple labels and puts them in other[multi] predictions. The most likely label is put in the label field. Confidence scores are returned in the logits field.
 
@@ -710,7 +698,7 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;PostMultiLabel.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+<pre><code class="python">@timed(&#34;PostMultiLabel.run&#34;, logger=logger)
 def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
     &#34;&#34;&#34;Extracts multiple labels and puts them in other[multi] predictions. The most likely label is put in the label field. Confidence scores are returned in the logits field.
 
@@ -795,11 +783,7 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
             offsets = [0] * len(labels)
         self.offsets = offsets
 
-    @Timer(
-        &#34;PostLabelConfidencePairs.run&#34;,
-        &#34;{name}: {milliseconds:.2f} ms&#34;,
-        logger=logger.debug,
-    )
+    @timed(&#34;PostLabelConfidencePairs.run&#34;, logger=logger)
     def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
         &#34;&#34;&#34;Extracts the confidence scores and puts them in other[label] predictions.
 
@@ -859,11 +843,7 @@ def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(
-    &#34;PostLabelConfidencePairs.run&#34;,
-    &#34;{name}: {milliseconds:.2f} ms&#34;,
-    logger=logger.debug,
-)
+<pre><code class="python">@timed(&#34;PostLabelConfidencePairs.run&#34;, logger=logger)
 def run(self, preds: torch.Tensor) -&gt; List[Prediction]:
     &#34;&#34;&#34;Extracts the confidence scores and puts them in other[label] predictions.
 

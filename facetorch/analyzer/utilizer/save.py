@@ -1,7 +1,7 @@
 import os
 import torch
 import torchvision
-from codetiming import Timer
+from facetorch._timing import timed
 from facetorch.base import BaseUtilizer
 from facetorch.datastruct import ImageData
 from facetorch.exceptions import ConfigurationError
@@ -28,7 +28,7 @@ class ImageSaver(BaseUtilizer):
         """
         super().__init__(transform, device, optimize_transform)
 
-    @Timer("ImageSaver.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("ImageSaver.run", logger=logger)
     def run(self, data: ImageData) -> ImageData:
         """Saves the image tensor to an image file, if the path_output attribute of ImageData is not None.
 
