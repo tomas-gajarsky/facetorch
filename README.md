@@ -51,8 +51,9 @@ Please use this library responsibly and with caution. Adhere to the [European Co
 ## Install
 
 > [!IMPORTANT]
-> This documentation targets **`1.0.0rc3` (Beta)**. Install the exact candidate
-> only after it appears on [PyPI](https://pypi.org/project/facetorch/). Bare
+> This branch prepares **`1.0.0rc4` (Beta)**, which is **not yet published**.
+> Use the versioned installation and container commands below only after its
+> approved publication on [PyPI](https://pypi.org/project/facetorch/) and Docker. Bare
 > `pip install facetorch` and Docker `latest` remain on the stable `0.6.2` line
 > during the RC soak. Conda-forge is asynchronous and must be verified separately.
 > None of those unpinned routes can be assumed to provide the v1 API shown below.
@@ -70,7 +71,7 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install --index-url https://download.pytorch.org/whl/cpu \
   "torch==2.13.0+cpu" "torchvision==0.28.0+cpu"
-python -m pip install "facetorch==1.0.0rc3"
+python -m pip install "facetorch==1.0.0rc4"
 ```
 
 For the validated CUDA 13.0 cohort, use a compatible NVIDIA host and replace the
@@ -89,7 +90,7 @@ space while downloads are staged.
 
 [Conda-forge](https://anaconda.org/conda-forge/facetorch) remains an asynchronous
 channel. Do not use its unversioned install command for the RC; wait until the
-feedstock displays `1.0.0rc3`, then pin that exact version.
+feedstock displays `1.0.0rc4`, then pin that exact version.
 
 ## Usage
 
@@ -108,7 +109,7 @@ non-root container never needs write access to the source checkout.
 CPU:
 
 ```bash
-FACETORCH_DOCKER_TAG=1.0.0-rc.3 docker compose run --rm facetorch \
+FACETORCH_DOCKER_TAG=1.0.0-rc.4 docker compose run --rm facetorch \
   python /opt/facetorch/example.py /workspace/data/input/test.jpg \
   --output /workspace/data/output/test.png
 ```
@@ -116,7 +117,7 @@ FACETORCH_DOCKER_TAG=1.0.0-rc.3 docker compose run --rm facetorch \
 GPU:
 
 ```bash
-FACETORCH_DOCKER_TAG=1.0.0-rc.3 docker compose run --rm facetorch-gpu \
+FACETORCH_DOCKER_TAG=1.0.0-rc.4 docker compose run --rm facetorch-gpu \
   python /opt/facetorch/example.py /workspace/data/input/test.jpg \
   --profile gpu --output /workspace/data/output/test-gpu.png
 ```
@@ -124,7 +125,7 @@ FACETORCH_DOCKER_TAG=1.0.0-rc.3 docker compose run --rm facetorch-gpu \
 Copy a result from the persistent volume into the checkout when needed:
 
 ```bash
-FACETORCH_DOCKER_TAG=1.0.0-rc.3 docker compose run --rm -T facetorch \
+FACETORCH_DOCKER_TAG=1.0.0-rc.4 docker compose run --rm -T facetorch \
   cat /workspace/data/output/test.png > data/output/test.png
 ```
 
@@ -698,8 +699,8 @@ container definitions needed by the suite. To validate an archive independently
 of a checkout (Python 3.12 and uv 0.9.14):
 
 ```bash
-tar -xzf facetorch-1.0.0rc3.tar.gz
-cd facetorch-1.0.0rc3
+tar -xzf facetorch-1.0.0rc4.tar.gz
+cd facetorch-1.0.0rc4
 uv sync --frozen --extra dev --extra release --python 3.12.12
 uv run --frozen --no-sync python -m pytest -q
 ```

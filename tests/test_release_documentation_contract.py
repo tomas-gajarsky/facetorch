@@ -68,8 +68,8 @@ def test_current_rc_identity_and_model_governance_prose_are_consistent():
         encoding="utf-8"
     )
 
-    assert 'version = "1.0.0rc3"' in project
-    assert "v1.0.0-rc.3" in changelog
+    assert 'version = "1.0.0rc4"' in project
+    assert "v1.0.0-rc.4" in changelog
     assert "release_eligible: false" not in compatibility
     assert "governance is still incomplete" not in compatibility
     assert "all ten records are release-eligible" in readme.lower()
@@ -99,11 +99,11 @@ def test_rc_onboarding_selects_exact_candidate_channels():
     compose = (REPO_ROOT / "docker-compose.yml").read_text(encoding="utf-8")
 
     combined = f"{readme}\n{migration}"
-    assert '"facetorch==1.0.0rc3"' in combined
+    assert '"facetorch==1.0.0rc4"' in combined
     assert '"torch==2.13.0+cpu"' in combined
     assert '"torch==2.13.0+cu130"' in combined
-    assert "FACETORCH_DOCKER_TAG=1.0.0-rc.3" in combined
-    assert "${FACETORCH_DOCKER_TAG:-1.0.0-rc.3}" in compose
+    assert "FACETORCH_DOCKER_TAG=1.0.0-rc.4" in combined
+    assert "${FACETORCH_DOCKER_TAG:-1.0.0-rc.4}" in compose
     assert "facetorch:latest" not in compose
     assert "facetorch-gpu:latest" not in compose
     assert "pip install facetorch\n" not in readme

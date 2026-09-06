@@ -2,7 +2,23 @@
 
 ## Unreleased
 
+## 1.0.0rc4
+
+Pending publication as `v1.0.0-rc.4`. This candidate is not generally available;
+the protected-source checks, final CPU/CUDA qualification and release approval
+remain required before publication.
+
 ### Fixed
+* Make debug timing independent for overlapping analyzer/component calls and stop
+  retaining an unbounded history of per-request timing samples.
+* Compose packaged and external configurations inside an active Hydra application
+  without replacing the host's Hydra instance, search path or job state.
+* Wait for required source checks to register and finish before evaluating the
+  automatic release dry run, with a bounded deadline and immediate failure on
+  unsuccessful completed checks.
+* Make the source archive's test suite executable with its bundled inputs and a
+  generated tensor fixture; validate the full unpacked archive in CI.
+* Preserve the public `InputError` contract for malformed image URLs and redirects.
 * Validate existing model programs without rebuilding exports, allowing inference
   compatibility checks to run independently of historical exporter APIs.
 * Retain the actual numerical reference bundles in release evidence and verify
@@ -22,6 +38,8 @@
   source matrix and exact-commit checks before release preparation.
 * Retain digest-bound per-model numerical records in release evidence and verify
   their recorded bounds offline before preparing the release plan.
+* Bound local CUDA qualification storage with one private temporary environment
+  at a time, retaining every supported runtime and numerical gate.
 
 ### Release status
 * Retain all eight Torch 2.6–2.13 lines as a product requirement, recommend 2.13

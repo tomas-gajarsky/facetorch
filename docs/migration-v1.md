@@ -11,9 +11,11 @@ CPU is the safe default profile; GPU remains supported by selecting
 `load_config("gpu")` on a compatible CUDA host. Windows, macOS, ARM, and MPS
 are experimental until separately validated.
 
-RC3 (`1.0.0rc3`) was published on September 3, 2026. Preinstalling
-the CPU PyTorch cohort prevents pip from selecting the much larger CUDA runtime
-dependency graph on a CPU host:
+This branch prepares RC4 (`1.0.0rc4`), which is not yet published. Use the
+commands below only after its approved publication. RC3 (`1.0.0rc3`) remains
+the September 3, 2026 historical release. Preinstalling the CPU PyTorch cohort
+prevents pip from selecting the much larger CUDA runtime dependency graph on a CPU
+host:
 
 ```bash
 python -m venv .venv
@@ -21,7 +23,7 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install --index-url https://download.pytorch.org/whl/cpu \
   "torch==2.13.0+cpu" "torchvision==0.28.0+cpu"
-python -m pip install "facetorch==1.0.0rc3"
+python -m pip install "facetorch==1.0.0rc4"
 ```
 
 For CUDA 13.0, install `torch==2.13.0+cu130` and
@@ -31,7 +33,7 @@ from 2.6/0.21 through 2.13/0.28 are supported; the two existing model artifact
 cohorts are selected automatically. Do not rely on bare `pip install facetorch`, Docker
 `latest`, or the unversioned conda command during the RC soak: those stable
 aliases remain on 0.6.2. Conda-forge is usable only after its feedstock shows
-the exact `1.0.0rc3` build.
+the exact `1.0.0rc4` build.
 
 ## Runtime API changes
 
@@ -128,11 +130,11 @@ the release tag and digest. Conda metadata may follow PyPI publication, so pin
 the artifact source explicitly in deployment automation.
 
 The repository Compose file defaults to the
-immutable `1.0.0-rc.3` tag. Keep the tag explicit in deployment automation:
+immutable `1.0.0-rc.4` tag. Keep the tag explicit in deployment automation:
 
 ```bash
-FACETORCH_DOCKER_TAG=1.0.0-rc.3 docker compose pull facetorch
-FACETORCH_DOCKER_TAG=1.0.0-rc.3 docker compose run --rm facetorch \
+FACETORCH_DOCKER_TAG=1.0.0-rc.4 docker compose pull facetorch
+FACETORCH_DOCKER_TAG=1.0.0-rc.4 docker compose run --rm facetorch \
   python /opt/facetorch/example.py /workspace/data/input/test.jpg \
   --output /workspace/data/output/test.png
 ```
