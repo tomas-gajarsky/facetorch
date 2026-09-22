@@ -14,6 +14,14 @@ from scripts import audit_dependencies as audit
 pytestmark = pytest.mark.release_blocker
 
 
+def test_audited_python_minors_match_the_public_support_contract():
+    root = Path(__file__).resolve().parents[1]
+    compatibility = json.loads(
+        (root / "facetorch/models/compatibility.json").read_text()
+    )
+    assert list(audit.PYTHON_MINOR_LINES) == compatibility["python"]["minor_lines"]
+
+
 def test_owner_approval_adds_only_reviewed_profile_version_pairs():
     root = Path(__file__).resolve().parents[1]
     approval_ref = "security/v1-advisory-approval-2026-09-06.json"
@@ -294,6 +302,77 @@ def test_profile_audit_uses_hashed_projection_and_records_coverage(
         tmp_path, "torch-2.6-cpu", Path("."), tmp_path / "output", _policy()
     )
     assert result["status"] == "failed"
-    assert result["coverage"]["audited_count"] == 1
-    assert result["audit_inventory_sha256"]
-    assert result["audit_requirements_sha256"] != result["requirements_sha256"]
+    assert result["coverage"]["audited_count"] == 3
+    assert {r["python_version"] for r in result["python_inventories"]} == {
+        "3.10",
+        "3.11",
+        "3.12",
+    }
+    for report in result["python_inventories"]:
+        assert report["audit_inventory_sha256"]
+        assert report["audit_report_sha256"]
+        assert report["audit_requirements_sha256"] != result["requirements_sha256"]
+
+
+def test_profile_audit_rejects_a_finding_only_active_on_another_python(
+    tmp_path, monkeypatch, export_fixture
+):
+    requirements, lock = copy.deepcopy(export_fixture)
+    for name, version, marker in (
+        ("numpy", "2.2.6", 'python_version < "3.11"'),
+        ("numpy", "2.4.6", 'python_version == "3.11"'),
+        ("numpy", "2.5.2", 'python_version >= "3.12"'),
+    ):
+        requirements += f"\n{name}=={version} ; {marker} --hash=sha256:" + "c" * 64
+        lock["package"].append(
+            {
+                "name": name,
+                "version": version,
+                "source": {"registry": "https://pypi.org/simple"},
+                "wheels": [{"hash": "sha256:" + "c" * 64}],
+            }
+        )
+    (tmp_path / "uv.lock").write_text("lock placeholder")
+    (tmp_path / "pyproject.toml").write_text("project placeholder")
+    monkeypatch.setattr(audit.tomllib, "loads", lambda _: lock)
+    queried = []
+
+    def run(command, *, cwd):
+        if command[0] == "uv":
+            target = Path(command[command.index("--output-file") + 1])
+            target.write_text(
+                '{"components": []}' if "cyclonedx1.5" in command else requirements
+            )
+        else:
+            paths = {
+                key: Path(
+                    next(
+                        arg.split("=", 1)[1]
+                        for arg in command
+                        if arg.startswith(f"--{key}=")
+                    )
+                )
+                for key in ("requirement", "output")
+            }
+            dependencies = []
+            for line in paths["requirement"].read_text().splitlines():
+                if not line or line.startswith("#"):
+                    continue
+                name, version = line.split()[0].split("==")
+                queried.append((name, version))
+                vulns = (
+                    [{"id": "CVE-test-python310-only"}]
+                    if (name == "numpy" and version == "2.2.6")
+                    else []
+                )
+                dependencies.append({"name": name, "version": version, "vulns": vulns})
+            paths["output"].write_text(json.dumps({"dependencies": dependencies}))
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(audit, "_run", run)
+    result = audit._audit_profile(
+        tmp_path, "torch-2.6-cpu", Path("."), tmp_path / "output", _policy()
+    )
+    assert result["status"] == "failed"
+    assert {("numpy", v) for v in ("2.2.6", "2.4.6", "2.5.2")} <= set(queried)
+    assert result["unresolved_findings"][0]["python_version"] == "3.10"

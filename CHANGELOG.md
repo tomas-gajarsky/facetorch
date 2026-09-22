@@ -9,6 +9,11 @@ the protected-source checks, final CPU/CUDA qualification and release approval
 remain required before publication.
 
 ### Fixed
+* Audit each supported Python 3.10–3.12 dependency inventory in every profile,
+  independently of the interpreter running the advisory gate.
+* Keep coordinated-release build check names separate from required source checks.
+* Register Hydra resolvers only during configuration composition, preserving a
+  host application's resolver names when Facetorch is merely imported.
 * Make debug timing independent for overlapping analyzer/component calls and stop
   retaining an unbounded history of per-request timing samples.
 * Compose packaged and external configurations inside an active Hydra application

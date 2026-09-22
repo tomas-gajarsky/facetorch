@@ -1,20 +1,32 @@
 # Facetorch v1 GA remediation status
 
-Updated: September 6, 2026. Branch: `fix/v1-ga-readiness`, based on RC3 / main
+Updated: September 22, 2026. Branch: `fix/v1-ga-readiness`, based on RC3 / main
 `12db551d937ac2fa0cc41324f89d71fd9858fa02`.
 
-The approved correction work and scoped risk treatment are implemented locally.
-**The dependency gate now passes all 17 profiles on Python 3.10 and 3.12.** The
-owner approved 76 exact profile/version records covering the 18 findings,
-expiring November 20; the earlier nine approvals are unchanged. All eight Torch
-lines remain supported. See the [treatment record](docs/v1-risk-treatment-proposal.md)
-and [activation evidence](security/v1-advisory-activation-2026-09-06.json).
-Full exact-candidate qualification, soak, and publication approval remain pending.
+**RC4 (`1.0.0rc4`, Beta) is prepared and under review in
+[PR #110](https://github.com/tomas-gajarsky/facetorch/pull/110); it is not published.**
+RC3 remains the latest published candidate, and 0.6.2 remains stable.
 
-This branch has not been pushed, merged, or published. Repository protection and
-release approvals have not been changed. The package still has the RC3 version
-and Beta classifier; locally built wheels are development validation artifacts,
-not replacements for the published RC3 bytes.
+The September 6 qualification of commit `235f862` passed its source, CPU/CUDA,
+installed-package and container checks. The September 22 correction cycle extends
+the existing dependency auditor to all three supported Python inventories,
+separates the release build's check name from source validation, defers Hydra
+resolver registration until configuration composition, and corrects README links.
+Fresh source validation passes 1,127 tests (185 skipped), and a single dependency
+audit passes all 51 profile/Python combinations: 841 entries on Python 3.10, 824
+on 3.11 and 832 on 3.12. The audit retains each interpreter's hashed inventory,
+raw results and exact exception decisions. Historical CPU/CUDA qualification
+remains bound to its original source. Merge, protected-source qualification, the candidate soak
+and publication approval remain release steps.
+
+All eight Torch lines remain supported. The owner-approved advisory exceptions
+are unchanged and expire November 20. See the
+[treatment record](docs/v1-risk-treatment-proposal.md) and
+[activation evidence](security/v1-advisory-activation-2026-09-06.json).
+Repository protection and release approvals have not been changed by this cycle.
+
+The tables below retain the September 6 remediation results and validation
+history; they do not claim fresh qualification of the September 22 corrections.
 
 ## Corrections against the review
 

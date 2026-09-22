@@ -271,6 +271,7 @@ jobs:
           retention-days: 30
 
   build-distributions:
+    name: release-build-distributions
     needs: [validate-inputs, resolve-candidate]
     runs-on: ubuntu-24.04
     timeout-minutes: 40

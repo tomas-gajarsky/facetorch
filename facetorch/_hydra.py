@@ -2,12 +2,15 @@
 
 from datetime import datetime
 import sys
+import threading
 
 from hydra._internal.config_loader_impl import ConfigLoaderImpl
 from hydra._internal.utils import create_config_search_path
 from hydra.core.hydra_config import HydraConfig
 from hydra.types import RunMode
 from omegaconf import DictConfig, OmegaConf, open_dict
+
+_RESOLVER_LOCK = threading.Lock()
 
 
 def _register_missing_resolvers() -> None:
@@ -30,11 +33,6 @@ def _register_missing_resolvers() -> None:
             OmegaConf.register_new_resolver(name, resolver, use_cache=use_cache)
 
 
-# Import initialization is serialized by Python; concurrent composition calls do
-# not register or replace shared resolvers.
-_register_missing_resolvers()
-
-
 def compose_config(
     search_path: str, config_name: str, overrides: list[str], *, job_name: str
 ) -> DictConfig:
@@ -45,6 +43,11 @@ def compose_config(
     JobRuntime, or changing the host's compatibility version. This small private
     adapter is covered at both the minimum and locked Hydra/OmegaConf versions.
     """
+    # Importing the library must not claim resolver names in a host application.
+    # Serialize the check/register pair for concurrent first compositions, and
+    # check each time so hosts may clear resolvers between configuration loads.
+    with _RESOLVER_LOCK:
+        _register_missing_resolvers()
     loader = ConfigLoaderImpl(create_config_search_path(search_path))
     config = loader.load_configuration(
         config_name=config_name,

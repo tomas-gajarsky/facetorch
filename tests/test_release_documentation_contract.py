@@ -272,6 +272,8 @@ def test_extension_guide_separates_private_and_shipped_model_paths(tmp_path):
         "docs/migration-v1.md",
         "docs/model-compatibility.md",
         "docs/model-publication.md",
+        "docs/torch-support-policy.md",
+        "docs/v1-risk-treatment-proposal.md",
         "facetorch/models/governance.json",
     ):
         assert re.search(

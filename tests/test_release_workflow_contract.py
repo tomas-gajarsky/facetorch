@@ -41,6 +41,19 @@ def _publication_jobs(workflow):
 
 
 @pytest.mark.release_blocker
+def test_release_check_names_do_not_shadow_required_source_checks():
+    policy = json.loads(
+        (REPO_ROOT / "security" / "required-source-checks.json").read_text()
+    )
+    required = set(policy["required_checks"])
+    for path in RELEASE_WORKFLOWS:
+        names = {
+            job.get("name", job_id) for job_id, job in _workflow(path)["jobs"].items()
+        }
+        assert not names.intersection(required), path.name
+
+
+@pytest.mark.release_blocker
 def test_dispatch_input_is_never_interpolated_directly_into_shell():
     unsafe = re.compile(r"\$\{\{\s*(?:github\.event\.)?inputs\.tag\s*\}\}")
     violations = []

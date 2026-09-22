@@ -2,6 +2,8 @@
 
 from concurrent.futures import ThreadPoolExecutor
 import copy
+import subprocess
+import sys
 import threading
 
 from hydra import compose, initialize_config_dir, version
@@ -16,6 +18,58 @@ from facetorch._hydra import ConfigLoaderImpl
 from facetorch.exceptions import ConfigurationError
 
 pytestmark = pytest.mark.release_blocker
+
+
+def test_import_leaves_host_resolvers_available_for_registration():
+    subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            """
+from omegaconf import OmegaConf
+names = ('now', 'hydra', 'python_version')
+assert not any(OmegaConf.has_resolver(name) for name in names)
+import facetorch
+assert not any(OmegaConf.has_resolver(name) for name in names)
+for name in names:
+    OmegaConf.register_new_resolver(name, lambda *args: 'host')
+facetorch.load_config()
+for name in names:
+    assert OmegaConf.create({'value': '${' + name + ':}'}).value == 'host'
+""",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_first_concurrent_compositions_register_resolvers_without_retaining_state():
+    subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            """
+from concurrent.futures import ThreadPoolExecutor
+import threading
+from omegaconf import OmegaConf
+from facetorch import load_config
+barrier = threading.Barrier(4, timeout=10)
+def load(_):
+    barrier.wait()
+    return load_config().analyzer.device
+with ThreadPoolExecutor(4) as pool:
+    assert list(pool.map(load, range(4))) == ['cpu'] * 4
+assert OmegaConf.create({'value': '${python_version:major}'}).value == '3'
+OmegaConf.clear_resolver('python_version')
+load_config()
+assert OmegaConf.create({'value': '${python_version:major}'}).value == '3'
+""",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
 
 
 @pytest.fixture

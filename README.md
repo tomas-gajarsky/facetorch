@@ -60,7 +60,7 @@ Please use this library responsibly and with caution. Adhere to the [European Co
 
 Torch 2.13.0 / torchvision 0.28.0 is the recommended pair for new installations
 within the current supported range. Older supported integrations remain welcome;
-see the [Torch support policy](docs/torch-support-policy.md).
+see the [Torch support policy](https://github.com/tomas-gajarsky/facetorch/blob/104c75575e439699f23430c1d812ccabee5f6b13/docs/torch-support-policy.md).
 
 Use a virtual environment and install the supported CPU PyTorch cohort first.
 This avoids pip selecting a multi-gigabyte CUDA dependency graph on a CPU host:
@@ -582,7 +582,7 @@ records and adds 76 exact Torch profile/version records approved on September 6
 for 18 reviewed findings. All expire on 2026-11-20. The dependency gate passes
 under this scoped policy; affected runtimes require trusted models and metadata.
 The full candidate qualification and release approval remain required. See the
-[risk treatment](docs/v1-risk-treatment-proposal.md).
+[risk treatment](https://github.com/tomas-gajarsky/facetorch/blob/104c75575e439699f23430c1d812ccabee5f6b13/docs/v1-risk-treatment-proposal.md).
 Validation uses immutable CPU golden references for both CPU and CUDA artifacts,
 with TensorFloat-32 disabled and the numeric policy recorded. Predictor batch
 sizes refer only to faces from one input image; multi-image batching is not

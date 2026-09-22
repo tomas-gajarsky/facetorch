@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit exact uv profiles and emit hashed exports and CycloneDX SBOMs."""
+"""Audit every supported Python inventory in exact uv profiles and emit SBOMs."""
 
 from __future__ import annotations
 
@@ -45,6 +45,7 @@ PROFILE_PROJECTS = {
     "torch-2.13-cu130": Path("environments/torch-2.13-cu130"),
 }
 PIP_AUDIT_VERSION = "2.10.1"
+PYTHON_MINOR_LINES = ("3.10", "3.11", "3.12")
 
 
 def _sha256(path: Path) -> str:
@@ -139,7 +140,9 @@ def _exception_for(
     return None
 
 
-def _audit_inventory(requirements: str, lock: dict, profile: str) -> dict:
+def _audit_inventory(
+    requirements: str, lock: dict, profile: str, *, environment=None
+) -> dict:
     """Bind advisory queries to the exact active, hashed lock inventory.
 
     PyPI's advisory service does not recognize official Torch local build tags.
@@ -147,7 +150,7 @@ def _audit_inventory(requirements: str, lock: dict, profile: str) -> dict:
     upstream release, retaining the actual identity for exception matching.
     """
     inventory = {}
-    environment = default_environment()
+    environment = default_environment() if environment is None else environment
     for line in requirements.replace("\\\n", " ").splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
@@ -319,9 +322,6 @@ def _audit_profile(
     profile_output.mkdir(parents=True, exist_ok=True)
     requirements_path = profile_output / "requirements.txt"
     sbom_path = profile_output / "sbom.cdx.json"
-    audit_path = profile_output / "pip-audit.json"
-    audit_requirements_path = profile_output / "audit-requirements.txt"
-    inventory_path = profile_output / "audit-inventory.json"
 
     export_base = [
         "uv",
@@ -352,10 +352,91 @@ def _audit_profile(
         raise RuntimeError(sbom.stdout + sbom.stderr)
 
     lock_path = project_root / "uv.lock"
+    requirements_text = requirements_path.read_text(encoding="utf-8")
+    lock = tomllib.loads(lock_path.read_text(encoding="utf-8"))
+    python_reports = [
+        _audit_python_inventory(
+            requirements_text,
+            lock,
+            profile,
+            python_version,
+            profile_output / f"python-{python_version}",
+            exception_policy,
+            repo_root,
+        )
+        for python_version in PYTHON_MINOR_LINES
+    ]
+    return {
+        "profile": profile,
+        "status": (
+            "ok" if all(r["status"] == "ok" for r in python_reports) else "failed"
+        ),
+        "coverage": {
+            key: sum(r["coverage"][key] for r in python_reports)
+            for key in ("expected_count", "audited_count")
+        }
+        | {
+            "errors": [
+                f"Python {r['python_version']}: {error}"
+                for r in python_reports
+                for error in r["coverage"]["errors"]
+            ]
+        },
+        **{
+            key: [
+                {**finding, "python_version": r["python_version"]}
+                for r in python_reports
+                for finding in r[key]
+            ]
+            for key in ("accepted_exceptions", "unresolved_findings")
+        },
+        "python_inventories": python_reports,
+        "project_sha256": _sha256(project_root / "pyproject.toml"),
+        "lock_sha256": _sha256(lock_path),
+        "requirements_sha256": _sha256(requirements_path),
+        "sbom_sha256": _sha256(sbom_path),
+        "sbom_content_sha256": _sbom_content_sha256(sbom_path),
+        "pip_audit_version": PIP_AUDIT_VERSION,
+    }
+
+
+def _audit_python_inventory(
+    requirements: str,
+    lock: dict,
+    profile: str,
+    python_version: str,
+    output_dir: Path,
+    exception_policy: dict,
+    repo_root: Path,
+) -> dict:
+    """Query each supported CPython/Linux inventory without installing its wheels.
+
+    Use each minor's minimum patch for marker evaluation. The export and its
+    hashes remain unchanged; only the advisory request loses inactive markers.
+    All CI and release callers therefore cover every declared Python minor,
+    independently of the interpreter used to execute pip-audit.
+    """
+    environment = {
+        **default_environment(),
+        "python_version": python_version,
+        "python_full_version": f"{python_version}.0",
+        "implementation_version": f"{python_version}.0",
+        "implementation_name": "cpython",
+        "platform_python_implementation": "CPython",
+        "os_name": "posix",
+        "sys_platform": "linux",
+        "platform_system": "Linux",
+        "platform_machine": "x86_64",
+    }
+    output_dir.mkdir(parents=True, exist_ok=True)
+    audit_path = output_dir / "pip-audit.json"
+    audit_requirements_path = output_dir / "audit-requirements.txt"
+    inventory_path = output_dir / "audit-inventory.json"
     inventory = _audit_inventory(
-        requirements_path.read_text(encoding="utf-8"),
-        tomllib.loads(lock_path.read_text(encoding="utf-8")),
+        requirements,
+        lock,
         profile,
+        environment=environment,
     )
     inventory_path.write_text(json.dumps(inventory, indent=2) + "\n", encoding="utf-8")
     audit_requirements_path.write_text(
@@ -388,18 +469,12 @@ def _audit_profile(
         raise RuntimeError(audit.stdout + audit.stderr)
 
     report = json.loads(audit_path.read_text(encoding="utf-8"))
-    project_path = project_root / "pyproject.toml"
     return {
-        "profile": profile,
+        "python_version": python_version,
         **_evaluate_audit(report, inventory, profile, exception_policy),
-        "project_sha256": _sha256(project_path),
-        "lock_sha256": _sha256(lock_path),
-        "requirements_sha256": _sha256(requirements_path),
         "audit_requirements_sha256": _sha256(audit_requirements_path),
         "audit_inventory_sha256": _sha256(inventory_path),
-        "sbom_sha256": _sha256(sbom_path),
-        "sbom_content_sha256": _sbom_content_sha256(sbom_path),
-        "pip_audit_version": PIP_AUDIT_VERSION,
+        "audit_report_sha256": _sha256(audit_path),
     }
 
 
