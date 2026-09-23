@@ -12,9 +12,15 @@ import re
 import subprocess
 import sys
 import tempfile
+from contextlib import contextmanager, ExitStack
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
+
+if __package__:
+    from .archive_numerical_evidence import create_index
+else:
+    from archive_numerical_evidence import create_index
 
 UV_VERSION = "0.9.14"
 ARTIFACT_COHORT_PROFILES = {
@@ -119,6 +125,49 @@ def _release_subprocess_environment() -> dict[str, str]:
     return environment
 
 
+@contextmanager
+def _profile_environment(
+    profile: Path,
+    *,
+    repo_root: Path,
+    python: str,
+    commands: list[list[str]],
+    ephemeral: bool,
+    extras: tuple[str, ...] = (),
+):
+    """Sync a frozen profile, optionally discarding only runner-owned storage."""
+    with ExitStack() as stack:
+        environment = os.environ.copy()
+        environment.pop("VIRTUAL_ENV", None)
+        if ephemeral:
+            temporary = Path(
+                stack.enter_context(
+                    tempfile.TemporaryDirectory(prefix="facetorch-cuda-environment-")
+                )
+            )
+            environment_root = temporary / "venv"
+            environment["UV_CACHE_DIR"] = str(temporary / "cache")
+        else:
+            environment_root = profile / ".venv"
+        # Bind uv and the interpreter to the same location even when the caller
+        # has a UV_PROJECT_ENVIRONMENT override for an unrelated project.
+        environment["UV_PROJECT_ENVIRONMENT"] = str(environment_root)
+        command = [
+            "uv",
+            "sync",
+            "--project",
+            str(profile),
+            "--frozen",
+            "--python",
+            python,
+        ]
+        for extra in extras:
+            command.extend(["--extra", extra])
+        _run(command, cwd=repo_root, environment=environment)
+        commands.append(command)
+        yield environment_root
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path, default=Path("."))
@@ -126,6 +175,16 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--staging-root", type=Path, required=True)
     parser.add_argument("--python", default="3.10")
     parser.add_argument("--report", type=Path)
+    parser.add_argument(
+        "--ephemeral-environments",
+        action="store_true",
+        help=(
+            "Install one frozen environment at a time in private temporary storage "
+            "and remove it and its cache after use, including on failure. "
+            "TMPDIR selects the temporary filesystem. Existing environments and "
+            "shared caches are left intact."
+        ),
+    )
     parser.add_argument(
         "--candidate-evidence",
         action="store_true",
@@ -198,7 +257,6 @@ def main() -> int:
     runtime_summaries = []
     runtime_summary_by_runtime = {}
     commands = []
-    synced_profiles = set()
     golden_reference_cohort = "2.6"
     golden_reference_root = staging_root / "golden-references"
     source_environment = os.environ.copy()
@@ -206,83 +264,77 @@ def main() -> int:
     for cohort, profile_relative in ARTIFACT_COHORT_PROFILES.items():
         profile = repo_root / profile_relative
         lock_relative = f"{profile_relative}/uv.lock"
-        sync_command = [
-            "uv",
-            "sync",
-            "--project",
-            str(profile),
-            "--frozen",
-            "--python",
-            args.python,
-        ]
-        if cohort == "2.6":
-            sync_command.extend(["--extra", "release"])
-        _run(sync_command, cwd=repo_root)
-        commands.append(sync_command)
-        synced_profiles.add(profile_relative)
-        cohort_python = profile / ".venv" / "bin" / "python"
-        inventory = staging_root / f"source-inventory-torch{cohort}.json"
-        prepare_command = [
-            str(cohort_python),
-            str(repo_root / "scripts" / "export_model_cohorts_hf.py"),
-            "prepare-sources",
-            "--repo-root",
-            str(repo_root),
-            "--cohort",
-            cohort,
-            "--environment-lock",
-            lock_relative,
-            "--inventory",
-            str(inventory),
-        ]
-        _run(prepare_command, cwd=repo_root, environment=source_environment)
-        commands.append(prepare_command)
-        cohort_root = staging_root / f"torch-{cohort}"
-        export_command = [
-            str(cohort_python),
-            str(repo_root / "scripts" / "export_model_cohorts_hf.py"),
-            "export",
-            "--repo-root",
-            str(repo_root),
-            "--out-root",
-            str(cohort_root),
-            "--environment-lock",
-            lock_relative,
-            "--validate-devices",
-            "cpu,cuda",
-            "--golden-reference-root",
-            str(golden_reference_root),
-            "--golden-reference-mode",
-            "record" if cohort == golden_reference_cohort else "reuse",
-            "--golden-reference-cohort",
-            golden_reference_cohort,
-        ]
-        _run(export_command, cwd=repo_root, environment=source_environment)
-        commands.append(export_command)
-        artifact_summaries.append(cohort_root / f"summary-torch{cohort}.json")
+        with _profile_environment(
+            profile,
+            repo_root=repo_root,
+            python=args.python,
+            commands=commands,
+            ephemeral=args.ephemeral_environments,
+            extras=("release",) if cohort == "2.6" else (),
+        ) as environment_root:
+            cohort_python = environment_root / "bin" / "python"
+            inventory = staging_root / f"source-inventory-torch{cohort}.json"
+            prepare_command = [
+                str(cohort_python),
+                str(repo_root / "scripts" / "export_model_cohorts_hf.py"),
+                "prepare-sources",
+                "--repo-root",
+                str(repo_root),
+                "--cohort",
+                cohort,
+                "--environment-lock",
+                lock_relative,
+                "--inventory",
+                str(inventory),
+            ]
+            _run(prepare_command, cwd=repo_root, environment=source_environment)
+            commands.append(prepare_command)
+            cohort_root = staging_root / f"torch-{cohort}"
+            export_command = [
+                str(cohort_python),
+                str(repo_root / "scripts" / "export_model_cohorts_hf.py"),
+                "export",
+                "--repo-root",
+                str(repo_root),
+                "--out-root",
+                str(cohort_root),
+                "--environment-lock",
+                lock_relative,
+                "--validate-devices",
+                "cpu,cuda",
+                "--golden-reference-root",
+                str(golden_reference_root),
+                "--golden-reference-mode",
+                "record" if cohort == golden_reference_cohort else "reuse",
+                "--golden-reference-cohort",
+                golden_reference_cohort,
+            ]
+            _run(export_command, cwd=repo_root, environment=source_environment)
+            commands.append(export_command)
+            artifact_summaries.append(cohort_root / f"summary-torch{cohort}.json")
 
-        # torch.export.save ZIP containers are not byte-reproducible. Keep the
-        # fresh export as semantic source evidence, then separately stage the
-        # immutable published bytes that every runtime and user will consume.
-        pinned_root = staging_root / "pinned-artifacts" / f"torch-{cohort}"
-        pinned_inventory = staging_root / f"pinned-artifacts-torch{cohort}.json"
-        stage_command = [
-            str(cohort_python),
-            str(repo_root / "scripts" / "export_model_cohorts_hf.py"),
-            "stage-artifacts",
-            "--repo-root",
-            str(repo_root),
-            "--cohort",
-            cohort,
-            "--out-root",
-            str(pinned_root),
-            "--inventory",
-            str(pinned_inventory),
-        ]
-        _run(stage_command, cwd=repo_root, environment=source_environment)
-        commands.append(stage_command)
-        pinned_artifact_roots[cohort] = pinned_root
-        pinned_artifact_inventories.append(pinned_inventory)
+            # torch.export.save ZIP containers are not byte-reproducible. Keep the
+            # fresh export as semantic source evidence, then separately stage the
+            # immutable published bytes that every runtime and user will consume.
+            pinned_root = staging_root / "pinned-artifacts" / f"torch-{cohort}"
+            pinned_inventory = staging_root / f"pinned-artifacts-torch{cohort}.json"
+            stage_command = [
+                str(cohort_python),
+                str(repo_root / "scripts" / "export_model_cohorts_hf.py"),
+                "stage-artifacts",
+                "--repo-root",
+                str(repo_root),
+                "--cohort",
+                cohort,
+                "--out-root",
+                str(pinned_root),
+                "--inventory",
+                str(pinned_inventory),
+            ]
+            _run(stage_command, cwd=repo_root, environment=source_environment)
+            commands.append(stage_command)
+            pinned_artifact_roots[cohort] = pinned_root
+            pinned_artifact_inventories.append(pinned_inventory)
 
     matrix_report = staging_root / "candidate-matrix-report.json"
     verify_command = [
@@ -302,52 +354,46 @@ def main() -> int:
     for runtime, (profile_relative, artifact_cohort) in CUDA_RUNTIME_PROFILES.items():
         profile = repo_root / profile_relative
         lock_relative = f"{profile_relative}/uv.lock"
-        if profile_relative not in synced_profiles:
-            sync_command = [
-                "uv",
-                "sync",
-                "--project",
-                str(profile),
-                "--frozen",
-                "--python",
-                args.python,
+        with _profile_environment(
+            profile,
+            repo_root=repo_root,
+            python=args.python,
+            commands=commands,
+            ephemeral=args.ephemeral_environments,
+        ) as environment_root:
+            runtime_python = environment_root / "bin" / "python"
+            report_root = staging_root / "runtime-validation" / f"torch-{runtime}"
+            validate_command = [
+                str(runtime_python),
+                str(repo_root / "scripts" / "export_model_cohorts_hf.py"),
+                "validate",
+                "--repo-root",
+                str(repo_root),
+                "--cohort",
+                artifact_cohort,
+                "--artifacts-root",
+                str(pinned_artifact_roots[artifact_cohort]),
+                "--report-root",
+                str(report_root),
+                "--environment-lock",
+                lock_relative,
+                "--validate-devices",
+                "cpu,cuda",
+                "--golden-reference-root",
+                str(golden_reference_root),
+                "--golden-reference-mode",
+                "reuse",
+                "--golden-reference-cohort",
+                golden_reference_cohort,
             ]
-            _run(sync_command, cwd=repo_root)
-            commands.append(sync_command)
-            synced_profiles.add(profile_relative)
-        runtime_python = profile / ".venv" / "bin" / "python"
-        report_root = staging_root / "runtime-validation" / f"torch-{runtime}"
-        validate_command = [
-            str(runtime_python),
-            str(repo_root / "scripts" / "export_model_cohorts_hf.py"),
-            "validate",
-            "--repo-root",
-            str(repo_root),
-            "--cohort",
-            artifact_cohort,
-            "--artifacts-root",
-            str(pinned_artifact_roots[artifact_cohort]),
-            "--report-root",
-            str(report_root),
-            "--environment-lock",
-            lock_relative,
-            "--validate-devices",
-            "cpu,cuda",
-            "--golden-reference-root",
-            str(golden_reference_root),
-            "--golden-reference-mode",
-            "reuse",
-            "--golden-reference-cohort",
-            golden_reference_cohort,
-        ]
-        _run(validate_command, cwd=repo_root, environment=source_environment)
-        commands.append(validate_command)
-        runtime_summary = (
-            report_root
-            / f"validation-summary-torch{runtime}-artifact{artifact_cohort}.json"
-        )
-        runtime_summaries.append(runtime_summary)
-        runtime_summary_by_runtime[runtime] = runtime_summary
+            _run(validate_command, cwd=repo_root, environment=source_environment)
+            commands.append(validate_command)
+            runtime_summary = (
+                report_root
+                / f"validation-summary-torch{runtime}-artifact{artifact_cohort}.json"
+            )
+            runtime_summaries.append(runtime_summary)
+            runtime_summary_by_runtime[runtime] = runtime_summary
 
     runtime_matrix_report = staging_root / "runtime-compatibility-report.json"
     runtime_verify_command = [
@@ -393,79 +439,87 @@ def main() -> int:
     if len(wheels) != 1:
         raise RuntimeError("Expected exactly one candidate wheel")
     production_profile = repo_root / ARTIFACT_COHORT_PROFILES["2.6"]
-    production_python = production_profile / ".venv" / "bin" / "python"
-    wheel_check_command = [
-        str(production_profile / ".venv" / "bin" / "check-wheel-contents"),
-        str(wheels[0]),
-    ]
-    _run(wheel_check_command, cwd=staging_root)
-    commands.append(wheel_check_command)
-    install_command = [
-        "uv",
-        "pip",
-        "install",
-        "--python",
-        str(production_python),
-        "--no-deps",
-        str(wheels[0]),
-    ]
-    _run(install_command, cwd=staging_root)
-    commands.append(install_command)
-    smoke_environment = _release_subprocess_environment()
-    alignment_metadata_report = staging_root / "alignment-metadata-report.json"
-    stage_metadata_command = [
-        str(production_python),
-        str(repo_root / "scripts" / "stage_alignment_metadata.py"),
-        "--staging-root",
-        str(staging_root),
-    ]
-    _run(stage_metadata_command, cwd=staging_root, environment=smoke_environment)
-    commands.append(stage_metadata_command)
+    with _profile_environment(
+        production_profile,
+        repo_root=repo_root,
+        python=args.python,
+        commands=commands,
+        ephemeral=args.ephemeral_environments,
+        extras=("release",),
+    ) as environment_root:
+        production_python = environment_root / "bin" / "python"
+        wheel_check_command = [
+            str(environment_root / "bin" / "check-wheel-contents"),
+            str(wheels[0]),
+        ]
+        _run(wheel_check_command, cwd=staging_root)
+        commands.append(wheel_check_command)
+        install_command = [
+            "uv",
+            "pip",
+            "install",
+            "--python",
+            str(production_python),
+            "--no-deps",
+            str(wheels[0]),
+        ]
+        _run(install_command, cwd=staging_root)
+        commands.append(install_command)
+        smoke_environment = _release_subprocess_environment()
+        alignment_metadata_report = staging_root / "alignment-metadata-report.json"
+        stage_metadata_command = [
+            str(production_python),
+            str(repo_root / "scripts" / "stage_alignment_metadata.py"),
+            "--staging-root",
+            str(staging_root),
+        ]
+        _run(stage_metadata_command, cwd=staging_root, environment=smoke_environment)
+        commands.append(stage_metadata_command)
 
-    smoke_report = staging_root / "default-analyzer-cuda-smoke.json"
-    smoke_command = [
-        str(production_python),
-        str(repo_root / "scripts" / "smoke_staged_default_analyzer.py"),
-        "--repo-root",
-        str(repo_root),
-        "--staging-root",
-        str(staging_root),
-        "--summary",
-        str(runtime_summary_by_runtime["2.6"]),
-        "--pinned-artifacts-root",
-        str(pinned_artifact_roots["2.6"]),
-        "--device",
-        "cuda",
-        "--report",
-        str(smoke_report),
-    ]
-    _run(smoke_command, cwd=staging_root, environment=smoke_environment)
-    commands.append(smoke_command)
+        smoke_report = staging_root / "default-analyzer-cuda-smoke.json"
+        smoke_command = [
+            str(production_python),
+            str(repo_root / "scripts" / "smoke_staged_default_analyzer.py"),
+            "--repo-root",
+            str(repo_root),
+            "--staging-root",
+            str(staging_root),
+            "--summary",
+            str(runtime_summary_by_runtime["2.6"]),
+            "--pinned-artifacts-root",
+            str(pinned_artifact_roots["2.6"]),
+            "--device",
+            "cuda",
+            "--report",
+            str(smoke_report),
+        ]
+        _run(smoke_command, cwd=staging_root, environment=smoke_environment)
+        commands.append(smoke_command)
 
-    notebook_path = staging_root / "facetorch-notebook-executed.ipynb"
-    notebook_report = staging_root / "facetorch-notebook-report.json"
-    notebook_command = [
-        str(production_python),
-        str(repo_root / "scripts" / "execute_candidate_notebook.py"),
-        "--repo-root",
-        str(repo_root),
-        "--staging-root",
-        str(staging_root),
-        "--summary",
-        str(runtime_summary_by_runtime["2.6"]),
-        "--pinned-artifacts-root",
-        str(pinned_artifact_roots["2.6"]),
-        "--wheel",
-        str(wheels[0]),
-        "--device",
-        "cuda",
-        "--output-notebook",
-        str(notebook_path),
-        "--report",
-        str(notebook_report),
-    ]
-    _run(notebook_command, cwd=staging_root, environment=smoke_environment)
-    commands.append(notebook_command)
+        notebook_path = staging_root / "facetorch-notebook-executed.ipynb"
+        notebook_report = staging_root / "facetorch-notebook-report.json"
+        notebook_command = [
+            str(production_python),
+            str(repo_root / "scripts" / "execute_candidate_notebook.py"),
+            "--repo-root",
+            str(repo_root),
+            "--staging-root",
+            str(staging_root),
+            "--summary",
+            str(runtime_summary_by_runtime["2.6"]),
+            "--pinned-artifacts-root",
+            str(pinned_artifact_roots["2.6"]),
+            "--wheel",
+            str(wheels[0]),
+            "--device",
+            "cuda",
+            "--output-notebook",
+            str(notebook_path),
+            "--report",
+            str(notebook_report),
+        ]
+        _run(notebook_command, cwd=staging_root, environment=smoke_environment)
+        commands.append(notebook_command)
 
     if _git(repo_root, "status", "--porcelain=v1", "--untracked-files=all"):
         raise RuntimeError("Release runner changed the exact source checkout")
@@ -481,6 +535,7 @@ def main() -> int:
         "platform": {"system": platform.system(), "machine": platform.machine()},
         "gpu_attestation": gpu_query,
         "uv_version": uv_version,
+        "ephemeral_environments": args.ephemeral_environments,
         "manifest_sha256": _sha256(
             repo_root / "facetorch" / "models" / "manifest.json"
         ),
@@ -521,6 +576,7 @@ def main() -> int:
         "candidate_evidence_only": args.candidate_evidence,
     }
     _write_json_atomic(report_path, report)
+    create_index(staging_root, source_sha=args.source_sha, runner_path=report_path)
     print(f"Local CUDA release report: {report_path}")
     return 0
 

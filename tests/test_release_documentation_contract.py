@@ -35,6 +35,7 @@ def _runtime_example_source():
 
 
 @pytest.mark.release_blocker
+@pytest.mark.checkout
 def test_unpublished_v1_changelog_is_not_marked_as_released():
     tag = subprocess.run(
         ["git", "tag", "--list", "v1.0.0"],
@@ -47,12 +48,15 @@ def test_unpublished_v1_changelog_is_not_marked_as_released():
         return
 
     changelog = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-    current_section = changelog.split("## 1.0.0rc3", 1)[1].split("\n## ", 1)[0]
-    assert "Released on" not in current_section
-    assert (
-        "Unreleased" in changelog.splitlines()[2]
-        or "release candidate" in current_section.lower()
+    # A published RC may have a release date while final 1.0.0 is still pending.
+    final_section = re.search(
+        r"^## 1\.0\.0(?:[ \t][^\n]*)?\n(.*?)(?=^## |\Z)", changelog, re.M | re.S
     )
+    if final_section:
+        assert "Released on" not in final_section.group(0)
+    assert changelog.splitlines()[2] == "## Unreleased"
+    rc3_section = changelog.split("## 1.0.0rc3", 1)[1].split("\n## ", 1)[0]
+    assert "Released on September 3, 2026" in rc3_section
 
 
 @pytest.mark.release_blocker
@@ -64,8 +68,8 @@ def test_current_rc_identity_and_model_governance_prose_are_consistent():
         encoding="utf-8"
     )
 
-    assert 'version = "1.0.0rc3"' in project
-    assert "v1.0.0-rc.3" in changelog
+    assert 'version = "1.0.0rc4"' in project
+    assert "v1.0.0-rc.4" in changelog
     assert "release_eligible: false" not in compatibility
     assert "governance is still incomplete" not in compatibility
     assert "all ten records are release-eligible" in readme.lower()
@@ -95,11 +99,11 @@ def test_rc_onboarding_selects_exact_candidate_channels():
     compose = (REPO_ROOT / "docker-compose.yml").read_text(encoding="utf-8")
 
     combined = f"{readme}\n{migration}"
-    assert '"facetorch==1.0.0rc3"' in combined
+    assert '"facetorch==1.0.0rc4"' in combined
     assert '"torch==2.13.0+cpu"' in combined
     assert '"torch==2.13.0+cu130"' in combined
-    assert "FACETORCH_DOCKER_TAG=1.0.0-rc.3" in combined
-    assert "${FACETORCH_DOCKER_TAG:-1.0.0-rc.3}" in compose
+    assert "FACETORCH_DOCKER_TAG=1.0.0-rc.4" in combined
+    assert "${FACETORCH_DOCKER_TAG:-1.0.0-rc.4}" in compose
     assert "facetorch:latest" not in compose
     assert "facetorch-gpu:latest" not in compose
     assert "pip install facetorch\n" not in readme
@@ -178,7 +182,7 @@ def test_generated_api_docs_cover_the_public_top_level_modules():
     missing = [
         module.stem
         for module in sorted(package_root.glob("*.py"))
-        if module.name != "__init__.py"
+        if not module.name.startswith("_")
         and not (documented / f"{module.stem}.html").is_file()
     ]
     assert missing == []
@@ -268,6 +272,8 @@ def test_extension_guide_separates_private_and_shipped_model_paths(tmp_path):
         "docs/migration-v1.md",
         "docs/model-compatibility.md",
         "docs/model-publication.md",
+        "docs/torch-support-policy.md",
+        "docs/v1-risk-treatment-proposal.md",
         "facetorch/models/governance.json",
     ):
         assert re.search(

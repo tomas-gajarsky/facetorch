@@ -121,10 +121,7 @@ el.replaceWith(d);
                 prefix=&#34;.facetorch-download-&#34;, dir=target.parent
             ) as temporary_dir:
                 temporary_path = Path(temporary_dir) / descriptor.filename
-                url = (
-                    &#34;https://drive.google.com/uc?&amp;id=&#34;
-                    f&#34;{self.file_id}&amp;confirm=t&#34;
-                )
+                url = &#34;https://drive.google.com/uc?&amp;id=&#34; f&#34;{self.file_id}&amp;confirm=t&#34;
                 downloaded = gdown.download(
                     url, output=os.fspath(temporary_path), quiet=False
                 )
@@ -247,9 +244,7 @@ All subclass should overwrite:</p>
     def _read_incompatible(self) -&gt; set[str]:
         path = self._incompatibility_path
         try:
-            return read_incompatible_artifact_ids(
-                path, self._incompatibility_key()
-            )
+            return read_incompatible_artifact_ids(path, self._incompatibility_key())
         except ArtifactIntegrityError:
             _quarantine(path, &#34;invalid incompatibility sidecar&#34;)
             return set()
@@ -396,9 +391,7 @@ All subclass should overwrite:</p>
     def run(self, force_download: bool = False) -&gt; str:
         candidates = self._resolve_candidates()
         self._candidate_index = 0
-        return self._download_descriptor(
-            candidates[0], force_download=force_download
-        )
+        return self._download_descriptor(candidates[0], force_download=force_download)
 
     def try_next(self, force_download: bool = False) -&gt; bool:
         &#34;&#34;&#34;Select one next manifest candidate after a persisted load rejection.&#34;&#34;&#34;
@@ -418,9 +411,7 @@ All subclass should overwrite:</p>
         if next_index &gt;= len(candidates):
             return False
         self._candidate_index = next_index
-        self._download_descriptor(
-            candidates[next_index], force_download=force_download
-        )
+        self._download_descriptor(candidates[next_index], force_download=force_download)
         return True</code></pre>
 </details>
 <div class="desc"><p>Resolve and authenticate one immutable Hugging Face model artifact.</p>
@@ -541,9 +532,7 @@ directory lock.</p></div>
     if next_index &gt;= len(candidates):
         return False
     self._candidate_index = next_index
-    self._download_descriptor(
-        candidates[next_index], force_download=force_download
-    )
+    self._download_descriptor(candidates[next_index], force_download=force_download)
     return True</code></pre>
 </details>
 <div class="desc"><p>Select one next manifest candidate after a persisted load rejection.</p></div>

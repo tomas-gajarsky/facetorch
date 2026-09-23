@@ -1,0 +1,561 @@
+{
+  "schema_version": 1,
+  "audited_on": "2026-09-05",
+  "status": "requires_decision",
+  "note": "Triage snapshot only. Does not approve any exception or change runtime support. CPU/CUDA build versions and complete hashes are preserved in the raw audit inventories.",
+  "baseline_commit": "12db551d937ac2fa0cc41324f89d71fd9858fa02",
+  "pip_audit_version": "2.10.1",
+  "exception_policy_sha256": "59dfed5aa1e50f34b616443f5ad55cecaa299cf004b5a80936a7ee9ea621198c",
+  "summary_sha256": "f496300aaa6f904a64a12a2d62eb3a36cdf0ab8dd5a43f616ad0e361d6189f44",
+  "unresolved_entries": 76,
+  "distinct_advisories": 18,
+  "profiles": [
+    {
+      "profile": "root",
+      "status": "ok",
+      "coverage": {
+        "expected_count": 42,
+        "audited_count": 42,
+        "errors": []
+      },
+      "accepted_count": 2,
+      "unresolved_count": 0
+    },
+    {
+      "profile": "torch-2.6-cpu",
+      "status": "failed",
+      "coverage": {
+        "expected_count": 41,
+        "audited_count": 41,
+        "errors": []
+      },
+      "accepted_count": 8,
+      "unresolved_count": 14
+    },
+    {
+      "profile": "torch-2.7-cpu",
+      "status": "failed",
+      "coverage": {
+        "expected_count": 41,
+        "audited_count": 41,
+        "errors": []
+      },
+      "accepted_count": 0,
+      "unresolved_count": 9
+    },
+    {
+      "profile": "torch-2.8-cpu",
+      "status": "failed",
+      "coverage": {
+        "expected_count": 41,
+        "audited_count": 41,
+        "errors": []
+      },
+      "accepted_count": 0,
+      "unresolved_count": 8
+    },
+    {
+      "profile": "torch-2.9-cpu",
+      "status": "failed",
+      "coverage": {
+        "expected_count": 41,
+        "audited_count": 41,
+        "errors": []
+      },
+      "accepted_count": 0,
+      "unresolved_count": 4
+    },
+    {
+      "profile": "torch-2.10-cpu",
+      "status": "failed",
+      "coverage": {
+        "expected_count": 41,
+        "audited_count": 41,
+        "errors": []
+      },
+      "accepted_count": 0,
+      "unresolved_count": 2
+    },
+    {
+      "profile": "torch-2.11-cpu",
+      "status": "ok",
+      "coverage": {
+        "expected_count": 42,
+        "audited_count": 42,
+        "errors": []
+      },
+      "accepted_count": 2,
+      "unresolved_count": 0
+    },
+    {
+      "profile": "torch-2.12-cpu",
+      "status": "failed",
+      "coverage": {
+        "expected_count": 42,
+        "audited_count": 42,
+        "errors": []
+      },
+      "accepted_count": 1,
+      "unresolved_count": 1
+    },
+    {
+      "profile": "torch-2.13-cpu",
+      "status": "ok",
+      "coverage": {
+        "expected_count": 42,
+        "audited_count": 42,
+        "errors": []
+      },
+      "accepted_count": 0,
+      "unresolved_count": 0
+    },
+    {
+      "profile": "torch-2.6-cu124",
+      "status": "failed",
+      "coverage": {
+        "expected_count": 55,
+        "audited_count": 55,
+        "errors": []
+      },
+      "accepted_count": 8,
+      "unresolved_count": 14
+    },
+    {
+      "profile": "torch-2.7-cu126",
+      "status": "failed",
+      "coverage": {
+        "expected_count": 57,
+        "audited_count": 57,
+        "errors": []
+      },
+      "accepted_count": 0,
+      "unresolved_count": 9
+    },
+    {
+      "profile": "torch-2.8-cu126",
+      "status": "failed",
+      "coverage": {
+        "expected_count": 57,
+        "audited_count": 57,
+        "errors": []
+      },
+      "accepted_count": 0,
+      "unresolved_count": 8
+    },
+    {
+      "profile": "torch-2.9-cu130",
+      "status": "failed",
+      "coverage": {
+        "expected_count": 57,
+        "audited_count": 57,
+        "errors": []
+      },
+      "accepted_count": 0,
+      "unresolved_count": 4
+    },
+    {
+      "profile": "torch-2.10-cu130",
+      "status": "failed",
+      "coverage": {
+        "expected_count": 59,
+        "audited_count": 59,
+        "errors": []
+      },
+      "accepted_count": 0,
+      "unresolved_count": 2
+    },
+    {
+      "profile": "torch-2.11-cu130",
+      "status": "ok",
+      "coverage": {
+        "expected_count": 61,
+        "audited_count": 61,
+        "errors": []
+      },
+      "accepted_count": 2,
+      "unresolved_count": 0
+    },
+    {
+      "profile": "torch-2.12-cu130",
+      "status": "failed",
+      "coverage": {
+        "expected_count": 61,
+        "audited_count": 61,
+        "errors": []
+      },
+      "accepted_count": 1,
+      "unresolved_count": 1
+    },
+    {
+      "profile": "torch-2.13-cu130",
+      "status": "ok",
+      "coverage": {
+        "expected_count": 61,
+        "audited_count": 61,
+        "errors": []
+      },
+      "accepted_count": 0,
+      "unresolved_count": 0
+    }
+  ],
+  "findings": [
+    {
+      "vulnerability_id": "PYSEC-2025-205",
+      "aliases": [
+        "BIT-pytorch-2025-55553",
+        "CVE-2025-55553"
+      ],
+      "fix_versions": [
+        "2.7.1"
+      ],
+      "profiles": [
+        "torch-2.6-cpu",
+        "torch-2.6-cu124"
+      ],
+      "subject": "proxy_tensor syntax failure",
+      "source_url": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-205.yaml",
+      "status": "requires_decision"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-206",
+      "aliases": [
+        "BIT-pytorch-2025-55554",
+        "CVE-2025-55554"
+      ],
+      "fix_versions": [
+        "2.9.0"
+      ],
+      "profiles": [
+        "torch-2.6-cpu",
+        "torch-2.7-cpu",
+        "torch-2.8-cpu",
+        "torch-2.6-cu124",
+        "torch-2.7-cu126",
+        "torch-2.8-cu126"
+      ],
+      "subject": "nan_to_num followed by integer conversion: overflow",
+      "source_url": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-206.yaml",
+      "status": "requires_decision"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-200",
+      "aliases": [
+        "BIT-pytorch-2025-46150",
+        "CVE-2025-46150"
+      ],
+      "fix_versions": [
+        "2.7.0"
+      ],
+      "profiles": [
+        "torch-2.6-cpu",
+        "torch-2.6-cu124"
+      ],
+      "subject": "Compiled FractionalMaxPool2d numerical mismatch",
+      "source_url": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-200.yaml",
+      "status": "requires_decision"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-207",
+      "aliases": [
+        "BIT-pytorch-2025-55557",
+        "CVE-2025-55557"
+      ],
+      "fix_versions": [
+        "2.7.1"
+      ],
+      "profiles": [
+        "torch-2.6-cpu",
+        "torch-2.6-cu124"
+      ],
+      "subject": "Compiled cummin: name error",
+      "source_url": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-207.yaml",
+      "status": "requires_decision"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-201",
+      "aliases": [
+        "BIT-pytorch-2025-46152",
+        "CVE-2025-46152"
+      ],
+      "fix_versions": [
+        "2.7.0"
+      ],
+      "profiles": [
+        "torch-2.6-cpu",
+        "torch-2.6-cu124"
+      ],
+      "subject": "Out-of-range bitwise right shift output",
+      "source_url": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-201.yaml",
+      "status": "requires_decision"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-204",
+      "aliases": [
+        "BIT-pytorch-2025-55552",
+        "CVE-2025-55552"
+      ],
+      "fix_versions": [
+        "2.9.0"
+      ],
+      "profiles": [
+        "torch-2.6-cpu",
+        "torch-2.7-cpu",
+        "torch-2.8-cpu",
+        "torch-2.6-cu124",
+        "torch-2.7-cu126",
+        "torch-2.8-cu126"
+      ],
+      "subject": "Combined rot90/randn_like behavior",
+      "source_url": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-204.yaml",
+      "status": "requires_decision"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-139",
+      "aliases": [
+        "BIT-pytorch-2026-4538",
+        "CVE-2026-4538"
+      ],
+      "fix_versions": [],
+      "profiles": [
+        "torch-2.6-cpu",
+        "torch-2.7-cpu",
+        "torch-2.8-cpu",
+        "torch-2.9-cpu",
+        "torch-2.10-cpu",
+        "torch-2.6-cu124",
+        "torch-2.7-cu126",
+        "torch-2.8-cu126",
+        "torch-2.9-cu130",
+        "torch-2.10-cu130"
+      ],
+      "subject": "PT2 deserialization: code execution concern",
+      "source_url": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2026-139.yaml",
+      "status": "requires_decision"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-209",
+      "aliases": [
+        "BIT-pytorch-2025-55560",
+        "CVE-2025-55560"
+      ],
+      "fix_versions": [
+        "2.7.1"
+      ],
+      "profiles": [
+        "torch-2.6-cpu",
+        "torch-2.6-cu124"
+      ],
+      "subject": "Compiled sparse/dense conversion failure",
+      "source_url": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-209.yaml",
+      "status": "requires_decision"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-208",
+      "aliases": [
+        "BIT-pytorch-2025-55558",
+        "CVE-2025-55558"
+      ],
+      "fix_versions": [
+        "2.7.1"
+      ],
+      "profiles": [
+        "torch-2.6-cpu",
+        "torch-2.6-cu124"
+      ],
+      "subject": "Compiled Conv2d/hardshrink/view/mv combination",
+      "source_url": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-208.yaml",
+      "status": "requires_decision"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-199",
+      "aliases": [
+        "BIT-pytorch-2025-46149",
+        "CVE-2025-46149"
+      ],
+      "fix_versions": [
+        "2.7.0"
+      ],
+      "profiles": [
+        "torch-2.6-cpu",
+        "torch-2.6-cu124"
+      ],
+      "subject": "Fold under Inductor: assertion failure",
+      "source_url": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-199.yaml",
+      "status": "requires_decision"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-202",
+      "aliases": [
+        "BIT-pytorch-2025-46153",
+        "CVE-2025-46153"
+      ],
+      "fix_versions": [
+        "2.7.0"
+      ],
+      "profiles": [
+        "torch-2.6-cpu",
+        "torch-2.6-cu124"
+      ],
+      "subject": "Dropout random fallback decomposition mismatch",
+      "source_url": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-202.yaml",
+      "status": "requires_decision"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-198",
+      "aliases": [
+        "BIT-pytorch-2025-46148",
+        "CVE-2025-46148"
+      ],
+      "fix_versions": [
+        "2.7.0"
+      ],
+      "profiles": [
+        "torch-2.6-cpu",
+        "torch-2.6-cu124"
+      ],
+      "subject": "PairwiseDistance eager numerical mismatch",
+      "source_url": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-198.yaml",
+      "status": "requires_decision"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-203",
+      "aliases": [
+        "BIT-pytorch-2025-55551",
+        "CVE-2025-55551"
+      ],
+      "fix_versions": [
+        "2.9.0"
+      ],
+      "profiles": [
+        "torch-2.6-cpu",
+        "torch-2.7-cpu",
+        "torch-2.8-cpu",
+        "torch-2.6-cu124",
+        "torch-2.7-cu126",
+        "torch-2.8-cu126"
+      ],
+      "subject": "LU with sliced tensors: denial of service",
+      "source_url": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-203.yaml",
+      "status": "requires_decision"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-2286",
+      "aliases": [
+        "CVE-2026-24747",
+        "GHSA-63cw-57p8-fm3p"
+      ],
+      "fix_versions": [
+        "2.10.0"
+      ],
+      "profiles": [
+        "torch-2.6-cpu",
+        "torch-2.7-cpu",
+        "torch-2.8-cpu",
+        "torch-2.9-cpu",
+        "torch-2.6-cu124",
+        "torch-2.7-cu126",
+        "torch-2.8-cu126",
+        "torch-2.9-cu130"
+      ],
+      "subject": "weights_only checkpoint unpickler: memory corruption/code execution",
+      "source_url": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2026-2286.yaml",
+      "status": "requires_decision"
+    },
+    {
+      "vulnerability_id": "PYSEC-2025-194",
+      "aliases": [
+        "BIT-pytorch-2025-3000",
+        "CVE-2025-3000",
+        "GHSA-rrmf-rvhw-rf47"
+      ],
+      "fix_versions": [
+        "2.13.0"
+      ],
+      "profiles": [
+        "torch-2.7-cpu",
+        "torch-2.8-cpu",
+        "torch-2.9-cpu",
+        "torch-2.10-cpu",
+        "torch-2.12-cpu",
+        "torch-2.7-cu126",
+        "torch-2.8-cu126",
+        "torch-2.9-cu130",
+        "torch-2.10-cu130",
+        "torch-2.12-cu130"
+      ],
+      "subject": "TorchScript class annotation: memory corruption",
+      "source_url": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2025-194.yaml",
+      "status": "requires_decision"
+    },
+    {
+      "vulnerability_id": "PYSEC-2026-1970",
+      "aliases": [
+        "BIT-pytorch-2025-3730",
+        "CVE-2025-3730",
+        "GHSA-887c-mr87-cxwp"
+      ],
+      "fix_versions": [
+        "2.8.0"
+      ],
+      "profiles": [
+        "torch-2.7-cpu",
+        "torch-2.7-cu126"
+      ],
+      "subject": "ctc_loss: denial of service",
+      "source_url": "https://raw.githubusercontent.com/pypa/advisory-database/main/vulns/torch/PYSEC-2026-1970.yaml",
+      "status": "requires_decision"
+    },
+    {
+      "vulnerability_id": "CVE-2025-2999",
+      "aliases": [
+        "GHSA-vgrw-7cvw-pwgx"
+      ],
+      "fix_versions": [
+        "2.9.1"
+      ],
+      "profiles": [
+        "torch-2.7-cpu",
+        "torch-2.8-cpu",
+        "torch-2.7-cu126",
+        "torch-2.8-cu126"
+      ],
+      "subject": "unpack_sequence: memory corruption",
+      "source_url": "https://api.osv.dev/v1/vulns/CVE-2025-2999",
+      "status": "requires_decision"
+    },
+    {
+      "vulnerability_id": "CVE-2025-3001",
+      "aliases": [
+        "GHSA-qfhq-4f3w-5fph"
+      ],
+      "fix_versions": [
+        "2.10.0"
+      ],
+      "profiles": [
+        "torch-2.7-cpu",
+        "torch-2.8-cpu",
+        "torch-2.9-cpu",
+        "torch-2.7-cu126",
+        "torch-2.8-cu126",
+        "torch-2.9-cu130"
+      ],
+      "subject": "lstm_cell: memory corruption",
+      "source_url": "https://api.osv.dev/v1/vulns/CVE-2025-3001",
+      "status": "requires_decision"
+    }
+  ],
+  "environment": {
+    "implementation_name": "cpython",
+    "implementation_version": "3.10.12",
+    "os_name": "posix",
+    "platform_machine": "x86_64",
+    "platform_release": "6.8.0-138-generic",
+    "platform_system": "Linux",
+    "platform_version": "#138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC ",
+    "python_full_version": "3.10.12",
+    "platform_python_implementation": "CPython",
+    "python_version": "3.10",
+    "sys_platform": "linux"
+  },
+  "inventory_scope": "Each default frozen runtime uv export, excluding development and release extras"
+}

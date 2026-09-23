@@ -114,9 +114,7 @@ class DetectorPostprocessorProtocol(Protocol):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class FaceDetector(BaseModel):
-    @Timer(
-        &#34;FaceDetector.__init__&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
-    )
+    @timed(&#34;FaceDetector.__init__&#34;, logger=logger)
     def __init__(
         self,
         downloader: BaseDownloader,
@@ -150,7 +148,7 @@ class DetectorPostprocessorProtocol(Protocol):
         self.preprocessor = preprocessor
         self.postprocessor = postprocessor
 
-    @Timer(&#34;FaceDetector.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;FaceDetector.run&#34;, logger=logger)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Detect all faces in the image.
 
@@ -314,7 +312,7 @@ class DetectorPostprocessorProtocol(Protocol):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;FaceDetector.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+<pre><code class="python">@timed(&#34;FaceDetector.run&#34;, logger=logger)
 def run(self, data: ImageData) -&gt; ImageData:
     &#34;&#34;&#34;Detect all faces in the image.
 

@@ -11,9 +11,11 @@ CPU is the safe default profile; GPU remains supported by selecting
 `load_config("gpu")` on a compatible CUDA host. Windows, macOS, ARM, and MPS
 are experimental until separately validated.
 
-Install the exact candidate only after `1.0.0rc3` appears on PyPI. Preinstalling
-the CPU PyTorch cohort prevents pip from selecting the much larger CUDA runtime
-dependency graph on a CPU host:
+This branch prepares RC4 (`1.0.0rc4`), which is not yet published. Use the
+commands below only after its approved publication. RC3 (`1.0.0rc3`) remains
+the September 3, 2026 historical release. Preinstalling the CPU PyTorch cohort
+prevents pip from selecting the much larger CUDA runtime dependency graph on a CPU
+host:
 
 ```bash
 python -m venv .venv
@@ -21,7 +23,7 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install --index-url https://download.pytorch.org/whl/cpu \
   "torch==2.13.0+cpu" "torchvision==0.28.0+cpu"
-python -m pip install "facetorch==1.0.0rc3"
+python -m pip install "facetorch==1.0.0rc4"
 ```
 
 For CUDA 13.0, install `torch==2.13.0+cu130` and
@@ -31,7 +33,7 @@ from 2.6/0.21 through 2.13/0.28 are supported; the two existing model artifact
 cohorts are selected automatically. Do not rely on bare `pip install facetorch`, Docker
 `latest`, or the unversioned conda command during the RC soak: those stable
 aliases remain on 0.6.2. Conda-forge is usable only after its feedstock shows
-the exact `1.0.0rc3` build.
+the exact `1.0.0rc4` build.
 
 ## Runtime API changes
 
@@ -59,7 +61,10 @@ a different `max_batch_size`. The old `batch_size` spelling is a
 
 The shipped detector accepts model inputs from 64 through 2048 pixels per axis in
 multiples of 32. Larger source images are downscaled for detection and all boxes,
-landmarks, and extracted faces are mapped back to original-image coordinates.
+landmarks, and extracted faces are mapped back to the canonical image returned
+by the reader. With the `run()` default of `fix_img_size=False`, this is the decoded input
+image. With `fix_img_size=True`, coordinates refer to the reader-resized/padded
+image; they are not automatically inverted to the original file dimensions.
 
 Predictors, the detector, and selection-linked utilizers are lazy. Empty
 selection and `skip_detector=True` are supported, and unknown or duplicate
@@ -124,12 +129,12 @@ Do not assume a floating `latest` image is equivalent to a tested tag; record
 the release tag and digest. Conda metadata may follow PyPI publication, so pin
 the artifact source explicitly in deployment automation.
 
-After the RC images are public, the repository Compose file defaults to the
-immutable `1.0.0-rc.3` tag. Keep the tag explicit in deployment automation:
+The repository Compose file defaults to the
+immutable `1.0.0-rc.4` tag. Keep the tag explicit in deployment automation:
 
 ```bash
-FACETORCH_DOCKER_TAG=1.0.0-rc.3 docker compose pull facetorch
-FACETORCH_DOCKER_TAG=1.0.0-rc.3 docker compose run --rm facetorch \
+FACETORCH_DOCKER_TAG=1.0.0-rc.4 docker compose pull facetorch
+FACETORCH_DOCKER_TAG=1.0.0-rc.4 docker compose run --rm facetorch \
   python /opt/facetorch/example.py /workspace/data/input/test.jpg \
   --output /workspace/data/output/test.png
 ```
@@ -152,3 +157,37 @@ Before upgrading, run the project regression suite against representative
 images, review model-rights and privacy limitations, and retain a tested
 rollback path. Face-analysis output must not be the sole basis for a
 consequential decision.
+
+## Public API and extension boundary
+
+The names exported by `facetorch.__all__` form the v1 public Python surface:
+configuration loaders, `FaceAnalyzer`, result/input records, typed exceptions,
+and documented cache operations. Documented reader and detector-postprocessor
+protocols, predictor `run(faces)` injection, and the custom-component guide are
+also supported extension contracts. `Response` and `run_legacy()` are retained
+compatibility paths with deprecation warnings throughout v1.x. Underscore-prefixed
+helpers, downloader lock internals, model reconstruction internals, and release
+scripts are implementation details. Generated API pages expose some internals
+for inspection; their presence alone is not a stability promise.
+
+Custom predictors must return `Prediction` instances (subclasses are accepted)
+with a string `label`, tensor `logits`, and dictionary `other`, one per face.
+Invalid entries raise `InferenceError` with the predictor name and face index.
+
+Hydra-created components preserve public `FacetorchError` subclasses: callers
+can catch `OfflineCacheError` or `ModelCompatibilityError` directly, including
+when a lazy component is first constructed. Other constructor/configuration
+failures become `ConfigurationError` with the underlying cause retained.
+
+Omitting `analyzer.logger`, or setting it to `None`, uses the existing `facetorch`
+logger without changing handlers, level, or propagation. Configure logging in
+the application when diagnostics are wanted. Explicit logger configuration keeps
+its documented behavior.
+
+For URL inputs, the finite positive timeout bounds DNS waiting, connection/TLS,
+redirects, HTTP headers, chunk framing, and body network reads as one deadline.
+A peer sending individual bytes cannot reset it. Image decoding after download
+is subject to the existing byte/pixel limits, not a hard CPU-time deadline.
+
+Before sharing an upgraded cache, follow the
+[cache-lock upgrade procedure](model-compatibility.md#cache-lock-upgrade).

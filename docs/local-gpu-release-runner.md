@@ -56,3 +56,8 @@ Docker image IDs.
 After the one-shot runner exits, remove its working directory and registration if
 the runner service did not do so automatically. Never attach this label to a
 persistent runner, and never add a pull-request trigger to the workflow.
+
+The runner now creates a portable numerical index and preserves every referenced
+per-model metadata file. See [offline evidence verification](release-runbook.md#portable-numerical-evidence).
+A missing or invalid record prevents successful runner completion and release
+assembly even if the high-level matrix report says `ok`.

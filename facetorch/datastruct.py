@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Optional
 import warnings as _warnings
 
 import torch
-from codetiming import Timer
 
+from facetorch._timing import timed
 from facetorch.logger import get_logger
 
 logger = get_logger()
@@ -153,8 +153,8 @@ class Detection:
     Attributes:
         loc (torch.Tensor): Locations of faces
         conf (torch.Tensor): Confidences of faces
-        landmarks (torch.Tensor): Selected landmark coordinates in source-image space.
-        boxes (torch.Tensor): Selected bounding boxes in source-image space.
+        landmarks (torch.Tensor): Selected landmarks in the canonical reader-image coordinate frame.
+        boxes (torch.Tensor): Selected boxes in the canonical reader-image coordinate frame.
         dets (torch.Tensor): Selected boxes and confidence scores.
 
     """
@@ -263,9 +263,7 @@ class ImageData:
         """Reset the detection object to empty state."""
         self.det = Detection()
 
-    @Timer(
-        "ImageData.reset_faces", "{name}: {milliseconds:.2f} ms", logger=logger.debug
-    )
+    @timed("ImageData.reset_faces", logger=logger)
     def reset_tensors(self) -> None:
         """Reset the tensors to empty state."""
         self.reset_img()

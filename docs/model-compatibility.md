@@ -4,6 +4,9 @@ Facetorch v1 uses a bounded release-candidate matrix. Runtime support and artifa
 export cohorts are separate concepts: one digest-pinned exported program may serve
 several PyTorch lines only after every line has passed CPU and CUDA validation.
 Similar export-schema numbers alone are not treated as compatibility proof.
+The [v1 support policy](torch-support-policy.md) records the owner’s decision
+to retain all eight lines, recommend Torch 2.13 for new installations, preserve
+a CUDA 12 path, and qualify newer runtimes before widening the bounds.
 
 | Python | PyTorch line | Export schema | Artifact cohort | Candidate CUDA runtime |
 | --- | --- | --- | --- | --- |
@@ -41,19 +44,27 @@ when Facetorch reads authenticated state dictionaries and metadata. Digest-pinne
 artifacts reduce exposure but do not justify retaining a critically affected
 runtime as a supported public cohort.
 
-Torch 2.6 remains available for the validated CUDA 12.4 production lane under
-three founder-approved moderate exceptions: GHSA-887c-mr87-cxwp,
-GHSA-vgrw-7cvw-pwgx, and GHSA-f4hp-rmr7-r7v8. They affect `ctc_loss`,
-`unpack_sequence`, and `pad_packed_sequence`, respectively; Facetorch does not call
-those APIs. The exceptions are restricted to the exact Torch 2.6 CPU/CUDA profiles
-and expire on 2026-11-20. The machine-readable policy and removal conditions are in
-`security/advisory-exceptions.json`.
+The approved exception policy contains nine earlier records (eight Torch and
+one setuptools) plus 76 exact Torch profile/version records approved on
+September 6 for the reviewed 18 findings. All expire on 2026-11-20; the earlier
+records were not renewed or broadened. They are
+limited to the profiles and versions listed in
+`security/advisory-exceptions.json`; support for an additional runtime does not
+extend an exception to it.
 
-Torch 2.11.0 and 2.12.1 currently constrain their runtime dependency to
-`setuptools<82`. Those exact profiles retain the existing Linux-only exception for
-CVE-2026-59890 through 2026-11-20. Facetorch does not build source distributions
-at runtime, and release source distributions use the isolated setuptools 84 build
-backend. Torch lines without that upstream constraint resolve setuptools 84.
+The corrected audit on 2026-09-05 covered every active runtime dependency in all 17 lock
+profiles. It found 18 distinct unresolved advisories, repeated as 76 entries
+across twelve profiles. Root, Torch 2.11 CPU/CUDA, and Torch 2.13 CPU/CUDA had no
+unresolved findings under the existing policy. This is a dated audit result,
+not a claim that these runtimes have no vulnerabilities. The owner approved
+scoped treatment on September 6, and fresh audits now pass all 17 profiles with
+zero coverage errors or unresolved findings. See the
+[decision record](v1-risk-treatment-proposal.md). Full candidate qualification
+and publication approval remain separate requirements.
+
+Torch 2.11.0 and 2.12.1 constrain setuptools to `<82`; the existing scoped
+setuptools exception covers the affected locked profiles. Runtime compatibility,
+artifact-cohort approval, and dependency risk acceptance are separate gates.
 
 ## Candidate evidence
 
@@ -71,9 +82,8 @@ clean commit `4aac25033cbafd836d32351e8fe9bc6c0e088ed5`. Its 20 artifacts and
 schema-2 validation records were published through the digest-approved plan, and
 the final Hub audit verified their immutable LFS identities, sizes, metadata, and
 legal documents. Compatibility and the packaged artifact manifest are therefore
-approved. This model-artifact approval is distinct from the coordinated RC1
-release, which must still run its protected dry run from the exact final source
-commit.
+approved. The coordinated RC1 release was aborted without publication. Artifact approval
+is separate from a package release and its exact-source validation.
 
 On 2026-09-01, the public RC2 wheel and all ten existing artifacts were then tested
 from an independent directory on PyTorch 2.6 through 2.13, on CPU and an RTX 3090.
@@ -81,8 +91,12 @@ All eight preferred routes loaded and completed real four-face inference within
 the published tolerances, and every downloaded artifact matched its manifest
 SHA-256. This established the reusable routing boundary above. It was a focused
 compatibility probe, not a substitute for the complete synthetic release matrix;
-RC3 publication therefore re-runs every batch, seed, scale, input variant, model,
-and device through the protected exact-candidate workflow.
+RC3 completed that full matrix on September 3, from clean source commit
+`12db551d937ac2fa0cc41324f89d71fd9858fa02`: 4,992 runtime cases in eight
+CPU/CUDA lanes, plus 1,248 artifact-cohort cases. The
+[published RC3 evidence](https://github.com/tomas-gajarsky/facetorch/releases/tag/v1.0.0-rc.3)
+is historical evidence for that commit. Each later candidate must rerun the
+complete matrix and the corrected dependency gate.
 
 ## Validation semantics
 
@@ -194,3 +208,20 @@ python scripts/run_local_cuda_release_matrix.py \
 The relaxed flags are diagnostic only. Release verification omits both flags and
 therefore requires a clean immutable source commit plus approved compatibility,
 governance, and artifact manifests.
+
+## Cache lock upgrade
+
+Shared writable caches use persistent POSIX `flock` files on a local filesystem.
+Independent processes and containers sharing the same host filesystem serialize
+on the same inode; the kernel releases the lock when the last owning descriptor
+closes. Use the same service UID and suitable directory access for all workers.
+Cross-host/network-filesystem locking is outside the validated guarantee.
+
+Stop **all** workers before upgrading a shared RC3 cache. If an old lock directory
+remains, remove only that directory after confirming every worker has stopped,
+then upgrade every worker before restarting. Mixing RC3 directory-lock clients
+with the new file-lock clients is unsupported. An existing directory raises
+`CacheLockError` rather than guessing whether its PID is alive in another
+container. Persistent lock files are normal; never delete or replace them while
+any cache worker may be running. Windows lacks the required POSIX lock and remains
+outside the supported platform matrix.

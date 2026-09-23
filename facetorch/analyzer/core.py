@@ -1,5 +1,4 @@
 import inspect
-import logging
 import os
 import threading
 import warnings
@@ -8,9 +7,9 @@ from typing import Any, List, Optional, Union
 
 import numpy as np
 import torch
-from codetiming import Timer
 from PIL import Image
 
+from facetorch._timing import timed
 from facetorch.analyzer.predictor.core import FacePredictor
 from facetorch.datastruct import (
     AnalysisResult,
@@ -19,6 +18,7 @@ from facetorch.datastruct import (
     Face,
     ImageData,
     Location,
+    Prediction,
     Response,
 )
 from facetorch.exceptions import (
@@ -28,14 +28,30 @@ from facetorch.exceptions import (
     InputError,
 )
 from facetorch.input import InputSpec
-from facetorch.logger import LoggerJsonFile, get_logger
+from facetorch.logger import get_logger
 from importlib.metadata import version
+from hydra.errors import InstantiationException
 from hydra.utils import instantiate
 from omegaconf import OmegaConf
 
 logger = get_logger()
 
 _UNLOADED = object()
+
+
+def _instantiate_component(config, label: str):
+    """Keep public errors catchable when Hydra wraps a constructor failure."""
+    try:
+        return instantiate(config)
+    except InstantiationException as exc:
+        cause = exc
+        while isinstance(cause, InstantiationException) and cause.__cause__ is not None:
+            cause = cause.__cause__
+        if isinstance(cause, FacetorchError):
+            # Preserve the original type, attributes, traceback and lower-level
+            # cause without making the Hydra wrapper a cyclic exception cause.
+            raise cause from cause.__cause__
+        raise ConfigurationError(f"Could not construct {label}.") from exc
 
 
 class _LazyComponentRegistry(MutableMapping[str, Any]):
@@ -104,9 +120,7 @@ class _LazyComponentRegistry(MutableMapping[str, Any]):
 
 
 class FaceAnalyzer(object):
-    @Timer(
-        "FaceAnalyzer.__init__", "{name}: {milliseconds:.2f} ms", logger=logger.debug
-    )
+    @timed("FaceAnalyzer.__init__", logger=logger)
     def __init__(self, cfg: OmegaConf):
         """FaceAnalyzer is the main class that reads images, runs face detection, tensor unification and facial feature prediction.
         It also draws bounding boxes and facial landmarks over the image.
@@ -140,15 +154,15 @@ class FaceAnalyzer(object):
         self._component_lock = threading.RLock()
 
         if hasattr(self.cfg, "logger") and self.cfg.logger is not None:
-            self.logger = instantiate(self.cfg.logger).logger
+            self.logger = _instantiate_component(self.cfg.logger, "logger").logger
         else:
-            self.logger = LoggerJsonFile(level=logging.INFO).logger
+            self.logger = get_logger()
 
         self.logger.info("Initializing FaceAnalyzer")
         self.logger.debug("Config", extra=self.cfg.__dict__["_content"])
 
         self.logger.info("Initializing BaseReader")
-        self.reader = instantiate(self.cfg.reader)
+        self.reader = _instantiate_component(self.cfg.reader, "image reader")
         self._reader_signature_owner = None
         self._reader_signature_parameters = None
 
@@ -158,7 +172,7 @@ class FaceAnalyzer(object):
 
         self.logger.info("Initializing FaceUnifier")
         if "unifier" in self.cfg:
-            self.unifier = instantiate(self.cfg.unifier)
+            self.unifier = _instantiate_component(self.cfg.unifier, "face unifier")
         else:
             self.unifier = None
 
@@ -214,7 +228,9 @@ class FaceAnalyzer(object):
         with lock:
             if self._detector is _UNLOADED:
                 self.logger.info("Initializing FaceDetector")
-                self._detector = instantiate(detector_config)
+                self._detector = _instantiate_component(
+                    detector_config, "face detector"
+                )
         return self._detector
 
     @detector.setter
@@ -306,11 +322,11 @@ class FaceAnalyzer(object):
 
     def _load_predictor(self, name: str, predictor_config) -> FacePredictor:
         self.logger.info(f"Initializing FacePredictor {name}")
-        return instantiate(predictor_config)
+        return _instantiate_component(predictor_config, f"predictor {name!r}")
 
     def _load_utilizer(self, name: str, utilizer_config):
         self.logger.info(f"Initializing BaseUtilizer {name}")
-        return instantiate(utilizer_config)
+        return _instantiate_component(utilizer_config, f"utilizer {name!r}")
 
     @staticmethod
     def _normalize_predictor_selection(
@@ -446,7 +462,7 @@ class FaceAnalyzer(object):
             return tuple(name for name in configured if name not in excluded)
         return configured
 
-    @Timer("FaceAnalyzer.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("FaceAnalyzer.run", logger=logger)
     def run(
         self,
         image_source: Optional[
@@ -587,6 +603,18 @@ class FaceAnalyzer(object):
                         f"{prediction_count} prediction(s) for "
                         f"{expected_count} input face(s)."
                     )
+                for index, prediction in enumerate(preds, start=face_indx_start):
+                    if (
+                        not isinstance(prediction, Prediction)
+                        or not isinstance(prediction.label, str)
+                        or not isinstance(prediction.logits, torch.Tensor)
+                        or not isinstance(prediction.other, dict)
+                    ):
+                        raise InferenceError(
+                            f"Face predictor {predictor_name!r} returned an invalid "
+                            f"Prediction for face {index}; expected a string label, "
+                            "tensor logits and dictionary metadata."
+                        )
                 data.add_preds(preds, predictor_name, face_indx_start)
 
             return data
@@ -656,12 +684,8 @@ class FaceAnalyzer(object):
             face_tensor = data.tensor[0]
             face = Face(
                 indx=0,
-                loc=Location(
-                    x1=0, y1=0, x2=data.dims.width, y2=data.dims.height
-                ),
-                dims=Dimensions(
-                    height=data.dims.height, width=data.dims.width
-                ),
+                loc=Location(x1=0, y1=0, x2=data.dims.width, y2=data.dims.height),
+                dims=Dimensions(height=data.dims.height, width=data.dims.width),
                 tensor=face_tensor,
                 ratio=1.0,
             )
@@ -727,9 +751,9 @@ class FaceAnalyzer(object):
             self.logger.info(f"Running BaseUtilizer: {utilizer_name}")
             data = _run_component(
                 f"Face utilizer {utilizer_name!r}",
-                lambda utilizer_name=utilizer_name: self.utilizers[
-                    utilizer_name
-                ].run(data),
+                lambda utilizer_name=utilizer_name: self.utilizers[utilizer_name].run(
+                    data
+                ),
             )
 
         if not include_tensors:
@@ -986,4 +1010,6 @@ class FaceAnalyzer(object):
             if tensor.numel() and (
                 float(tensor.min()) < 0.0 or float(tensor.max()) > 255.0
             ):
-                raise ConfigurationError("Reader output values must stay within 0..255.")
+                raise ConfigurationError(
+                    "Reader output values must stay within 0..255."
+                )

@@ -1,5 +1,5 @@
 import torch
-from codetiming import Timer
+from facetorch._timing import timed
 from facetorch.base import BaseProcessor
 from facetorch.datastruct import ImageData
 from facetorch.logger import get_logger
@@ -24,7 +24,7 @@ class FaceUnifier(BaseProcessor):
         """
         super().__init__(transform, device, optimize_transform)
 
-    @Timer("FaceUnifier.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("FaceUnifier.run", logger=logger)
     def run(self, data: ImageData) -> ImageData:
         """Runs unifying transform on each face tensor one by one.
 

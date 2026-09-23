@@ -1,0 +1,2589 @@
+{
+  "schema_version": 1,
+  "inspected_on": "2026-09-05",
+  "torch_version": "2.11.0+cu130",
+  "manifest_sha256": "1714b7e46302cef80644354aa67e00984c0a2c2d24721e950d4687d20c82ff00",
+  "scope": "All 20 manifest-pinned PT2 programs; recursively inspect FX call_function targets after verifying file digest and size. Name matching is a review aid, not exploitability proof or coverage of arbitrary custom/compiled programs.",
+  "models": [
+    {
+      "model_id": "detector-retinaface",
+      "artifact_cohort": "2.6",
+      "artifact_sha256": "fafa283e8f3d4e696a04cb05d375abe8c9e1a599c51c039957fcde643b4bbfd2",
+      "operator_counts": {
+        "<built-in function add>": 6,
+        "<built-in function floordiv>": 4,
+        "aten.add.Tensor": 2,
+        "aten.add_.Tensor": 16,
+        "aten.batch_norm.default": 73,
+        "aten.cat.default": 6,
+        "aten.contiguous.default": 9,
+        "aten.conv2d.default": 82,
+        "aten.leaky_relu_.default": 11,
+        "aten.max_pool2d.default": 1,
+        "aten.permute.default": 9,
+        "aten.relu.default": 3,
+        "aten.relu_.default": 49,
+        "aten.softmax.int": 1,
+        "aten.sym_size.int": 2,
+        "aten.upsample_nearest2d.vec": 2,
+        "aten.view.default": 9
+      },
+      "advisory_related_names": {},
+      "dropout_parameters": []
+    },
+    {
+      "model_id": "detector-retinaface",
+      "artifact_cohort": "2.11",
+      "artifact_sha256": "ed4b6377d6c0ad147b00b533a24cb6fb2fb300a99e076d43407c1bc421435d8c",
+      "operator_counts": {
+        "aten.add.Tensor": 2,
+        "aten.add_.Tensor": 16,
+        "aten.batch_norm.default": 73,
+        "aten.cat.default": 6,
+        "aten.contiguous.default": 9,
+        "aten.conv2d.default": 82,
+        "aten.leaky_relu_.default": 11,
+        "aten.max_pool2d.default": 1,
+        "aten.permute.default": 9,
+        "aten.relu.default": 3,
+        "aten.relu_.default": 49,
+        "aten.softmax.int": 1,
+        "aten.sym_size.int": 4,
+        "aten.upsample_nearest2d.vec": 2,
+        "aten.view.default": 9
+      },
+      "advisory_related_names": {},
+      "dropout_parameters": []
+    },
+    {
+      "model_id": "align-synergynet",
+      "artifact_cohort": "2.6",
+      "artifact_sha256": "72865fa2e88245ea239e32fd518503e69c75e8b7f35678e2d6e49d67ccd5229f",
+      "operator_counts": {
+        "aten.adaptive_avg_pool2d.default": 1,
+        "aten.add.Tensor": 10,
+        "aten.batch_norm.default": 52,
+        "aten.cat.default": 1,
+        "aten.conv2d.default": 52,
+        "aten.dropout.default": 3,
+        "aten.hardtanh_.default": 35,
+        "aten.linear.default": 3,
+        "aten.reshape.default": 1,
+        "aten.sym_size.int": 1
+      },
+      "advisory_related_names": {
+        "aten.dropout.default": 3
+      },
+      "dropout_parameters": [
+        {
+          "p": {
+            "as_float": 0.2
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.2
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.2
+          },
+          "train": {
+            "as_bool": false
+          }
+        }
+      ]
+    },
+    {
+      "model_id": "align-synergynet",
+      "artifact_cohort": "2.11",
+      "artifact_sha256": "7f1a98ca1a480ae19d6bfddb87a4ec58bdd77180d8508340a41ed7c9afb2dec4",
+      "operator_counts": {
+        "aten.adaptive_avg_pool2d.default": 1,
+        "aten.add.Tensor": 10,
+        "aten.batch_norm.default": 52,
+        "aten.cat.default": 1,
+        "aten.conv2d.default": 52,
+        "aten.dropout.default": 3,
+        "aten.hardtanh_.default": 35,
+        "aten.linear.default": 3,
+        "aten.reshape.default": 1,
+        "aten.sym_size.int": 1
+      },
+      "advisory_related_names": {
+        "aten.dropout.default": 3
+      },
+      "dropout_parameters": [
+        {
+          "p": {
+            "as_float": 0.2
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.2
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.2
+          },
+          "train": {
+            "as_bool": false
+          }
+        }
+      ]
+    },
+    {
+      "model_id": "au-opengraph",
+      "artifact_cohort": "2.6",
+      "artifact_sha256": "f1ee082bf865593aa4ff0302e10f47fd00f52ac53de8c9081e3f595af6dcace1",
+      "operator_counts": {
+        "<built-in function getitem>": 74,
+        "<built-in function mul>": 3,
+        "aten.add.Tensor": 85,
+        "aten.batch_norm.default": 29,
+        "aten.bmm.default": 2,
+        "aten.cat.default": 3,
+        "aten.clamp_min.default": 23,
+        "aten.contiguous.default": 124,
+        "aten.conv2d.default": 1,
+        "aten.detach.default": 2,
+        "aten.diag_embed.default": 1,
+        "aten.div.Tensor": 23,
+        "aten.dropout.default": 125,
+        "aten.einsum.default": 2,
+        "aten.expand_as.default": 23,
+        "aten.flatten.using_ints": 3,
+        "aten.ge.Tensor": 1,
+        "aten.gelu.default": 24,
+        "aten.index.Tensor": 24,
+        "aten.layer_norm.default": 53,
+        "aten.linalg_vector_norm.default": 23,
+        "aten.linear.default": 129,
+        "aten.matmul.default": 48,
+        "aten.mean.dim": 1,
+        "aten.mul.Tensor": 39,
+        "aten.pad.default": 27,
+        "aten.permute.default": 156,
+        "aten.pow.Tensor_Scalar": 1,
+        "aten.relu.default": 16,
+        "aten.relu_.default": 28,
+        "aten.reshape.default": 116,
+        "aten.roll.default": 22,
+        "aten.select.int": 22,
+        "aten.slice.Tensor": 57,
+        "aten.softmax.int": 24,
+        "aten.sum.dim_IntList": 16,
+        "aten.sym_size.int": 1,
+        "aten.to.dtype": 2,
+        "aten.topk.default": 1,
+        "aten.transpose.int": 49,
+        "aten.unbind.int": 24,
+        "aten.unsqueeze.default": 73,
+        "aten.view.default": 214
+      },
+      "advisory_related_names": {
+        "aten.dropout.default": 125
+      },
+      "dropout_parameters": [
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        }
+      ]
+    },
+    {
+      "model_id": "au-opengraph",
+      "artifact_cohort": "2.11",
+      "artifact_sha256": "8ededd74d36a0b552d4a5e48f2dd32395ec483a974944bcbae7b09d65ae6d728",
+      "operator_counts": {
+        "<built-in function getitem>": 74,
+        "<built-in function mul>": 3,
+        "aten.add.Tensor": 85,
+        "aten.alias.default": 24,
+        "aten.batch_norm.default": 29,
+        "aten.bmm.default": 2,
+        "aten.cat.default": 3,
+        "aten.clamp_min.default": 23,
+        "aten.contiguous.default": 124,
+        "aten.conv2d.default": 1,
+        "aten.detach.default": 2,
+        "aten.diag_embed.default": 1,
+        "aten.div.Tensor": 23,
+        "aten.dropout.default": 125,
+        "aten.einsum.default": 2,
+        "aten.expand_as.default": 23,
+        "aten.flatten.using_ints": 3,
+        "aten.ge.Tensor": 1,
+        "aten.gelu.default": 24,
+        "aten.index.Tensor": 24,
+        "aten.layer_norm.default": 53,
+        "aten.linalg_vector_norm.default": 23,
+        "aten.linear.default": 129,
+        "aten.matmul.default": 48,
+        "aten.mean.dim": 1,
+        "aten.mul.Tensor": 39,
+        "aten.pad.default": 27,
+        "aten.permute.default": 156,
+        "aten.pow.Tensor_Scalar": 1,
+        "aten.relu.default": 16,
+        "aten.relu_.default": 28,
+        "aten.reshape.default": 116,
+        "aten.roll.default": 22,
+        "aten.select.int": 22,
+        "aten.softmax.int": 24,
+        "aten.sum.dim_IntList": 16,
+        "aten.sym_size.int": 1,
+        "aten.to.dtype": 2,
+        "aten.topk.default": 1,
+        "aten.transpose.int": 49,
+        "aten.unbind.int": 24,
+        "aten.unsqueeze.default": 73,
+        "aten.view.default": 214
+      },
+      "advisory_related_names": {
+        "aten.dropout.default": 125
+      },
+      "dropout_parameters": [
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        }
+      ]
+    },
+    {
+      "model_id": "deepfake-efficientnet-b7",
+      "artifact_cohort": "2.6",
+      "artifact_sha256": "366fac40be1fc5f2a9250d0925edf391ed673b7933a88500afe48215a0d1f415",
+      "operator_counts": {
+        "aten.adaptive_avg_pool2d.default": 1,
+        "aten.add.Tensor": 48,
+        "aten.batch_norm.default": 163,
+        "aten.conv2d.default": 273,
+        "aten.dropout.default": 1,
+        "aten.flatten.using_ints": 1,
+        "aten.linear.default": 1,
+        "aten.mean.dim": 55,
+        "aten.mul.Tensor": 55,
+        "aten.pad.default": 5,
+        "aten.sigmoid.default": 55,
+        "aten.silu_.default": 163
+      },
+      "advisory_related_names": {
+        "aten.dropout.default": 1
+      },
+      "dropout_parameters": [
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        }
+      ]
+    },
+    {
+      "model_id": "deepfake-efficientnet-b7",
+      "artifact_cohort": "2.11",
+      "artifact_sha256": "9173ff7b4b3448b24379b187e45f8198b7a5200c4aaf0391410f96afe3040195",
+      "operator_counts": {
+        "aten.adaptive_avg_pool2d.default": 1,
+        "aten.add.Tensor": 48,
+        "aten.batch_norm.default": 163,
+        "aten.conv2d.default": 273,
+        "aten.dropout.default": 1,
+        "aten.flatten.using_ints": 1,
+        "aten.linear.default": 1,
+        "aten.mean.dim": 55,
+        "aten.mul.Tensor": 55,
+        "aten.pad.default": 5,
+        "aten.sigmoid.default": 55,
+        "aten.silu_.default": 163
+      },
+      "advisory_related_names": {
+        "aten.dropout.default": 1
+      },
+      "dropout_parameters": [
+        {
+          "p": {
+            "as_float": 0.0
+          },
+          "train": {
+            "as_bool": false
+          }
+        }
+      ]
+    },
+    {
+      "model_id": "embed-resnet50",
+      "artifact_cohort": "2.6",
+      "artifact_sha256": "6fe0cb024468c20eb863d326a1a80ffbf89b28d982afd4961fdba4eb3f9ef906",
+      "operator_counts": {
+        "aten.adaptive_avg_pool2d.default": 1,
+        "aten.add_.Tensor": 16,
+        "aten.batch_norm.default": 54,
+        "aten.cat.default": 1,
+        "aten.clamp_min.default": 1,
+        "aten.conv2d.default": 53,
+        "aten.div.Tensor": 1,
+        "aten.flatten.using_ints": 1,
+        "aten.linalg_vector_norm.default": 1,
+        "aten.linear.default": 3,
+        "aten.max_pool2d.default": 1,
+        "aten.relu_.default": 50
+      },
+      "advisory_related_names": {},
+      "dropout_parameters": []
+    },
+    {
+      "model_id": "embed-resnet50",
+      "artifact_cohort": "2.11",
+      "artifact_sha256": "709a55482b6a1f33d308487f5ddfd6c99d99f75ff15f97131e249cda2b1226d6",
+      "operator_counts": {
+        "aten.adaptive_avg_pool2d.default": 1,
+        "aten.add_.Tensor": 16,
+        "aten.batch_norm.default": 54,
+        "aten.cat.default": 1,
+        "aten.clamp_min.default": 1,
+        "aten.conv2d.default": 53,
+        "aten.div.Tensor": 1,
+        "aten.flatten.using_ints": 1,
+        "aten.linalg_vector_norm.default": 1,
+        "aten.linear.default": 3,
+        "aten.max_pool2d.default": 1,
+        "aten.relu_.default": 50
+      },
+      "advisory_related_names": {},
+      "dropout_parameters": []
+    },
+    {
+      "model_id": "fer-efficientnet-b0",
+      "artifact_cohort": "2.6",
+      "artifact_sha256": "21085ae819e25c41b19fabc518ae2df4ecda47798032f7929e50607e709a8706",
+      "operator_counts": {
+        "aten.adaptive_avg_pool2d.default": 1,
+        "aten.add.Tensor": 9,
+        "aten.batch_norm.default": 49,
+        "aten.conv2d.default": 81,
+        "aten.flatten.using_ints": 1,
+        "aten.linear.default": 1,
+        "aten.mean.dim": 16,
+        "aten.mul.Tensor": 16,
+        "aten.pad.default": 5,
+        "aten.sigmoid.default": 16,
+        "aten.silu_.default": 49
+      },
+      "advisory_related_names": {},
+      "dropout_parameters": []
+    },
+    {
+      "model_id": "fer-efficientnet-b0",
+      "artifact_cohort": "2.11",
+      "artifact_sha256": "f8299072dfa79e555f1458df55a4afae11a3cc8b364a05576c64e71cffe5f840",
+      "operator_counts": {
+        "aten.adaptive_avg_pool2d.default": 1,
+        "aten.add.Tensor": 9,
+        "aten.batch_norm.default": 49,
+        "aten.conv2d.default": 81,
+        "aten.flatten.using_ints": 1,
+        "aten.linear.default": 1,
+        "aten.mean.dim": 16,
+        "aten.mul.Tensor": 16,
+        "aten.pad.default": 5,
+        "aten.sigmoid.default": 16,
+        "aten.silu_.default": 49
+      },
+      "advisory_related_names": {},
+      "dropout_parameters": []
+    },
+    {
+      "model_id": "fer-efficientnet-b2",
+      "artifact_cohort": "2.6",
+      "artifact_sha256": "8efe66ef13cb46b7e5d3fc6e0d8c5b9f215261ce96922979c28ddfa4d0cd1109",
+      "operator_counts": {
+        "<built-in function getitem>": 2,
+        "aten.adaptive_max_pool2d.default": 1,
+        "aten.add.Tensor": 16,
+        "aten.batch_norm.default": 69,
+        "aten.conv2d.default": 115,
+        "aten.flatten.using_ints": 1,
+        "aten.linear.default": 1,
+        "aten.mean.dim": 23,
+        "aten.mul.Tensor": 23,
+        "aten.pad.default": 5,
+        "aten.sigmoid.default": 23,
+        "aten.silu_.default": 69
+      },
+      "advisory_related_names": {},
+      "dropout_parameters": []
+    },
+    {
+      "model_id": "fer-efficientnet-b2",
+      "artifact_cohort": "2.11",
+      "artifact_sha256": "d319e478ace14e8ac2b4b4fabec3851ed91de0196a52289bc83be436dfee323c",
+      "operator_counts": {
+        "<built-in function getitem>": 2,
+        "aten.adaptive_max_pool2d.default": 1,
+        "aten.add.Tensor": 16,
+        "aten.batch_norm.default": 69,
+        "aten.conv2d.default": 115,
+        "aten.flatten.using_ints": 1,
+        "aten.linear.default": 1,
+        "aten.mean.dim": 23,
+        "aten.mul.Tensor": 23,
+        "aten.pad.default": 5,
+        "aten.sigmoid.default": 23,
+        "aten.silu_.default": 69
+      },
+      "advisory_related_names": {},
+      "dropout_parameters": []
+    },
+    {
+      "model_id": "va-elim",
+      "artifact_cohort": "2.6",
+      "artifact_sha256": "2e07b91fa8cad7aaa28b7b6656fc66d4f8b8d154df1b3c8a00ecd604e8cdd624",
+      "operator_counts": {
+        "aten.adaptive_avg_pool2d.default": 1,
+        "aten.batch_norm.default": 1,
+        "aten.conv2d.default": 5,
+        "aten.dropout.default": 2,
+        "aten.flatten.using_ints": 1,
+        "aten.linear.default": 4,
+        "aten.max_pool2d.default": 3,
+        "aten.relu_.default": 8
+      },
+      "advisory_related_names": {
+        "aten.dropout.default": 2
+      },
+      "dropout_parameters": [
+        {
+          "p": {
+            "as_float": 0.5
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.5
+          },
+          "train": {
+            "as_bool": false
+          }
+        }
+      ]
+    },
+    {
+      "model_id": "va-elim",
+      "artifact_cohort": "2.11",
+      "artifact_sha256": "0c55f59a573bb5d56e068eee8a840eef9e57b74d008c22147a9bdc23ec20ba56",
+      "operator_counts": {
+        "aten.adaptive_avg_pool2d.default": 1,
+        "aten.batch_norm.default": 1,
+        "aten.conv2d.default": 5,
+        "aten.dropout.default": 2,
+        "aten.flatten.using_ints": 1,
+        "aten.linear.default": 4,
+        "aten.max_pool2d.default": 3,
+        "aten.relu_.default": 8
+      },
+      "advisory_related_names": {
+        "aten.dropout.default": 2
+      },
+      "dropout_parameters": [
+        {
+          "p": {
+            "as_float": 0.5
+          },
+          "train": {
+            "as_bool": false
+          }
+        },
+        {
+          "p": {
+            "as_float": 0.5
+          },
+          "train": {
+            "as_bool": false
+          }
+        }
+      ]
+    },
+    {
+      "model_id": "verify-adaface",
+      "artifact_cohort": "2.6",
+      "artifact_sha256": "99a07809423a075991cb32c0df5475ed0e01617ac75fb7cb11beab894d0646c4",
+      "operator_counts": {
+        "aten.add.Tensor": 49,
+        "aten.batch_norm.default": 51,
+        "aten.conv2d.default": 102,
+        "aten.div.Tensor": 1,
+        "aten.linalg_norm.default": 1,
+        "aten.linear.default": 1,
+        "aten.max_pool2d.default": 1,
+        "aten.prelu.default": 50,
+        "aten.sym_size.int": 1,
+        "aten.view.default": 1
+      },
+      "advisory_related_names": {},
+      "dropout_parameters": []
+    },
+    {
+      "model_id": "verify-adaface",
+      "artifact_cohort": "2.11",
+      "artifact_sha256": "c87f48c48859a05207de63702d1fe0f491a63677a4b0304d49a527fe3507426f",
+      "operator_counts": {
+        "aten.add.Tensor": 49,
+        "aten.batch_norm.default": 51,
+        "aten.conv2d.default": 102,
+        "aten.div.Tensor": 1,
+        "aten.linalg_norm.default": 1,
+        "aten.linear.default": 1,
+        "aten.max_pool2d.default": 1,
+        "aten.prelu.default": 50,
+        "aten.sym_size.int": 1,
+        "aten.view.default": 1
+      },
+      "advisory_related_names": {},
+      "dropout_parameters": []
+    },
+    {
+      "model_id": "verify-magface",
+      "artifact_cohort": "2.6",
+      "artifact_sha256": "b96f0dcfb5a9009ce352a2c215c7874802361f09de41d5d0040f83e647c95339",
+      "operator_counts": {
+        "aten.add.Tensor": 49,
+        "aten.batch_norm.default": 154,
+        "aten.conv2d.default": 103,
+        "aten.flatten.using_ints": 1,
+        "aten.linear.default": 1,
+        "aten.prelu.default": 50
+      },
+      "advisory_related_names": {},
+      "dropout_parameters": []
+    },
+    {
+      "model_id": "verify-magface",
+      "artifact_cohort": "2.11",
+      "artifact_sha256": "d7c153debab6cb61327b684fc66132f71f4960b9c7779e1b282eba2c4e0d05e3",
+      "operator_counts": {
+        "aten.add.Tensor": 49,
+        "aten.batch_norm.default": 154,
+        "aten.conv2d.default": 103,
+        "aten.flatten.using_ints": 1,
+        "aten.linear.default": 1,
+        "aten.prelu.default": 50
+      },
+      "advisory_related_names": {},
+      "dropout_parameters": []
+    }
+  ]
+}

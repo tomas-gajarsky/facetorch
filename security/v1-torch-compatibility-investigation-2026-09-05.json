@@ -1,0 +1,402 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-09-05T14:54:52.062968+00:00",
+  "status": "diagnostic_checks_passed_release_approval_pending",
+  "runtime_validator_source_commit": "29e5ffb633d0ff9b1cd6dda58ab06b64071f4b83",
+  "source_state": {
+    "tracked_tree_clean_during_model_runs": true,
+    "source_tree_clean": false,
+    "untracked_review_documents": [
+      "V1_FINAL_RELEASE_READINESS_REVIEW.md",
+      "V1_RC_NARRATED_CHANGE_REVIEW.md"
+    ],
+    "status_sha256": "14ae6fa559dd0b0aef7fc2e9327d33e046bf6a0c16e84d09c8bdf35b56700037"
+  },
+  "platform": {
+    "system": "Linux",
+    "machine": "x86_64",
+    "python_version": "3.10.12",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "gpu_capability": [
+      8,
+      6
+    ],
+    "driver_version": "595.71.05",
+    "diagnostic_cpu_threads": 4
+  },
+  "existing_runtime_cases": 4992,
+  "candidate_torch214_cases": 1560,
+  "lanes": [
+    {
+      "profile": "torch-2.10-cu130",
+      "candidate_only": false,
+      "status": "ok",
+      "torch_version": "2.10.0+cu130",
+      "torchvision_version": "0.25.0+cu130",
+      "python_version": "3.10.12",
+      "cuda_runtime": "13.0",
+      "devices": [
+        "cpu",
+        "cuda"
+      ],
+      "models": 10,
+      "cases": 624,
+      "summary_path": "build/torch-support/runtime-validation/torch-2.10-cu130/validation-summary-torch2.10-artifact2.11.json",
+      "summary_sha256": "2aa290a56510f298d6c6028b1d1a67e4b036abaf52b42e3229049b908b660713",
+      "environment_lock": {
+        "path": "environments/torch-2.10-cu130/uv.lock",
+        "sha256": "2d29d2b3979baa4c47b8f6230c13c44a20ffcbb58af3a038a799479e04fbe52c"
+      }
+    },
+    {
+      "profile": "torch-2.11-cu130",
+      "candidate_only": false,
+      "status": "ok",
+      "torch_version": "2.11.0+cu130",
+      "torchvision_version": "0.26.0+cu130",
+      "python_version": "3.10.12",
+      "cuda_runtime": "13.0",
+      "devices": [
+        "cpu",
+        "cuda"
+      ],
+      "models": 10,
+      "cases": 624,
+      "summary_path": "build/torch-support/runtime-validation/torch-2.11-cu130/validation-summary-torch2.11-artifact2.11.json",
+      "summary_sha256": "2d58c7ca24f5b93ab6c9007c83acc2a078983121e1855b21c716bb14dd5c4e50",
+      "environment_lock": {
+        "path": "environments/torch-2.11-cu130/uv.lock",
+        "sha256": "1bbf8909ccbd6a525a37edca6ddcb0ee98c338175a7d270e884634b02ab365b7"
+      }
+    },
+    {
+      "profile": "torch-2.12-cu130",
+      "candidate_only": false,
+      "status": "ok",
+      "torch_version": "2.12.1+cu130",
+      "torchvision_version": "0.27.1+cu130",
+      "python_version": "3.10.12",
+      "cuda_runtime": "13.0",
+      "devices": [
+        "cpu",
+        "cuda"
+      ],
+      "models": 10,
+      "cases": 624,
+      "summary_path": "build/torch-support/runtime-validation/torch-2.12-cu130/validation-summary-torch2.12-artifact2.11.json",
+      "summary_sha256": "81e15ff6fd1ac6f8bce3a048de85650220f25775b9279402f3288f29ab96baef",
+      "environment_lock": {
+        "path": "environments/torch-2.12-cu130/uv.lock",
+        "sha256": "37a5c2419904665bba896a7688ca1ff87e1099bc1597799fe12dcc1d18e446ed"
+      }
+    },
+    {
+      "profile": "torch-2.13-cu130",
+      "candidate_only": false,
+      "status": "ok",
+      "torch_version": "2.13.0+cu130",
+      "torchvision_version": "0.28.0+cu130",
+      "python_version": "3.10.12",
+      "cuda_runtime": "13.0",
+      "devices": [
+        "cpu",
+        "cuda"
+      ],
+      "models": 10,
+      "cases": 624,
+      "summary_path": "build/torch-support/runtime-validation/torch-2.13-cu130/validation-summary-torch2.13-artifact2.11.json",
+      "summary_sha256": "8a9893205813f818379a050bb5f41ddb3a22d9cc0cc86388a3d0969b3d41b859",
+      "environment_lock": {
+        "path": "environments/torch-2.13-cu130/uv.lock",
+        "sha256": "ef4d69a00a60fc5d873a5d53353e2122337cbe5680a2dfaacf65654357fbabbf"
+      }
+    },
+    {
+      "profile": "torch-2.14-cpu",
+      "candidate_only": true,
+      "status": "ok",
+      "torch_version": "2.14.0+cpu",
+      "torchvision_version": "0.29.0+cpu",
+      "python_version": "3.10.12",
+      "cuda_runtime": null,
+      "devices": [
+        "cpu"
+      ],
+      "models": 10,
+      "cases": 312,
+      "summary_path": "build/torch-support/runtime-validation/torch-2.14-cpu/validation-summary-torch2.14-artifact2.11.json",
+      "summary_sha256": "4f9aada85872ecb55532ed8f6ed8fcf6475c947f2a6d9e97f0623ab6931778e9",
+      "environment_lock": {
+        "path": "build/torch-support/profiles/torch-2.14-cpu/uv.lock",
+        "sha256": "26a74b54b5de29233237d7f6456143c2697405cde79682f6b078bf31ea4a49ce"
+      }
+    },
+    {
+      "profile": "torch-2.14-cu126",
+      "candidate_only": true,
+      "status": "ok",
+      "torch_version": "2.14.0+cu126",
+      "torchvision_version": "0.29.0+cu126",
+      "python_version": "3.10.12",
+      "cuda_runtime": "12.6",
+      "devices": [
+        "cpu",
+        "cuda"
+      ],
+      "models": 10,
+      "cases": 624,
+      "summary_path": "build/torch-support/runtime-validation/torch-2.14-cu126/validation-summary-torch2.14-artifact2.11.json",
+      "summary_sha256": "bdb0131ba7c9b90a1af19917c59bad2362eeb13dad7b2b651a8be71a05bb6217",
+      "environment_lock": {
+        "path": "build/torch-support/profiles/torch-2.14-cu126/uv.lock",
+        "sha256": "2f8a66a510e4b50820d2935d9f24f827d059015b239a5126e835037984b36c4d"
+      }
+    },
+    {
+      "profile": "torch-2.14-cu130",
+      "candidate_only": true,
+      "status": "ok",
+      "torch_version": "2.14.0+cu130",
+      "torchvision_version": "0.29.0+cu130",
+      "python_version": "3.10.12",
+      "cuda_runtime": "13.0",
+      "devices": [
+        "cpu",
+        "cuda"
+      ],
+      "models": 10,
+      "cases": 624,
+      "summary_path": "build/torch-support/runtime-validation/torch-2.14-cu130/validation-summary-torch2.14-artifact2.11.json",
+      "summary_sha256": "85ada8b29f7c6ae54b8b8d86f20e9d1dd17a44f43bf0e9cd7915399c094352e4",
+      "environment_lock": {
+        "path": "build/torch-support/profiles/torch-2.14-cu130/uv.lock",
+        "sha256": "3816de1457c873e87932b2fe2d5d3423baa3f4101c7621ffc24bc21b6b0b30d0"
+      }
+    },
+    {
+      "profile": "torch-2.6-cu124",
+      "candidate_only": false,
+      "status": "ok",
+      "torch_version": "2.6.0+cu124",
+      "torchvision_version": "0.21.0+cu124",
+      "python_version": "3.10.12",
+      "cuda_runtime": "12.4",
+      "devices": [
+        "cpu",
+        "cuda"
+      ],
+      "models": 10,
+      "cases": 624,
+      "summary_path": "build/torch-support/runtime-validation/torch-2.6-cu124/validation-summary-torch2.6-artifact2.6.json",
+      "summary_sha256": "d011f50d948184bd4fc11a30cabaa29ea0362a44c585f41eb9fab50f72911c3e",
+      "environment_lock": {
+        "path": "environments/torch-2.6-cu124/uv.lock",
+        "sha256": "9011ddb573128b32067c0dafaf9bf7db216b5264317be203f5b476926f76237b"
+      }
+    },
+    {
+      "profile": "torch-2.7-cu126",
+      "candidate_only": false,
+      "status": "ok",
+      "torch_version": "2.7.1+cu126",
+      "torchvision_version": "0.22.1+cu126",
+      "python_version": "3.10.12",
+      "cuda_runtime": "12.6",
+      "devices": [
+        "cpu",
+        "cuda"
+      ],
+      "models": 10,
+      "cases": 624,
+      "summary_path": "build/torch-support/runtime-validation/torch-2.7-cu126/validation-summary-torch2.7-artifact2.6.json",
+      "summary_sha256": "0ad3ad882a3c5f0091fb8ec14d86ae3e3ed75350bd9b9cbc8ecdfdff0e4c18e3",
+      "environment_lock": {
+        "path": "environments/torch-2.7-cu126/uv.lock",
+        "sha256": "23ff984d3450ec6e49060a734c45217ae739e11d68d86f57ec3480213e7fb0c2"
+      }
+    },
+    {
+      "profile": "torch-2.8-cu126",
+      "candidate_only": false,
+      "status": "ok",
+      "torch_version": "2.8.0+cu126",
+      "torchvision_version": "0.23.0+cu126",
+      "python_version": "3.10.12",
+      "cuda_runtime": "12.6",
+      "devices": [
+        "cpu",
+        "cuda"
+      ],
+      "models": 10,
+      "cases": 624,
+      "summary_path": "build/torch-support/runtime-validation/torch-2.8-cu126/validation-summary-torch2.8-artifact2.6.json",
+      "summary_sha256": "8b0a9caa13622f2f47a768c47a6945dfaa0af762bb05fd9bf50f104b68a82986",
+      "environment_lock": {
+        "path": "environments/torch-2.8-cu126/uv.lock",
+        "sha256": "189a61018ec36b8085f7f76e78fbb9581e37f14e415844a80977bdc892079cf4"
+      }
+    },
+    {
+      "profile": "torch-2.9-cu130",
+      "candidate_only": false,
+      "status": "ok",
+      "torch_version": "2.9.1+cu130",
+      "torchvision_version": "0.24.1+cu130",
+      "python_version": "3.10.12",
+      "cuda_runtime": "13.0",
+      "devices": [
+        "cpu",
+        "cuda"
+      ],
+      "models": 10,
+      "cases": 624,
+      "summary_path": "build/torch-support/runtime-validation/torch-2.9-cu130/validation-summary-torch2.9-artifact2.11.json",
+      "summary_sha256": "ec748a57bdd7b1f9bce9e261171b519ce80433ceebc815f19fb0aa066db2b9ec",
+      "environment_lock": {
+        "path": "environments/torch-2.9-cu130/uv.lock",
+        "sha256": "6fc6c85801ba773557345e4fdcc0fd46bbe5342fed2da8c8d336fd33f42f81e6"
+      }
+    }
+  ],
+  "reference_recovery": {
+    "torch_version": "2.6.0+cu124",
+    "num_threads": 16,
+    "models": [
+      {
+        "model_id": "detector-retinaface",
+        "matches": true,
+        "sha256": "2546932958ec46c9e5df00ac91e67db05e09d7a1ec915c7474739ba68d07cd00",
+        "expected_sha256": "2546932958ec46c9e5df00ac91e67db05e09d7a1ec915c7474739ba68d07cd00",
+        "size_bytes": 18110654
+      },
+      {
+        "model_id": "fer-efficientnet-b2",
+        "matches": true,
+        "sha256": "e1b142c8a8a66043d43782fb193fd8394c4a0dcef88d6e5e46e8c71ee3f764fc",
+        "expected_sha256": "e1b142c8a8a66043d43782fb193fd8394c4a0dcef88d6e5e46e8c71ee3f764fc",
+        "size_bytes": 20598
+      },
+      {
+        "model_id": "fer-efficientnet-b0",
+        "matches": true,
+        "sha256": "eae39cd5bb82dde103724619ca294c6d95fbdae15ff9ea08af240d2bfc4ca9a1",
+        "expected_sha256": "eae39cd5bb82dde103724619ca294c6d95fbdae15ff9ea08af240d2bfc4ca9a1",
+        "size_bytes": 19254
+      },
+      {
+        "model_id": "au-opengraph",
+        "matches": true,
+        "sha256": "1c52bdd00b0791ae3781afaf734e7364ecf48bea5088fdaf2261822d18e2c172",
+        "expected_sha256": "1c52bdd00b0791ae3781afaf734e7364ecf48bea5088fdaf2261822d18e2c172",
+        "size_bytes": 36150
+      },
+      {
+        "model_id": "va-elim",
+        "matches": true,
+        "sha256": "b99783acafe084d192464122b7b070d87f095811c74b475dbacee7eee9841c94",
+        "expected_sha256": "b99783acafe084d192464122b7b070d87f095811c74b475dbacee7eee9841c94",
+        "size_bytes": 17590
+      },
+      {
+        "model_id": "embed-resnet50",
+        "matches": true,
+        "sha256": "9c8c4d1b831f99d25dab6e49d1bd935e453c2a252be737faa71b847fed58e106",
+        "expected_sha256": "9c8c4d1b831f99d25dab6e49d1bd935e453c2a252be737faa71b847fed58e106",
+        "size_bytes": 1526678
+      },
+      {
+        "model_id": "deepfake-efficientnet-b7",
+        "matches": true,
+        "sha256": "13b8f7d3a6aa1299e3848595d35e0a04f2fdc7354cb190a6ed8d6486fa0fc1a4",
+        "expected_sha256": "13b8f7d3a6aa1299e3848595d35e0a04f2fdc7354cb190a6ed8d6486fa0fc1a4",
+        "size_bytes": 17270
+      },
+      {
+        "model_id": "align-synergynet",
+        "matches": true,
+        "sha256": "69cb06b84744b938db729f8e67cb39722a2fdb95df43aa30154632a68fb8e506",
+        "expected_sha256": "69cb06b84744b938db729f8e67cb39722a2fdb95df43aa30154632a68fb8e506",
+        "size_bytes": 45750
+      },
+      {
+        "model_id": "verify-magface",
+        "matches": true,
+        "sha256": "ba97944b641799366ac8875cab516a298687c5ce86c553d639008ff5e719b476",
+        "expected_sha256": "ba97944b641799366ac8875cab516a298687c5ce86c553d639008ff5e719b476",
+        "size_bytes": 262518
+      },
+      {
+        "model_id": "verify-adaface",
+        "matches": true,
+        "sha256": "17f4db36c47ae18e70aa059b41a265d057659b2c7bd2101658e34b72876c171f",
+        "expected_sha256": "17f4db36c47ae18e70aa059b41a265d057659b2c7bd2101658e34b72876c171f",
+        "size_bytes": 271574
+      }
+    ]
+  },
+  "reference_limit": "Model runs used a separate fixed four-thread CPU reference set. Subsequently recovered all ten published reference bundles exactly with sixteen threads. Reports were not rewritten to claim that the earlier runs used those historical bytes.",
+  "largest_reference_output_delta": 1.9073486328125e-06,
+  "candidate_dependency_audits": [
+    {
+      "profile": "torch-2.14-cpu",
+      "status": "ok",
+      "coverage": {
+        "expected_count": 41,
+        "audited_count": 41,
+        "errors": []
+      },
+      "accepted": 0,
+      "unresolved": 0,
+      "lock_sha256": "26a74b54b5de29233237d7f6456143c2697405cde79682f6b078bf31ea4a49ce"
+    },
+    {
+      "profile": "torch-2.14-cu126",
+      "status": "ok",
+      "coverage": {
+        "expected_count": 60,
+        "audited_count": 60,
+        "errors": []
+      },
+      "accepted": 0,
+      "unresolved": 0,
+      "lock_sha256": "2f8a66a510e4b50820d2935d9f24f827d059015b239a5126e835037984b36c4d"
+    },
+    {
+      "profile": "torch-2.14-cu130",
+      "status": "ok",
+      "coverage": {
+        "expected_count": 60,
+        "audited_count": 60,
+        "errors": []
+      },
+      "accepted": 0,
+      "unresolved": 0,
+      "lock_sha256": "3816de1457c873e87932b2fe2d5d3423baa3f4101c7621ffc24bc21b6b0b30d0"
+    }
+  ],
+  "exporter_regressions": {
+    "torch_2_6": 27,
+    "torch_2_11": 27,
+    "torch_2_14": 27
+  },
+  "affected_gate_tests_passed": 58,
+  "active_exception_policy_sha256": "59dfed5aa1e50f34b616443f5ad55cecaa299cf004b5a80936a7ee9ea621198c",
+  "evidence_archive": {
+    "path": "build/torch-support/compatibility-evidence.tar.gz",
+    "sha256": "1feb6f527bad209a7f4f80e1dfb36e33ee24e4c8cad80d894749c8b0db935b76",
+    "size_bytes": 38278588,
+    "files_verified": 198
+  },
+  "release_limitations": [
+    "No protected exact-candidate qualification or publication approval is implied.",
+    "Torch 2.14 package bounds, routing, installed-wheel/CI and model-card admission remain pending.",
+    "Only one GPU architecture was exercised.",
+    "Optional torch.compile configurations and arbitrary custom models are outside these numerical runs.",
+    "The existing 18 unresolved advisories remain unapproved."
+  ],
+  "distribution_contract_tests": {
+    "passed": 34,
+    "log_path": "build/torch-support/distribution-contract-tests.log",
+    "log_sha256": "8dfabe009fdcf51241675f705ffc12bae5c728ea3700ddd52d690f41d416541c"
+  }
+}

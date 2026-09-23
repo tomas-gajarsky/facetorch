@@ -654,6 +654,75 @@ def _patch_export_pipeline(monkeypatch, validation_status="ok"):
 
 
 @pytest.mark.release_blocker
+@pytest.mark.parametrize("failure", [None, "reference_digest", "numerical_drift"])
+def test_existing_program_validation_works_without_exporter_apis(
+    tmp_path, monkeypatch, failure
+):
+    reference_path = tmp_path / "reference.pt"
+    torch.jit.script(_Identity()).save(str(reference_path))
+    spec = {
+        **_spec(),
+        "repo_id": "owner/test-model",
+        "validation_reference": {
+            "kind": "torchscript",
+            "source": str(reference_path),
+            "sha256": hashlib.sha256(reference_path.read_bytes()).hexdigest(),
+            "device": "cpu",
+        },
+    }
+    artifact_root = tmp_path / "artifacts"
+    artifact = artifact_root / spec["id"] / "model-torch2.11.pt2"
+    artifact.parent.mkdir(parents=True)
+    model = _Offset() if failure == "numerical_drift" else _Identity()
+    program = torch.export.export(model, (torch.ones(1, 3, 8, 8),))
+    torch.export.save(program, str(artifact))
+    original_bytes = artifact.read_bytes()
+    if failure == "reference_digest":
+        reference_path.write_bytes(b"untrusted replacement")
+
+    def unavailable(*_args, **_kwargs):
+        raise AssertionError("Runtime validation must not re-export a model")
+
+    monkeypatch.setattr(exporter, "_build_reference_and_exported_program", unavailable)
+    monkeypatch.setattr(torch.export, "export", unavailable)
+    monkeypatch.setattr(torch.export, "save", unavailable)
+    summary, failures = _run_for_specs(
+        specs=[spec],
+        mode="validate",
+        repo_root=Path.cwd(),
+        cohort="2.11",
+        out_root=tmp_path / "reports",
+        artifacts_root=artifact_root,
+        upload=False,
+        hf_token_env="UNUSED_TOKEN",
+        batch_sizes=[1],
+        seeds=[0],
+        scales=[1.0],
+        validate_devices=["cpu"],
+    )
+
+    assert artifact.read_bytes() == original_bytes
+    result = summary["results"][0]
+    if failure is None:
+        assert failures == []
+        assert summary["status"] == "ok"
+        metadata = json.loads(Path(result["meta"]).read_text())
+        assert metadata["source"]["validation_reference"]["sha256"] == (
+            spec["validation_reference"]["sha256"]
+        )
+        assert result["num_cases"] > 0
+    else:
+        assert summary["status"] == "failed"
+        assert len(failures) == 1
+        expected = (
+            "Validation reference digest mismatch"
+            if failure == "reference_digest"
+            else "Validation did not satisfy the complete release gate"
+        )
+        assert expected in result["error"]
+
+
+@pytest.mark.release_blocker
 def test_new_export_directories_are_traversable_with_restrictive_umask(
     tmp_path, monkeypatch
 ):

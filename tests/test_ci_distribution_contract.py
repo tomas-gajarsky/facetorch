@@ -144,7 +144,7 @@ def test_alignment_metadata_release_contract_matches_packaged_configuration():
 def test_conda_candidate_smokes_the_current_rc_distribution():
     commands = _workflow_commands(WORKFLOW_ROOT / "conda-env.yml")
 
-    assert commands.count('version("facetorch") == "1.0.0rc3"') == 2
+    assert commands.count('version("facetorch") == "1.0.0rc4"') == 2
     assert 'version("facetorch") == "1.0.0"' not in commands
 
 
@@ -357,7 +357,7 @@ def test_torch_advisory_exceptions_are_exact_scoped_and_mitigated():
     torch_exceptions = {
         exception["vulnerability_id"]: exception
         for exception in policy["exceptions"]
-        if exception["package"] == "torch"
+        if exception["package"] == "torch" and "approval_ref" not in exception
     }
     unused_affected_apis = {
         "CVE-2025-3730": ("GHSA-887c-mr87-cxwp", "ctc_loss"),

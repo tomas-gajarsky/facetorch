@@ -20,7 +20,14 @@ from facetorch.analyzer.predictor.core import FacePredictor
 from facetorch.analyzer.reader import TensorReader, UniversalReader
 from facetorch.analyzer.unifier import FaceUnifier
 from facetorch.analyzer.utilizer.save import ImageSaver
-from facetorch.datastruct import Detection, Dimensions, Face, ImageData, Location, Prediction
+from facetorch.datastruct import (
+    Detection,
+    Dimensions,
+    Face,
+    ImageData,
+    Location,
+    Prediction,
+)
 from facetorch.logger import LoggerJsonFile
 from omegaconf import OmegaConf
 
@@ -136,21 +143,17 @@ def test_model_components_are_not_eagerly_constructed():
 
 
 @pytest.mark.release_blocker
-def test_optional_analyzer_logger_restores_info_diagnostics():
+def test_optional_analyzer_logger_preserves_application_diagnostics():
     cfg = OmegaConf.create({"reader": {"component": "reader"}})
     target = logging.getLogger("facetorch")
     original_level = target.level
-    original_handler_levels = {
-        handler: handler.level for handler in target.handlers
-    }
+    original_handler_levels = {handler: handler.level for handler in target.handlers}
     try:
         target.setLevel(logging.CRITICAL)
         for handler in target.handlers:
             if getattr(handler, "_facetorch_stream_handler", False):
                 handler.setLevel(logging.CRITICAL)
-        with patch(
-            "facetorch.analyzer.core.instantiate", return_value=object()
-        ):
+        with patch("facetorch.analyzer.core.instantiate", return_value=object()):
             analyzer = FaceAnalyzer(cfg)
 
         managed = [
@@ -159,8 +162,9 @@ def test_optional_analyzer_logger_restores_info_diagnostics():
             if getattr(handler, "_facetorch_stream_handler", False)
         ]
         assert analyzer.logger is target
-        assert target.level == logging.INFO
-        assert managed and all(handler.level == logging.INFO for handler in managed)
+        assert target.level == logging.CRITICAL
+        assert all(handler.level == logging.CRITICAL for handler in managed)
+        assert set(target.handlers) == set(original_handler_levels)
     finally:
         target.setLevel(original_level)
         for handler, level in original_handler_levels.items():
@@ -372,7 +376,9 @@ def test_model_wrappers_forward_compile_options(component_class, tmp_path):
         "compile_options": {"backend": "eager"},
     }
 
-    with patch("torch.compile", side_effect=lambda model, **_kwargs: model) as compile_spy:
+    with patch(
+        "torch.compile", side_effect=lambda model, **_kwargs: model
+    ) as compile_spy:
         component_class(**component_kwargs)
 
     compile_spy.assert_called_once()

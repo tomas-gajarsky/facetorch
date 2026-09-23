@@ -67,3 +67,106 @@ automated and exact-candidate gate, and rehearse recovery from the receipts.
 The release candidate remains provisional until the clean protected dry run,
 model-rights approvals, required remote environments, and exact local-GPU
 evidence are all present.
+
+## Required source checks and activation
+
+`security/required-source-checks.json` declares thirteen successful checks required
+on the exact final source SHA before release preparation. The CPU aggregate
+`cpu-cohorts-complete` depends on every supported CPU lane, including Python 3.11
+on Torch 2.6. A failed, skipped, cancelled, missing, or unfinished lane fails the
+aggregate. The release verifier accepts only GitHub Actions check runs bound to
+the candidate SHA and uses the newest attempt for each required check. The
+resulting `source-checks.json` is retained in the release evidence.
+
+On September 5, main protection already required the core checks, but named only
+three individual CPU lanes. Activate the aggregate in branch protection after
+the workflow is available on main and has produced a successful check run:
+add `cpu-cohorts-complete` with GitHub Actions app ID `15368`, preserving the
+existing contexts, strict up-to-date requirement, administrator enforcement, and
+D20 owner-review policy. This is a separately reviewed settings change. Do not
+require a check that cannot yet be emitted by the protected branch.
+
+For an independent read-only check of a candidate's source CI:
+
+```bash
+python scripts/verify_source_checks.py --repo tomas-gajarsky/facetorch \
+  --source-sha FULL_COMMIT_SHA --output source-checks.json
+```
+
+A saved paginated API response can be verified using `--checks-json`. Pull-request
+`dependency-review` remains a branch-protection requirement; it is not required
+on the final push commit, where the full frozen dependency audit is required.
+
+## Local qualification before publication
+
+Qualification answers whether one fixed source revision works as a complete
+distribution: frozen dependencies, model inference, the installed wheel, the
+example notebook, and production containers. Use a separate clean checkout and
+keep evidence outside it. A local branch run is useful pre-merge evidence; the
+protected-main checks and publication approval above still apply to the final
+release revision.
+
+For machines with limited storage, the same full numerical runner can install
+one environment at a time:
+
+```bash
+OMP_NUM_THREADS=16 MKL_NUM_THREADS=16 \
+python scripts/run_local_cuda_release_matrix.py \
+  --repo-root /path/to/clean/checkout --source-sha FULL_COMMIT_SHA \
+  --staging-root /path/to/evidence --ephemeral-environments
+```
+
+This still exports both artifact cohorts and validates all eight supported Torch
+lines on CPU and CUDA against the fixed reference bundles. It removes only the
+temporary environment and private download cache it creates, including after a
+failed check. Existing project environments and shared caches remain available.
+The tradeoff is repeated downloads when a profile is needed again. `TMPDIR` can
+select an executable temporary filesystem with space for one CUDA environment
+and its downloads; source models and staged artifacts also need space. Archive
+evidence onto persistent storage before removing temporary storage.
+
+The thread settings reproduce the current approved reference bundles on the
+qualification host. CPU reduction order can change reference bytes even when
+outputs remain within tolerance; a golden-reference digest mismatch must be
+investigated, never resolved by replacing the expected digest with the new one.
+The runner's success report and portable index are written only after every
+numerical, installed-wheel, and notebook check succeeds. Container checks and
+the final protected-source workflow remain separate required gates.
+
+## Portable numerical evidence
+
+The local runner records `numerical-evidence-index.json`, every export/runtime
+summary, the per-model `.meta.json` records referenced by those summaries, and
+the actual `golden-references/*/golden-reference.pt` bundles. Schema 2 of the
+index binds portable relative paths, metadata digests, and reference sizes/hashes while preserving
+original summary bytes and runner identity. Both local GPU upload paths retain
+these records. Release assembly verifies the downloaded archive before creating
+the release plan; partial evidence cannot proceed through that workflow.
+
+After extracting a candidate's evidence, use the scripts from its source commit:
+
+```bash
+python scripts/archive_numerical_evidence.py verify \
+  --root /path/to/evidence/local-gpu --source-sha FULL_COMMIT_SHA
+```
+
+This uses only the Python standard library and the sibling
+`model_evidence_contract.py`; no Torch install, GPU, model download, or original
+runner directory is needed. It checks source identity, summary/metadata digests,
+model/device/case records, finite errors, recorded same/cross-device bounds, and
+fixed-reference identities and the archived reference bytes without deserializing
+them. It validates the recorded measurements, not a new
+execution or independently reconstructed golden tensors. The existing complete
+matrix and model-manifest gates still establish authoritative case coverage,
+policy tolerances, and artifact/golden bytes before archiving. The public archive
+checksum and release receipt remain the external trust roots for the records.
+
+RC3's published archive lacks these numerical records. Its historical summary
+is retained as such; this change does not retroactively upgrade RC3 evidence.
+
+The September 5 compatibility investigation recovered all ten historical golden
+bundles exactly using Torch 2.6 with 16 CPU threads. Four-thread regeneration
+changed their output bytes while remaining within numerical bounds. Retain the
+authenticated bundles and record the generation environment; do not assume that
+regeneration under different CPU settings will reproduce their hashes. See the
+[investigation](torch-support-investigation.md) for the local recovery evidence.

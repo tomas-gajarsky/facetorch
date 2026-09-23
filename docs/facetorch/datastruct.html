@@ -393,8 +393,8 @@ class Detection:
     Attributes:
         loc (torch.Tensor): Locations of faces
         conf (torch.Tensor): Confidences of faces
-        landmarks (torch.Tensor): Selected landmark coordinates in source-image space.
-        boxes (torch.Tensor): Selected bounding boxes in source-image space.
+        landmarks (torch.Tensor): Selected landmarks in the canonical reader-image coordinate frame.
+        boxes (torch.Tensor): Selected boxes in the canonical reader-image coordinate frame.
         dets (torch.Tensor): Selected boxes and confidence scores.
 
     &#34;&#34;&#34;
@@ -414,9 +414,9 @@ class Detection:
 <dt><strong><code>conf</code></strong> :&ensp;<code>torch.Tensor</code></dt>
 <dd>Confidences of faces</dd>
 <dt><strong><code>landmarks</code></strong> :&ensp;<code>torch.Tensor</code></dt>
-<dd>Selected landmark coordinates in source-image space.</dd>
+<dd>Selected landmarks in the canonical reader-image coordinate frame.</dd>
 <dt><strong><code>boxes</code></strong> :&ensp;<code>torch.Tensor</code></dt>
-<dd>Selected bounding boxes in source-image space.</dd>
+<dd>Selected boxes in the canonical reader-image coordinate frame.</dd>
 <dt><strong><code>dets</code></strong> :&ensp;<code>torch.Tensor</code></dt>
 <dd>Selected boxes and confidence scores.</dd>
 </dl></div>
@@ -603,9 +603,7 @@ class ImageData:
         &#34;&#34;&#34;Reset the detection object to empty state.&#34;&#34;&#34;
         self.det = Detection()
 
-    @Timer(
-        &#34;ImageData.reset_faces&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
-    )
+    @timed(&#34;ImageData.reset_faces&#34;, logger=logger)
     def reset_tensors(self) -&gt; None:
         &#34;&#34;&#34;Reset the tensors to empty state.&#34;&#34;&#34;
         self.reset_img()
@@ -830,9 +828,7 @@ None</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(
-    &#34;ImageData.reset_faces&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug
-)
+<pre><code class="python">@timed(&#34;ImageData.reset_faces&#34;, logger=logger)
 def reset_tensors(self) -&gt; None:
     &#34;&#34;&#34;Reset the tensors to empty state.&#34;&#34;&#34;
     self.reset_img()

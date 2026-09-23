@@ -244,9 +244,12 @@ def test_small_spatial_dimensions_support_an_explicit_numpy_layout(width):
     numpy_hwc = np.zeros((4, width, 3), dtype=np.uint8)
 
     assert reader.run(torch_chw).tensor.shape == (1, 3, 4, width)
-    assert reader.run(
-        numpy_hwc, input_spec=InputSpec(layout="HWC")
-    ).tensor.shape == (1, 3, 4, width)
+    assert reader.run(numpy_hwc, input_spec=InputSpec(layout="HWC")).tensor.shape == (
+        1,
+        3,
+        4,
+        width,
+    )
 
 
 def test_contradictory_input_spec_is_actionable():
@@ -1362,11 +1365,21 @@ def test_pinned_https_connection_uses_numeric_ip_and_original_tls_hostname(
         def close(self):
             observed["raw_closed"] = True
 
+    class TLSSocket:
+        def settimeout(self, timeout):
+            observed["tls_timeout"] = timeout
+
+        def do_handshake(self):
+            observed["handshake"] = True
+
+    tls_socket = TLSSocket()
+
     class TLSContext:
-        def wrap_socket(self, raw_socket, *, server_hostname):
+        def wrap_socket(self, raw_socket, *, server_hostname, do_handshake_on_connect):
             observed["raw_socket"] = raw_socket
             observed["server_hostname"] = server_hostname
-            return "tls-socket"
+            assert do_handshake_on_connect is False
+            return tls_socket
 
     raw_socket = RawSocket()
 
@@ -1389,8 +1402,9 @@ def test_pinned_https_connection_uses_numeric_ip_and_original_tls_hostname(
 
     assert observed["target"] == ("93.184.216.34", 443)
     assert observed["server_hostname"] == "example.test"
-    assert observed["timeout"] == 2.5
-    assert connection.sock == "tls-socket"
+    assert 0 < observed["tls_timeout"] <= observed["timeout"] <= 2.5
+    assert observed["handshake"] is True
+    assert connection.sock._sock is tls_socket
 
 
 def test_pinned_request_preserves_host_and_query_without_reresolving(monkeypatch):

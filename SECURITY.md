@@ -2,9 +2,9 @@
 
 ## Reporting a vulnerability
 
-Please use [GitHub private vulnerability reporting](https://github.com/tomas-gajarsky/facetorch/security/advisories/new). The repository feature must be enabled before v1 publication. If the link does not show a private report form during the pre-release period, email [the maintainer](mailto:gajarsky.tomas@gmail.com?subject=Facetorch%20security%20report) with a minimal summary and coordinate a safer channel before sending sensitive details. Do not disclose a suspected vulnerability, private image, model input, access token, or exploit details in a public issue.
+Please use [GitHub private vulnerability reporting](https://github.com/tomas-gajarsky/facetorch/security/advisories/new). Private reporting is enabled for this repository. If the link does not show a private report form during the pre-release period, email [the maintainer](mailto:gajarsky.tomas@gmail.com?subject=Facetorch%20security%20report) with a minimal summary and coordinate a safer channel before sending sensitive details. Do not disclose a suspected vulnerability, private image, model input, access token, or exploit details in a public issue.
 
-The founder is the initial security and model-provenance owner. The project aims to acknowledge a private report within five business days and provide an initial assessment within fourteen days. These are communication targets, not a promise that every fix will be available by a particular date. A backup security owner must be assigned before the v1 general-availability release.
+The founder is the initial security and model-provenance owner. The project aims to acknowledge a private report within five business days and provide an initial assessment within fourteen days. These are communication targets, not a promise that every fix will be available by a particular date. A backup owner is preferred. Under the approved, bounded D20 exception, `tomas-gajarsky` may self-approve and operate releases through the final `1.0.0` post-publication checks without a backup. This accepts owner-availability risk and does not waive any automated or exact-candidate gate; see the [release runbook](docs/release-runbook.md).
 
 ## Supported versions
 
@@ -25,3 +25,16 @@ Reports are triaged privately. Fixes are prepared against supported versions, te
 Facetorch has no telemetry by default. Image bytes, facial-analysis inputs, predictions, and derived payloads are not included in default logs, dependency reports, build provenance, or release evidence. Network access is limited to documented model retrieval and to remote-image input when the caller explicitly selects the restricted URL reader. Security reports should use synthetic or redacted reproductions whenever possible.
 
 Dependency exceptions are exact-version, profile-scoped, time-bounded records under `security/`. Expired or mismatched exceptions fail the release dependency gate.
+
+The complete audit of the RC3 lock profiles on 2026-09-05 found 18 unresolved
+advisories after correcting upstream Torch build-tag coverage. On September 6,
+the owner approved the [scoped risk treatment](docs/v1-risk-treatment-proposal.md).
+The active policy adds exactly 76 profile/version records, expiring November 20;
+the earlier nine approvals retain their dates and scopes. Fresh audits pass all
+17 profiles with no coverage gaps or unresolved findings under that policy.
+
+Affected older runtimes are retained for trusted model programs and metadata.
+Digest verification authenticates selected bytes; it does not make adversarial
+model uploads safe. Keep built-in verification enabled and qualify custom models
+and compiler options separately. These are accepted dependency risks, not
+upstream fixes or approval to publish GA.

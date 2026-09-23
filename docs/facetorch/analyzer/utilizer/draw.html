@@ -78,7 +78,7 @@ el.replaceWith(d);
         self.color = color
         self.line_width = line_width
 
-    @Timer(&#34;BoxDrawer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;BoxDrawer.run&#34;, logger=logger)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Draws face boxes to the image tensor.
 
@@ -129,7 +129,7 @@ el.replaceWith(d);
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;BoxDrawer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+<pre><code class="python">@timed(&#34;BoxDrawer.run&#34;, logger=logger)
 def run(self, data: ImageData) -&gt; ImageData:
     &#34;&#34;&#34;Draws face boxes to the image tensor.
 
@@ -204,7 +204,7 @@ def run(self, data: ImageData) -&gt; ImageData:
         self.width = width
         self.color = color
 
-    @Timer(&#34;LandmarkDrawer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+    @timed(&#34;LandmarkDrawer.run&#34;, logger=logger)
     def run(self, data: ImageData) -&gt; ImageData:
         &#34;&#34;&#34;Draws 3D face landmarks to the image tensor.
 
@@ -279,7 +279,7 @@ def run(self, data: ImageData) -&gt; ImageData:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@Timer(&#34;LandmarkDrawer.run&#34;, &#34;{name}: {milliseconds:.2f} ms&#34;, logger=logger.debug)
+<pre><code class="python">@timed(&#34;LandmarkDrawer.run&#34;, logger=logger)
 def run(self, data: ImageData) -&gt; ImageData:
     &#34;&#34;&#34;Draws 3D face landmarks to the image tensor.
 

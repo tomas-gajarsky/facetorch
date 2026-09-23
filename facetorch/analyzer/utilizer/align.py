@@ -2,7 +2,7 @@ import os
 from typing import List, Tuple, Union
 import torch
 import numpy as np
-from codetiming import Timer
+from facetorch._timing import timed
 from facetorch.base import BaseDownloader, BaseUtilizer
 from facetorch.datastruct import ImageData
 from facetorch.exceptions import ArtifactIntegrityError
@@ -89,7 +89,7 @@ class Lmk3DMeshPose(BaseUtilizer):
         self.w_exp_base = self.w_exp[self.keypoints]
         self.dim = self.w_shp.shape[0] // 3
 
-    @Timer("Lmk3DMeshPose.run", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("Lmk3DMeshPose.run", logger=logger)
     def run(self, data: ImageData) -> ImageData:
         """Runs the Lmk3DMeshPose class functionality - convert the face parameter vector to 3D landmarks, mesh and pose.
 

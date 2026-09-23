@@ -8,7 +8,6 @@ from zipfile import ZipFile
 
 import pytest
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 WHEEL_REQUIRED_FILES = {
@@ -21,6 +20,7 @@ WHEEL_REQUIRED_FILES = {
 }
 
 
+@pytest.mark.checkout
 def test_model_trust_root_is_not_excluded_from_git():
     required = [
         "facetorch/models/__init__.py",
@@ -42,15 +42,22 @@ def test_model_trust_root_is_not_excluded_from_git():
 
 
 SDIST_ALLOWED_TOP_LEVEL = {
+    ".dockerignore",
+    ".flake8",
+    ".github",
     "CHANGELOG.md",
     "LICENSE",
     "MANIFEST.in",
     "MODEL_NOTICE.md",
     "PKG-INFO",
     "README.md",
+    "SECURITY.md",
     "conf",
     "data",
     "docs",
+    "docker",
+    "docker-compose.yml",
+    "docker-compose.dev.yml",
     "environment.yml",
     "environments",
     "facetorch",
@@ -60,6 +67,7 @@ SDIST_ALLOWED_TOP_LEVEL = {
     "model_defs",
     "model_cards",
     "notebooks",
+    "pdoc",
     "pyproject.toml",
     "pytest.ini",
     "scripts",
@@ -318,10 +326,54 @@ def test_sdist_content_matches_source_allowlist(built_distributions):
         "scripts/render_model_cards.py",
         "scripts/release_transaction.py",
         "scripts/verify_model_release_matrix.py",
+        "scripts/verify_runtime_compatibility_matrix.py",
+        "scripts/stage_alignment_metadata.py",
+        "scripts/verify_source_checks.py",
         "model_cards/catalog.json",
         "model_cards/upstream_licenses/adaface-LICENSE",
         "notebooks/facetorch_notebook_demo.ipynb",
+        ".github/workflows/release.yml",
+        ".github/workflows/python-package.yml",
+        ".github/dependabot.yml",
+        ".dockerignore",
+        "docker/Dockerfile",
+        "docker/Dockerfile.gpu",
+        "docker/Dockerfile.tests",
+        "docker-compose.yml",
+        "docker-compose.dev.yml",
+        "SECURITY.md",
+        "data/input/test.jpg",
+        "tests/conftest.py",
     } <= relative
+    assert "data/input/tensor.pt" not in relative
+
+
+@pytest.mark.release_blocker
+def test_sdist_executes_tensor_and_workflow_regressions(built_distributions):
+    extract_root = built_distributions["root"] / "regressions-extracted"
+    with tarfile.open(built_distributions["sdist"], mode="r:gz") as archive:
+        archive.extractall(extract_root)
+    source_root = next(path for path in extract_root.iterdir() if path.is_dir())
+    assert not (source_root / "data/input/tensor.pt").exists()
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-q",
+            "tests/test_reader.py::test_output_shape_length_with_tensor_input[tests.config.5]",
+            "tests/test_source_checks.py::test_candidate_resolution_checks_source_before_model_preparation",
+        ],
+        cwd=source_root,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 @pytest.mark.release_blocker
@@ -334,6 +386,8 @@ def test_sdist_model_manifest_auditor_has_its_renderer_inputs(built_distribution
 from pathlib import Path
 
 from scripts.audit_model_manifest_hf import audit_remote_manifest
+from scripts import stage_alignment_metadata, verify_runtime_compatibility_matrix
+from scripts import verify_source_checks, archive_numerical_evidence
 
 class OfflineApi:
     def model_info(self, **kwargs):

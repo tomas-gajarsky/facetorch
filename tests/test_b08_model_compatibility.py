@@ -722,7 +722,12 @@ def test_environment_metadata_records_schema_lock_source_and_cuda():
     assert all(
         isinstance(value, int) for value in environment["export_schema"].values()
     )
-    assert len(environment["source_tree"]["commit"]) == 40
+    if (REPO_ROOT / ".git").exists():
+        assert len(environment["source_tree"]["commit"]) == 40
+    else:
+        # A source archive has no Git identity. Keep testing the runtime and
+        # lock metadata without pretending this is release-qualified evidence.
+        assert environment["source_tree"]["commit"] is None
     assert environment["environment_lock"]["path"] == "uv.lock"
     assert len(environment["environment_lock"]["sha256"]) == 64
     assert environment["platform"]["system"]

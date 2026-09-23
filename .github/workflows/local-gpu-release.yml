@@ -166,12 +166,16 @@ jobs:
             ${{ env.FACETORCH_STAGING }}/candidate-matrix-report.json
             ${{ env.FACETORCH_STAGING }}/runtime-compatibility-report.json
             ${{ env.FACETORCH_STAGING }}/local-cuda-runner-report.json
+            ${{ env.FACETORCH_STAGING }}/numerical-evidence-index.json
+            ${{ env.FACETORCH_STAGING }}/golden-references/*/golden-reference.pt
             ${{ env.FACETORCH_STAGING }}/alignment-metadata-report.json
             ${{ env.FACETORCH_STAGING }}/default-analyzer-cuda-smoke.json
             ${{ env.FACETORCH_STAGING }}/facetorch-notebook-report.json
             ${{ env.FACETORCH_STAGING }}/facetorch-notebook-executed.ipynb
             ${{ env.FACETORCH_STAGING }}/pinned-artifacts-torch*.json
             ${{ env.FACETORCH_STAGING }}/torch-*/summary-torch*.json
+            ${{ env.FACETORCH_STAGING }}/torch-*/*/*.meta.json
+            ${{ env.FACETORCH_STAGING }}/runtime-validation/torch-*/*/*.meta.json
             ${{ env.FACETORCH_STAGING }}/runtime-validation/torch-*/validation-summary-*.json
             ${{ env.FACETORCH_STAGING }}/container-reports/*.json
             ${{ env.FACETORCH_STAGING }}/container-evidence.json

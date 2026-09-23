@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "github_actions_app_id": 15368,
+  "required_checks": [
+    "source-tests",
+    "lint-and-locks",
+    "build-distributions",
+    "install-wheel (3.10)",
+    "install-wheel (3.11)",
+    "install-wheel (3.12)",
+    "pip-audit-and-sbom",
+    "secret-scan",
+    "cpu-conda-candidate",
+    "gpu-conda-hybrid-candidate",
+    "cpu-image",
+    "gpu-image-build",
+    "cpu-cohorts-complete"
+  ],
+  "branch_protection_additions": ["cpu-cohorts-complete"],
+  "note": "Preserve existing branch protections. dependency-review is enforced on pull requests; release source checks run against the final commit's push workflows."
+}

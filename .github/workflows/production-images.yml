@@ -33,6 +33,15 @@ jobs:
         run: |
           docker run --rm --network none --entrypoint python facetorch:cpu-candidate -c \
             "import facetorch, os, torch; assert os.getuid() != 0; assert facetorch.load_config(offline=True).analyzer.device == 'cpu'; assert torch.__version__.split('+', 1)[0] == '2.6.0'"
+      - name: Verify cache exclusion and crash recovery across PID namespaces
+        run: |
+          python scripts/check_container_cache_lock.py --image facetorch:cpu-candidate \
+            --output "$RUNNER_TEMP/container-cache-lock.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: container-cache-lock
+          path: ${{ runner.temp }}/container-cache-lock.json
+          if-no-files-found: error
 
   gpu-image-build:
     if: github.event_name != 'pull_request'

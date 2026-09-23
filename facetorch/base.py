@@ -3,9 +3,9 @@ from abc import ABCMeta, abstractmethod
 from typing import Any, Optional, Tuple, Union
 
 import torch
-from codetiming import Timer
 from torchvision import transforms
 
+from facetorch._timing import timed
 from facetorch import utils
 from facetorch.datastruct import ImageData
 from facetorch.exceptions import ConfigurationError, ModelCompatibilityError
@@ -17,9 +17,7 @@ logger = get_logger()
 
 
 class BaseProcessor(object, metaclass=ABCMeta):
-    @Timer(
-        "BaseProcessor.__init__", "{name}: {milliseconds:.2f} ms", logger=logger.debug
-    )
+    @timed("BaseProcessor.__init__", logger=logger)
     def __init__(
         self,
         transform: Optional[transforms.Compose],
@@ -65,7 +63,7 @@ class BaseProcessor(object, metaclass=ABCMeta):
 
 
 class BaseReader(BaseProcessor):
-    @Timer("BaseReader.__init__", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("BaseReader.__init__", logger=logger)
     def __init__(
         self,
         transform: transforms.Compose,
@@ -165,9 +163,7 @@ class BaseReader(BaseProcessor):
 
 
 class BaseDownloader(object, metaclass=ABCMeta):
-    @Timer(
-        "BaseDownloader.__init__", "{name}: {milliseconds:.2f} ms", logger=logger.debug
-    )
+    @timed("BaseDownloader.__init__", logger=logger)
     def __init__(
         self,
         file_id: str,
@@ -199,7 +195,7 @@ class BaseDownloader(object, metaclass=ABCMeta):
 
 
 class BaseModel(object, metaclass=ABCMeta):
-    @Timer("BaseModel.__init__", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("BaseModel.__init__", logger=logger)
     def __init__(
         self,
         downloader: BaseDownloader,
@@ -254,7 +250,7 @@ class BaseModel(object, metaclass=ABCMeta):
 
         self.model = self.load_model()
 
-    @Timer("BaseModel.load_model", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("BaseModel.load_model", logger=logger)
     def load_model(self) -> torch.nn.Module:
         """Loads the model from the local file.
 
@@ -274,9 +270,7 @@ class BaseModel(object, metaclass=ABCMeta):
         cache_resolver = None
         cache_resolution_missed = False
         if not should_verify:
-            cache_resolver = getattr(
-                type(self.downloader), "resolve_cached_path", None
-            )
+            cache_resolver = getattr(type(self.downloader), "resolve_cached_path", None)
             if callable(cache_resolver):
                 resolved_path = cache_resolver(self.downloader)
                 if resolved_path is not None:
@@ -448,15 +442,19 @@ class BaseModel(object, metaclass=ABCMeta):
                             state_dict[key] = getattr(mod, buf)
                         except AttributeError:
                             pass
-            if state_dict:
-                model.load_state_dict(state_dict, strict=True)
-            elif hasattr(model, "load_from_torchscript"):
+            if not state_dict and callable(
+                getattr(model, "load_from_torchscript", None)
+            ):
                 model.load_from_torchscript(ts_model)
+            else:
+                # Frozen graphs may inline every parameter. An empty source is
+                # valid only when the native target also requires no state.
+                model.load_state_dict(state_dict, strict=True)
 
         model.to(self.device)
         return model
 
-    @Timer("BaseModel.inference", "{name}: {milliseconds:.2f} ms", logger=logger.debug)
+    @timed("BaseModel.inference", logger=logger)
     def inference(
         self, tensor: torch.Tensor
     ) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
