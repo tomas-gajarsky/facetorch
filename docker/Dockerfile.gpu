@@ -9,7 +9,7 @@ COPY pyproject.toml README.md LICENSE MODEL_NOTICE.md ./
 COPY facetorch/ facetorch/
 RUN uv build --wheel --out-dir /dist
 
-FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04@sha256:cff3a0d82d2c2b47bab252d67fa9b34a20ef4c50781d98501b5c7367ea9afd10
+FROM nvidia/cuda:13.4.2-runtime-ubuntu22.04@sha256:8054877041592f9dd593ddf27535fa2fe68b4cbb5c39db11f7e9a425d52afa6b
 ARG SOURCE_DATE_EPOCH
 
 COPY --from=ghcr.io/astral-sh/uv:0.9.14@sha256:ad3f022815822ee5124d1e3d77169ba4420ed8906815ecb486164a48fdba360b /uv /uvx /bin/
