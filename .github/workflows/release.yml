@@ -541,7 +541,9 @@ jobs:
             ${{ env.FACETORCH_STAGING }}/pinned-artifacts-torch*.json
             ${{ env.FACETORCH_STAGING }}/torch-*/summary-torch*.json
             ${{ env.FACETORCH_STAGING }}/torch-*/*/*.meta.json
+            ${{ env.FACETORCH_STAGING }}/torch-*/failure-evidence/**
             ${{ env.FACETORCH_STAGING }}/runtime-validation/torch-*/*/*.meta.json
+            ${{ env.FACETORCH_STAGING }}/runtime-validation/torch-*/failure-evidence/**
             ${{ env.FACETORCH_STAGING }}/runtime-validation/torch-*/validation-summary-*.json
             ${{ env.FACETORCH_STAGING }}/container-reports/*.json
             ${{ env.FACETORCH_STAGING }}/container-evidence.json

@@ -461,6 +461,129 @@ def test_export_validation_fails_outside_tolerance():
 
 
 @pytest.mark.release_blocker
+def test_intermittent_failure_retains_original_call_without_reexecution(tmp_path):
+    class FailsOnce(torch.nn.Module):
+        calls = 0
+
+        def forward(self, x):
+            self.calls += 1
+            if self.calls == 1:
+                return x.add_(42.0)
+            return x
+
+    model = FailsOnce()
+    evidence = tmp_path / "failure-evidence" / "case.pt"
+    validation = _validate_exported_module(
+        _spec(),
+        ref_fn=_reference,
+        exported_module=model,
+        batch_sizes=[1],
+        seeds=[0],
+        scales=[1.0],
+        devices=["cpu"],
+        failure_evidence_path=evidence,
+    )
+
+    assert validation["status"] == "failed"
+    assert model.calls == 2  # The declared randn/randu cases, with no retry.
+    retained = torch.load(evidence, weights_only=True)
+    assert retained["case_id"].endswith("randn")
+    assert torch.equal(retained["input"], retained["reference_output"])
+    assert torch.equal(retained["actual_output"], retained["input"] + 42.0)
+    assert (
+        validation["failure_evidence"]["sha256"]
+        == hashlib.sha256(evidence.read_bytes()).hexdigest()
+    )
+    assert list(evidence.parent.iterdir()) == [evidence]
+
+
+@pytest.mark.release_blocker
+def test_failure_capture_keeps_nonfinite_values_and_original_gate_result(tmp_path):
+    evidence = tmp_path / "case.pt"
+    validation = _validate_exported_module(
+        _spec(),
+        ref_fn=_reference,
+        exported_module=_NestedNonFinite(),
+        batch_sizes=[1],
+        seeds=[0],
+        scales=[1.0],
+        devices=["cpu"],
+        failure_evidence_path=evidence,
+    )
+    assert validation["status"] == "failed"
+    retained = torch.load(evidence, weights_only=True)
+    assert retained["failure"]["kind"] == "case_validation_error"
+    assert torch.isnan(retained["actual_output"]["head"][1]).all()
+
+
+def test_successful_validation_does_not_create_failure_evidence(tmp_path):
+    evidence = tmp_path / "failures" / "case.pt"
+    validation = _validate_exported_module(
+        _spec(),
+        ref_fn=_reference,
+        exported_module=_Identity(),
+        batch_sizes=[1],
+        seeds=[0],
+        scales=[1.0],
+        devices=["cpu"],
+        failure_evidence_path=evidence,
+    )
+    assert validation["status"] == "ok"
+    assert "failure_evidence" not in validation
+    assert not evidence.parent.exists()
+
+
+def test_cross_device_failure_retains_the_compared_baseline(tmp_path):
+    class DeviceOffset(torch.nn.Module):
+        def to(self, device):
+            self.offset = 0.0015 if device.index is None else -0.0015
+            return self
+
+        def forward(self, x):
+            return x + self.offset
+
+    evidence = tmp_path / "case.pt"
+    spec = {**_spec(), "max_abs_tolerance": 0.002, "mean_abs_tolerance": 0.002}
+    validation = _validate_exported_module(
+        spec,
+        ref_fn=_reference,
+        exported_module=DeviceOffset(),
+        batch_sizes=[1],
+        seeds=[0],
+        scales=[1.0],
+        devices=["cpu", "cpu:0"],
+        failure_evidence_path=evidence,
+    )
+    assert validation["status"] == "failed"
+    assert all(f["kind"] == "cross_device_drift" for f in validation["failures"])
+    retained = torch.load(evidence, weights_only=True)
+    assert retained["failure"]["baseline_device"] == "cpu"
+    assert torch.equal(retained["reference_output"], retained["input"] + 0.0015)
+    assert torch.equal(retained["actual_output"], retained["input"] - 0.0015)
+
+
+def test_evidence_write_failure_does_not_hide_numerical_failure(tmp_path, monkeypatch):
+    def cannot_write(*args, **kwargs):
+        raise OSError("storage unavailable")
+
+    monkeypatch.setattr(exporter, "_write_torch_atomic", cannot_write)
+    validation = _validate_exported_module(
+        _spec(),
+        ref_fn=_reference,
+        exported_module=_Offset(),
+        batch_sizes=[1],
+        seeds=[0],
+        scales=[1.0],
+        devices=["cpu"],
+        failure_evidence_path=tmp_path / "case.pt",
+    )
+    assert validation["status"] == "failed"
+    assert validation["failures"][0]["kind"] == "reference_drift"
+    assert validation["failure_evidence"]["status"] == "error"
+    assert validation["failure_evidence"]["error"] == "storage unavailable"
+
+
+@pytest.mark.release_blocker
 @pytest.mark.parametrize("value", [float("nan"), float("inf"), -float("inf")])
 def test_export_validation_rejects_nonfinite_outputs_even_when_both_match(value):
     nonfinite = _NonFinite(value)
@@ -720,6 +843,19 @@ def test_existing_program_validation_works_without_exporter_apis(
             else "Validation did not satisfy the complete release gate"
         )
         assert expected in result["error"]
+        if failure == "numerical_drift":
+            retained = tmp_path / "reports" / "failure-evidence" / spec["id"]
+            artifact.unlink()  # Simulate cleanup of the original staging location.
+            assert (retained / artifact.name).read_bytes() == original_bytes
+            case = torch.load(retained / "case.pt", weights_only=True)
+            restored = torch.export.load(retained / artifact.name).module()
+            assert torch.equal(restored(case["input"]), case["actual_output"])
+            metadata_files = list(retained.glob("*.meta.json"))
+            assert len(metadata_files) == 1
+            assert (
+                json.loads(metadata_files[0].read_text())["validation"]["status"]
+                == "failed"
+            )
 
 
 @pytest.mark.release_blocker

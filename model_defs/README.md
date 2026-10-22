@@ -59,3 +59,18 @@ when loaded into the current timm forward definition, so release tooling preserv
 each immutable, digest-verified published AU program and validates batched face
 outputs against concatenated one-face golden calls. The generic snippet above does
 not apply to this controlled program-reuse path.
+
+## Investigating numerical failures
+
+Export and runtime validation retain the first failed inference per model under
+`failure-evidence/<model-id>/`: `case.pt` contains the input before inference,
+the compared reference and actual outputs, the failure kind, and CPU backend
+settings. The directory also retains the exact tested `.pt2` bytes and their
+validation metadata. Both CUDA qualification workflows upload these directories
+even when the gate fails, before temporary runner storage is removed.
+
+The failure is not retried or replaced by a later successful result. For a
+cross-device mismatch, the retained reference is the baseline device output.
+Passing models produce no failure bundle, and the numerical tolerances are
+unchanged. Retaining evidence improves diagnosis; it does not resolve an
+unexplained mismatch or authorize publication of a failed model.
