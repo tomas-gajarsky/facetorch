@@ -107,8 +107,14 @@ keep evidence outside it. A local branch run is useful pre-merge evidence; the
 protected-main checks and publication approval above still apply to the final
 release revision.
 
-For machines with limited storage, the same full numerical runner can install
-one environment at a time:
+Both GPU workflows use the existing ephemeral-environment mode to install one
+frozen CUDA environment at a time. The inventory audit runs in the smaller root
+CPU environment; it still exports and audits every CPU/CUDA lock. Configure
+`TMPDIR` on a filesystem with enough space and POSIX permissions for the temporary
+environment and evidence. The exact image archives and Docker image layers also
+need their own capacity.
+
+To run the same full numerical qualification locally:
 
 ```bash
 OMP_NUM_THREADS=16 MKL_NUM_THREADS=16 \

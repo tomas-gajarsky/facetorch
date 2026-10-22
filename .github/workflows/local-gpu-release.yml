@@ -98,17 +98,16 @@ jobs:
           echo "FACETORCH_STAGING=$facetorch_staging" >> "$GITHUB_ENV"
       - name: Verify locks and dependency advisories
         run: |
-          uv sync --project environments/torch-2.6-cu124 --frozen \
-            --extra test --extra release --python 3.11
-          environments/torch-2.6-cu124/.venv/bin/python scripts/check_dependency_sync.py
-          environments/torch-2.6-cu124/.venv/bin/python scripts/audit_dependencies.py \
+          uv sync --frozen --extra release --python 3.11
+          uv run --frozen --no-sync python scripts/check_dependency_sync.py
+          uv run --frozen --no-sync python scripts/audit_dependencies.py \
             --output-dir "$FACETORCH_STAGING/dependency-audit"
       - name: Export and validate all exact CUDA cohorts
         run: |
           python scripts/run_local_cuda_release_matrix.py \
             --repo-root . \
             --source-sha "$SOURCE_SHA" \
-            --staging-root "$FACETORCH_STAGING"
+            --staging-root "$FACETORCH_STAGING" --ephemeral-environments
       - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
       - name: Build exact CPU and GPU production images
         run: |
