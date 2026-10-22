@@ -1,32 +1,40 @@
 # Facetorch v1 GA remediation status
 
-Updated: September 22, 2026. Branch: `fix/v1-ga-readiness`, based on RC3 / main
-`12db551d937ac2fa0cc41324f89d71fd9858fa02`.
+Updated: October 22, 2026. RC5 preparation is based on protected main
+`17a3c9ac3ce838f2a0e9366abe64c7d58aed6dba`.
 
-**RC4 (`1.0.0rc4`, Beta) is prepared and under review in
-[PR #110](https://github.com/tomas-gajarsky/facetorch/pull/110); it is not published.**
-RC3 remains the latest published candidate, and 0.6.2 remains stable.
+RC4 (`1.0.0rc4`, Beta) was published on September 23 after
+[PR #110](https://github.com/tomas-gajarsky/facetorch/pull/110) merged and the
+protected-source release checks completed. Version 0.6.2 remains stable.
+RC5 (`1.0.0rc5`) is being prepared; it has not been published or qualified for GA.
 
-The September 6 qualification of commit `235f862` passed its source, CPU/CUDA,
-installed-package and container checks. The September 22 correction cycle extends
-the existing dependency auditor to all three supported Python inventories,
-separates the release build's check name from source validation, defers Hydra
-resolver registration until configuration composition, and corrects README links.
-Fresh source validation passes 1,127 tests (185 skipped), and a single dependency
-audit passes all 51 profile/Python combinations: 841 entries on Python 3.10, 824
-on 3.11 and 832 on 3.12. The audit retains each interpreter's hashed inventory,
-raw results and exact exception decisions. Historical CPU/CUDA qualification
-remains bound to its original source. Merge, protected-source qualification, the candidate soak
-and publication approval remain release steps.
+The October review found newly disclosed dependency vulnerabilities in Hydra,
+Pillow, urllib3 and certifi, plus a URL timeout misclassification during HTTP
+chunk parsing. RC5 raises the affected dependency floors and moves to Python
+3.11–3.12 because the security fixes in Pillow 13 require Python 3.11 or newer.
+All 17 lock profiles, CI lanes and release helpers follow the same policy.
+Tornado's tooling-only fix is included. All eight Torch lines and the model
+artifact cohorts remain unchanged.
 
-All eight Torch lines remain supported. The owner-approved advisory exceptions
-are unchanged and expire November 20. See the
-[treatment record](docs/v1-risk-treatment-proposal.md) and
-[activation evidence](security/v1-advisory-activation-2026-09-06.json).
-Repository protection and release approvals have not been changed by this cycle.
+The owner-approved advisory exceptions retain their scopes and November 20
+expiry. See the [treatment record](docs/v1-risk-treatment-proposal.md) and
+[activation evidence](security/v1-advisory-activation-2026-09-06.json). RC5 still
+requires fresh source, dependency, distribution, CPU/CUDA and exact-image
+qualification, followed by publication and representative candidate soak.
 
-The tables below retain the September 6 remediation results and validation
-history; they do not claim fresh qualification of the September 22 corrections.
+Local RC5 implementation validation passes 1,128 source tests (185 skipped),
+the wheel/sdist structure checks, all 17 frozen lock checks, dependency alignment,
+Flake8 and actionlint. The full runtime audit covers 34 profile/Python
+combinations: 824 package entries on Python 3.11 and 832 on Python 3.12, with no
+coverage gaps or unresolved findings under the unchanged exception policy.
+The new chunk-parser regression fails on RC4 and passes with the fix. Hosted CI,
+the unpacked-source suite and exact-candidate release qualification are separate
+checks; these local results do not constitute publication approval.
+
+The tables below retain the September remediation results and validation history;
+they do not claim fresh RC5 qualification. The CPU aggregate was activated in
+main protection for RC4. RC5 must migrate obsolete Python 3.10 check names while
+preserving the aggregate and the other protection requirements.
 
 ## Corrections against the review
 

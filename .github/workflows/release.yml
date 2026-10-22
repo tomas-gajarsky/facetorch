@@ -448,16 +448,15 @@ jobs:
           echo "FACETORCH_STAGING=$facetorch_staging" >> "$GITHUB_ENV"
       - name: Verify the CUDA lock and dependency advisories
         run: |
-          uv sync --project environments/torch-2.6-cu124 --frozen \
-            --extra test --extra release --python 3.10
-          environments/torch-2.6-cu124/.venv/bin/python scripts/check_dependency_sync.py
-          environments/torch-2.6-cu124/.venv/bin/python scripts/audit_dependencies.py \
+          uv sync --frozen --extra release --python 3.11
+          uv run --frozen --no-sync python scripts/check_dependency_sync.py
+          uv run --frozen --no-sync python scripts/audit_dependencies.py \
             --output-dir "$FACETORCH_STAGING/dependency-audit"
       - name: Export and validate all exact CUDA cohorts
         run: |
           python scripts/run_local_cuda_release_matrix.py \
             --repo-root . --source-sha "$SOURCE_SHA" \
-            --staging-root "$FACETORCH_STAGING"
+            --staging-root "$FACETORCH_STAGING" --ephemeral-environments
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: release-cpu-image-${{ needs.validate-inputs.outputs.source_sha }}

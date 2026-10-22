@@ -5,7 +5,6 @@
     "source-tests",
     "lint-and-locks",
     "build-distributions",
-    "install-wheel (3.10)",
     "install-wheel (3.11)",
     "install-wheel (3.12)",
     "pip-audit-and-sbom",

@@ -302,9 +302,8 @@ def test_profile_audit_uses_hashed_projection_and_records_coverage(
         tmp_path, "torch-2.6-cpu", Path("."), tmp_path / "output", _policy()
     )
     assert result["status"] == "failed"
-    assert result["coverage"]["audited_count"] == 3
+    assert result["coverage"]["audited_count"] == 2
     assert {r["python_version"] for r in result["python_inventories"]} == {
-        "3.10",
         "3.11",
         "3.12",
     }
@@ -361,8 +360,8 @@ def test_profile_audit_rejects_a_finding_only_active_on_another_python(
                 name, version = line.split()[0].split("==")
                 queried.append((name, version))
                 vulns = (
-                    [{"id": "CVE-test-python310-only"}]
-                    if (name == "numpy" and version == "2.2.6")
+                    [{"id": "CVE-test-python311-only"}]
+                    if (name == "numpy" and version == "2.4.6")
                     else []
                 )
                 dependencies.append({"name": name, "version": version, "vulns": vulns})
@@ -374,5 +373,6 @@ def test_profile_audit_rejects_a_finding_only_active_on_another_python(
         tmp_path, "torch-2.6-cpu", Path("."), tmp_path / "output", _policy()
     )
     assert result["status"] == "failed"
-    assert {("numpy", v) for v in ("2.2.6", "2.4.6", "2.5.2")} <= set(queried)
-    assert result["unresolved_findings"][0]["python_version"] == "3.10"
+    assert {("numpy", v) for v in ("2.4.6", "2.5.2")} <= set(queried)
+    assert ("numpy", "2.2.6") not in queried
+    assert result["unresolved_findings"][0]["python_version"] == "3.11"

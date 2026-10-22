@@ -30,8 +30,13 @@ The complete audit of the RC3 lock profiles on 2026-09-05 found 18 unresolved
 advisories after correcting upstream Torch build-tag coverage. On September 6,
 the owner approved the [scoped risk treatment](docs/v1-risk-treatment-proposal.md).
 The active policy adds exactly 76 profile/version records, expiring November 20;
-the earlier nine approvals retain their dates and scopes. Fresh audits pass all
-17 profiles with no coverage gaps or unresolved findings under that policy.
+the earlier nine approvals retain their dates and scopes. The September 23 RC4
+qualification passed all 17 profiles under that policy. That historical result
+is not a current vulnerability guarantee: October's audit found newly disclosed
+issues in Hydra, Pillow, urllib3 and certifi. RC5 raises their minimum versions
+and drops Python 3.10 to support Pillow 13. Every candidate still requires a
+fresh audit of all 17 profiles on both supported Python minors; exception scopes
+and their November 20 expiry are unchanged.
 
 Affected older runtimes are retained for trusted model programs and metadata.
 Digest verification authenticates selected bytes; it does not make adversarial

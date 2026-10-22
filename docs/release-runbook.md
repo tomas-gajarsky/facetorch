@@ -70,21 +70,22 @@ evidence are all present.
 
 ## Required source checks and activation
 
-`security/required-source-checks.json` declares thirteen successful checks required
+`security/required-source-checks.json` declares twelve successful checks required
 on the exact final source SHA before release preparation. The CPU aggregate
-`cpu-cohorts-complete` depends on every supported CPU lane, including Python 3.11
+`cpu-cohorts-complete` depends on every supported CPU lane, including Python 3.12
 on Torch 2.6. A failed, skipped, cancelled, missing, or unfinished lane fails the
 aggregate. The release verifier accepts only GitHub Actions check runs bound to
 the candidate SHA and uses the newest attempt for each required check. The
 resulting `source-checks.json` is retained in the release evidence.
 
-On September 5, main protection already required the core checks, but named only
-three individual CPU lanes. Activate the aggregate in branch protection after
-the workflow is available on main and has produced a successful check run:
-add `cpu-cohorts-complete` with GitHub Actions app ID `15368`, preserving the
-existing contexts, strict up-to-date requirement, administrator enforcement, and
-D20 owner-review policy. This is a separately reviewed settings change. Do not
-require a check that cannot yet be emitted by the protected branch.
+The CPU aggregate was activated in main protection for RC4 on September 23.
+RC5 removes the Python 3.10 wheel check and replaces the old Python 3.10 CPU
+contexts with the corresponding supported lanes: Torch 2.6 / Python 3.12 and
+Torch 2.11 / Python 3.11. Keep the existing Torch 2.6 / Python 3.11 context.
+Migrate these settings only after the replacement checks succeed on the RC5
+pull request. Preserve GitHub Actions app ID `15368`, every unrelated check,
+the CPU aggregate, strict up-to-date requirement, administrator enforcement and
+D20 owner-review policy. Retain the before/after settings as release evidence.
 
 For an independent read-only check of a candidate's source CI:
 
@@ -106,8 +107,14 @@ keep evidence outside it. A local branch run is useful pre-merge evidence; the
 protected-main checks and publication approval above still apply to the final
 release revision.
 
-For machines with limited storage, the same full numerical runner can install
-one environment at a time:
+Both GPU workflows use the existing ephemeral-environment mode to install one
+frozen CUDA environment at a time. The inventory audit runs in the smaller root
+CPU environment; it still exports and audits every CPU/CUDA lock. Configure
+`TMPDIR` on a filesystem with enough space and POSIX permissions for the temporary
+environment and evidence. The exact image archives and Docker image layers also
+need their own capacity.
+
+To run the same full numerical qualification locally:
 
 ```bash
 OMP_NUM_THREADS=16 MKL_NUM_THREADS=16 \

@@ -26,7 +26,7 @@ Facetorch into an existing supported environment.
 | 2.13.0 | 0.28.0 | 13.0 | 2.11 |
 
 Each row also has an exact CPU profile. Official platform coverage remains Linux
-x86-64 and Python 3.10–3.12. Support for a minor line is demonstrated at the exact
+x86-64 and Python 3.11–3.12. Support for a minor line is demonstrated at the exact
 patch pair in its frozen profiles; this does not qualify every historical patch,
 CUDA wheel, Python version, GPU architecture, or compiler backend.
 
