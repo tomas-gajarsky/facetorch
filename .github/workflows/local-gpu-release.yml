@@ -108,7 +108,7 @@ jobs:
             --repo-root . \
             --source-sha "$SOURCE_SHA" \
             --staging-root "$FACETORCH_STAGING" --ephemeral-environments
-      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Build exact CPU and GPU production images
         run: |
           source_date_epoch="$(git show -s --format=%ct "$SOURCE_SHA")"
@@ -157,7 +157,7 @@ jobs:
             --gpu-image "facetorch:gpu-${SOURCE_SHA}" \
             --output "$FACETORCH_STAGING/container-evidence.json"
           test -z "$(git status --porcelain=v1 --untracked-files=all)"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ always() && env.FACETORCH_STAGING != '' }}
         with:
           name: exact-candidate-local-gpu-evidence
