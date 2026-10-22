@@ -555,6 +555,27 @@ def test_local_cuda_release_runner_is_explicit_and_manually_gated():
 
 @pytest.mark.release_blocker
 @pytest.mark.parametrize("workflow_name", ["local-gpu-release.yml", "release.yml"])
+def test_failed_cuda_qualification_uploads_replayable_evidence(workflow_name):
+    workflow = yaml.safe_load(
+        (WORKFLOW_ROOT / workflow_name).read_text(encoding="utf-8")
+    )
+    uploads = [
+        step
+        for job in workflow["jobs"].values()
+        for step in job.get("steps", [])
+        if isinstance(step, dict)
+        and str(step.get("uses", "")).startswith("actions/upload-artifact@")
+        and "local-gpu-evidence" in str(step.get("with", {}).get("name", ""))
+    ]
+    assert len(uploads) == 1
+    assert "always()" in uploads[0]["if"]
+    paths = uploads[0]["with"]["path"]
+    assert "/torch-*/failure-evidence/**" in paths
+    assert "/runtime-validation/torch-*/failure-evidence/**" in paths
+
+
+@pytest.mark.release_blocker
+@pytest.mark.parametrize("workflow_name", ["local-gpu-release.yml", "release.yml"])
 def test_local_cuda_evidence_is_traversable_by_non_root_images(workflow_name):
     workflow = yaml.safe_load(
         (WORKFLOW_ROOT / workflow_name).read_text(encoding="utf-8")

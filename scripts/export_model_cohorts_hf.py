@@ -1685,7 +1685,10 @@ def _stage_pinned_artifacts(
 
         repo_id = str(model.get("repo_id", ""))
         revision = str(model.get("revision", ""))
-        if repo_id != spec["repo_id"] or re.fullmatch(r"[0-9a-f]{40}", revision) is None:
+        if (
+            repo_id != spec["repo_id"]
+            or re.fullmatch(r"[0-9a-f]{40}", revision) is None
+        ):
             raise RuntimeError(f"Invalid pinned repository identity for {model_id}")
 
         artifacts = [
@@ -1956,6 +1959,7 @@ def _validate_exported_module_impl(
     golden_reference_mode: str = "ephemeral",
     cohort: str = "",
     golden_reference_cohort: str = "",
+    failure_evidence_path: Path | None = None,
 ) -> Dict[str, Any]:
     cases = _build_validation_cases(spec, batch_sizes, seeds, scales)
     tolerance = spec.get("tolerances", {})
@@ -1987,6 +1991,45 @@ def _validate_exported_module_impl(
     baseline_outputs: Dict[str, Any] = {}
     fixed_reference_outputs: Dict[str, Any] = {}
     cross_device_results = []
+    failure_evidence = None
+
+    def retain_first_failure(failure, case, input_before, reference, actual):
+        # Keep the original failed call; rerunning it can hide intermittent errors.
+        # One case per model bounds storage even when every matrix entry fails.
+        nonlocal failure_evidence
+        if failure_evidence_path is None or failure_evidence is not None:
+            return
+        try:
+            _write_torch_atomic(
+                failure_evidence_path,
+                {
+                    "schema_version": 1,
+                    "model_id": spec["id"],
+                    "failure": dict(failure),
+                    "case_id": case["id"],
+                    "input": input_before,
+                    "reference_output": _clone_output_cpu(reference),
+                    "actual_output": _clone_output_cpu(actual),
+                    "torch_version": str(torch.__version__),
+                    "cpu_num_threads": torch.get_num_threads(),
+                    "cpu_num_interop_threads": torch.get_num_interop_threads(),
+                    "mkldnn_enabled": torch.backends.mkldnn.enabled,
+                    "torch_build_configuration": torch.__config__.show(),
+                },
+            )
+            failure_evidence = {
+                "status": "retained",
+                "filename": failure_evidence_path.name,
+                "sha256": _sha256(failure_evidence_path),
+                "size_bytes": failure_evidence_path.stat().st_size,
+            }
+        except Exception as exc:
+            # Preserve the numerical failure even if evidence storage also fails.
+            failure_evidence = {
+                "status": "error",
+                "error_type": type(exc).__name__,
+                "error": str(exc),
+            }
 
     if not requested_devices or any(not device for device in requested_devices):
         matrix_failures.append(
@@ -2161,6 +2204,11 @@ def _validate_exported_module_impl(
 
         for case in cases:
             x = case["x"].to(torch_device)
+            input_before = (
+                _clone_output_cpu(x)
+                if failure_evidence_path is not None and failure_evidence is None
+                else None
+            )
             ref_out = None
             exp_out = None
             try:
@@ -2193,6 +2241,7 @@ def _validate_exported_module_impl(
                 }
                 validation_failures.append(failure)
                 device_failures.append(failure)
+                retain_first_failure(failure, case, input_before, ref_out, exp_out)
                 case_results.append(
                     {
                         "case_id": case["id"],
@@ -2256,6 +2305,7 @@ def _validate_exported_module_impl(
                 }
                 validation_failures.append(failure)
                 device_failures.append(failure)
+                retain_first_failure(failure, case, input_before, ref_out, exp_out)
 
             if baseline_device is None:
                 baseline_device = device_name
@@ -2280,6 +2330,13 @@ def _validate_exported_module_impl(
                     failure = {"kind": "cross_device_drift", **cross_result}
                     validation_failures.append(failure)
                     device_failures.append(failure)
+                    retain_first_failure(
+                        failure,
+                        case,
+                        input_before,
+                        baseline_outputs[case["id"]],
+                        exp_out,
+                    )
 
             case_results.append(case_result)
 
@@ -2332,6 +2389,7 @@ def _validate_exported_module_impl(
         "worst_max_abs_diff_vs_reference": worst_max_abs,
         "worst_mean_abs_diff_vs_reference": worst_mean_abs,
         "failures": validation_failures,
+        **({"failure_evidence": failure_evidence} if failure_evidence else {}),
         "devices": validated_devices,
         "cross_device": cross_device_results,
     }
@@ -2349,6 +2407,7 @@ def _validate_exported_module(
     golden_reference_mode: str = "ephemeral",
     cohort: str = "",
     golden_reference_cohort: str = "",
+    failure_evidence_path: Path | None = None,
 ) -> Dict[str, Any]:
     with _validation_numeric_policy() as numeric_policy:
         result = _validate_exported_module_impl(
@@ -2363,6 +2422,7 @@ def _validate_exported_module(
             golden_reference_mode=golden_reference_mode,
             cohort=cohort,
             golden_reference_cohort=golden_reference_cohort,
+            failure_evidence_path=failure_evidence_path,
         )
     result["numeric_policy"] = numeric_policy
     return result
@@ -2492,6 +2552,9 @@ def _run_for_specs(
                 golden_reference_mode=golden_reference_mode,
                 cohort=cohort,
                 golden_reference_cohort=golden_reference_cohort,
+                failure_evidence_path=(
+                    out_root / "failure-evidence" / spec["id"] / "case.pt"
+                ),
             )
 
             meta = {
@@ -2525,6 +2588,17 @@ def _run_for_specs(
             _write_json_atomic(meta_path, meta)
 
             if validation["status"] != "ok":
+                # Workflows upload this directory even when qualification fails.
+                # Preserve exact bytes, not a new serialization or a later export.
+                failure_dir = out_root / "failure-evidence" / spec["id"]
+                _ensure_runtime_directory(failure_dir)
+                _copy_verified_source(
+                    artifact_path,
+                    failure_dir / artifact_path.name,
+                    expected_sha256=meta["artifact_sha256"],
+                    expected_size=meta["artifact_size_bytes"],
+                )
+                _write_json_atomic(failure_dir / meta_path.name, meta)
                 raise RuntimeError(
                     "Validation did not satisfy the complete release gate "
                     f"(max_abs={validation['worst_max_abs_diff_vs_reference']}, "
