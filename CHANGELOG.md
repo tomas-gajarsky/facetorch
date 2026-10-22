@@ -2,11 +2,27 @@
 
 ## Unreleased
 
+## 1.0.0rc5
+
+Pending qualification and publication as `v1.0.0-rc.5`.
+
+* Raise the Python minimum to 3.11; Python 3.11–3.12 remain supported. Pillow 13
+  contains required security fixes and no longer supports Python 3.10.
+* Require Hydra 1.3.7, Pillow 13.0.0, urllib3 2.8.0 and certifi 2026.10.19 in
+  every runtime profile; refresh the frozen locks without changing the eight
+  supported Torch/torchvision pairs or the scoped advisory exceptions.
+* Update development and release tooling to Tornado 6.5.9.
+* Preserve the public timeout error when a remote-image deadline expires during
+  HTTP chunk parsing; add a deterministic regression alongside the real HTTP
+  and HTTPS deadline tests.
+* Align wheel checks, CPU lanes, dependency audit inventories, model compatibility
+  policy and release helpers with Python 3.11–3.12.
+* Correct the historical RC4 publication status and clarify exact-version
+  installation and the RC4-to-RC5 interpreter migration.
+
 ## 1.0.0rc4
 
-Pending publication as `v1.0.0-rc.4`. This candidate is not generally available;
-the protected-source checks, final CPU/CUDA qualification and release approval
-remain required before publication.
+Released on September 23, 2026 as `v1.0.0-rc.4`.
 
 ### Fixed
 * Audit each supported Python 3.10–3.12 dependency inventory in every profile,

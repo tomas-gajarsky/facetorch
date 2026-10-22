@@ -173,7 +173,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--source-sha", required=True)
     parser.add_argument("--staging-root", type=Path, required=True)
-    parser.add_argument("--python", default="3.10")
+    parser.add_argument("--python", default="3.11")
     parser.add_argument("--report", type=Path)
     parser.add_argument(
         "--ephemeral-environments",

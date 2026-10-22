@@ -45,7 +45,7 @@ PROFILE_PROJECTS = {
     "torch-2.13-cu130": Path("environments/torch-2.13-cu130"),
 }
 PIP_AUDIT_VERSION = "2.10.1"
-PYTHON_MINOR_LINES = ("3.10", "3.11", "3.12")
+PYTHON_MINOR_LINES = ("3.11", "3.12")
 
 
 def _sha256(path: Path) -> str:

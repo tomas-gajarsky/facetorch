@@ -10,14 +10,14 @@ a CUDA 12 path, and qualify newer runtimes before widening the bounds.
 
 | Python | PyTorch line | Export schema | Artifact cohort | Candidate CUDA runtime |
 | --- | --- | --- | --- | --- |
-| 3.10-3.12 | 2.6.x | 8.2 | 2.6 | 12.4 |
-| 3.10-3.12 | 2.7.x | 8.2 artifact | 2.6 | 12.6 |
-| 3.10-3.12 | 2.8.x | 8.2 artifact | 2.6 | 12.6 |
-| 3.10-3.12 | 2.9.x | 8.17 artifact | 2.11 | 13.0 |
-| 3.10-3.12 | 2.10.x | 8.17 artifact | 2.11 | 13.0 |
-| 3.10-3.12 | 2.11.x | 8.17 | 2.11 | 13.0 |
-| 3.10-3.12 | 2.12.x | 8.17 artifact | 2.11 | 13.0 |
-| 3.10-3.12 | 2.13.x | 8.17 artifact | 2.11 | 13.0 |
+| 3.11-3.12 | 2.6.x | 8.2 | 2.6 | 12.4 |
+| 3.11-3.12 | 2.7.x | 8.2 artifact | 2.6 | 12.6 |
+| 3.11-3.12 | 2.8.x | 8.2 artifact | 2.6 | 12.6 |
+| 3.11-3.12 | 2.9.x | 8.17 artifact | 2.11 | 13.0 |
+| 3.11-3.12 | 2.10.x | 8.17 artifact | 2.11 | 13.0 |
+| 3.11-3.12 | 2.11.x | 8.17 | 2.11 | 13.0 |
+| 3.11-3.12 | 2.12.x | 8.17 artifact | 2.11 | 13.0 |
+| 3.11-3.12 | 2.13.x | 8.17 artifact | 2.11 | 13.0 |
 
 The dependencies are deliberately expressed as `torch>=2.6,<2.14` and
 `torchvision>=0.21,<0.29`. Torch 2.3-2.5 and 2.14 or newer fail before model

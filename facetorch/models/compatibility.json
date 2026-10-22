@@ -3,8 +3,8 @@
   "status": "approved",
   "approved_on": "2026-09-02",
   "python": {
-    "specifier": ">=3.10,<3.13",
-    "minor_lines": ["3.10", "3.11", "3.12"]
+    "specifier": ">=3.11,<3.13",
+    "minor_lines": ["3.11", "3.12"]
   },
   "torch": {
     "specifier": ">=2.6,<2.14",

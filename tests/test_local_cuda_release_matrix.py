@@ -37,7 +37,7 @@ def test_ephemeral_profile_removes_only_owned_storage(tmp_path, monkeypatch, fai
     def sync(command, *, cwd, environment):
         assert cwd == tmp_path
         assert command == [
-            "uv", "sync", "--project", str(profile), "--frozen", "--python", "3.10",
+            "uv", "sync", "--project", str(profile), "--frozen", "--python", "3.11",
             "--extra", "release",
         ]
         assert "VIRTUAL_ENV" not in environment
@@ -56,7 +56,7 @@ def test_ephemeral_profile_removes_only_owned_storage(tmp_path, monkeypatch, fai
         with release_matrix._profile_environment(
             profile,
             repo_root=tmp_path,
-            python="3.10",
+            python="3.11",
             commands=commands,
             ephemeral=True,
             extras=("release",),
@@ -99,7 +99,7 @@ def test_persistent_profile_binds_uv_to_the_selected_interpreter(tmp_path, monke
     with release_matrix._profile_environment(
         profile,
         repo_root=tmp_path,
-        python="3.10",
+        python="3.11",
         commands=commands,
         ephemeral=False,
     ) as environment_root:

@@ -151,9 +151,14 @@ class _DeadlineReader(io.RawIOBase):
         return True
 
     def readinto(self, buffer) -> int:
-        self._sock.settimeout(_remaining_timeout(self._deadline))
+        # http.client catches ValueError while parsing chunk sizes. InputError
+        # inherits ValueError, so use the transport exception here and let
+        # URLReader translate it to the public timeout error at the boundary.
+        self._sock.settimeout(
+            _remaining_timeout(self._deadline, error_type=TimeoutError)
+        )
         count = self._raw.readinto(buffer)
-        _remaining_timeout(self._deadline)
+        _remaining_timeout(self._deadline, error_type=TimeoutError)
         return count
 
     def close(self) -> None:
@@ -284,11 +289,11 @@ def _open_pinned_response(parsed, address: str, timeout: float):
         raise
 
 
-def _remaining_timeout(deadline: float) -> float:
-    """Return the remaining request budget or fail with the public timeout error."""
+def _remaining_timeout(deadline: float, *, error_type=InputError) -> float:
+    """Return the remaining request budget or raise the caller's timeout type."""
     remaining = deadline - time.monotonic()
     if remaining <= 0:
-        raise InputError("Remote image request timed out.")
+        raise error_type("Remote image request timed out.")
     return remaining
 
 

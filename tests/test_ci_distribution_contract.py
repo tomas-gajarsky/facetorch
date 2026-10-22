@@ -144,7 +144,7 @@ def test_alignment_metadata_release_contract_matches_packaged_configuration():
 def test_conda_candidate_smokes_the_current_rc_distribution():
     commands = _workflow_commands(WORKFLOW_ROOT / "conda-env.yml")
 
-    assert commands.count('version("facetorch") == "1.0.0rc4"') == 2
+    assert commands.count('version("facetorch") == "1.0.0rc5"') == 2
     assert 'version("facetorch") == "1.0.0"' not in commands
 
 
@@ -210,15 +210,15 @@ def test_configuration_dependency_floors_match_used_apis_and_are_smoked():
     hydra = requirements["hydra-core"].specifier
     omegaconf = requirements["omegaconf"].specifier
 
-    assert Version("1.3.2") in hydra
-    assert Version("1.3.1") not in hydra
+    assert Version("1.3.7") in hydra
+    assert Version("1.3.6") not in hydra
     assert Version("1.4.0") not in hydra
     assert Version("2.3.0") in omegaconf
     assert Version("2.2.3") not in omegaconf
     assert Version("2.4.0") not in omegaconf
 
     commands = _workflow_commands(WORKFLOW_ROOT / "python-package.yml")
-    assert '"hydra-core==1.3.2"' in commands
+    assert '"hydra-core==1.3.7"' in commands
     assert '"omegaconf==2.3.0"' in commands
     assert "facetorch.load_config(offline=True)" in commands
 
@@ -239,8 +239,8 @@ def test_cpu_ci_has_an_explicit_supported_torch_cohort_matrix():
     lanes = {
         (lane["torch-cohort"], lane["python-version"]) for lane in matrix["include"]
     }
-    assert {(cohort, "3.10") for cohort in supported} <= lanes
-    assert ("2.6", "3.11") in lanes
+    assert {(cohort, "3.11") for cohort in supported} <= lanes
+    assert ("2.6", "3.12") in lanes
 
 
 @pytest.mark.release_blocker
@@ -283,10 +283,12 @@ def test_every_supported_torch_device_pair_has_an_exact_uv_lock():
         assert locked_torch["source"]["registry"].endswith(index_suffix)
         assert locked_vision["source"]["registry"].endswith(index_suffix)
         build_suffix = index_suffix.removeprefix("/whl/")
-        assert f"torch-{torch_version}%2B{build_suffix}-cp310-cp310-" in lock_text
-        assert (
-            f"torchvision-{vision_version}%2B{build_suffix}-cp310-cp310-" in lock_text
-        )
+        for abi in ("cp311", "cp312"):
+            assert f"torch-{torch_version}%2B{build_suffix}-{abi}-{abi}-" in lock_text
+            assert (
+                f"torchvision-{vision_version}%2B{build_suffix}-{abi}-{abi}-"
+                in lock_text
+            )
         assert "x86_64.whl" in lock_text
 
 
@@ -528,7 +530,9 @@ def test_local_cuda_release_runner_is_explicit_and_manually_gated():
     assert 'runtime_summary_by_runtime["2.6"]' in runner
     assert 'pinned_artifact_roots["2.6"]' in runner
     assert "--pinned-artifacts-root" in runner
-    assert '"pinned_manifest_artifacts": args.pinned_artifacts_root is not None' in smoke
+    assert (
+        '"pinned_manifest_artifacts": args.pinned_artifacts_root is not None' in smoke
+    )
     assert "stage_alignment_metadata.py" in runner
     assert 'Path("runtime-inputs/3dmm/meta.pt")' in smoke
     assert 'repo_root / "data" / "3dmm" / "meta.pt"' not in smoke
@@ -540,8 +544,7 @@ def test_local_cuda_release_runner_is_explicit_and_manually_gated():
         assert "alignment-metadata-report.json" in workflow
         assert "pinned-artifacts-torch*.json" in workflow
         assert (
-            "--pinned-artifacts-root /evidence/pinned-artifacts/torch-2.6"
-            in workflow
+            "--pinned-artifacts-root /evidence/pinned-artifacts/torch-2.6" in workflow
         )
         assert (
             "/evidence/runtime-validation/torch-2.6/"
@@ -582,7 +585,7 @@ def test_local_cuda_evidence_is_traversable_by_non_root_images(workflow_name):
 @pytest.mark.release_blocker
 def test_install_matrix_covers_every_supported_python_in_an_empty_environment():
     workflow = (WORKFLOW_ROOT / "python-package.yml").read_text(encoding="utf-8")
-    for version in ("3.10", "3.11", "3.12"):
+    for version in ("3.11", "3.12"):
         assert f'"{version}"' in workflow
     assert "python -m venv" in workflow
     assert 'VIRTUAL_ENV="$RUNNER_TEMP/wheel-venv" uv sync' in workflow

@@ -1,12 +1,14 @@
 """Total network deadlines through the real HTTP/TLS buffering layers."""
 
 import io
+import http.client
 import shutil
 import socket
 import ssl
 import subprocess
 import threading
 import time
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -17,6 +19,44 @@ from facetorch.analyzer.reader import core as reader_core
 from facetorch.exceptions import InputError
 
 pytestmark = pytest.mark.release_blocker
+
+
+def test_chunk_parser_preserves_deadline_expiry(monkeypatch):
+    """A deadline hit after recv must not become an invalid chunk-size error."""
+    clock = SimpleNamespace(now=0.0)
+    monkeypatch.setattr(
+        reader_core, "time", SimpleNamespace(monotonic=lambda: clock.now)
+    )
+
+    class RawResponse(io.BytesIO):
+        def readinto(self, buffer):
+            if self.tell() == 0:
+                data = b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n"
+                self.seek(1)
+            else:
+                data = b"1;extension=slow\r\nx\r\n0\r\n\r\n"
+                clock.now = 2.0
+            buffer[: len(data)] = data
+            return len(data)
+
+    raw = RawResponse()
+    sock = SimpleNamespace(makefile=lambda *a, **kw: raw, settimeout=lambda _: None)
+    response = http.client.HTTPResponse(reader_core._DeadlineSocket(sock, 1.0))
+    response.begin()
+    closed = []
+    connection = SimpleNamespace(sock=None, close=lambda: closed.append(True))
+    monkeypatch.setattr(
+        reader_core, "_validate_public_url_target", lambda *_: ("8.8.8.8",)
+    )
+    monkeypatch.setattr(
+        reader_core, "_open_pinned_response", lambda *_: (connection, response)
+    )
+
+    reader = URLReader(None, torch.device("cpu"), False, timeout=1.0)
+    with pytest.raises(InputError, match="timed out"):
+        reader.run("https://example.test/image.png")
+    assert raw.closed
+    assert closed == [True]
 
 
 @pytest.fixture(scope="module")

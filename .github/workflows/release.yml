@@ -449,7 +449,7 @@ jobs:
       - name: Verify the CUDA lock and dependency advisories
         run: |
           uv sync --project environments/torch-2.6-cu124 --frozen \
-            --extra test --extra release --python 3.10
+            --extra test --extra release --python 3.11
           environments/torch-2.6-cu124/.venv/bin/python scripts/check_dependency_sync.py
           environments/torch-2.6-cu124/.venv/bin/python scripts/audit_dependencies.py \
             --output-dir "$FACETORCH_STAGING/dependency-audit"

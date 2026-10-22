@@ -70,21 +70,22 @@ evidence are all present.
 
 ## Required source checks and activation
 
-`security/required-source-checks.json` declares thirteen successful checks required
+`security/required-source-checks.json` declares twelve successful checks required
 on the exact final source SHA before release preparation. The CPU aggregate
-`cpu-cohorts-complete` depends on every supported CPU lane, including Python 3.11
+`cpu-cohorts-complete` depends on every supported CPU lane, including Python 3.12
 on Torch 2.6. A failed, skipped, cancelled, missing, or unfinished lane fails the
 aggregate. The release verifier accepts only GitHub Actions check runs bound to
 the candidate SHA and uses the newest attempt for each required check. The
 resulting `source-checks.json` is retained in the release evidence.
 
-On September 5, main protection already required the core checks, but named only
-three individual CPU lanes. Activate the aggregate in branch protection after
-the workflow is available on main and has produced a successful check run:
-add `cpu-cohorts-complete` with GitHub Actions app ID `15368`, preserving the
-existing contexts, strict up-to-date requirement, administrator enforcement, and
-D20 owner-review policy. This is a separately reviewed settings change. Do not
-require a check that cannot yet be emitted by the protected branch.
+The CPU aggregate was activated in main protection for RC4 on September 23.
+RC5 removes the Python 3.10 wheel check and replaces the old Python 3.10 CPU
+contexts with the corresponding supported lanes: Torch 2.6 / Python 3.12 and
+Torch 2.11 / Python 3.11. Keep the existing Torch 2.6 / Python 3.11 context.
+Migrate these settings only after the replacement checks succeed on the RC5
+pull request. Preserve GitHub Actions app ID `15368`, every unrelated check,
+the CPU aggregate, strict up-to-date requirement, administrator enforcement and
+D20 owner-review policy. Retain the before/after settings as release evidence.
 
 For an independent read-only check of a candidate's source CI:
 
