@@ -209,7 +209,7 @@ jobs:
             --repo "$GITHUB_REPOSITORY" --source-sha "$SOURCE_SHA" \
             --wait-timeout 5400 --poll-interval 30 \
             --output "$RUNNER_TEMP/source-checks.json"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: release-source-checks-${{ needs.validate-inputs.outputs.source_sha }}
@@ -229,7 +229,7 @@ jobs:
             --filename "$MODEL_FILENAME" --sha256 "$MODEL_SHA256" \
             --output "$RUNNER_TEMP/model-manifest-evidence/model-manifest.json" \
             --report "$RUNNER_TEMP/model-manifest-evidence/model-manifest-report.json"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-model-manifest-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/model-manifest-evidence
@@ -249,7 +249,7 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12.12"
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-model-manifest-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/model-manifest-evidence
@@ -263,7 +263,7 @@ jobs:
             --remote-manifest "$RUNNER_TEMP/model-manifest-evidence/model-manifest.json" \
             --download-artifacts \
             --report "$RUNNER_TEMP/model-audit-evidence/model-manifest-audit.json"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-model-audit-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/model-audit-evidence/model-manifest-audit.json
@@ -309,7 +309,7 @@ jobs:
           uv run --frozen --extra release python scripts/audit_dependencies.py \
             --output-dir "$RUNNER_TEMP/distribution-part/evidence/dependency-audit"
       - name: Generate distribution SBOM
-        uses: anchore/sbom-action@aa80c8c5bd439a416a62804f2151ab38c671a638 # v0.24.1
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
         with:
           path: ${{ runner.temp }}/distribution-part/distributions
           format: spdx-json
@@ -318,7 +318,7 @@ jobs:
           upload-artifact: false
           upload-release-assets: false
           syft-version: v1.42.3
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-distributions-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/distribution-part
@@ -345,7 +345,7 @@ jobs:
           clean: true
           persist-credentials: false
           ref: ${{ github.sha }}
-      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Build the exact ${{ matrix.flavor }} image once
         env:
           FLAVOR: ${{ matrix.flavor }}
@@ -367,7 +367,7 @@ jobs:
             --entrypoint python "facetorch:${FLAVOR}-${SOURCE_SHA}" -c \
             "import facetorch, os; assert os.getuid() != 0; facetorch.load_config('${CONFIG_NAME}', offline=True)"
       - name: Generate ${{ matrix.flavor }} image SBOM
-        uses: anchore/sbom-action@aa80c8c5bd439a416a62804f2151ab38c671a638 # v0.24.1
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
         with:
           image: facetorch:${{ matrix.flavor }}-${{ needs.validate-inputs.outputs.source_sha }}
           format: spdx-json
@@ -388,14 +388,14 @@ jobs:
           docker save "facetorch:${FLAVOR}-${SOURCE_SHA}" | \
             zstd -T0 -10 -o "$RUNNER_TEMP/image-part/images/facetorch-${FLAVOR}.tar.zst"
       - name: Upload the exact pre-compressed ${{ matrix.flavor }} image directly
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           path: ${{ runner.temp }}/image-part/images/facetorch-${{ matrix.flavor }}.tar.zst
           archive: false
           if-no-files-found: error
           retention-days: 3
       - name: Upload the ${{ matrix.flavor }} image identity and SBOM
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-${{ matrix.flavor }}-image-${{ needs.validate-inputs.outputs.source_sha }}
           path: |
@@ -457,20 +457,20 @@ jobs:
           python scripts/run_local_cuda_release_matrix.py \
             --repo-root . --source-sha "$SOURCE_SHA" \
             --staging-root "$FACETORCH_STAGING" --ephemeral-environments
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-cpu-image-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/release-cpu-image
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: facetorch-cpu.tar.zst
           path: ${{ runner.temp }}/release-cpu-image/images
           digest-mismatch: error
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-gpu-image-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/release-gpu-image
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: facetorch-gpu.tar.zst
           path: ${{ runner.temp }}/release-gpu-image/images
@@ -524,7 +524,7 @@ jobs:
             --gpu-image "facetorch:gpu-${SOURCE_SHA}" \
             --output "$FACETORCH_STAGING/container-evidence.json"
           test -z "$(git status --porcelain=v1 --untracked-files=all)"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ always() && env.FACETORCH_STAGING != '' }}
         with:
           name: release-local-gpu-evidence-${{ needs.validate-inputs.outputs.source_sha }}
@@ -571,41 +571,41 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12.12"
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-model-manifest-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/release-bundle/evidence
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-model-audit-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/release-bundle/evidence
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-distributions-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/release-bundle
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-cpu-image-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/release-bundle
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: facetorch-cpu.tar.zst
           path: ${{ runner.temp }}/release-bundle/images
           digest-mismatch: error
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-gpu-image-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/release-bundle
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: facetorch-gpu.tar.zst
           path: ${{ runner.temp }}/release-bundle/images
           digest-mismatch: error
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-local-gpu-evidence-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/release-bundle/evidence/local-gpu
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-source-checks-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/release-bundle/evidence
@@ -681,7 +681,7 @@ jobs:
             --public-checksums "$RUNNER_TEMP/release-bundle/SHA256SUMS" \
             --bundle-checksums "$RUNNER_TEMP/release-bundle/BUNDLE-SHA256SUMS"
           echo "plan_id=$(jq -r .plan_id "$RUNNER_TEMP/release-bundle/release-plan.json")" >> "$GITHUB_OUTPUT"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-metadata-${{ needs.validate-inputs.outputs.source_sha }}
           path: |
@@ -729,7 +729,7 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12.12"
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-metadata-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/release-bundle
@@ -802,7 +802,7 @@ jobs:
             --details "$RUNNER_TEMP/github-release-details.json"
           upload_identical "$RUNNER_TEMP/receipt-model-manifest.json"
           upload_identical "$RUNNER_TEMP/receipt-github-release.json"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-receipts-github-${{ needs.validate-inputs.outputs.source_sha }}
           path: |
@@ -841,15 +841,15 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12.12"
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-metadata-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/release-bundle
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-${{ matrix.flavor }}-image-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/image-part
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: facetorch-${{ matrix.flavor }}.tar.zst
           path: ${{ runner.temp }}/image-part/images
@@ -942,7 +942,7 @@ jobs:
           else
             gh release upload "$TAG" "$receipt"
           fi
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-receipts-${{ matrix.channel }}-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/receipt-${{ matrix.channel }}.json
@@ -969,7 +969,7 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12.12"
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-metadata-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/release-bundle
@@ -1029,7 +1029,7 @@ jobs:
           else
             gh release upload "$TAG" "$receipt"
           fi
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-receipts-pypi-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/receipt-pypi.json
@@ -1060,11 +1060,11 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12.12"
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-metadata-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/release-bundle
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: release-receipts-*-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/channel-receipts
@@ -1158,7 +1158,7 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12.12"
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-metadata-${{ needs.validate-inputs.outputs.source_sha }}
           path: ${{ runner.temp }}/release-bundle
