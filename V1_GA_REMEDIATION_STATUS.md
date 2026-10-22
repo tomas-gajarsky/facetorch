@@ -22,6 +22,15 @@ expiry. See the [treatment record](docs/v1-risk-treatment-proposal.md) and
 requires fresh source, dependency, distribution, CPU/CUDA and exact-image
 qualification, followed by publication and representative candidate soak.
 
+Local RC5 implementation validation passes 1,128 source tests (185 skipped),
+the wheel/sdist structure checks, all 17 frozen lock checks, dependency alignment,
+Flake8 and actionlint. The full runtime audit covers 34 profile/Python
+combinations: 824 package entries on Python 3.11 and 832 on Python 3.12, with no
+coverage gaps or unresolved findings under the unchanged exception policy.
+The new chunk-parser regression fails on RC4 and passes with the fix. Hosted CI,
+the unpacked-source suite and exact-candidate release qualification are separate
+checks; these local results do not constitute publication approval.
+
 The tables below retain the September remediation results and validation history;
 they do not claim fresh RC5 qualification. The CPU aggregate was activated in
 main protection for RC4. RC5 must migrate obsolete Python 3.10 check names while
