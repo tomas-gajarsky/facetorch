@@ -22,7 +22,7 @@ dependencies = [
 
 [project.optional-dependencies]
 test = [
-    "black>=22.1.0",
+    "black>=26.10.1",
     "build>=1.2.2",
     "flake8>=5.0.4",
     "packaging>=25.0",
